@@ -1,0 +1,64 @@
+Indicateurs
+	ligne de tendance
+		brisée: signe d'achat ou de vente selon le sens par deux chandelles
+	support et résistance
+		un rebobd de deux chandelles présage que la tendance va continuer
+		à étudier ou comme info complémentaire
+		peut s'utiliser comme une ligne de tendance mais plus risqué
+	inversion de tendance avec des chandelles clairement inverses
+
+	Sur grandes tendances:
+	MA (sur au moins une heure)
+		deux moyennes mobiles, achat ou vente au croisement
+	MACD(idem)
+		indic graphique de MA, ligne rouge ?
+	ADX
+		Mesure la tendance
+			> 25: tendance forte ligne pleine
+			< 20: pas de tendance
+			croisement DI+ et -: achat ou vente
+	Bollinger Bands
+		Achat ou vente quand sortie des bandes
+
+	Couloirs rapides
+	STO (stochastique)
+		permet de repérer quand le titre est en achat ou vente
+		acheter ou vendre quand il repasse la ligne 80 ou 20
+	SAR (indicateur de tendance)
+		point au dessus: mvt baissier
+		      en dessous: mvt haussier
+
+    RSI (à checker)
+    
+    Méthodologie des divergences
+
+    Money management
+
+Application de portefeuille et dans les calculs
+	L'analyse génére des ordres compliqués comme des achats limites ou stop loss, achats différés
+	A intégrer dans l'application portefeuille du coup
+	Mettre au point des stratégies: montant à investir, capital risque, pertes envisageables
+		1. Stratégie des fonds alloués
+		2. Analyse technique
+			2.1. Cycle global des jours à la journée
+			2.2. Lignes de tendance
+			2.3. Supports et résistance
+			2.4. Indicateurs
+			2.5. News
+
+
+Stratégies logicielles
+	1. Téléchargement de l'objet et de ses dépendances (ici cac40)
+	2. Repérage d'actions intéressantes
+		2.1. MA et MACD: mesure de la différence de plusieurs MA
+		2.2. Lignes de tendance: rapport de tracé et distance entre la ligne et le cours
+		2.3. De même pour les supports et résistances
+		2.4. Inversion de tendance appuyé par les chandelles
+		2.5. STO: distance des lignes 80-20
+	3. Tests sur les titres sélectionnés
+		3.1. ADX: Mesure de la tendance + distance DI et DI-
+		3.2. Analyse du marché associé (tendance générale, locale et news)
+		3.3. Analyse fondamentale numérique
+	4. Génération des rapports
+		4.1. Vue globale de l'analyse: Nombre de titres repérés et indicateurs de potentiel, d'urgence, de viabilité, de risque
+		4.2. Rapport par action: Résultats détaillés des analyses, graphiques avec indicateurs: Bollinger Bands, MACD, SAR, STO. Nouvelles les plus pertinentes et récentes, y compris associées aux dépendances.
