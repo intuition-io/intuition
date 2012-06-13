@@ -1,0 +1,25 @@
+#type dependencies parent name symbol market	ajouter secteur ? + d'icac40os ?
+indice 20 france cac40 PX1 INDEXEURO 
+action 0 cac40 accor AC EPA 
+action 0 cac40 air-liquide AI EPA 
+action 0 cac40 alcatel ALU EPA 
+action 0 cac40 alstom ALO EPA 
+action 0 cac40 arcelor MT AMS 
+action 0 cac40 axa CS EPA 
+action 0 cac40 bnp-paribas BNP EPA 
+action 0 cac40 bouygues EN EPA 
+action 0 cac40 cap-gemini CAP EPA 
+action 0 cac40 carrefour CA EPA 
+action 0 cac40 crédit-agricole ACA EPA 
+action 0 cac40 danone BN EPA 
+action 0 cac40 eads EAD EPA 
+action 0 cac40 edf EDF EPA 
+action 0 cac40 essilor-intl EI EPA 
+action 0 cac40 france-telecom FTE EPA 
+action 0 cac40 gdf-suez GSZ EPA 
+action 0 cac40 l-oreal OR EPA 
+action 0 cac40 schneider-electric SU EPA  
+action 0 cac40 societe-generale GLE EPA 
+indice 2 france test PX1 INDEXEURO 
+action 0 test schneider-electric SU EPA  
+action 0 test societe-generale GLE EPA 

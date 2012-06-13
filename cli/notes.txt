@@ -1,0 +1,8 @@
+[12-06-2012] Notes du projet
+
+Architecture:
+    Noyau fonctionnel, sortie console
+    surcouche graphique utilisant le noyau en lui envoyant un paramètre
+
+Autre:
+    Interface::config_file_generator pourrait renvoyer le string de script python avec les paramètres construits / ou alors configurer dans le fichier de conf ces paramètres
