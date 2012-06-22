@@ -18,8 +18,8 @@ action 0 cac40 essilor-intl EI EPA
 action 0 cac40 france-telecom FTE EPA 
 action 0 cac40 gdf-suez GSZ EPA 
 action 0 cac40 l-oreal OR EPA 
-action 0 cac40 schneider-electric SU EPA  
 action 0 cac40 societe-generale GLE EPA 
+action 0 cac40 schneider-electric SU EPA  
 indice 2 france test PX1 INDEXEURO 
-action 0 test schneider-electric SU EPA  
 action 0 test societe-generale GLE EPA 
+action 0 test schneider-electric SU EPA  

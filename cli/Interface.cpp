@@ -1,109 +1,71 @@
 #include "Interface.h"
 
 using namespace std;
+using namespace boost::property_tree;
 
-Interface::Interface() : index_f_m("./data/index.db"), conf_f_m("./data/quotes.ini") {
-    parameters_m[0] = "1";
-    parameters_m[1] = "10";
-    parameters_m[2] = "0";
+Interface::Interface() : index_f_m("./data/index.db") {
 }
 
-Interface::Interface(string index_f, string conf_f, string days, string precision, string rss) : index_f_m(index_f), conf_f_m(conf_f) {    
-    parameters_m[0] = days;
-    parameters_m[1] = precision;
-    parameters_m[2] = rss;
-}
+Interface::Interface(string index_f) : index_f_m(index_f) {}
 
 Interface::~Interface() {
     /*Currently nothing*/
 }
 
-void Interface::cmd_parser(string cmd_line) {
-    // Try cmd_m.clear();
-    while ( cmd_m.size() > 0  ) 
-        cmd_m.pop_back();
-    while ( stocks_list_m.size() > 0 ) 
-        stocks_list_m.pop_back();
-
-    stringstream ss(cmd_line);
-    string input("");
-    unsigned int i(0);
-    //ss >> input;
-    while (input.find(';') == string::npos) {
-        ss >> input;
-        cmd_m.push_back(input);
+int Interface::init(const string &config_f) {
+    // Retireving data from json config file
+    ptree pt;
+    try {
+        read_json(config_f, pt);
+        cmd_m.push_back(pt.get<string>("commande"));
+        cmd_m.push_back(pt.get<string>("share.name"));
+        parameters_m["days"] = pt.get("share.days", "1");
+        parameters_m["action"] = pt.get("share.action", "current");
+        parameters_m["precision"] = pt.get("share.precision", "10");
+        parameters_m["rss"] = pt.get("share.rss", "off");
+        parameters_m["dependancies"] = pt.get("share.dependancies", "off");
+        statistics_m["variation"] = pt.get<string>("stats.variation");
     }
-    if ( cmd_m[2].compare("parametric") == 0 ) {
-        cout << "parameters: [days precision rss]\n\t> ";
-        cin >> input;
-        while ( input.find(';') == string::npos ) {
-            parameters_m[i] = input;
-            cin >> input;
-            i++;
-        }
+    catch(exception &e) {
+        cout << "[!] Error: " << e.what() << "\n";
     }
-    cin.ignore();
-}
-
-int Interface::config_file_generator() {
-    ofstream flux_out(conf_f_m.c_str());        //opening in write mode
-    ifstream flux_in(index_f_m.c_str());       //opening in read mode
-    if (flux_in) {
-        string line;
-        while ( getline(flux_in, line) ) {
+    if ( parameters_m["dependancies"] == "on" ) {
+        cout << "[DEBUG] Storing list of dependancies to handle... ";
+        string parent("");
+        string child("");
+        ifstream flux_in( index_f_m.c_str() );
+        string line("");
+        while ( getline( flux_in, line ) ) {
             stringstream ss(line);
-            ss >> stock_m[0] >> stock_m[1] >> stock_m[2] >> stock_m[3] >> stock_m[4] >> stock_m[5];
-            if ( stock_m[3] == cmd_m[1] || stock_m[2] == cmd_m[1]) {
-                if ( flux_out ) {
-                    stocks_list_m.push_back(stock_m[3]);
-                    flux_out << "[" + stock_m[3] + "]\n";
-                    flux_out << "name = " + stock_m[3] << endl;
-                    flux_out << "code = " + stock_m[4] << endl;
-                    flux_out << "market = " + stock_m[5] << endl << endl;
-                }
+            ss >> line >> line >> parent >> child;
+            if ( parent == cmd_m[1] ) {
+                cout << child + ", ";
+                cmd_m.push_back(child);
             }
         }
-        if (stocks_list_m.size() != 0) {
-            cout << "[DEBUG] Found " << stocks_list_m.size() << " references in database.\n";
-            flux_out << "[general]\nstocks_list = ";
-            for (unsigned int i = 0; i < stocks_list_m.size(); i++) {
-                flux_out << stocks_list_m[i] + " ";
-            }
-            flux_out << "\ndays = " << parameters_m[0] << "\nprecision = " << parameters_m[1] << "\nrss = " << parameters_m[2] << endl;
-        }
-        else
-            return -1;
+        cout << "Done.\n";
     }
-    else
-        return -2;
     return 0;
 }
-
-string Interface::accessDb() {
-    unsigned int i(0);
-    string infos("");
-    string data_f("");
-    string pattern("10:00");
-    while ( i < stocks_list_m.size() ) {
-        data_f = "./data/" + stocks_list_m[i] + ".data";
-        ifstream flux_data(data_f.c_str());
-        if ( flux_data ) {
-            string line("");
-            while ( getline(flux_data, line) ) {
-                if (line.find(pattern) != string::npos) {
-                    stringstream ss(line);
-                    ss >> stock_m[0] >> stock_m[1] >> stock_m[2] >> stock_m[3] >> stock_m[4] >> stock_m[5];
-                    line = stocks_list_m[i] + " the " + stock_m[0] + ":\n\tClose: " + stock_m[1] + "\n\tVolume: " + stock_m[5] + "\n";
-                    infos += line;
-                    break;
-
-                }
+ 
+void Interface::process() {
+    for ( vector<string>::iterator it = cmd_m.begin()+1; it != cmd_m.end(); it++ ) {
+        cout << "[DEBUG] Processing " << *it << "...\n";
+        Share action(*it);
+        if ( action.download(parameters_m["days"], parameters_m["precision"], parameters_m["action"]) != 0)
+            cout << "[!] Error downloading quotes\n";
+        if ( action.getData() < 0 )
+            cout << "[!] Error filling share infos\n";
+        else {
+            //if ( action.computeVariation(statistics_m["variation"]) != 0 )
+                //cout << "[!] Error computing variation\n";
+            if ( cmd_m[0] == "brief" || cmd_m[0] == "all" )
+                action.display();
+            if ( cmd_m[0] == "plot" || cmd_m[0] == "all" ) {
+                if ( action.plot() != 0 )
+                    cout << "[!] Error plotting quotes\n";
             }
         }
-        else
-            infos += "Openinf file failled\n";
-        flux_data.close();
-        i++;
     }
-    return infos;
 }
+

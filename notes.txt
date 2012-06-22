@@ -2,7 +2,7 @@ Indicateurs
 	ligne de tendance
 		brisée: signe d'achat ou de vente selon le sens par deux chandelles
 	support et résistance
-		un rebobd de deux chandelles présage que la tendance va continuer
+		un rebond de deux chandelles présage que la tendance va continuer
 		à étudier ou comme info complémentaire
 		peut s'utiliser comme une ligne de tendance mais plus risqué
 	inversion de tendance avec des chandelles clairement inverses
@@ -53,7 +53,7 @@ Stratégies logicielles
 		2.1. MA et MACD: mesure de la différence de plusieurs MA
 		2.2. Lignes de tendance: rapport de tracé et distance entre la ligne et le cours
 		2.3. De même pour les supports et résistances
-		2.4. Inversion de tendance appuyé par les chandelles
+		2.4. Inversion de tendance appuyé par les chandelles, méthode des divergences ?
 		2.5. STO: distance des lignes 80-20
 	3. Tests sur les titres sélectionnés
 		3.1. ADX: Mesure de la tendance + distance DI et DI-
@@ -62,3 +62,13 @@ Stratégies logicielles
 	4. Génération des rapports
 		4.1. Vue globale de l'analyse: Nombre de titres repérés et indicateurs de potentiel, d'urgence, de viabilité, de risque
 		4.2. Rapport par action: Résultats détaillés des analyses, graphiques avec indicateurs: Bollinger Bands, MACD, SAR, STO. Nouvelles les plus pertinentes et récentes, y compris associées aux dépendances.
+
+
+[12-06-2012] Notes du projet
+
+Architecture:
+    Noyau fonctionnel, sortie console
+    surcouche graphique utilisant le noyau en lui envoyant un paramètre
+
+Autre:
+    Interface::config_file_generator pourrait renvoyer le string de script python avec les paramètres construits / ou alors configurer dans le fichier de conf ces paramètres

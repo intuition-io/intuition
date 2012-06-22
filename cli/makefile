@@ -3,8 +3,8 @@
 
 CC = g++
 EXEC = trade
-DEBUG = yes
-LIBS = 
+DEBUG = no
+LIBS = -I ~/setup/boost_1_49_0
 
 
 ifeq ($(DEBUG),yes)

@@ -7,36 +7,38 @@ print("-------------  R trade script  -------------")
 args <- commandArgs()
 print("Loading quantmod library")
 library(quantmod)
-print("Entering in the right working directory")
+print("Entering in data directory")
 setwd(getwd())
-setwd("./data")
+setwd("./data/")
 
 # Read the dowlonded quote file and store it in an object
 print("Downloading data file in current directory")
 FILE <- paste(args[4],".data",sep="") 
-trade <- read.table(file = FILE, sep=",", na.strings="-", header=TRUE)
+trade <- read.table(file = FILE, sep="", na.strings="-", header=TRUE)
+trade[, "Date"] <- paste(trade[, "Date"], trade[, "Hour"], sep="  ")
 closes = trade[, "Close"]
 opens = trade[, "Open"]
 highs = trade[, "High"]
 lows = trade[, "Low"]
+trade <- trade[, -2]
 
-print("DEBUG: before trade_xts assigment")
-trade_xts <- xts(trade[,-1],seq(as.POSIXct("2000-01-01 9:00"),len=length(trade[,1]),by="min"))
+#trade_xts <- xts(trade[,-1],seq(as.POSIXct("2000-01-01 9:00"),len=length(trade[,1]),by="min"))
+#trade_xts <- xts(trade[,-1], as.POSIXct(trade[1,1], format = '%Y-%m-%d %H:%M'))
+trade_xts <- as.xts(trade[,-1], order.by=strptime(trade[,1], format="%Y-%m-%d %H:%M"))
+#trade_xts <- as.xts(trade[,-1], order.by=trade[,1])
 
 ## Some interested stuff
-## periodicity(trade_xts)
-## to.minutes5(trade_xts)
-## trade_xts['2000-01-01 14::']
-## trade_xts['2000-01-01 14','2000-01-01 15']
-## last(x2,10)
-## max(x2$Close)
+# periodicity(trade_xts)
+# to.minutes5(trade_xts)
+# trade_xts['2000-01-01 14::']
+# trade_xts['2000-01-01 14','2000-01-01 15']
+# last(x2,10)
+# max(x2$Close)
 
 # Print some control informations
 print("Quick informations about the dowloaded file")
 periodicity(trade_xts)
 last(trade_xts$Close)
-max(trade_xts$Close)
-str(trade_xts)
 
 print("More detailed informations about data in mentionned file")
 summary(trade_xts$Open)
@@ -46,27 +48,26 @@ summary(trade_xts$Volume)
 trade_plot <- function(msg = "Google Quote and Volume plotting") 
 {
  	print(msg)
-	company <- paste(args[4],".bmp",sep="") 
-	bmp(company)
+	company <- paste(args[4],".pdf",sep="") 
+	pdf(company)
 
 	## candleChart(x2, subset='2000-01-01 09::2000-01-01 10')
 	## or reChart(major.ticks='days', subset='first 100 minutes')
 	## chartSeries(trade_xts,multi.col=TRUE,theme="black")
 	## candleChart(trade_xts, TA=NULL)
 	## chartSeries(to.minutes10(x2),multi.col=TRUE,theme=chartTheme("black.mono"))
-	## blacktrade <- chartTheme(up.col='white',dn.col='red', area='#080808',bg.col='#000000')
-	##candleChart(trade_xts,theme=blacktrade)
-	candleChart(trade_xts,theme=chartTheme("black.mono"),TA="addMACD();addDEMA();addSMI();addCCI()")
-	#addMACD()
-	#addDEMA()
-	#addSMI()
-	#addBBands()
-	#addDPO()
-	#addCCI()
+	blacktrade <- chartTheme(up.col='green',dn.col='red', area='#080808',bg.col='#000000')
+    candleChart(trade_xts, theme=blacktrade, TA='addVo();addMACD();addBBands();addDPO()')
+    #addTA(volatility(OHLC(trade_xts),calc='garman.klass'), col=2)
+    addVolatility()
 	## or chartSeries(trade_xts, theme="black", TA="addCCI();addMACD()")
 
 	dev.off()
 }
+
+#TA extension
+#volatility(OHLC(trade_xts),calc='garman.klass')
+addVolatility <- newTA(volatility, preFUN=OHLC, col=4, lwd=2)
 
 
 #MA exponential
