@@ -1,0 +1,9 @@
+{
+    "command": "test",
+    "share":
+    {
+        "name": "archos",
+        "precision": "30",
+        "days": "1"
+    }
+}

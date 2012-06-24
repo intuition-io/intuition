@@ -1,0 +1,8 @@
+{
+    "commande": "dl",
+    "share" : {
+        "name": "google",
+        "precision": 20,
+        "days": 2
+    }
+}

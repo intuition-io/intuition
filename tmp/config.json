@@ -1,0 +1,21 @@
+{
+    "commande": "all",
+    "share":
+    {
+        "name": "archos",
+        "days": "1",
+        "precision": "30",
+        "action": "test",
+        "rss": "off",
+        "dependancies": "off"
+    },
+    "graphic":
+    {
+        "trend": "off",
+        "ma": "off"
+    },
+    "stats":
+    {
+        "variation": "06-18"
+    }
+}
