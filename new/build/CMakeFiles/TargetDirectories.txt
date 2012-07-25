@@ -1,1 +1,0 @@
-/home/xavier/dev/projects/ppQuanTrade/new/build/CMakeFiles/QuanTrade.dir
