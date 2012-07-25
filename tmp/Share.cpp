@@ -3,7 +3,7 @@
 using namespace std;
 using namespace boost::property_tree;
 
-Share::Share(string name) : database("assets.db"), name_m(name) {
+Share::Share(string name) : database_m("assets.db"), name_m(name) {
 }
 
 int Share::download(string days, string precision, string action, string conf_dl = "./conf_dl.json") {
@@ -18,9 +18,9 @@ int Share::download(string days, string precision, string action, string conf_dl
     write_json(conf_dl, pt);
 
     cout << "[DEBUG] Checking if processor is available...\n";
-    downloader_cmd = downloader_cmd + conf_dl + " -d " + database;
+    downloader_cmd = downloader_cmd + conf_dl + " -d " + database_m + "\n";
     if (system(NULL)) {
-        cout << "[DEBUG] OK - Running downloader configured...\n";
+        cout << "[DEBUG] OK - Running downloader configured: " + downloader_cmd;
         value_r = system( downloader_cmd.c_str() );
         cout << "[DEBUG] Returned value: " << value_r << endl;
     }
@@ -29,17 +29,23 @@ int Share::download(string days, string precision, string action, string conf_dl
     return value_r;
 }
 
-void Share::display() {
-    cout << "\t[" << data_m.date << data_m.hour << "]\t" << name_m << "\t" << data_m.value << "€ ( " << ((data_m.open - data_m.value) * 100 / data_m.value) << "% )\tvolume: " << data_m.volume/100 << "K€" << endl;
-    //cout << "\tVariation: " << stats_m.variation << endl;
-}
-
-int Share::plot() {
+int Share::compute(string function, string conf_r = "./conf_r.json") {
     int value_r(0);
-    string r_script("R --slave --args " + name_m + " < ./quantmod.R");
+    string r_script("R --slave --args " + name_m + " " + conf_r + " < ./compute.R");
+
+    ptree pt;
+    int dpo(0);
+    pt.put("command", function);
+    pt.put("share.name", name_m);
+    pt.put("graphic.macd", "on");
+    pt.put("graphic.dpo", "off");
+    pt.put("graphic.bbands", "on");
+    write_json(conf_r, pt);
+
+    cout << "[DEBUG] Computing " + function + " R script\n";
     cout << "[DEBUG] Checking if processor is available...\n";
     if (system(NULL)) {
-        cout << "[DEBUG] OK - Running R script...\n";
+        cout << "[DEBUG] OK - Running R script: " + r_script +  "\n";
         value_r = system( r_script.c_str() );
         cout << "[DEBUG] Returned value: " << value_r << endl;
     }
@@ -48,72 +54,7 @@ int Share::plot() {
     return value_r;
 }
 
-string Share::getTextData(string database, string table, string field) {
-    string data("");
-    int r, i;
-    sqlite3 *dbh;
-    sqlite3_stmt *stmt;
-    if ( sqlite3_open(database.c_str(), &dbh) != SQLITE_OK ) {
-        fprintf( stderr, "Could not open database (%s)\n", sqlite3_errmsg(dbh) );
-        return(NULL);
-    }
-    string query = "SELECT " + field + " FROM " + table;
-    cout << "[DEBUG] accessing database: " << query << endl;
-    if ( sqlite3_prepare_v2( dbh, query.c_str(), 1024, &stmt, NULL ) != SQLITE_OK ) {
-        fprintf( stderr, "Didn't get any data\n" );
-        exit( EXIT_FAILURE );
-    }
-    int fields = sqlite3_column_count( stmt );
-    /*
-     *affichage du header
-     */
-    for (i = 0; i < fields; i++) 
-        printf("[DEBUG] Retrienving data as %s\n", sqlite3_column_name(stmt, i));
-    /*
-     *affichage des valeurs
-     */
-    while ( sqlite3_step( stmt ) == SQLITE_ROW ) {
-        for (i = 0; i < fields; i++) {
-            printf("data: %s\n", sqlite3_column_text( stmt, i ));
-            data = (char*)sqlite3_column_text( stmt, i );
-        }
-    }
-    sqlite3_finalize( stmt );
-    sqlite3_close( dbh );
-    return data;
-}
-
-float Share::getRealData(string database, string table, string field) {
-    float data(0);
-    int r, i;
-    sqlite3 *dbh;
-    sqlite3_stmt *stmt;
-    if ( sqlite3_open(database.c_str(), &dbh) != SQLITE_OK ) {
-        fprintf( stderr, "Could not open database (%s)\n", sqlite3_errmsg(dbh) );
-        return(NULL);
-    }
-    string query = "SELECT " + field + " FROM " + table;
-    cout << "[DEBUG] accessing database: " << query << endl;
-    if ( sqlite3_prepare_v2( dbh, query.c_str(), 1024, &stmt, NULL ) != SQLITE_OK ) {
-        fprintf( stderr, "Didn't get any data\n" );
-        exit( EXIT_FAILURE );
-    }
-    int fields = sqlite3_column_count( stmt );
-    /*
-     *affichage du header
-     */
-    for (i = 0; i < fields; i++) 
-        printf("[DEBUG] Retrienving data as %s\n", sqlite3_column_name(stmt, i));
-    /*
-     *affichage des valeurs
-     */
-    while ( sqlite3_step( stmt ) == SQLITE_ROW ) {
-        for (i = 0; i < fields; i++) {
-            printf("data: %s\n", sqlite3_column_text( stmt, i ));
-            data = sqlite3_column_double( stmt, i );
-        }
-    }
-    sqlite3_finalize( stmt );
-    sqlite3_close( dbh );
-    return data;
+void Share::display() {
+    cout << "\t[" << data_m.date << data_m.hour << "]\t" << name_m << "\t" << data_m.value << "€ ( " << ((data_m.open - data_m.value) * 100 / data_m.value) << "% )\tvolume: " << data_m.volume/100 << "K€" << endl;
+    //cout << "\tVariation: " << stats_m.variation << endl;
 }

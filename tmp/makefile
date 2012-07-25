@@ -4,7 +4,7 @@
 CC = g++
 EXEC = trade
 DEBUG = no
-LIBS = -lsqlite3 -I ~/setup/boost_1_49_0
+LIBS = -lsqlite3 -I ~/lib/boost_1_49_0
 
 
 ifeq ($(DEBUG),yes)

@@ -8,7 +8,7 @@ int main() {
     /*
      * Crée le noyau manageant la configuration requise
      */
-    Interface core("./data/index.db");
+    Interface core("./data/index.db", "assets.db");
 
     /*
      *Lecture du fichier de configuration et paramétrage du process

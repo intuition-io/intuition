@@ -3,7 +3,14 @@
     "share":
     {
         "name": "archos",
-        "precision": "30",
-        "days": "1"
+        "precision": "10",
+        "days": "5"
+    },
+    "rss":
+    {
+        "name": "archos",
+        "description": "on",
+        "link": "off",
+        "update": "on"
     }
 }

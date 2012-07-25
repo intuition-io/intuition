@@ -1,0 +1,13 @@
+{
+    "command": "plot",
+    "share":
+    {
+        "name": "archos"
+    },
+    "graphic":
+    {
+        "macd": "on",
+        "dpo": "0",
+        "bbands": "1"
+    }
+}

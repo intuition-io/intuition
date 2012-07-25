@@ -1,0 +1,15 @@
+{
+"commande":"all",
+"graphic":
+    {
+    "macd":1,
+    "dpo":0,
+    "bbands": 1
+    },
+"share":
+    {
+    "name":"archos",
+    "days":4,
+    "precision":10
+    }
+}

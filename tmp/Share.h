@@ -6,7 +6,6 @@
 #include <fstream>
 #include <sstream>
 #include <cstdlib>
-#include <sqlite3.h>
 
 struct infos_share {
     std::string date;
@@ -24,13 +23,11 @@ class Share {
     public:
         Share(std::string name);
         int download(std::string days, std::string precision, std::string action, std::string conf_dl);
+        int compute(std::string function, std::string conf_r);
         void display();
-        int plot();
-        std::string getTextData(std::string database, std::string table, std::string field);
-        float getRealData(std::string database, std::string table, std::string field);
 
     private:
-        std::string const database;
+        std::string const database_m;
         std::string const conf_dl;
         std::string const name_m;
         infos_share data_m; 

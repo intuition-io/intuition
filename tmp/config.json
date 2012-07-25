@@ -3,8 +3,8 @@
     "share":
     {
         "name": "archos",
-        "days": "1",
-        "precision": "30",
+        "days": "5",
+        "precision": "10",
         "action": "test",
         "rss": "off",
         "dependancies": "off"

@@ -4,6 +4,7 @@
 import argparse
 import json
 import finance
+import rss
 
 def main():
     ''' Parsing command line args '''
@@ -17,11 +18,18 @@ def main():
     config = json.load(open(args.file, 'r'))
 
     ''' Execute financial stuff '''
-    # Initialisation
     q = finance.Quote(config['share']['name'], args.database)
-    #q.checkDb(config['share']['days'])
-    q.download(int(config['share']['days']), int(config['share']['precision']))
-    q.updateDb()
+    #q.download(int(config['share']['days']), int(config['share']['precision']))
+    #q.updateDb()
+
+    ''' Execute rss stuff '''
+    print '[DEBUG] Retrieving rss news from', q.rss
+    channel = rss.Rss(q.rss)
+    rval = channel.getFeeds(config['rss']['description'], config['rss']['link'], config['rss']['update'])
+    for i in range(0, len(channel.title)):
+        print '\t', channel.title[i], '-', channel.update[i]
+        #print '\t', channel.description[i].strip()
+
 
 
 if __name__ == '__main__':
