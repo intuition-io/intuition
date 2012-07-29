@@ -1,0 +1,12 @@
+{
+    "name": "archos",
+    "days": "5",
+    "precision": "10",
+    "description": "on",
+    "link": "off",
+    "update": "on",
+    "command": "basic",
+    "macd": "on",
+    "dpo": "0",
+    "bbands": "1"
+}
