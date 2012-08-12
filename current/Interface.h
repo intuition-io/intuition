@@ -14,16 +14,13 @@
 class Interface {
     public:
         Interface();
-        Interface(std::string index_f, std::string database);
         int init(const std::string &config_f);
-        int process();
+        int generateConfigFile(std::string module);
+        int process(std::string module);
 
     private:
-        std::string const database_m;
-        std::vector<std::string> cmd_m;
-        std::string const index_f_m;
-        std::string stock_m[6];
-        std::map<std::string, std::string> parameters_m;
+        std::map<std::string, std::string> generalConfig_m;
+        std::map<std::string, std::map<std::string, std::string> > modulesConfig_m;
 };
 
 #endif

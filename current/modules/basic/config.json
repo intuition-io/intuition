@@ -1,12 +1,19 @@
 {
-    "name": "archos",
-    "days": "5",
-    "precision": "10",
-    "description": "on",
-    "link": "off",
-    "update": "on",
+    "assetsdb": ".\/data\/assets.db",
+    "bbands": "1",
     "command": "basic",
-    "macd": "on",
+    "days": "1",
+    "dependancies": "off",
+    "description": "on",
     "dpo": "0",
-    "bbands": "1"
+    "link": "off",
+    "macd": "on",
+    "name": "archos",
+    "precision": "10",
+    "pymodule": ".\/modules\/basic\/finance.py",
+    "pyscript": ".\/modules\/basic\/downloader.py",
+    "rmodule": ".\/modules\/basic\/finance.R",
+    "rscript": ".\/modules\/basic\/compute.R",
+    "rulesdb": ".\/data\/rules.db",
+    "update": "on"
 }

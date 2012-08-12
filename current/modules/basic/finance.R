@@ -1,7 +1,7 @@
 # Graphic management
 trade_plot <- function(data, name, macd = "off", msg = "Google Quote and Volume plotting") 
 {
-    setwd("./data/")
+    #setwd("./data/")
 	company <- paste(name,".pdf",sep="") 
 	pdf(company)
 

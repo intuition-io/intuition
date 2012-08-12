@@ -11,7 +11,7 @@ endif ( UNIX )
 # Unable it with -D CMAKE_BUILD_TYPE=Release
 if ( CMAKE_BUILD_TYPE STREQUAL "Debug" )
     set( CMAKE_BUILD_TYPE Debug )
-    add_definitions(-g -Wall -W -DDEBUG)
+    #add_definitions(-g -Wall -W -DDEBUG)
 endif ()
 
 # Some version infos for config file

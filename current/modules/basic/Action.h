@@ -5,7 +5,7 @@
 
 class Action : public Share {
     public:
-        Action(std::string name, std::string conf_f);
+        Action(std::string name, std::string conf_f, std::string rscript, std::string pyscript, std::string rulesdb, std::string assetsdb);
 };
 
 #endif

@@ -6,17 +6,16 @@ library("Defaults")
 library("xts")
 library("TTR")
 library("RSQLite")
-require("quantmod")
+#require("quantmod")
+library("quantmod")
 library("RJSONIO")
 
 ## =========================    Preparing data    ========================== ##
-source("./modules/basic/finance.R")
 
-args <- commandArgs()
-company <- args[4]
-database <- "./data/assets.db"
+#args <- commandArgs()
 
-config_f <- args[5]
+#config_f <- args[4]
+config_f <- "./modules/basic/config.json"
 
 config = ""
 connection <- file(config_f, open='r')
@@ -24,6 +23,10 @@ while ( length(line <- readLines(connection, n=1, warn= FALSE)) > 0 ) {
     config <- paste(config, line)
 }
 parameters <- fromJSON(config)
+source(parameters["rmodule"])
+database <- parameters["assetsdb"]
+company <- parameters["name"]
+close(connection)
 
 drv <- dbDriver("SQLite")
 connection <- dbConnect(drv, database)
@@ -55,6 +58,9 @@ trade_plot(xts_data, company, parameters["macd"], "Calling trade_plot() function
 ## ===============================    End    =============================== ##
 
 
+#lastData = delta[dim(delta)[1], dim(delta)[2]]
+lastData = delta[length(delta)]
+print(lastData)
 ## Sending query
 field = "ma"
 query <- "update"
@@ -62,15 +68,14 @@ query <- "update"
 query <- paste(query, "computations set")
 query <- paste(query, field)
 query <- paste(query, "=")
-query <- paste(query, delta)
+query <- paste(query, lastData)
 debug <- paste("[DEBUG] Updating database: ", query)
-#print(debug[135])
-#rs <- dbSendQuery(connection, query)
+print(debug)
+rs <- dbSendQuery(connection, query)
 #data <- fetch(rs,n=3) #3 rows, -1 for all
-#print(data)
 #dbHasCompleted(rs)
 
 ## Cleaning up
-#dbClearResult(rs)
+dbClearResult(rs)
 dbDisconnect(connection)
 dbUnloadDriver(drv)

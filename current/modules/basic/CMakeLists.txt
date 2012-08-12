@@ -6,7 +6,8 @@ project( ppQuanTrade )
 # Unable it with -D CMAKE_BUILD_TYPE=Release
 if ( CMAKE_BUILD_TYPE STREQUAL "Debug" )
     set( CMAKE_BUILD_TYPE Debug )
-    add_definitions(-g -Wall -W -DDEBUG)
+    #add_definitions(-g -Wall -W -DDEBUG)
+    add_definitions(-DDEBUG)
 endif ()
 
 set(BUILD_DIR build CACHE PATH "Installation directory for Cmake files")

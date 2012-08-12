@@ -1,42 +1,31 @@
 #include <iostream>
 #include "Action.cpp"
-#include <vector>
+#include "../Module.cpp"
+#include <map>
 #include <string>
 
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
-#include <exception>
 
-using namespace std;
-using namespace boost::property_tree;
-
-void init(string filename, vector<string> &configuration) {
-    ptree pt;
-    try {
-        read_json(filename, pt);
-        //ptree pt_child = pt.get_child("debug.modules");
-        for ( ptree::iterator iptree = pt.begin(); iptree != pt.end(); iptree++ )
-            //configuration.push_back(iptree->second);
-            std::cout << iptree->first << "\n";
-    }
-    catch(exception &e) {
-        cout << "[ERROR] " << e.what() << "\n";
-    }
-}
-
-int main() {
-    cout << "-----------------------------------------------------------------\n";
+int main(int argc, char** argv) {
+    cout << "------- BASIC - MODULE --------------------------------------------------\n";
     cout << "[DEBUG] Module basic running...\n";
-    vector<string> configuration;
-    init("./modules/basic/config.json", configuration);
-    cout << configuration[2] << "  " << configuration[4] << endl;
-    return 0;
+    map<string, string> configuration;
+    string configFile;
 
-    Action test("archos", "./modules/basic/config.json");
-    if ( test.download("1", "10", "plot") != 0 )
+    Module basic("basic");
+
+    if ( argc > 1 )
+        configFile = argv[1];
+    else
+        configFile = "./modules/basic/config.json";
+    basic.init(configFile, configuration);
+
+    //TODO Looping for each asked action or group
+    //So accessing database and retrieving a vector through iteration
+    Action test(configuration["name"], configFile, configuration["rscript"], configuration["pyscript"], configuration["rulesdb"], configuration["assetsdb"]);
+    if ( test.download(configuration["days"], configuration["precision"], "plot") != 0 )
         cout << "[ERROR] downloading\n";
-    if ( test.compute("basic") != 0 )
+    if ( test.compute(configuration["command"]) != 0 )
         cout << "[ERROR] computing\n";
-    cout << "-----------------------------------------------------------------\n";
+    cout << "-------------------------------------------------------------------------\n";
     return 0;
 }

@@ -15,18 +15,23 @@ cout << "[INFO] Opearting system: Linux\n";
     /*
      * Crée le noyau manageant la configuration requise
      */
-    Interface core("./data/index.db", "./data/assets.db");
+    Interface core;
 
     /*
      *Lecture du fichier de configuration et paramétrage du process
      */
     if ( core.init("./config.json") < 0 )
-        cout << "[ERROR] Initializing\n";
+        cout << "** Error initializing\n";
+
     /*
      * Process module execution
+     * Should loop over modules stored from config file
      */
-    if ( core.process() != 0 )
-        cout << "[ERROR] Processing module\n";
+    if ( core.generateConfigFile("basic") < 0 )
+        cout << "** Error generating configuration file, module\n";
+
+    if ( core.process("basic") != 0 )
+        cout << "** Error processing module\n";
 
     //TODO generateReport()
     //TODO readReport();

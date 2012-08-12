@@ -11,14 +11,15 @@ def main():
     parser = argparse.ArgumentParser(description='Spyder-quote, the terrific botnet')
     parser.add_argument('-v', '--version', action='version', version='%(prog)s v0.8.1 Licence GPLv3', help='Print program version')
     parser.add_argument('-f', '--file', action='store', required=True, help='Config file path')
-    parser.add_argument('-d', '--database', action='store', required=True, help='Config file path')
+    #parser.add_argument('-d', '--database', action='store', required=True, help='Config file path')
     args = parser.parse_args()
 
     ''' Parsing configuration file '''
     config = json.load(open(args.file, 'r'))
 
     ''' Execute financial stuff '''
-    q = finance.Quote(config['name'], args.database)
+    #q = finance.Quote(config['name'], args.database)
+    q = finance.Quote(config['name'], config['assetsdb'])
     q.download(int(config['days']), int(config['precision']))
     q.updateDb()
 

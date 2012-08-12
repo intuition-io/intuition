@@ -1,21 +1,32 @@
 {
-    "commande": "all",
-    "share":
+    "basic":
     {
+        "rscript" : "./modules/basic/compute.R",
+        "rmodule" : "./modules/basic/finance.R",
+        "pyscript" : "./modules/basic/downloader.py",
+        "pymodule" : "./modules/basic/finance.py",
+        "rulesdb" : "./data/rules.db",
+        "assetsdb" : "./data/assets.db",
         "name": "archos",
-        "days": "5",
+        "days": "1",
         "precision": "10",
-        "action": "test",
-        "rss": "off",
+        "description": "on",
+        "link": "off",
+        "update": "on",
+        "command": "basic",
+        "macd": "on",
+        "dpo": "0",
+        "bbands": "1",
         "dependancies": "off"
     },
-    "graphic":
+    "core":
     {
-        "trend": "off",
-        "ma": "off"
+        "printreport": "on",
+        "debug": "off"
     },
-    "module":
+    "neuron":
     {
-        "name": "basic"
+        "model": "asymetric",
+        "nodes": "4"
     }
 }
