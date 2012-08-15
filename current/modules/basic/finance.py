@@ -27,7 +27,8 @@ class Quote:
             else:
                 self.symbol = row['symbol']
                 self.market = row['market']
-                self.rss = row['rss']
+                self.rss_source = row['rss']
+                self.rss = 'http://www.google.com/finance/company_news?q=' + row['market'] + ':' + row['symbol'] + '&output=rss'
         self.name = quote
 
     def download(self, days, precision):
@@ -63,7 +64,7 @@ class Quote:
     def updateDb(self):
         ''' store quotes and information '''
         ''' Updating index table '''
-        print '[DEBUG] Updating database...'
+        print '[DEBUG] Updating rule database...'
         buffer = 'drop table if exists ' + self.name
         buffer = buffer.strip()
         uvalue = self.data[self.data.shape[0]-1, 4]
@@ -84,11 +85,9 @@ class Quote:
 
     def computeVariation(self):
         ''' return day variation '''
-        return 0
+        return ((self.data[self.data.shape[0]-1, 4] - self.data[0,4])/self.data[0,4]) * 100
 
 
-#TODO Use Google rss or others for company specifs news
-#TODO Change get_infos place ?
 #TODO Add control commands
 #TODO Resolve data problem for 30 days 60minutes
 #date = time.strftime("%Y-%m-%d %H:%M", time.localtime(float(infos[0][1:])))    #see %c also and %m

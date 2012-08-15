@@ -12,9 +12,10 @@ void Module::init(string configFile, map<string, string> &configuration)
     try {
         read_json(configFile, pt);
         //ptree pt_child = pt.get_child("debug.modules");
-        for ( ptree::iterator iptree = pt.begin(); iptree != pt.end(); iptree++ ) 
+        for ( ptree::iterator iptree = pt.begin(); iptree != pt.end(); iptree++ ) {
             configuration[iptree->first] = iptree->second.data();
-            //configuration.push_back(iptree->second.data());
+            cout << iptree->first << "\t" << iptree->second.data() << endl;
+        }
         
     }
     catch(exception &e) {

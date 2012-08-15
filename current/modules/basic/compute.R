@@ -14,8 +14,8 @@ library("RJSONIO")
 
 #args <- commandArgs()
 
-#config_f <- args[4]
-config_f <- "./modules/basic/config.json"
+#config_f <- "./modules/basic/config.json"
+config_f <- "./config.json"
 
 config = ""
 connection <- file(config_f, open='r')
@@ -58,14 +58,15 @@ trade_plot(xts_data, company, parameters["macd"], "Calling trade_plot() function
 ## ===============================    End    =============================== ##
 
 
-#lastData = delta[dim(delta)[1], dim(delta)[2]]
 lastData = delta[length(delta)]
 print(lastData)
 ## Sending query
+table = "basic"
 field = "ma"
 query <- "update"
 #query <- paste(query, args[4])
-query <- paste(query, "computations set")
+query <- paste(query, table)
+query <- paste(query, "set")
 query <- paste(query, field)
 query <- paste(query, "=")
 query <- paste(query, lastData)

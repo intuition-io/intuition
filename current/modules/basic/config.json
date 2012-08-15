@@ -1,19 +1,25 @@
 {
-    "assetsdb": ".\/data\/assets.db",
+    "assetsdb": "../../data/assets.db",
     "bbands": "1",
     "command": "basic",
-    "days": "1",
+    "days": "2",
     "dependancies": "off",
     "description": "on",
     "dpo": "0",
-    "link": "off",
+    "link": "on",
     "macd": "on",
     "name": "archos",
     "precision": "10",
-    "pymodule": ".\/modules\/basic\/finance.py",
-    "pyscript": ".\/modules\/basic\/downloader.py",
-    "rmodule": ".\/modules\/basic\/finance.R",
-    "rscript": ".\/modules\/basic\/compute.R",
-    "rulesdb": ".\/data\/rules.db",
-    "update": "on"
+    "pymodule": "./finance.py",
+    "pyscript": "./downloader.py",
+    "rmodule": "./finance.R",
+    "rscript": "./compute.R",
+    "rulesdb": "../../data/rules.db",
+    "update": "on",
+    "results":
+        [
+            {"name": "price", "relation": "more", "value": "3.2"},
+            {"name": "rss", "relation": "find", "value": "bad"},
+            {"name": "ma", "relation": "less", "value": "0.02"}
+        ]
 }

@@ -18,6 +18,7 @@ int main(int argc, char** argv) {
     else
         configFile = "./modules/basic/config.json";
     basic.init(configFile, configuration);
+    return 0;
 
     //TODO Looping for each asked action or group
     //So accessing database and retrieving a vector through iteration

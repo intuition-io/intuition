@@ -5,10 +5,13 @@ import re, argparse, sys
 import urllib2
 from ConfigParser import SafeConfigParser
 from xml.dom import minidom, Node
+import sqlite3 as sql
 
 class Rss:
-    def __init__(self, url):
+    def __init__(self, name, source, url):
+        self.name = name
         self.cpt_cdata = 0
+        self.source = source
         self.link = []
         self.title = []
         self.update = []
@@ -93,3 +96,22 @@ class Rss:
                 return 'no value'
         else:
             return backup_value
+
+    def updateDb(self, database):
+        print '[DEBUG] Updating rss database...'
+        table = self.name + 'Rss'
+        buffer = 'drop table if exists ' + table
+        buffer = buffer.strip()
+        self.connection = sql.connect(database)
+        with self.connection:
+            self.connection.row_factory = sql.Row
+            self.cursor = self.connection.cursor()
+            self.cursor.execute(buffer)
+            buffer = 'create table ' + table + '(id integer primary key, source text, title text, date text, link text, description text)'
+            buffer = buffer.strip()
+            self.cursor.execute(buffer)
+            buffer = 'insert into ' + table + ' values(?, ?, ?, ?, ?, ?)'
+            buffer = buffer.strip()
+            for i in range(0, len(self.title)):
+                data = (i, self.source, self.title[i], self.update[i], self.link[i], self.description[i].strip())
+                self.cursor.execute(buffer, data)
