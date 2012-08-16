@@ -34,3 +34,77 @@ int Share::compute(string function) {
         return -1;
     return value_r;
 }
+
+
+string Share::getTextData(string database, string table, string field, string patternField, string pattern) {
+    string data("");
+    int r, i;
+    sqlite3 *dbh;
+    sqlite3_stmt *stmt;
+    if ( sqlite3_open(database.c_str(), &dbh) != SQLITE_OK ) {
+        fprintf( stderr, "Could not open database (%s)\n", sqlite3_errmsg(dbh) );
+        return(NULL);
+    }
+    string query = "SELECT " + field + " FROM " + table + " WHERE " + patternField + " LIKE '" + pattern + "'";
+    cout << "[DEBUG] accessing database: " << query << endl;
+    if ( sqlite3_prepare_v2( dbh, query.c_str(), 1024, &stmt, NULL ) != SQLITE_OK ) {
+        fprintf( stderr, "Didn't get any data\n" );
+        exit( EXIT_FAILURE );
+    }
+    int fields = sqlite3_column_count( stmt );
+    /*
+     *affichage du header
+     */
+    for (i = 0; i < fields; i++) 
+        printf("[DEBUG] Retrienving data as %s\n", sqlite3_column_name(stmt, i));
+    /*
+     *affichage des valeurs
+     */
+    while ( sqlite3_step( stmt ) == SQLITE_ROW ) {
+        for (i = 0; i < fields; i++) {
+            printf("[DEBUG] Retrieved data: %s\n", sqlite3_column_text( stmt, i ));
+            data = (char*)sqlite3_column_text( stmt, i );
+        }
+    }
+    sqlite3_finalize( stmt );
+    sqlite3_close( dbh );
+    string dataToString(data);
+    //cout << "Converted: " << dataToString << endl;
+    //return dataToString;
+    return data;
+}
+
+double Share::getRealData(string database, string table, string field, string patternField, string pattern) {
+    double data(0);
+    int r, i;
+    sqlite3 *dbh;
+    sqlite3_stmt *stmt;
+    if ( sqlite3_open(database.c_str(), &dbh) != SQLITE_OK ) {
+        fprintf( stderr, "Could not open database (%s)\n", sqlite3_errmsg(dbh) );
+        return(1);
+    }
+    string query = "SELECT " + field + " FROM " + table + " WHERE " + patternField + " LIKE '" + pattern + "'";
+    cout << "[DEBUG] accessing database: " << query << endl;
+    if ( sqlite3_prepare_v2( dbh, query.c_str(), 1024, &stmt, NULL ) != SQLITE_OK ) {
+        fprintf( stderr, "Didn't get any data\n" );
+        exit( EXIT_FAILURE );
+    }
+    int fields = sqlite3_column_count( stmt );
+    /*
+     *affichage du header
+     */
+    for (i = 0; i < fields; i++) 
+        printf("[DEBUG] Retrienving data as %s\n", sqlite3_column_name(stmt, i));
+    /*
+     *affichage des valeurs
+     */
+    while ( sqlite3_step( stmt ) == SQLITE_ROW ) {
+        for (i = 0; i < fields; i++) {
+            printf("[DEBUG] Retrieved data: %s\n", sqlite3_column_text( stmt, i ));
+            data = sqlite3_column_double( stmt, i );
+        }
+    }
+    sqlite3_finalize( stmt );
+    sqlite3_close( dbh );
+    return data;
+}

@@ -18,15 +18,16 @@ int main(int argc, char** argv) {
     else
         configFile = "./modules/basic/config.json";
     basic.init(configFile, configuration);
-    return 0;
 
     //TODO Looping for each asked action or group
     //So accessing database and retrieving a vector through iteration
     Action test(configuration["name"], configFile, configuration["rscript"], configuration["pyscript"], configuration["rulesdb"], configuration["assetsdb"]);
-    if ( test.download(configuration["days"], configuration["precision"], "plot") != 0 )
-        cout << "[ERROR] downloading\n";
-    if ( test.compute(configuration["command"]) != 0 )
-        cout << "[ERROR] computing\n";
+    //if ( test.download(configuration["days"], configuration["precision"], "plot") != 0 )
+        //cout << "[ERROR] downloading\n";
+    //if ( test.compute(configuration["command"]) != 0 )
+        //cout << "[ERROR] computing\n";
+    test.evaluateResults(configuration);
+    //test.writeResults(configuration["reportFile"]);
     cout << "-------------------------------------------------------------------------\n";
     return 0;
 }

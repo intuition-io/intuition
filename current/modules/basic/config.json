@@ -16,6 +16,7 @@
     "rscript": "./compute.R",
     "rulesdb": "../../data/rules.db",
     "update": "on",
+    "reportFile": "basicReport.txt",
     "results":
         [
             {"name": "price", "relation": "more", "value": "3.2"},
