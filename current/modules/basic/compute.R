@@ -12,10 +12,13 @@ library("RJSONIO")
 
 ## =========================    Preparing data    ========================== ##
 
-#args <- commandArgs()
-
+args <- commandArgs()
+config_f <- args[4]
+target <- args[5]
 #config_f <- "./modules/basic/config.json"
-config_f <- "./config.json"
+#config_f <- "./config.json"
+print(config_f)
+print(target)
 
 config = ""
 connection <- file(config_f, open='r')
@@ -25,16 +28,16 @@ while ( length(line <- readLines(connection, n=1, warn= FALSE)) > 0 ) {
 parameters <- fromJSON(config)
 source(parameters["rmodule"])
 database <- parameters["assetsdb"]
-company <- parameters["name"]
+#target <- parameters["name"]
 close(connection)
 
 drv <- dbDriver("SQLite")
 connection <- dbConnect(drv, database)
 ## Checking the connection
 #dbListTables(connection)
-#dbListFields(connection, company)
+#dbListFields(connection, target)
 ## Storing it in a dataframe and converting to xts object
-data <- dbReadTable(connection, company)
+data <- dbReadTable(connection, target)
 xts_data <- as.xts(data[,-1], order.by=as.POSIXct(data[,1], origin="1970-01-01"))
 ## ===============================    End    =============================== ##
 
@@ -54,7 +57,7 @@ delta = ma94 - ma97
 
 
 ## ===============================   Plots   =============================== ##
-trade_plot(xts_data, company, parameters["macd"], "Calling trade_plot() function")
+trade_plot(xts_data, target, parameters["macd"], "Calling trade_plot() function")
 ## ===============================    End    =============================== ##
 
 

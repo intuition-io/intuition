@@ -35,10 +35,12 @@ int main(int argc, char** argv) {
             return 1;
         cout  << "[DEBUG] Actions to process: " << stocks << endl;
     }
+    else
+        deps.push_back(configuration["name"]);
 
     //TODO Looping for each asked action or group
     //So accessing database and retrieving a vector through iteration
-    for ( int i = 0; i < stocks; i++ ) {
+    for ( int i = 0; i < deps.size(); i++ ) {
         Action archos(deps[i], configFile, configuration["rscript"], configuration["pyscript"], configuration["rulesdb"], configuration["assetsdb"]);
         cout << "[DEBUG] Analysing: " << deps[i] << endl;
         if ( archos.download(configuration["days"], configuration["precision"], "plot") != 0 )

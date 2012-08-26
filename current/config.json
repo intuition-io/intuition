@@ -7,7 +7,7 @@
         "pymodule" : "./modules/basic/finance.py",
         "rulesdb" : "./data/rules.db",
         "assetsdb" : "./data/assets.db",
-        "name": "archos",
+        "name": "google",
         "days": "2",
         "precision": "10",
         "description": "on",

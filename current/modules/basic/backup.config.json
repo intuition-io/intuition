@@ -1,0 +1,26 @@
+{
+    "assetsdb": "../../data/assets.db",
+    "bbands": "1",
+    "command": "basic",
+    "days": "2",
+    "dependancies": "on",
+    "description": "on",
+    "dpo": "0",
+    "link": "on",
+    "macd": "on",
+    "name": "google",
+    "precision": "10",
+    "pymodule": "./finance.py",
+    "pyscript": "./downloader.py",
+    "rmodule": "./finance.R",
+    "rscript": "./compute.R",
+    "rulesdb": "../../data/rules.db",
+    "update": "on",
+    "reportFile": "basicReport.txt",
+    "results":
+        [
+            {"name": "price", "relation": "more", "value": "3.2"},
+            {"name": "rss", "relation": "find", "value": "bad"},
+            {"name": "ma", "relation": "less", "value": "0.02"}
+        ]
+}
