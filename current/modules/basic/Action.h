@@ -16,7 +16,7 @@ class Action : public Share {
     public:
         Action(std::string name, std::string conf_f, std::string rscript, std::string pyscript, std::string rulesdb, std::string assetsdb);
         void evaluateResults(std::map<std::string, std::string>);
-        void writeResults(std::string out);
+        int writeResults(std::string out);
 
     protected:
         Basic results;

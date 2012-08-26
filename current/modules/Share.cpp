@@ -35,15 +35,16 @@ int Share::compute(string function) {
     return value_r;
 }
 
-
-string Share::getTextData(string database, string table, string field, string patternField, string pattern) {
-    string data("");
+int Share::getTextData(vector<string> &data, string database, string table, string field, string patternField, string pattern) {
+    int linesCpt(0);
+    if ( !data.empty() )
+        data.clear();
     int r, i;
     sqlite3 *dbh;
     sqlite3_stmt *stmt;
     if ( sqlite3_open(database.c_str(), &dbh) != SQLITE_OK ) {
         fprintf( stderr, "Could not open database (%s)\n", sqlite3_errmsg(dbh) );
-        return(NULL);
+        return -1;
     }
     string query = "SELECT " + field + " FROM " + table + " WHERE " + patternField + " LIKE '" + pattern + "'";
     cout << "[DEBUG] accessing database: " << query << endl;
@@ -63,25 +64,25 @@ string Share::getTextData(string database, string table, string field, string pa
     while ( sqlite3_step( stmt ) == SQLITE_ROW ) {
         for (i = 0; i < fields; i++) {
             printf("[DEBUG] Retrieved data: %s\n", sqlite3_column_text( stmt, i ));
-            data = (char*)sqlite3_column_text( stmt, i );
+            data.push_back((char*)sqlite3_column_text( stmt, i ));
         }
+        linesCpt++;
     }
     sqlite3_finalize( stmt );
     sqlite3_close( dbh );
-    string dataToString(data);
-    //cout << "Converted: " << dataToString << endl;
-    //return dataToString;
-    return data;
+    return linesCpt;
 }
 
-double Share::getRealData(string database, string table, string field, string patternField, string pattern) {
-    double data(0);
+int Share::getRealData(vector<double> &data, string database, string table, string field, string patternField, string pattern) {
+    int linesCpt(0);
+    if ( !data.empty() )
+        data.clear();
     int r, i;
     sqlite3 *dbh;
     sqlite3_stmt *stmt;
     if ( sqlite3_open(database.c_str(), &dbh) != SQLITE_OK ) {
         fprintf( stderr, "Could not open database (%s)\n", sqlite3_errmsg(dbh) );
-        return(1);
+        return(-1);
     }
     string query = "SELECT " + field + " FROM " + table + " WHERE " + patternField + " LIKE '" + pattern + "'";
     cout << "[DEBUG] accessing database: " << query << endl;
@@ -101,10 +102,11 @@ double Share::getRealData(string database, string table, string field, string pa
     while ( sqlite3_step( stmt ) == SQLITE_ROW ) {
         for (i = 0; i < fields; i++) {
             printf("[DEBUG] Retrieved data: %s\n", sqlite3_column_text( stmt, i ));
-            data = sqlite3_column_double( stmt, i );
+            data.push_back(sqlite3_column_double( stmt, i ));
         }
+        linesCpt++;
     }
     sqlite3_finalize( stmt );
     sqlite3_close( dbh );
-    return data;
+    return linesCpt;
 }

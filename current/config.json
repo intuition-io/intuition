@@ -17,6 +17,7 @@
         "macd": "on",
         "dpo": "0",
         "bbands": "1",
+        "reportFile": "./modules/basic/basicReport.txt",
         "dependancies": "off"
     },
     "core":
