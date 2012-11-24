@@ -14,7 +14,7 @@ void Action::evaluateResults( map<string, string> configuration ) {
     int fieldsTmp(0);
     //TODO Apprendre la syntaxe sql et récupérer plusieurs résultats à la fois
     //TODO des paramètres par défaut, donc changement d'ordre
-    //TODO Pas de vecteur, une map de vecteur ! (avec le nom des colonnes et demandes multiples
+    //TODO Pas de vecteur, une map de vecteur ! (avec le nom des colonnes et demandes multiples)
     if ( (fieldsTmp = getRealData(doubleTmp, configuration["assetsdb"], "stocks", "value", "ticker", name_m)) > 0 ) {
         cout << "[DEBUG] Got " << fieldsTmp << " result(s) for value\n";
         results.value = doubleTmp[0];
@@ -35,7 +35,7 @@ void Action::evaluateResults( map<string, string> configuration ) {
 }
 
 /*
- * Write it to a config file, for main process use
+ * Write it to a file, for main process use
  */
 int Action::writeResults(string out) {
     cout << "[DEBUG] Writting report file: " << out << endl;

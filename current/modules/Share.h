@@ -13,7 +13,7 @@ class Share {
         Share(std::string name, std::string conf_f, std::string rscript, std::string pyscript, std::string rulesdb, std::string assetsdb);
         int download(std::string days, std::string precision, std::string action);
         int compute(std::string function);
-		int getTextData(std::vector<std::string> &data, std::string database, std::string table, std::string field, std::string patternField, std::string pattern);
+        int getTextData(std::vector<std::string> &data, std::string database, std::string table, std::string field, std::string patternField, std::string pattern);
         int getRealData(std::vector<double> &data, std::string database, std::string table, std::string field, std::string patternField, std::string pattern);
 
     protected:
