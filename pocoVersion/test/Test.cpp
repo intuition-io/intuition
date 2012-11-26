@@ -5,7 +5,8 @@
 using namespace std;
 
 
-int Test::runModule(string moduleName, vector<string> args) {
+//TODO: Distributed modules
+int Test::runLocalModule(string moduleName, vector<string> args) {
   int rc(0);
   try
   {
@@ -31,6 +32,9 @@ int Test::main(const vector<string>& args) {
   logger().information("Opearting system: Linux");
 #endif
 
+  //std::string tmp;
+  //cin >> tmp;
+  //logger().information("Received: " + tmp);
   if ( !_helpRequested ) {
     // Read config from properti file:
     //  db config (position)
@@ -45,6 +49,15 @@ int Test::main(const vector<string>& args) {
     // Dependancies won't be handle at this time
     
     // Download (data submodule)
+    vector<string> args;
+    args.push_back("-t");
+    args.push_back("google");
+    args.push_back("-i");
+    args.push_back("3");
+    string prog = "./test/downloader.py";
+    int rc = runLocalModule(prog, args);
+    if ( rc != 0 )
+      logger().error("** Forking failed: " + toStr(rc));
 
     // Compute (compute submodule)
   }

@@ -1,4 +1,5 @@
 #include "DataSubsystem.h"
+#include "../logger/tradeLogger.cpp"
 
 #include <Poco/File.h>
 #include <Poco/Data/SQLite/Connector.h>
@@ -19,9 +20,10 @@ namespace quantrade {
 
 DataSubsystem::DataSubsystem() :
     _pPool(0),
-    _logger(Poco::Logger::get("Poco::Logger::ROOT"))
+    //_logger(Poco::Logger::get("Poco::Logger::ROOT"))
+    _logger(quantrade::TradeLogger::get("datasubsystem"))
 {
-    std::cout << "Hello from datasubsystem constructor !\n";
+    _logger.debug("Registering sqlite session.");
     SQLite::Connector::registerConnector();
 }
 
@@ -41,7 +43,6 @@ void DataSubsystem::connect(const std::string& dbFilename)
     if (_pPool)
         delete _pPool;
     _logger.debug("Trying to connect to " + dbFilename);
-    std::cout << "Trying to connect to " + dbFilename << std::endl;
     _pPool = new Poco::Data::SessionPool("SQLite", dbFilename);
     _poolLock.unlock();
     _dbFilename = dbFilename;
@@ -60,14 +61,13 @@ void DataSubsystem::disconnect()
 void DataSubsystem::initialize(Poco::Util::Application& app)
 {
     string dbFilename = app.config().getString("mod.database.file", "quanTrade.db");
-    _logger.debug("Initiating database subsystem, connecting to database.");
-    std::cout << "Initiating database subsystem, connecting to database.\n";
+    _logger.information("Initiating database subsystem, connecting to database.");
     connect(dbFilename);
 }
 
 void DataSubsystem::uninitialize()
 {
-    std::cout << "Disconnecting from database\n";
+    _logger.information("Disconnecting from database\n");
     disconnect();
 }
 
@@ -84,18 +84,18 @@ void DataSubsystem::setup()
     _logger.debug("Creating tables and indices, if neccessary.");
     Session session = getSession();
     session.begin();
-    session <<
-        "CREATE TABLE IF NOT EXISTS process ("
-        "  process_id     INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,"
-        "  process_name   TEXT NOT NULL,"
-        "  input_file     TEXT NOT NULL,"
-        "  start_time     INTEGER NOT NULL,"
-        "  sample_freq    INTEGER NOT NULL"
-        ")",
-        now;
+    //session <<
+        //"CREATE TABLE IF NOT EXISTS process ("
+        //"  process_id     INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,"
+        //"  process_name   TEXT NOT NULL,"
+        //"  input_file     TEXT NOT NULL,"
+        //"  start_time     INTEGER NOT NULL,"
+        //"  sample_freq    INTEGER NOT NULL"
+        //")",
+        //now;
 
-    session.commit();
-    _logger.debug("Data setup successful.");
+    //session.commit();
+    _logger.information("Data setup successful.");
 }
 
 void DataSubsystem::test() {
@@ -103,7 +103,7 @@ void DataSubsystem::test() {
     _logger.debug("Test control of the database.");
     Session session = getSession();
     session << "SELECT ticker FROM stocks WHERE id LIKE 2", into(name), now;
-    std::cout << "Asset with id 2: " << name << std::endl;
+    _logger.debug("Asset with id 2: " + name);
 }
 
 } // namespace quantrade

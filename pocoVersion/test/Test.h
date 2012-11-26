@@ -136,7 +136,7 @@ protected:
 	}
 
 	int main(const std::vector<std::string>& args);
-  int runModule(std::string moduleName, std::vector<std::string> args);
+  int runLocalModule(std::string moduleName, std::vector<std::string> args);
 	
 private:
 	bool _helpRequested;

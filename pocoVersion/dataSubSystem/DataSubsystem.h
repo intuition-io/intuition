@@ -4,8 +4,6 @@
 #include <Poco/Logger.h>
 #include <Poco/Mutex.h>
 #include <Poco/RWLock.h>
-//#include <Poco/Data/Common.h>
-//#include "Poco/Data/Session.h"
 #include <Poco/Data/SessionPool.h>
 #include <Poco/Util/Subsystem.h>
 

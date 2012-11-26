@@ -1,9 +1,13 @@
 #include <iostream>
+
+#include <Poco/Thread.h>
+
 #include "utils.h"
 #include "TradeCenter.h"
 #include "Interface.cpp"
 
 using namespace std;
+using Poco::Thread;
 
 
 int TradeCenter::runModule(string moduleName, vector<string> args) {
@@ -11,9 +15,14 @@ int TradeCenter::runModule(string moduleName, vector<string> args) {
   try
   {
     Poco::Pipe outPipe;
-    Poco::ProcessHandle ph = Poco::Process::launch(moduleName, args, 0, &outPipe, 0);
+    Poco::Pipe inPipe;
+    Poco::ProcessHandle ph = Poco::Process::launch(moduleName, args, &inPipe, &outPipe, 0);
     Poco::PipeInputStream istr(outPipe);
+    Poco::PipeOutputStream ostr(inPipe);
     Poco::StreamCopier::copyStream(istr, std::cout);
+    //Poco::StreamCopier::copyStream(ostr, std::cin);
+    //Thread::sleep(5000);
+    //ostr << "pouet";
     rc = ph.wait();
     logger().information(Poco::format("return code = %d", rc));
   }
@@ -33,23 +42,22 @@ int TradeCenter::main(const vector<string>& args) {
 #endif
 
   if ( !_helpRequested ) {
-    logger().information("Application properties:");
-    printProperties("");
+    //logger().information("Application properties:");
+    //printProperties("");
 
     /*
      * Crée le noyau manageant la configuration requise
      */
-    Interface core;
+    //Interface core;
 
     /*
      *Lecture du fichier de configuration et paramétrage du process
      */
-    if ( core.init("./config.json") < 0 )
-      logger().information("** Error initializing");
+    //if ( core.init("./config.json") < 0 )
+      //logger().information("** Error initializing");
 
     vector<string> args;
     //args.push_back("-al");
-    //string prog = "ls";
     string prog = "./test/dist/testModule-x86_64";
     int rc = runModule(prog, args);
     if ( rc != 0 )
