@@ -4,10 +4,12 @@
 import argparse
 import json
 import sys, os
+import numpy
 
-sys.path.append( 'pyTrade' )
+sys.path.append( '../pyTrade' )
 from data.QuoteRetriever import QuoteDL
 from data.RssRetriever import Rss
+from compute.QuantSubSystem import Quantitative
 from Utilities import LogSubSystem
 
 def main():
@@ -67,7 +69,7 @@ def main():
 
     ''' Execute financial stuff '''
     q = QuoteDL(args.target, config['assetsdb'])
-    q.download(int(config['days']), int(config['precision']))
+    data = q.download(int(config['days']), int(config['precision']))
     q.updateDb()
 
     ''' Execute rss stuff '''
@@ -81,6 +83,12 @@ def main():
       #for i in range(0, len(channel.title)):
           #print '\t', channel.title[i], '-', channel.update[i]
           #print '\t', channel.description[i].strip()
+
+
+    ''' Computation stuff '''
+    log.info('Computational phase')
+    compute = Quantitative(data) 
+    compute.variation()
 
 
 

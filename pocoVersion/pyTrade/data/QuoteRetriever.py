@@ -65,6 +65,7 @@ class QuoteDL:
                 self.data = np.append(self.data, [[float(infos[0][1:]), float(infos[4]), float(infos[3]), float(infos[2]), float(infos[1]), float(infos[5])]], axis=0)
             feed = page.readline()
             cpt += 1
+        return self.data
 
     def epochToDate(self, epoch):
         ''' Convert seconds of epoch time to date POSIXct format %Y-%M-%D %H:%m '''
@@ -92,11 +93,6 @@ class QuoteDL:
             buffer = 'insert into ' + self.name + ' values(?, ?, ?, ?, ?, ?)'
             buffer = buffer.strip()
             self.cursor.executemany(buffer, self.data)
-
-
-    #def computeVariation(self):
-        #''' return day variation '''
-        #return ((self.data[self.data.shape[0]-1, 4] - self.data[0,4])/self.data[0,4]) * 100
 
 
 #TODO Add control commands

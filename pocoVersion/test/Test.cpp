@@ -54,7 +54,7 @@ int Test::main(const vector<string>& args) {
     args.push_back("google");
     args.push_back("-i");
     args.push_back("3");
-    string prog = "./test/downloader.py";
+    string prog = "./test/pipeline.py";
     int rc = runLocalModule(prog, args);
     if ( rc != 0 )
       logger().error("** Forking failed: " + toStr(rc));
