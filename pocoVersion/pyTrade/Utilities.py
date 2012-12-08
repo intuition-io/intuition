@@ -52,15 +52,6 @@ class LogSubSystem:
   def getLog(self):
     return self.logger
 
-class TradeDB:
-  ''' SQLite facilities for quanTrade software '''
-  def __init__(self, db_file):
-    try:
-      self.conn = sqlite3.connect(db_file)
-    except sqlite3.OperationalError: # Can't locate database file
-      exit(1)
-    self.cursor = self.conn.cursor()
-
 
 
 '''---------------------------------------------------------------------------------------
@@ -100,12 +91,11 @@ class DatabaseSubSystem(threading.Thread):
         self._connection = sql.connect(self._filename)
         self._connection.row_factory = sql.Row
         self._connection.text_factory = str
-        self._log_info("Database connection established.")
-        self._log_debug("Datbase file is '%s'." % self._filename)
+        self._log_info("Database connection to %s established." % self._filename)
         cursor = self._connection.cursor()
         
         while True:
-            cmd, params, q = self._queue.get()
+            cmd, params, many, q = self._queue.get()
                 
             if cmd == "close":
                 self._log_debug("Database got 'close' command.")
@@ -114,14 +104,17 @@ class DatabaseSubSystem(threading.Thread):
             elif cmd == "commit":
                 self._log_debug("Database got 'commit' command.")
                 self._connection.commit()
-                self._log.debug("Database changes committed.")
+                self._log_debug("Database changes committed.")
                 q.put([])
                 continue
                 
             res = []
             try:
-                for row in cursor.execute(cmd, params):
-                    res.append(row)
+                if ( many ):
+                    cursor.executemany(cmd, params)
+                else:
+                    cursor.execute(cmd, params)
+                res = cursor.fetchone()
             except sql.Error, e:
                 self._log_error("Database error: '%s'." % e.args[0])
             q.put(res)
@@ -150,10 +143,17 @@ class DatabaseSubSystem(threading.Thread):
         """ 
         self._n += 1
         n = self._n
+        many = False
+        try:
+            if type(params[0]) is type(list()):
+                self._log_debug('Executing several queries at a time')
+                many = True
+        except:
+            many = False
         start = time.time()
         if not self._stopped.isSet():
             q = Queue.Queue()
-            self._queue.put((cmd, params, q))
+            self._queue.put((cmd, params, many, q))
             res = q.get()
             dur = time.time() - start
             self._log_debug("Database query %s executed in %s seconds." % (n, \
@@ -161,7 +161,7 @@ class DatabaseSubSystem(threading.Thread):
             return res
         return None
         
-    def get_tables(self):
+    def getTables(self):
         """
         Returns a list of table names currently in the database.
         """
@@ -189,7 +189,7 @@ if __name__ == '__main__':
   database = DatabaseSubSystem("assets.db", log)
   database.execute("select * from stocks")
   database.execute("select * from basic")
-  tables = database.get_tables()
+  tables = database.getTables()
   print tables
   database.close()
 '''

@@ -15,7 +15,6 @@ int Test::runLocalModule(string moduleName, vector<string> args) {
     Poco::PipeInputStream istr(outPipe);
     Poco::StreamCopier::copyStream(istr, std::cout);
     rc = ph.wait();
-    logger().information(Poco::format("  return code = %d", rc));
   }
   catch (Poco::SystemException& exc)
   {
@@ -37,9 +36,6 @@ int Test::main(const vector<string>& args) {
   //logger().information("Received: " + tmp);
   if ( !_helpRequested ) {
     // Read config from properti file:
-    //  db config (position)
-    //  pyClass
-    //  RScript
     // Handling a json order
     string command = "{\"name\": \"google\", \"days\": 2, \"deps\": false}";
     quantrade::DataSubsystem& database = getSubsystem<quantrade::DataSubsystem>();
@@ -54,12 +50,19 @@ int Test::main(const vector<string>& args) {
     args.push_back("google");
     args.push_back("-i");
     args.push_back("3");
-    string prog = "./test/pipeline.py";
+    string prog = config().getString("mod.pipeline.file", "pipeline.py");
     int rc = runLocalModule(prog, args);
     if ( rc != 0 )
       logger().error("** Forking failed: " + toStr(rc));
 
     // Compute (compute submodule)
+    args.clear();
+    args.push_back("--target");
+    args.push_back("archos");
+    rc = runLocalModule("./statAndPlot.R", args);
+    if ( rc != 0 )
+      logger().error("** Forking failed: " + toStr(rc));
   }
+  uninitialize();
   return Application::EXIT_OK;
 }

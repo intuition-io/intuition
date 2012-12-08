@@ -41,7 +41,7 @@ protected:
 	void uninitialize()
 	{
 		// add your own uninitialization code here
-        logger().information("Shutting down application...");
+        logger().information("Shutting down Test module...");
 		Application::uninitialize();
 	}
 	
@@ -145,7 +145,6 @@ private:
 //POCO_APP_MAIN(Test);
 
 int main (int argc, char** argv) {
-    std::cout << "===========\tRunning Test Module\t==========\n";
     Poco::AutoPtr<Test> pApp = new Test;
     try {
         pApp->init(argc, argv);
@@ -154,7 +153,8 @@ int main (int argc, char** argv) {
         return Poco::Util::Application::EXIT_CONFIG;
     }
     if ( pApp->initialized() ) {
-        pApp->logger().information("Application has been successfully initialized");
+        pApp->logger().debug("Application has been successfully initialized");
     }
+    pApp->logger().debug("===========\tRunning Test Module\t==========\n");
     return pApp->run();
 }

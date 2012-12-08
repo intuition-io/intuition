@@ -12,9 +12,15 @@ library("RJSONIO")
 
 ## =========================    Preparing data    ========================== ##
 
-args <- commandArgs()
+#args <- commandArgs()
+args <- commandArgs(trailingOnly = TRUE)
+print(args)
+# trailingOnly=TRUE means that only arguments after --args are returned
+# if trailingOnly=FALSE then you got:
+# [1] "R -q --slave --no-restore --no-save --args example 100 < script.R
 config_f <- args[4]
 target <- args[5]
+rm(args)
 #config_f <- "./modules/basic/config.json"
 #config_f <- "./config.json"
 print(config_f)
@@ -83,3 +89,5 @@ rs <- dbSendQuery(connection, query)
 dbClearResult(rs)
 dbDisconnect(connection)
 dbUnloadDriver(drv)
+
+q(status=0)

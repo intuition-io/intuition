@@ -6,7 +6,9 @@ import json
 import sys, os
 import numpy
 
+# A more elegant solution would determine who or where the application runs
 sys.path.append( '../pyTrade' )
+sys.path.append('./pyTrade')
 from data.QuoteRetriever import QuoteDL
 from data.RssRetriever import Rss
 from compute.QuantSubSystem import Quantitative
@@ -88,6 +90,7 @@ def main():
     ''' Computation stuff '''
     log.info('Computational phase')
     compute = Quantitative(data) 
+    # Data might concern several assets...
     compute.variation()
 
 

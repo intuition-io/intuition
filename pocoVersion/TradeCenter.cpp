@@ -24,7 +24,6 @@ int TradeCenter::runModule(string moduleName, vector<string> args) {
     //Thread::sleep(5000);
     //ostr << "pouet";
     rc = ph.wait();
-    logger().information(Poco::format("return code = %d", rc));
   }
   catch (Poco::SystemException& exc)
   {
@@ -57,8 +56,8 @@ int TradeCenter::main(const vector<string>& args) {
       //logger().information("** Error initializing");
 
     vector<string> args;
-    //args.push_back("-al");
-    string prog = "./test/dist/testModule-x86_64";
+    //string prog = "./test/dist/testModule-x86_64";
+    string prog = config().getString("app.mod.bin", "./test/dist/testModule-x86_64");
     int rc = runModule(prog, args);
     if ( rc != 0 )
       logger().error("** Forking failed: " + toStr(rc));
@@ -77,5 +76,6 @@ int TradeCenter::main(const vector<string>& args) {
   //TODO generateReport()
   //TODO readReport();
   //TODO Envoyer argv[1] ou des saisies d'utilisateur pour influencer le process ?
+  uninitialize();
   return Application::EXIT_OK;
 }

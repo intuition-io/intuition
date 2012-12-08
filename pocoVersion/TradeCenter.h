@@ -38,7 +38,7 @@ protected:
 	void uninitialize()
 	{
 		// add your own uninitialization code here
-        logger().information("Shutting down application...");
+        logger().information("Shutting down root application...");
 		Application::uninitialize();
 	}
 	
