@@ -63,9 +63,12 @@ class DatabaseSubSystem(threading.Thread):
         self._filename = filename
         self._queue = Queue.Queue()
         self._stopped = threading.Event()
-        self._logger = logger
         self._n = 0
         self.start()
+        if logger == None:
+            self._logger = LogSubSystem(__name__, 'debug').getLog()
+        else:
+            self._logger = logger
         
     def _log_debug(self, msg):
         if self._logger != None:
@@ -171,6 +174,23 @@ class DatabaseSubSystem(threading.Thread):
             name = row[0]
             tables.append(name)
         return tables
+
+    def getData(self, table, id, fields):
+        '''
+        Return data as a list in specified location
+        '''
+        statement = 'select %s' % fields[0] 
+        for item in fields[1:]:
+            statement = statement + ', ' + item 
+        tmp = ' from %s where %s=:%s' % (table, id.keys()[0], id.keys()[0] )
+        statement += tmp
+        self._logger.debug(statement)
+        res = self.execute(statement, id)
+        return res
+
+    def finalize(self):
+        self.execute('commit')
+        self.close()
 
 
 

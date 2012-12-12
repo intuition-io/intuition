@@ -3,24 +3,28 @@
 
 import urllib2
 import sys, re, time
-import re
-#import sqlite3 as sql
+from datetime import datetime
 
 from pandas import Index, DataFrame
 from pandas.core.datetools import BMonthEnd
 from pandas import ols
 
+import numpy as np
+import matplotlib.finance as fin
+
 sys.path.append('..')
 from Utilities import LogSubSystem
 from Utilities import DatabaseSubSystem
-#TODO: use above module to handle datbase communication
+
+# Quote dict structure
+
 
 class QuotesDL(object):
     ''' Quote object - fill everything related:
             name, code, current value, bought value,
             market, actions owned,
             and date, open, close, volume, of asked period'''
-    def __init__(self, quote, db_name, logger=None):
+    def __init__(self, quotes, db_name, logger=None):
         # Logger initialisation
         if logger == None:
           self._logger = LogSubSystem('QuoteDL', "debug").getLog()
@@ -29,9 +33,9 @@ class QuotesDL(object):
 
         # Getting quotes info from db
         try:
-            self._db = DatabaseSubSystem(db_name, self._logger)
+            #self._db = DatabaseSubSystem(db_name, self._logger)
             #tables = self._db.getTables()  #TODO:Check table presence and error handling
-            res = self._db.execute('select symbol, market, rss from stocks where ticker=:ticker', {"ticker": quote})
+            #res = self._db.execute('select symbol, market, rss from stocks where ticker=:ticker', {"ticker": quotes})
 
             self.symbol = res['symbol']
             self.market = res['market']
@@ -40,7 +44,7 @@ class QuotesDL(object):
         except:
             self._logger.error('Using database SubSystem')
             self._db.close()
-        self.name = quote
+        self.name = quotes
 
     def finalize(self):
         ''' Clean up the download process '''
@@ -48,7 +52,7 @@ class QuotesDL(object):
         self._db.execute('commit')
         self._db.close()
 
-    def fetchQuotes(self, days, freq):
+    def getQuotes(self, timestamps, freq):
         ''' retrieve google finance data asked while initializing
         and store it: Date, open, low, high, close, volume '''
         url = 'http://www.google.com/finance/getprices?q=' + self.symbol + '&x=' + self.market + '&p=' + str(days) + 'd&i=' + str(freq*61)
@@ -64,7 +68,7 @@ class QuotesDL(object):
         while (re.search('^a', feed) == None):
             feed = page.readline()
         while ( feed != '' ):
-            data.append(feed[1:-1].split(','))
+            data.append(np.array(map(float, feed[1:-1].split(','))))
             feed = page.readline()
         dates, open, close, high, low, volume = zip(*data)
         data = {
@@ -76,6 +80,21 @@ class QuotesDL(object):
                 }
         dates = Index([self.epochToDate(float(d)) for d in dates])
         #index = date_range(date.fromtimestamp(float(dates)), periods=1000, freq='M')
+        return DataFrame(data, index=dates)
+
+    def getHistoricalQuotes(self, symbol, start, end):
+        quotes = fin.quotes_historical_yahoo(symbol, start, end)
+        dates, open, close, high, low, volume = zip(*quotes)
+
+        data = {
+            'open' : open,
+            'close' : close,
+            'high' : high,
+            'low' : low,
+            'volume' : volume
+        }
+
+        dates = Index([datetime.fromordinal(int(d)) for d in dates])
         return DataFrame(data, index=dates)
 
     def epochToDate(self, epoch):
@@ -114,8 +133,16 @@ if __name__ == '__main__':
     print 'Test of the module'
     #TODO: Send a tuple of quotes and handle everything
     q = QuotesDL('google', '../../dataSubSystem/assets.db')
-    quotes = q.fetchQuotes(3, 30)
+    quotes = q.getQuotes(3, 30)
     q.updateDb(quotes)
+
+    startDate = datetime(2008, 1, 1)
+    endDate = datetime(2009, 9, 1)
+    goog = getQuotes('GOOG', startDate, endDate)
+    ibm = getQuotes('IBM', startDate, endDate)
+    px = Dataframe({'IBM' : ibm['close'],
+                    'GOOG' : goog['close']})
+
     q.finalize()
 '''
 
