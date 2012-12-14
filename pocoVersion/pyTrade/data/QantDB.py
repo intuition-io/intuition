@@ -1,25 +1,30 @@
 import sys
 
+
 #TODO: environnement variable ?
 sys.path.append('..')
-from Utilities import LogSubSystem
-from Utilities import DatabaseSubSystem
+from utils.LogSubsystem import LogSubsystem
+from utils.DatabaseSubsystem import SQLiteWrapper
+from utils.decorators import *
 
-class QantBase(DatabaseSubSystem):
+#@singleton
+class QantSQLiteDB(SQLiteWrapper):
     """ 
     Specific database facilities fir quanTrade software 
     """
     def __init__(self, db_file='assets.db', logger=None):
         if logger == None:
-            self._logger = LogSubSystem(__name__, 'debug').getLog()
+            self._logger = LogSubsystem(__name__, 'debug').getLog()
         else:
             self._logger = logger
         # try super().__init__(bla bla)
-        DatabaseSubSystem.__init__(self, db_file, self._logger)
+        SQLiteWrapper.__init__(self, db_file, self._logger)
 
+    #TODO: code that !
+    @deprecated
     def updateStockDb(self, quotes):
         ''' 
-        store quotes and information 
+        store quotes and information in SQLiteDB
         '''
         self._logger.info('Updating database...')
         #TODO: Handling data accumulation and compression

@@ -3,11 +3,12 @@
 
 import re, argparse, sys
 import urllib2
-from ConfigParser import SafeConfigParser
+#from ConfigParser import SafeConfigParser
 from xml.dom import minidom, Node
-import sqlite3 as sql
 
-from Utilities import LogSubSystem
+sys.path.append(..)
+from utils.LogSubsystem import LogSubsystem
+import sqlite3 as sql
 #from Utilities import DatabaseSubSystem
 #TODO: use above module
 

@@ -1,72 +1,26 @@
-#!/usr/bin/python
-# -*- coding: utf8 -*-
-
-# Logger class (obviously...)
-import logging
-
 # SQLite wrapper
 import time
 import Queue
 import threading
 import sqlite3 as sql
 
+from decorators import *
 
-#TODO: reimplement fatal function with (colors ?) exit
-'''---------------------------------------------------------------------------------------
-Logger class
----------------------------------------------------------------------------------------'''
-class LogSubSystem:
-  ''' Trade logging version '''
-  def __init__(self, name = '', lvl_str = "debug"):
-    if lvl_str == "debug":
-      lvl = logging.DEBUG
-    elif lvl_str == "info":
-      lvl = logging.INFO
-    else:
-      print '[DEBUG] __LogSubSystem__ : Unsupported mode, setting default logger level: debug'
-      lvl = logging.DEBUG
-    if name == '':
-      self.logger = logging.getLogger()
-    else:
-      self.logger = logging.getLogger(name)
-    self.logger.setLevel(lvl)
-    self.setup(lvl)
-
-  def setup(self, lvl = logging.DEBUG):
-    self.formatter = logging.Formatter('[%(levelname)s] %(name)s :  %(message)s')
-
-    ch = logging.StreamHandler()
-    ch.setLevel(lvl)
-    ch.setFormatter(self.formatter)
-    self.logger.addHandler(ch)
-
-    print('[DEBUG] __LogSubSystem__ : Logging initialized.')
-
-  def addFileHandler(self, lvl = logging.DEBUG, file_store = 'pyTrade.log'):
-    fh = logging.FileHandler(file_store)
-    fh.setLevel(lvl)
-    fh.setFormatter(self.formatter)
-    self.logger.addHandler(fh)
-    print('[DEBUG] __LogSubSystem__ : Logging file handler initialized.')
-
-  def getLog(self):
-    return self.logger
-
-
+from LogSubsystem import LogSubsystem
 
 '''---------------------------------------------------------------------------------------
 SQLite Wrapper
 ---------------------------------------------------------------------------------------'''
-class DatabaseSubSystem(threading.Thread):
+class SQLiteWrapper(threading.Thread):
     def __init__(self, filename="assets.db", logger=None):
-        super(DatabaseSubSystem, self).__init__()
+        super(SQLiteWrapper, self).__init__()
         self._filename = filename
         self._queue = Queue.Queue()
         self._stopped = threading.Event()
         self._n = 0
         self.start()
         if logger == None:
-            self._logger = LogSubSystem(__name__, 'debug').getLog()
+            self._logger = LogSubsystem(__name__, 'debug').getLog()
         else:
             self._logger = logger
         
@@ -192,6 +146,9 @@ class DatabaseSubSystem(threading.Thread):
         self.execute('commit')
         self.close()
 
+    def __def__(self):
+        self.finalize()
+
 
 
 '''---------------------------------------------------------------------------------------
@@ -199,18 +156,10 @@ Usage Exemple
 ---------------------------------------------------------------------------------------'''
 '''
 if __name__ == '__main__':
-  logSys = LogSubSystem(__name__, "debug")
-  #logSys.addFileHandler()
-  log = logSys.getLog()
-
-  # 'application' code
-  log.debug('SQLite fork wrapper test')
-
-  database = DatabaseSubSystem("assets.db", log)
+  database = SQLiteWrapper("assets.db", log)
   database.execute("select * from stocks")
   database.execute("select * from basic")
   tables = database.getTables()
   print tables
   database.close()
 '''
-

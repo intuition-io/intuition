@@ -19,8 +19,8 @@ import json
 
 #TODO: use here env variable ?
 sys.path.append('..')
-from Utilities import LogSubSystem
-from QantBase import QantBase
+from utils.LogSubsystem import LogSubsystem
+from QantDB import QantSQLiteDB
 
 #TODO: Uniform Quote dict structure to implement (and fill in different methods)
 #TODO: Implement yahoo framework: http://www.goldb.org/ystockquote.html
@@ -54,12 +54,12 @@ class DataAccess(object):
     def __init__(self, db_location=None, logger=None):
         # Logger initialisation
         if logger == None:
-          self._logger = LogSubSystem('QuoteDL', "debug").getLog()
+          self._logger = LogSubsystem('QuoteDL', "debug").getLog()
         else:
           self._logger = logger
         #TODO: Trouver ici la database, boulot du prochain module
         if db_location != None:
-            self._db = QantBase(db_location)
+            self._db = QantSQLiteDB(db_location)
             self._logger.info('Database location provided, Connected to %s' % db_location)
 
     def getQuotes(self, quotes, fields, index=None, *args, **kwarg):
@@ -80,6 +80,7 @@ class DataAccess(object):
         for q in quotes:
             self._logger.info('Processing %s stock' % q)
             # Compute start, end, elapse, whatever the parameters
+            #TODO: Compute instead an index used for every function ?
             res = self._db.getData('stocks', {'ticker': q}, ("symbol","market"))
             symbol = 'GOOG'
             market = 'NASDAQ'
@@ -177,7 +178,6 @@ class DataAccess(object):
             res = self._db.getData('stocks', {'ticker': q}, ("symbol","market"))
             symbols.append(res['symbol'])
             markets.append(res['market'])
-        #markets = ['NASDAQ', 'EPA', 'NASDAQ']
         if kwarg['light']:
             snapshot = {q : dict() for q in symbols}
             data = self._lightSummary(symbols, markets)
