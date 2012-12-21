@@ -25,9 +25,9 @@ class Rss:
         self.link = []
         self.title = []
         self.update = []
+        self.description = []
         self.language = ''
         self.period = ''
-        self.description = []
         try:
             url_fd = urllib2.urlopen(url)
         except IOError:

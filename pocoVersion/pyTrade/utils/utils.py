@@ -1,6 +1,7 @@
 import locale
-import datetime
+import datetime, time
 import pytz
+import calendar
 
 #import babel.numbers
 #import decimal
@@ -90,6 +91,26 @@ class TimeZone(object):
     def actualize(self, tz):
         #TODO: change formats here after setTimezone()
         return 'not implemented'
+
+def UTCdateToEpoch(utc_date):
+    return calendar.timegm(utc_date.timetuple())
+
+def dateToEpoch(local_date):
+    return time.mktime(local_date.timetuple())
+
+def epochToDate(epoch):
+    tm = time.gmtime(epoch)
+    return(dt.datetime(tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min))
+
+def dateFormat(epoch):
+    ''' Convert seconds of epoch time to date POSIXct format %Y-%M-%D %H:%m '''
+    return time.strftime("%Y-%m-%d %H:%M", time.localtime(epoch))
+
+def toMonthly(frame, how):
+    #TODO: generic function ?
+    offset = BMonthEnd()
+    return frame.groupby(offset.rollforward).aggregate(how)
+
 
 class International(object):
     #TODO: Handle the definition of an other localisation

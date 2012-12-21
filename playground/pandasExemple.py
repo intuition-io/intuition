@@ -60,7 +60,6 @@ ibm['hi-lo spread'] = ibm['high'] - ibm['low']
 
 def toMonthly(frame, how):
     offset = BMonthEnd()
-
     return frame.groupby(offset.rollforward).aggregate(how)
 
 msftMonthly = toMonthly(msft, np.mean)

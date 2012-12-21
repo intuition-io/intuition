@@ -42,6 +42,7 @@ res
 *.pyc
 deprecated
 dist
+QSData
 
 # R
 # History files
