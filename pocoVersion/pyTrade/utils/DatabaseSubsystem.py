@@ -41,36 +41,21 @@ class SQLiteWrapper(object):
         except:
             many = False
         start = time.time()
-        if cmd == "close":
-            self._logger.debug("Database got 'close' command.")
-            #self._connection.commit()
-            self._logger.info("Database connection closed.")
-
-        elif cmd == "commit":
-            self._logger.debug("Database got 'commit' command.")
-            self._connection.commit()
-            self._logger.debug("Database changes committed.")
-            
-        else:
-            try:
-                if ( many ):
-                    self.cursor.executemany(cmd, params)
-                else:
-                    self.cursor.execute(cmd, params)
+        try:
+            if ( many ):
+                self.cursor.executemany(cmd, params)
+            else:
+                self.cursor.execute(cmd, params)
+            if cmd.find('where') < 0:
+                res = self.cursor.fetchall()
+            else:
                 res = self.cursor.fetchone()
-            except sql.Error, e:
-                self._logger.error("Database error: '%s'." % e.args[0])
+        except sql.Error, e:
+            self._logger.error("Database error: '%s'." % e.args[0])
         
         dur = time.time() - start
         self._logger.debug("Database query %s executed in %s seconds." % (n, dur))
         return res
-        
-    def commit(self, close=False):
-        """ Commit changes."""
-        self.execute("commit")
-        if close:
-            self.connected = False
-            self.execute('close')
         
     def getTables(self):
         """
@@ -117,15 +102,24 @@ class SQLiteWrapper(object):
     def finalize(self):
         self.commit(close=True)
 
-    def close(self):
+    def commit(self):
+        """ Commit changes."""
+        self._logger.debug("Database got 'commit' command.")
+        self._connection.commit()
+        self._logger.debug("Database changes committed.")
+
+    def close(self, commit=False):
         ''' ! this function close database without commit '''
-        self.connected = False
-        self.execute('close')
+        if commit:
+            self._connection.commit()
+        self._logger.info('Database got close command')
+        self._connection.close()
+        self.connected = True
 
     def __del__(self):
         self._logger.info('Deleting object')
         if self.connected:
-            self.commit(close=True)
+            self.close(commit=False)
 
 
 

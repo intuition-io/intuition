@@ -70,20 +70,6 @@ class Portfolio(object):
         #TODO: weighed informations ?
         return best_portfolio
 
-    def _panelToRetsDF(self, dataPanel, kept_field='close', type='dataframe'):
-        '''
-        @summary transform data in DataAccess format to a dataframe suitable for qstk.tsutils.optimizePortfolio()
-        @param dataPanel get with the reverse flag: data like quotes['close']['google']
-        @output : a dataframe, cols = companies, rows = dates
-        '''
-        #TODO Here a need of data normalisation
-        df = dataPanel[kept_field]
-        df.fillna(method='ffill')
-        df.fillna(method='backfill')
-        if type == 'array':
-            return self.compute.dailyReturns(df, 1).values
-        return self.compute.dailyReturns(df, 1) # 1 in doc, 0 in example
-
     def markowitzOptimization(self, dataPanel, ftarget, naLower=None, naUpper=None, naExpected=None, s_type='long'):
         ''' 
         See qstk documentation 

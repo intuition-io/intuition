@@ -5,21 +5,22 @@ import urllib2
 import sys, re, time, os
 import datetime as dt
 
+import pandas as pd
 from pandas import Index, Series, DataFrame, Panel
 
 import numpy as np
-import matplotlib.finance as fin
+import matplotlib.finance as finance
 
 from xml.dom import minidom, Node
 import json
 
 sys.path.append(str(os.environ['QTRADEPYTHON']))
 from utils.LogSubsystem import LogSubsystem
-from QuantDB import QuantSQLite, yahooCode
+from QuantDB import QuantSQLite, yahooCode, Fields
 from utils.utils import epochToDate
 
 #TODO: Uniform Quote dict structure to implement (and fill in different methods)
-
+#tmp
 class Alias (object):
     SYMBOL = 't'
     MARKET = 'e'
@@ -46,7 +47,7 @@ class DataAgent(object):
             self._db = QuantSQLite(db_location)
             self._logger.info('Database location provided, Connected to %s' % db_location)
 
-    def getQuotes(self, quotes, fields, index=None, *args, **kwarg):
+    def getQuotes(self, tickers, fields, index=None, *args, **kwargs):
         ''' 
         @summary: retrieve google finance data asked while initializing
         and store it: Date, open, low, high, close, volume 
@@ -56,52 +57,99 @@ class DataAgent(object):
         @param args: unuse
         @param kwargs.start: date or datetime of the first values
                kwargs.end: date or datetime of the last value
-               kwargs.elapse: datetime.timedelta object, period of time to fill
+               kwargs.delta: datetime.timedelta object, period of time to fill
+               kwargs.save: save to database downloaded quotes
+               kwargs.reverse: reverse companie name and field in panel data structure
         @param reverse: fields as columns, comapnies as index
         @return a panel/dataframe/timeserie like closeAt9 = data['google'][['close']][date]
         '''
         if index != None:
-            kwarg['start'] = index[0]
-            kwarg['end'] = index[len(index)-1]
-            kwarg['elapse'] = index[1] - index[0]  #timedelta object ?
+            start_day = index[0]
+            end_day = index[len(index)-1]
+            delta = index[1] - index[0]  #timedelta object ?
         else:
-            if not kwarg.has_key('end'):
-                kwarg['end'] = dt.datetime.now()
-            if kwarg.has_key('start'):
-                if not kwarg.has_key('elapse'):
-                    kwarg['elapse'] = self._guessResolution(kwarg['start'], kwarg['end'])
-            elif not kwarg.has_key('start'):
-                if kwarg.has_key('elapse'):
-                    kwarg['start'] = kwarg['end'] - kwarg['elapse']
-                else:
-                    #TODO: today with a minute precision
-                    self._logger.error('** Neither start, end or elapse parameters provided')
-                    return None
+            start_day = kwargs.get('start', None)
+            end_day = kwargs.get('end', dt.datetime.now())
+            if start_day != None:
+                delta = kwargs.get('delta', self._guessResolution(start_day, end_day))
+            else:
+                delta = kwargs.get('delta', None)
+            save = kwargs.get('save', False)
+            reverse = kwargs.get('reverse', False)
+            if start_day == None and delta != None:
+                start_day = end_day - delta
+            elif start_day == None and delta == None:
+                #TODO: today with a minute precision
+                self._logger.error('** Neither index, start, end or elapse (or just end) parameters provided')
+                return None
         #TODO: multithread !
         df = dict()
-        i = 0
-        symbols, markets = self._db.getTickersCodes(quotes)
-        for q in quotes:
-            self._logger.info('Processing %s stock' % q)
-            # Compute start, end, elapse, whatever the parameters
-            #NOTE: Compute instead an index used for every function ?
+        symbols, markets = self._db.getTickersCodes(tickers)
+        for ticker in tickers:
+            self._logger.info('Processing {} stock'.format(ticker))
+            self._logger.info('Inspecting database.')
+            #TODO: identificate NaN columns, that will erase everything at dropna() time
+            first_db_date, last_db_date, db_freq = self._db.getDataIndex(ticker, summary=True)
+            self._logger.debug('Requested delta: {} vs db one available: {}'.format(delta, db_freq))
+            if db_freq > delta or db_freq == None:
+                self._logger.debug('Superior asked frequency, dropping and downloading along whole timestamp')
+                downloaded = False
+            else:
+                downloaded = True
+                if first_db_date > start_day and last_db_date < end_day:
+                    self._db.getQuotesDB(ticker, first_db_date, last_db_date, delta)
+                    db_df = DataFrame(dataobj._db.getQuotesDB(ticker, start=startday, \
+                            end=endday, delta=2 * pd.datetools.Day()), columns=fields).dropna()
+                    #TODO: Two different timestamps to download !
+                    #to dl: start_day -> first_db_date and last_db_date -> end_day
+                elif first_db_date > start_day and last_db_date > end_day:
+                    db_df = DataFrame(self._db.getQuotesDB(ticker, start=first_db_date, \
+                            end=end_day, delta=delta), columns=fields).dropna()
+                    #to dl: start_day -> first_db_date 
+                    end_day = first_db_date
+                elif first_db_date < start_day and last_db_date < end_day:
+                    db_df = DataFrame(self._db.getQuotesDB(ticker, start=start_day, \
+                            end=last_db_date, delta=delta), columns=fields).dropna()
+                    #last_db_date -> end_day
+                    start_day = last_db_date
+                elif first_db_date < start_day and last_db_date > end_day:
+                    self._logger.info('Quotes available offline, in database')
+                    df[ticker] = DataFrame(self._db.getQuotesDB(ticker, start=start_day, \
+                            end=end_day, delta=delta), columns=fields).dropna()
+                    continue
+
+            self._logger.info('Downloading missing data, from {} to {}'.format(start_day, end_day))
             # Running the appropriate retriever
-            if kwarg['elapse'].seconds != 0:
-                df[q] = DataFrame(self._RTFetcher(symbols[i], markets[i], abs(kwarg['elapse'].days), abs(kwarg['elapse'].seconds)), columns=fields)
-                #TODO: Handle only from now, could here reindex df with end value
-                #like truncate() which does : df[q] = df[q].ix[kwarg['start']:kwarg['end']]
+            if delta.seconds != 0:
+                network_df = DataFrame(self._RTFetcher(symbols[ticker], markets[ticker], \
+                        abs(delta.days), abs(delta.seconds)), columns=fields)
+                network_df.truncate(after=end_day)
+                #NOTES like truncate() which does : df[q] = df[q].ix[start_day:end_day]
             else:
                 self._logger.info('Fetching historical data from yahoo finance')
-                df[q] = DataFrame(self._getHistoricalQuotes(symbols[i], kwarg['start'], kwarg['end'], kwarg['elapse']), columns=fields)
-            i += 1
+                network_df = DataFrame(self._getHistoricalQuotes(symbols[ticker], \
+                        start_day, end_day, delta), columns=fields)
+            if downloaded:
+                self._logger.debug('Checking db index ({}) vs network index ({})'.format(db_df.index[0], network_df.index[0]))
+                if db_df.index[0] > network_df.index[0]: 
+                    df[ticker] = pd.concat([network_df, db_df])
+                else:
+                    df[ticker] = pd.concat([db_df, network_df])
+            else:
+                df[ticker] = network_df
 
-        if kwarg.has_key('reverse'):
-            if kwarg['reverse']:
-                return Panel.from_dict(df, intersect=True, orient='minor')
-        return Panel.from_dict(df, intersect=True)
+        data = Panel.from_dict(df, intersect=True)
+        if save:
+            #TODO: accumulation and compression of data issue, drop always true at the moment
+            self._db.updateStockDb(data, Fields.QUOTES, drop=True)  
+        if reverse:
+            return Panel.from_dict(df, intersect=True, orient='minor')
+        return data
+        
 
     def _guessResolution(self, start, end):
         #TODO: Find a more subtil, like proportional, relation
+        self._logger.info('Automatic delta fixing')
         elapse = end - start
         if abs(elapse.days) > 5:
             return dt.timedelta(days=1)
@@ -137,13 +185,12 @@ class DataAgent(object):
                 'low' : low,
                 'volume' : volume
                 }
-        #dates = Index([self.dateFormat(float(d)) for d in dates])
         index = Index(epochToDate(d) for d in dates)
         return DataFrame(data, index=index)
 
-    #TODO: adjusted close ?
+    #NOTES: adjusted close ?
     def _getHistoricalQuotes(self, symbol, start, end, elapse=None, adj_flag=False):
-        quotes = fin.quotes_historical_yahoo(symbol, start, end, adjusted=adj_flag)
+        quotes = finance.quotes_historical_yahoo(symbol, start, end, adjusted=adj_flag)
 
         dates, open, close, high, low, volume = zip(*quotes)
         data = {
@@ -154,12 +201,12 @@ class DataAgent(object):
             'volume' : volume
         }
 
-        dates = Index([dt.date.fromordinal(int(d)) for d in dates])
+        dates = Index([dt.datetime.fromordinal(int(d)) for d in dates])
         df = DataFrame(data, index=dates)
         #ix method could work too
         if elapse != None:
             keep = list()
-            for i in range(0, len(dates)):
+            for i in range(len(dates)):
                 if i % elapse.days == 0: keep.append(i)
             subindex = [dates[i] for i in keep] 
             df = df.reindex(index=subindex)
@@ -239,16 +286,22 @@ class DataAgent(object):
 
 ''' Example'''
 if __name__ == '__main__':
-    dataobj = DataAgent('stocks.db')   # Just needs the relative path to Database directory
-    startday = dt.datetime(2011,12,6)
-    endday = dt.datetime(2012,12,1)
-    delta = dt.timedelta(days=4)
-    data = dataobj.getQuotes(['altair', 'google'], ['open', 'close', 'high'], start=startday, end=endday)
-    print data['altair']['open'].head()
+    dataobj = DataAgent('stocks.db')        # Just needs the relative path to Database directory
+    startday = dt.datetime(2011,6,20)      #in db: 2011-12-05
+    endday = dt.datetime(2012,4,1)          #in db: 2012-6-1
+    delta = dt.timedelta(days=3)            #in db: 1
+    data = dataobj.getQuotes(['altair'], ['open', 'volume'], \
+            start=startday, end=endday, delta=delta)
+    print('================\n{}'.format(data['altair']['open'].head()))
+    #summary = dataobj.getSnaphot(['google', 'apple'], light=true)
+    #print '(light) Google variation: %s' % summary['google'][Alias.VARIATION]
     #summary = dataobj.getSnaphot(['google', 'apple'], light=False)
-    #print 'Google variation: %s' % summary['google'][Alias.VARIATION]
-    #print 'Google market cap: %s' % summary['google']['market_cap']
+    #print '(heavy) Apple market cap: %s' % summary['apple']['market_cap']
 
-    dataobj._db.updateStockDb(data)   #TODO: Not functionnal yet
-
-    dataobj._db.commit(close=True)
+    #dataobj._db.updateStockDb(data, Fields.QUOTES, drop=True)  
+    #first_date, last_date, freq = dataobj._db.getDataIndex('google', summary=True)
+    #print('Data from {} to {} with an interval of {}'.format(first_date, last_date, freq))
+    #quotes = DataFrame(dataobj._db.getQuotesDB('google', start=startday,\
+            #end=endday, delta=delta), columns=['open', 'volume']).dropna()
+    #print quotes.head()
+    dataobj._db.close(commit=True)

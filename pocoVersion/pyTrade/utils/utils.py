@@ -3,6 +3,8 @@ import datetime, time
 import pytz
 import calendar
 
+import pandas as pd
+
 #import babel.numbers
 #import decimal
 from pycurrency import converter
@@ -86,7 +88,7 @@ class TimeZone(object):
         #TODO: ask for country code and convert to tz ?
         dt = self.tz.localize(date)
         tz = pytz.timezone(pytz.country_timezones[code][0])
-        return dt.astimezone(tz).strftime(self.datetime_fmt)
+        return datetime.astimezone(tz).strftime(self.datetime_fmt)
 
     def actualize(self, tz):
         #TODO: change formats here after setTimezone()
@@ -100,7 +102,7 @@ def dateToEpoch(local_date):
 
 def epochToDate(epoch):
     tm = time.gmtime(epoch)
-    return(dt.datetime(tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min))
+    return(datetime.datetime(tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min))
 
 def dateFormat(epoch):
     ''' Convert seconds of epoch time to date POSIXct format %Y-%M-%D %H:%m '''
@@ -111,6 +113,65 @@ def toMonthly(frame, how):
     offset = BMonthEnd()
     return frame.groupby(offset.rollforward).aggregate(how)
 
+def BIndexGenerator(start, end, delta=pd.datetools.bday, market=''):
+    '''
+    @summary generate a business index, avoiding closed market days and hours
+    @param start, end, delta: dates informations
+    @param market: the concerned market, t guess hours
+    @return: a formatted pandas index
+    '''
+    if delta >= pd.datetools.BDay():
+        start += datetime.timedelta(hours= 23 - start.hour)
+    bdays = pd.date_range(start, end, freq=delta)  #Business date_range doesn't seem to work
+    # TODO: Substracting special days like christmas
+    if bdays.freq > pd.datetools.Day():
+        selector = ((dates.hour > 8) & (dates.hour < 17)) | \
+                ((dates.hour > 16) & (dates.hour < 18) & (dates.minute < 31))
+        #return bdays[Markets('euronext').schedule()['selector']]
+        return bdays[selector]
+    return bdays
+
+def reIndexDF(df, **kwargs):
+    '''
+    @summary take a pandas dataframe and reformat it according to delta, 
+    contrained by to closed market days and hours
+    '''
+    start = kwargs.get('start', df.index[0])
+    if start==None or not start:
+        start = df.index[0]
+    end = kwargs.get('end', df.index[len(df)-1])
+    if end==None or not end:
+        end = df.index[len(df)-1]
+    delta_tmp = kwargs.get('delta', df.index[1] - df.index[0])
+    if isinstance(delta_tmp, datetime.timedelta):
+        delta = pd.DateOffset(days=delta_tmp.days, minutes=delta_tmp.seconds*60)
+    elif delta_tmp==None or not delta_tmp:
+        delta_tmp = df.index[1] - df.index[0]
+        delta = pd.DateOffset(days=delta_tmp.days, minutes=delta_tmp.seconds*60)
+    else:
+        delta = delta_tmp
+    market = kwargs.get('market', 'euronext')
+    columns = kwargs.get('columns', None)
+    print('[DEBUG] reIndexDF : re-indexing to -> Start: {}, end: {}, delta: {}'.format(start, end, delta))
+    if columns:
+        return df.reindex(index = BIndexGenerator(start, end, delta, market), columns=columns).dropna(axis=0)
+    return df.reindex(index=BIndexGenerator(start, end, delta, market))
+
+
+class Markets:
+    def __init__(self, market):
+        self.selector = None
+        self.market = market
+    
+    def schedule(self):
+        #TODO: getting this values from database
+        if self.market == 'euronext':
+            selector = ((dates.hour > 8) & (dates.hour < 17)) | \
+                    ((dates.hour > 16) & (dates.hour < 18) & (dates.minute < 31))
+            open = datetime.time(9, 0, 0, 0)
+            close = datetime.time(17, 30, 0, 0)
+        selector = ((dates.hour > 8) & (dates.hour < 17)) | ((dates.hour > 16) & (dates.hour < 18) & (dates.minute < 31))
+        return {'open': open, 'close': close, 'simple fixing': '', 'double fixing': '', 'selector': selector}
 
 class International(object):
     #TODO: Handle the definition of an other localisation

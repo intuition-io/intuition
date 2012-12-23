@@ -1,6 +1,8 @@
 import sys, os
 
+import sqlite3 as sql
 import numpy as np
+from pandas import DataFrame, Index, DateOffset
 
 sys.path.append(str(os.environ['QTRADEPYTHON']))
 from utils.DatabaseSubsystem import SQLiteWrapper
@@ -15,7 +17,7 @@ class QuantSQLite(SQLiteWrapper):
     """
     def __init__(self, db_file='stocks.db', logger=None):
         if logger == None:
-            self._logger = LogSubsystem(self.__class__.__name__, 'debug').getLog()
+            self._logger = LogSubsystem(self.__class__.__name__, 'info').getLog()
         else:
             self._logger = logger
         dbRootDir = os.environ['QTRADEDATA']
@@ -32,36 +34,36 @@ class QuantSQLite(SQLiteWrapper):
         if self._db_name.find('stocks.db') == -1:
             self._logger.error('** Bad DB, You are not connected to stocks.db')
             return None, None
-        symbols = list()
-        markets = list()
+        symbols = dict()
+        markets = dict()
         table = 'properties'
         fields = ('symbol', 'market')
-        for q in tickers:
-            selector = {'ticker': q}
+        for t in tickers:
+            selector = {'ticker': t}
             res = self.getData(table, selector, fields)
-            symbols.append(res[fields[0]])
-            markets.append(res[fields[1]])
+            symbols[t] = res[fields[0]]
+            markets[t] = res[fields[1]]
         return symbols, markets
 
-    def updateStockDb(self, quotes):
+    def updateStockDb(self, quotes, fields, drop=False):
         ''' 
         @summary store quotes and information in SQLiteDB
         @param quotes: pandas.Panel not reversed, like quotes[companies][fields] 
         '''
         #TODO: maybe a general update function ?
-        fields = ['open', 'close', 'high', 'low', 'volume']
         self._logger.info('Updating database...')
         #TODO: Handling data accumulation and compression, right now just drop
         for name, frame in quotes.iteritems():
             self._logger.info('saving {} quotes'.format(name))
+            for item in fields:
+                if item not in frame.columns:
+                    frame[item] = np.empty((len(frame.index)))
+                    frame[item].fill(np.NaN)
             try:
-                for item in fields:
-                    if item not in frame.columns:
-                        frame[item] = np.empty((len(frame.index)))
-                        frame[item].fill(np.NaN)
-                res = self.execute('drop table if exists ' + name)
-                self.execute('create table ' + name + \
-                        '(date int, open real, low real, high real, close real, volume int)')
+                if drop:
+                    res = self.execute('drop table if exists ' + name)
+                    self.execute('create table ' + name + \
+                            '(date int, open real, low real, high real, close real, volume int)')
                 #NOTE: could it be possible in one line with executemany ?
                 for i in range(len(frame.index)):
                     raw = (dateToEpoch(frame.index[i]),
@@ -76,18 +78,43 @@ class QuantSQLite(SQLiteWrapper):
                 return 1
         return 0
 
-    def getDataIndex(self, ticker):
+    def getDataIndex(self, ticker, summary=True):
         '''
         @summary retrieve the ticker data index from db, for storage optimization
         @return a pandas.Index
         '''
+        self._logger.info('Getting index quotes properties.')
+        try:
+            res = self.execute('select date from {}'.format(ticker))
+        except sql.Error, e:
+            self._logger.error('** While getting index: {}'.format(e.args[0]))
+            return None, None, None
+        if summary:
+            oldest_date = epochToDate(res[0][0])
+            latest_date = epochToDate(res[len(res)-1][0])
+            freq = epochToDate(res[1][0]) - oldest_date
+            self._logger.debug('Data from {} to {} with an interval of {} days, {}mins'.format(oldest_date, latest_date, freq.days, freq.seconds/60))
+            return epochToDate(res[0][0]), epochToDate(res[len(res)-1][0]), freq
+        else:
+            return Index([epochToDate(res[i][0]) for i in range(len(res))])
 
-    def getStockDB(self, ticker, start, end, elapse):
+
+    def getQuotesDB(self, ticker, start=False, end=False, delta=False):
         '''
         @summary like network utilities, it gets from db data according params
         @params see getData
-        @return a dataframe, stiff for other DataAgent rootins compatibility
+        @return a dataframe, still for other DataAgent functions compatibility
         '''
+        self._logger.info('Retrieving {} quotes'.format(ticker))
+        db_dates = self.getDataIndex(ticker, summary=False)
+        #TODO: Something more generic ?
+        self._logger.debug('Query: select {} from {}'.format(' ,'.join(Fields.QUOTES), ticker))
+        res = self.execute('select {} from {}'.format(' ,'.join(Fields.QUOTES), ticker))
+        df = DataFrame.from_records(res, index=db_dates, columns=Fields.QUOTES)
+        # Reindexing:
+        if ( start or end or delta ):
+            return reIndexDF(df, start=start, end=end, delta=delta, market='euronext')
+        return df
 
 
 #TODO: Same for google json and xml retrievig
@@ -122,6 +149,11 @@ yahooCode = {'ask':'a', 'average daily volume':'a2', 'ask size':'a5',
         'ticker trend':'t7', '1 year target price':'t8', 'volume':'v',
         'holdings value':'v1', 'holdings value rt':'v7', '52-week range':'w',
         'day value change':'w1', 'day value change rt':'w4', 'stock exchange':'x'}
+
+
+class Fields:
+    QUOTES = ['open', 'low', 'high', 'close', 'volume']
+
 
 '''
 if __name__ == '__main__':
