@@ -8,6 +8,6 @@
 
 
 #-----------------------------------------------------------------
-export QTRADE=$HOME/dev/projects/ppQuanTrade/pocoVersion
+export QTRADE=$HOME/dev/projects/ppQuanTrade
 export QTRADEDATA=$QTRADE/Database
 export QTRADEPYTHON=$QTRADE/pyTrade

@@ -20,10 +20,10 @@ void greet()
     //"def greet():                   \n"
     //"   return 'Hello from Python!' \n",
     //global, global);
-    py::object result = py::exec_file("test.py", global, global);
+    py::object result = py::exec_file("classTest.py", global, global);
 
   // Create a reference to it.
-    py::object greet = global["pouet"];
+    py::object greet = global["Test"];
 
   // Call it.
   std::string message = py::extract<std::string>(greet());
