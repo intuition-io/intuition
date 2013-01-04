@@ -12,6 +12,10 @@ class LogSubsystem(object):
       lvl = logging.DEBUG
     elif lvl_str == "info":
       lvl = logging.INFO
+    elif lvl_str == 'error':
+        lvl = logging.ERROR
+    elif lvl_str == 'warning':
+        lvl = logging.WARNING
     else:
       print '[DEBUG] __LogSubSystem__ : Unsupported mode, setting default logger level: debug'
       lvl = logging.DEBUG

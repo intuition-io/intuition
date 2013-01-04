@@ -4,6 +4,9 @@ import pytz
 import calendar
 
 import pandas as pd
+from pandas import DataFrame
+from pandas.core.datetools import BMonthEnd
+import numpy as np
 
 #import babel.numbers
 #import decimal
@@ -134,9 +137,10 @@ def BIndexGenerator(start, end, delta=pd.datetools.bday, market=''):
 
 def reIndexDF(df, **kwargs):
     '''
-    @summary take a pandas dataframe and reformat it according to delta, 
-    contrained by to closed market days and hours
+    @summary take a pandas dataframe and reformat it according to delta, start and end,
+    contrained by closed market days and hours
     '''
+    how = kwargs.get('how', np.mean)
     start = kwargs.get('start', df.index[0])
     if start==None or not start:
         start = df.index[0]
@@ -145,7 +149,11 @@ def reIndexDF(df, **kwargs):
         end = df.index[len(df)-1]
     delta_tmp = kwargs.get('delta', df.index[1] - df.index[0])
     if isinstance(delta_tmp, datetime.timedelta):
-        delta = pd.DateOffset(days=delta_tmp.days, minutes=delta_tmp.seconds*60)
+        #TODO more offset std or a new way to do it
+        if abs(delta_tmp.days - 30) < 5:
+            delta = BMonthEnd()
+        else:
+            delta = pd.DateOffset(days=delta_tmp.days, minutes=delta_tmp.seconds*60)
     elif delta_tmp==None or not delta_tmp:
         delta_tmp = df.index[1] - df.index[0]
         delta = pd.DateOffset(days=delta_tmp.days, minutes=delta_tmp.seconds*60)
@@ -153,10 +161,16 @@ def reIndexDF(df, **kwargs):
         delta = delta_tmp
     market = kwargs.get('market', 'euronext')
     columns = kwargs.get('columns', None)
-    print('[DEBUG] reIndexDF : re-indexing to -> Start: {}, end: {}, delta: {}'.format(start, end, delta))
+    print('[DEBUG] reIndexDF : re-indexing to -> Start: {}, end: {}, delta: {}'\
+            .format(start, end, delta))
+    #if columns:
+        #return df.reindex(index = BIndexGenerator(start, end, delta, market), columns=columns).dropna(axis=0)
+    #return df.reindex(index=BIndexGenerator(start, end, delta, market))
     if columns:
-        return df.reindex(index = BIndexGenerator(start, end, delta, market), columns=columns).dropna(axis=0)
-    return df.reindex(index=BIndexGenerator(start, end, delta, market))
+        df = DataFrame(df.groupby(delta.rollforward).aggregate(how), columns=columns)
+    else:
+        df = df.groupby(delta.rollforward).aggregate(how)
+    return df.truncate(before=start, after=end)
 
 
 class Markets:

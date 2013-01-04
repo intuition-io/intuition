@@ -1,19 +1,24 @@
 #!/usr/bin/python
 # -*- coding: utf8 -*-
 
-import sys
+import sys, os
 
 # Logger class (obviously...)
-sys.path.append('..')
-from data.QuantDB import QuantSQLite
-from utils.LogSubsystem import LogSubsystem
+sys.path.append(str(os.environ['QTRADE']))
+from pyTrade.data.QuantDB import QuantSQLite
+from pyTrade.utils.LogSubsystem import LogSubsystem
+from pyTrade.utils.utils import reIndexDF
 
 # For mathematical stuff, data manipulation...
-from pandas import Index, DataFrame
+import pandas as pd
+from pandas import Index, DataFrame, Series
+from pandas.core.datetools import BDay
 # Statsmodels has ols too, benchamark needed
 #from pandas import ols
 
 import numpy as np
+import math
+import datetime as dt
 
 
 '''---------------------------------------------------------------------------------------
@@ -22,9 +27,9 @@ Quant
 class Quantitative:
     ''' Trade qunatitativ module 
     an instanciation work on a data set specified while initializing'''
-    def __init__(self, logger=None):
+    def __init__(self, logger=None, lvl='debug'):
         if logger == None:
-            self._logger = LogSubsystem('Computer', "debug").getLog()
+            self._logger = LogSubsystem('Computer', lvl).getLog()
         else:
             self._logger = logger
 
@@ -87,14 +92,75 @@ class Quantitative:
         emafast = self.movingAverage(x, nfast, type='exponential')
         return emaslow, emafast, emafast - emaslow
 
-    def returns(self, ts, period, relative=0):
-        ''' Compute returns on the given period '''
-        #TODO: freq parameter etc...
+    def CCAnnualizedReturns(self, ret_per_period, periods_per_year):
+        return math.log(1 + self.annualizedReturns(ret_per_period, periods_per_year))
+
+    def annualizedReturns(self, ret_per_period, periods_per_year):
+        ''' Could use: 
+        res1 = self.averageReturns(Series([ret_per_period]*periods_per_year), \
+                period=1, type='net')
+        '''
+        return pow(1+ret_per_period, periods_per_year) - 1
+
+    def averageReturns(self, ts, **kwargs):
+        ''' Compute geometric average returns from a returns time serie'''
+        type = kwargs.get('type', 'net')
+        if type == 'net': relative = 0
+        else: relative = -1 # gross
+        start = kwargs.get('start', ts.index[0])
+        end = kwargs.get('end', ts.index[len(ts.index)-1])
+        delta = kwargs.get('delta', ts.index[1] - ts.index[0])
+        period = kwargs.get('period', None)
+        if isinstance(period, int):
+            pass
+        else:
+            ts = reIndexDF(ts, start=start, end=end, delta=delta)
+            period = 1
+        avg_ret = 1
+        for idx in range(len(ts.index)):
+            if idx % period == 0:
+                avg_ret *= (1 + ts[idx] + relative)
+        return avg_ret - 1
+
+    def CCReturns(self, ts, **kwargs):
+        start = kwargs.get('start', None)
+        end = kwargs.get('end', dt.datetime.today())
+        delta = kwargs.get('deltaya', BDay())
+        period = kwargs.get('period', None)
+        rets = self.returns(ts, type='net', start=start, end=end, delta=delta, period=period)
+        return math.log(1 + rets)
+
+    #TODO dividends in account
+    #TODO inflation in account
+    def returns(self, ts, **kwargs):
+        ''' 
+        Compute returns on the given period 
+        @param ts : time serie to process
+        @param kwargs.type: gross or simple returns
+        @param delta : period betweend two computed returns
+        @param start : with end, will return the return betweend this elapsed time
+        @param period : delta is the number of lines/periods provided
+        @param end : so said
+        '''
+        type = kwargs.get('type', 'net')
+        if type == 'net': relative = 0
+        else: relative = 1 # gross
+        start = kwargs.get('start', None)
+        end = kwargs.get('end', dt.datetime.today())
+        delta = kwargs.get('delta', None)
+        period = kwargs.get('period', 1)
+        if isinstance(start, dt.datetime):
+            self._logger.debug('{} / {} -1'.format(ts[end], ts[start]))
+            return ts[end] / ts[start] - 1 + relative
+        elif isinstance(delta, pd.DateOffset) or isinstance(delta, dt.timedelta):
+            #FIXME timezone problem
+            ts = reIndexDF(ts, delta=delta)
+            period = 1
         return ts / ts.shift(period) - 1 + relative
 
-    def dailyReturns(self, ts, relative=0):
-        #TODO: smart index date handler
-        return self.returns(ts, 1, relative)
+    def dailyReturns(self, ts, **kwargs):
+        relative = kwargs.get('relative', 0)
+        return self.simpleReturns(ts, delta=BDay(), relative=relative)
 
     def panelToRetsDF(dataPanel, kept_field='close', type='dataframe'):
         '''
@@ -107,8 +173,8 @@ class Quantitative:
         df.fillna(method='ffill')
         df.fillna(method='backfill')
         if type == 'array':
-            return self.compute.dailyReturns(df, 1).values
-        return self.compute.dailyReturns(df, 1) # 1 in doc, 0 in example
+            return self.compute.dailyReturns(df, relative=0).values
+        return self.compute.dailyReturns(df, relative=0) # 1 in doc, 0 in example
 
     def sharpeRatio(self, ts):
         #TODO: Dataframe handler

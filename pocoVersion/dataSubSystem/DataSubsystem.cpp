@@ -60,7 +60,8 @@ void DataSubsystem::disconnect()
 
 void DataSubsystem::initialize(Poco::Util::Application& app)
 {
-    string dbFilename = app.config().getString("mod.database.location", "quanTrade.db");
+    //TODO Get env variable here and add it  
+    string dbFilename = app.config().getString("mod.database.location", "stocks.db");
     _logger.information("Initiating database subsystem, connecting to database.");
     connect(dbFilename);
 }

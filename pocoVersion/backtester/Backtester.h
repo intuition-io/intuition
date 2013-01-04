@@ -22,10 +22,10 @@ using Poco::Util::AbstractConfiguration;
 using Poco::Util::OptionCallback;
 using Poco::AutoPtr;
 
-class Test: public Application
+class Backtester: public Application
 {
 public:
-	Test(): _helpRequested(false) {
+	Backtester(): _helpRequested(false) {
     setUnixOptions(true);
     addSubsystem(new quantrade::DataSubsystem);
   }
@@ -41,7 +41,7 @@ protected:
 	void uninitialize()
 	{
 		// add your own uninitialization code here
-        logger().information("Shutting down Test module...");
+        logger().information("Shutting down Backtester module...");
 		Application::uninitialize();
 	}
 	
@@ -59,28 +59,28 @@ protected:
 			Option("help", "h", "display help information on command line arguments")
 				.required(false)
 				.repeatable(false)
-				.callback(OptionCallback<Test>(this, &Test::handleHelp)));
+				.callback(OptionCallback<Backtester>(this, &Backtester::handleHelp)));
 
 		options.addOption(
 			Option("define", "D", "define a configuration property")
 				.required(false)
 				.repeatable(true)
 				.argument("name=value")
-				.callback(OptionCallback<Test>(this, &Test::handleDefine)));
+				.callback(OptionCallback<Backtester>(this, &Backtester::handleDefine)));
 				
 		options.addOption(
 			Option("config-file", "f", "load configuration data from a file")
 				.required(false)
 				.repeatable(true)
 				.argument("file")
-				.callback(OptionCallback<Test>(this, &Test::handleConfig)));
+				.callback(OptionCallback<Backtester>(this, &Backtester::handleConfig)));
 
 		options.addOption(
-			Option("bind", "b", "bind option value to test.property")
+			Option("bind", "b", "bind option value to Backtester.property")
 				.required(false)
 				.repeatable(false)
 				.argument("value")
-				.binding("test.property"));
+				.binding("Backtester.property"));
 	}
 
     /* Doesn't work */
@@ -142,10 +142,10 @@ private:
 	bool _helpRequested;
 };
 
-//POCO_APP_MAIN(Test);
+//POCO_APP_MAIN(Backtester);
 
 int main (int argc, char** argv) {
-    Poco::AutoPtr<Test> pApp = new Test;
+    Poco::AutoPtr<Backtester> pApp = new Backtester;
     try {
         pApp->init(argc, argv);
     } catch (Poco::Exception& e) {
@@ -155,6 +155,6 @@ int main (int argc, char** argv) {
     if ( pApp->initialized() ) {
         pApp->logger().debug("Application has been successfully initialized");
     }
-    pApp->logger().debug("===========\tRunning Test Module\t==========\n");
+    pApp->logger().debug("===========\tRunning Backtester Module\t==========\n");
     return pApp->run();
 }

@@ -30,6 +30,7 @@ class SQLiteWrapper(object):
         """
         Execute the command cmd. '?'s in the command are replaced by the params tuple's content.
         """ 
+        cmd = cmd.lower()
         self._n += 1
         n = self._n
         many = False
@@ -46,10 +47,16 @@ class SQLiteWrapper(object):
                 self.cursor.executemany(cmd, params)
             else:
                 self.cursor.execute(cmd, params)
+            #FIXME where word is used in 'fetchone commands'(see isTableExists), matter ?
             if cmd.find('where') < 0:
                 res = self.cursor.fetchall()
+                if len(res) == 1:
+                    res = res[0]
             else:
                 res = self.cursor.fetchone()
+                #NOTE Relevant ?
+                if len(res) == 1:
+                    res = res[0]
         except sql.Error, e:
             self._logger.error("Database error: '%s'." % e.args[0])
         
@@ -57,6 +64,21 @@ class SQLiteWrapper(object):
         self._logger.debug("Database query %s executed in %s seconds." % (n, dur))
         return res
         
+    def isTableExists(self, table_name):
+        ''' 
+        Check if the given table exists in the current connected database
+        '''
+        assert isinstance(table_name, str)
+        res = self.execute('SELECT COUNT(*) FROM sqlite_master \
+                WHERE type = "{}" AND name = "{}"'.format('table', table_name))
+        self._logger.debug('Table check result: {}'.format(res))
+        if res == 1:
+            return True
+        else:
+            return False
+        return (res == 1)
+
+
     def getTables(self):
         """
         Returns a list of table names currently in the database.

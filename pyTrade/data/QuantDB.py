@@ -63,7 +63,8 @@ class QuantSQLite(SQLiteWrapper):
                 if drop:
                     res = self.execute('drop table if exists ' + name)
                     self.execute('create table ' + name + \
-                            '(date int, open real, low real, high real, close real, volume int)')
+                            '(date int, {} real, {} real, {} real, {} real, {} int, {} real)'\
+                            .format(*Fields.QUOTES))
                 #NOTE: could it be possible in one line with executemany ?
                 for i in range(len(frame.index)):
                     raw = (dateToEpoch(frame.index[i]),
@@ -71,8 +72,9 @@ class QuantSQLite(SQLiteWrapper):
                         frame['close'][i], 
                         frame['high'][i],
                         frame['low'][i],
-                        frame['volume'][i])
-                    self.execute('insert into ' + name + ' values(?, ?, ?, ?, ?, ?)', raw)
+                        frame['volume'][i],
+                        frame['adj_close'][i])
+                    self.execute('insert into ' + name + ' values(?, ?, ?, ?, ?, ?, ?)', raw)
             except:
                 self._logger.error('While insering new values in database')
                 return 1
@@ -83,11 +85,18 @@ class QuantSQLite(SQLiteWrapper):
         @summary retrieve the ticker data index from db, for storage optimization
         @return a pandas.Index
         '''
+        assert isinstance(ticker, str)
+        if not self.isTableExists(ticker):
+            return None, None, None
         self._logger.info('Getting index quotes properties.')
         try:
             res = self.execute('select date from {}'.format(ticker))
         except sql.Error, e:
             self._logger.error('** While getting index: {}'.format(e.args[0]))
+            return None, None, None
+        if len(res) == 0 or not isinstance(res[0][0], int):
+            #No epoch time found
+            #TODO a check in epochToDate, but will probably be replaced py zipline function
             return None, None, None
         if summary:
             oldest_date = epochToDate(res[0][0])
@@ -105,15 +114,14 @@ class QuantSQLite(SQLiteWrapper):
         @params see getData
         @return a dataframe, still for other DataAgent functions compatibility
         '''
-        self._logger.info('Retrieving {} quotes'.format(ticker))
+        self._logger.info('Retrieving {} quotes from database'.format(ticker))
         db_dates = self.getDataIndex(ticker, summary=False)
-        #TODO: Something more generic ?
+        #NOTE: Something more generic ?
         self._logger.debug('Query: select {} from {}'.format(' ,'.join(Fields.QUOTES), ticker))
         res = self.execute('select {} from {}'.format(' ,'.join(Fields.QUOTES), ticker))
         df = DataFrame.from_records(res, index=db_dates, columns=Fields.QUOTES)
-        # Reindexing:
         if ( start or end or delta ):
-            return reIndexDF(df, start=start, end=end, delta=delta, market='euronext')
+            df = reIndexDF(df, start=start, end=end, delta=delta, market='euronext')
         return df
 
 
@@ -152,7 +160,7 @@ yahooCode = {'ask':'a', 'average daily volume':'a2', 'ask size':'a5',
 
 
 class Fields:
-    QUOTES = ['open', 'low', 'high', 'close', 'volume']
+    QUOTES = ['open', 'low', 'high', 'close', 'volume', 'adj_close']
 
 
 '''

@@ -8,6 +8,7 @@ import pytz
 
 import pandas as pd
 from pandas import Index, Series, DataFrame, Panel
+from pandas.io.data import DataReader
 
 import numpy as np
 import matplotlib.finance as finance
@@ -18,7 +19,7 @@ import json
 sys.path.append(str(os.environ['QTRADEPYTHON']))
 from utils.LogSubsystem import LogSubsystem
 from QuantDB import QuantSQLite, yahooCode, Fields
-from utils.utils import epochToDate
+from utils.utils import epochToDate, reIndexDF
 
 #TODO: Uniform Quote dict structure to implement (and fill in different methods)
 #tmp
@@ -66,7 +67,8 @@ class DataAgent(object):
         '''
         save = kwargs.get('save', False)
         reverse = kwargs.get('reverse', False)
-        if index != None:
+        if isinstance(index, pd.tseries.index.DatetimeIndex):
+            self._logger.debug('Index requested: \n{}'.format(index))
             start_day = index[0]
             end_day = index[len(index)-1]
             delta = index[1] - index[0]  #timedelta object ?
@@ -90,10 +92,15 @@ class DataAgent(object):
             downloaded = False
             self._logger.info('Processing {} stock'.format(ticker))
             self._logger.info('Inspecting database.')
-            #TODO: identificate NaN columns, that will erase everything at dropna() time
+            #TODO comparison are too strics
+            #TODO identificate NaN columns, that will erase everything at dropna() time
             first_db_date, last_db_date, db_freq = self._db.getDataIndex(ticker, summary=True)
-            self._logger.debug('Requested delta: {} vs db one available: {}'.format(delta, db_freq))
-            if db_freq > delta or db_freq == None:
+            self._logger.debug('Delta: db vs asked {} / {}'.format(delta, db_freq))
+            self._logger.debug('Start, db vs asked: {} / {}'.format(first_db_date, start_day))
+            self._logger.debug('End, db vs asked: {} / {}'.format(last_db_date, end_day))
+            if first_db_date == None or last_db_date == None or db_freq == None:
+                self._logger.info('No quotes stored in database, dowloading everything')
+            elif db_freq > delta:
                 self._logger.info('Superior asked frequency, dropping and downloading along whole timestamp')
             elif first_db_date > end_day:
                 self._logger.info('No quotes available in database, downloading along whole timestamp')
@@ -102,7 +109,7 @@ class DataAgent(object):
                 if first_db_date > start_day and last_db_date < end_day:
                     self._db.getQuotesDB(ticker, first_db_date, last_db_date, delta)
                     db_df = DataFrame(dataobj._db.getQuotesDB(ticker, start=startday, \
-                            end=endday, delta=2 * pd.datetools.Day()), columns=fields).dropna()
+                            end=end_day, delta=2 * pd.datetools.Day()), columns=fields).dropna()
                     #TODO: Two different timestamps to download !
                     #to dl: start_day -> first_db_date and last_db_date -> end_day
                 elif first_db_date > start_day and last_db_date > end_day:
@@ -112,10 +119,11 @@ class DataAgent(object):
                     end_day = first_db_date
                 elif first_db_date < start_day and last_db_date < end_day:
                     db_df = DataFrame(self._db.getQuotesDB(ticker, start=start_day, \
-                            end=last_db_date, delta=delta), columns=fields).dropna()
+                            end=last_db_date, delta=delta), columns=fields)
                     #last_db_date -> end_day
                     start_day = last_db_date
-                elif first_db_date < start_day and last_db_date > end_day:
+                elif first_db_date <= start_day and last_db_date >= end_day:
+                    save = False
                     self._logger.info('Quotes available offline, in database')
                     df[ticker] = DataFrame(self._db.getQuotesDB(ticker, start=start_day, \
                             end=end_day, delta=delta), columns=fields).dropna()
@@ -147,7 +155,8 @@ class DataAgent(object):
             self._db.updateStockDb(data, Fields.QUOTES, drop=True)  
         if reverse:
             return Panel.from_dict(df, intersect=True, orient='minor')
-        return data
+        #NOTE if data used here, insert every FIELD.QUOTES columns
+        return Panel.from_dict(df, intersect=True)
         
 
     def _guessResolution(self, start, end):
@@ -193,30 +202,19 @@ class DataAgent(object):
         df.index = df.index.tz_localize(pytz.utc)
         return DataFrame(data, index=index)
 
-    #NOTES: adjusted close ?
-    def _getHistoricalQuotes(self, symbol, start, end, elapse=None, adj_flag=False):
-        quotes = finance.quotes_historical_yahoo(symbol, start, end, adjusted=adj_flag)
-
-        dates, open, close, high, low, volume = zip(*quotes)
-        data = {
-            'open' : open,
-            'close' : close,
-            'high' : high,
-            'low' : low,
-            'volume' : volume
-        }
-
-        dates = Index([pd.datetime.fromordinal(int(d)) for d in dates])
-        df = DataFrame(data, index=dates)
-        #ix method could work too
+    def _getHistoricalQuotes(self, symbol, start, end=None, elapse=None):
+        print('Yahoo elapse: {}'.format(elapse))
+        source = 'yahoo'
+        if(end is None):
+            end = dt.datetime.today()
+        quotes = DataReader(symbol, source, start, end) 
         if elapse != None:
-            keep = list()
-            for i in range(len(dates)):
-                if i % elapse.days == 0: keep.append(i)
-            subindex = [dates[i] for i in keep] 
-            df = df.reindex(index=subindex)
-            df.index = df.index.tz_localize(pytz.utc)
-        return df
+            #NOTE reIndexDF has a column arg but here not provided
+            quotes = reIndexDF(quotes, delta=elapse)
+        #quotes.index.tz_localize(pytz.utc)
+        quotes.index = quotes.index.tz_localize(pytz.utc)
+        quotes.columns = Fields.QUOTES
+        return quotes
 
     def getSnaphot(self, tickers, light=True):
         symbols, markets = self._db.getTickersCodes(tickers)

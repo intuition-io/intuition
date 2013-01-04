@@ -7,7 +7,7 @@
 # Makefile générique + makefile spécialisé ?
 # Make de tests ?
 
-PROJECT = testModule
+PROJECT = Backtester
 ARCH:= $(shell uname -m)
 DBG = no
 PERF=no
@@ -42,7 +42,7 @@ BIN_DIR = ./dist
 #Conditionné 
 LDFLAGS = -lPocoFoundation -lPocoUtil -lPocoData -lPocoSQLite   #replace for -lsqlite3
 #SRC = $(wildcard *.$(EXT))
-SRC = Test.cpp
+SRC = Backtester.cpp
 HDR = $(wildcard *.h)
 OBJ = $(SRC:.$(EXT)=.o)
 BIN = $(PROJECT)$(PROD)$(PERF)-$(ARCH)
