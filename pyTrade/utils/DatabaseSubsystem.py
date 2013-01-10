@@ -1,19 +1,20 @@
 # SQLite wrapper
-import time, sys
+import time
 import sqlite3 as sql
 
-#sys.path.append('..')
 from decorators import *
 from LogSubsystem import LogSubsystem
 
 '''---------------------------------------------------------------------------------------
 SQLite Wrapper
 ---------------------------------------------------------------------------------------'''
+
+
 class SQLiteWrapper(object):
     def __init__(self, filename="stocks.db", logger=None):
         super(SQLiteWrapper, self).__init__()
         self._db_name = filename
-        if logger == None:
+        if logger is None:
             self._logger = LogSubsystem(self.__class__.__name__, 'debug').getLog()
         else:
             self._logger = logger
@@ -27,9 +28,9 @@ class SQLiteWrapper(object):
         self.connected = True
 
     def execute(self, cmd, params=tuple()):
-        """
+        '''
         Execute the command cmd. '?'s in the command are replaced by the params tuple's content.
-        """ 
+        '''
         cmd = cmd.lower()
         self._n += 1
         n = self._n
@@ -43,41 +44,36 @@ class SQLiteWrapper(object):
             many = False
         start = time.time()
         try:
-            if ( many ):
+            if (many):
                 self.cursor.executemany(cmd, params)
             else:
                 self.cursor.execute(cmd, params)
             #FIXME where word is used in 'fetchone commands'(see isTableExists), matter ?
             if cmd.find('where') < 0:
                 res = self.cursor.fetchall()
-                if len(res) == 1:
-                    res = res[0]
+                #if len(res) == 1:
+                    #res = res[0]
             else:
                 res = self.cursor.fetchone()
                 #NOTE Relevant ?
-                if len(res) == 1:
-                    res = res[0]
+                #if len(res) == 1:
+                    #res = res[0]
         except sql.Error, e:
             self._logger.error("Database error: '%s'." % e.args[0])
-        
         dur = time.time() - start
         self._logger.debug("Database query %s executed in %s seconds." % (n, dur))
         return res
-        
+
     def isTableExists(self, table_name):
-        ''' 
+        '''
         Check if the given table exists in the current connected database
         '''
         assert isinstance(table_name, str)
-        res = self.execute('SELECT COUNT(*) FROM sqlite_master \
-                WHERE type = "{}" AND name = "{}"'.format('table', table_name))
-        self._logger.debug('Table check result: {}'.format(res))
-        if res == 1:
-            return True
-        else:
-            return False
-        return (res == 1)
-
+        #res = self.execute('SELECT COUNT(*) FROM sqlite_master \
+                #WHERE type = "{}" AND name = "{}"'.format('table', table_name))
+        #self._logger.debug('Table check result: {}'.format(res))
+        #return (res == 1)
+        return (table_name in self.getTables())
 
     def getTables(self):
         """
@@ -95,10 +91,10 @@ class SQLiteWrapper(object):
         Return data as a list in specified location
         '''
         #TODO: a .join() thing to do here
-        statement = 'select %s' % fields[0] 
+        statement = 'select %s' % fields[0]
         for item in fields[1:]:
-            statement = statement + ', ' + item 
-        tmp = ' from %s where %s=:%s' % (table, idx.keys()[0], idx.keys()[0] )
+            statement = statement + ', ' + item
+        tmp = ' from %s where %s=:%s' % (table, idx.keys()[0], idx.keys()[0])
         statement += tmp
         self._logger.debug(statement)
         res = self.execute(statement, idx)
@@ -144,7 +140,6 @@ class SQLiteWrapper(object):
             self.close(commit=False)
 
 
-
 '''---------------------------------------------------------------------------------------
 Usage Exemple
 ---------------------------------------------------------------------------------------'''
@@ -152,6 +147,6 @@ Usage Exemple
 if __name__ == '__main__':
     db = SQLiteWrapper("stocks.db")
     print db.execute('SELECT SQLITE_VERSION()')
-    db.queryFromScript('test.sql') 
+    db.queryFromScript('test.sql')
     db.close()   # a good habbit but __del__ handles that
 '''

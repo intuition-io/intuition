@@ -35,7 +35,7 @@ if __name__ == '__main__':
     #put in some DataAgent properties ?
     db_agent = DataAgent('stocks.db')
     data = db_agent.getQuotes([ticker], ['adj_close'], index=timestamp, \
-            save=True, reverse=True)
+            save=False, reverse=True)
     #ts = Series(data[ticker]['adj_close'], name=ticker)
     ts = data['adj_close'][ticker]
 

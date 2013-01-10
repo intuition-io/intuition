@@ -141,8 +141,10 @@ class Quantitative:
         @param start : with end, will return the return betweend this elapsed time
         @param period : delta is the number of lines/periods provided
         @param end : so said
+        @param cumulative: compute cumulative returns
         '''
         type = kwargs.get('type', 'net')
+        cumulative = kwargs.get('cumulative', False)
         if type == 'net': relative = 0
         else: relative = 1 # gross
         start = kwargs.get('start', None)
@@ -156,11 +158,14 @@ class Quantitative:
             #FIXME timezone problem
             ts = reIndexDF(ts, delta=delta)
             period = 1
-        return ts / ts.shift(period) - 1 + relative
+        rets_df = ts / ts.shift(period) - 1 + relative
+        if cumulative:
+            return = rets_df.cumprod()
+        return rets_df
 
     def dailyReturns(self, ts, **kwargs):
         relative = kwargs.get('relative', 0)
-        return self.simpleReturns(ts, delta=BDay(), relative=relative)
+        return self.returns(ts, delta=BDay(), relative=relative)
 
     def panelToRetsDF(dataPanel, kept_field='close', type='dataframe'):
         '''
@@ -173,8 +178,8 @@ class Quantitative:
         df.fillna(method='ffill')
         df.fillna(method='backfill')
         if type == 'array':
-            return self.compute.dailyReturns(df, relative=0).values
-        return self.compute.dailyReturns(df, relative=0) # 1 in doc, 0 in example
+            return self.returns(df, relative=0).values
+        return self.returns(df, relative=0) # 1 in doc, 0 in example
 
     def sharpeRatio(self, ts):
         #TODO: Dataframe handler

@@ -1,35 +1,16 @@
-#!/usr/bin/python
-# -*- coding: utf8 -*-
-
-import urllib2
-import sys, re, time, os
+import sys
+import os
 import datetime as dt
+import ipdb as pdb
 import pytz
 
 import pandas as pd
-from pandas import Index, Series, DataFrame, Panel
-from pandas.io.data import DataReader
+from pandas import DataFrame, Panel
 
-import numpy as np
-import matplotlib.finance as finance
-
-from xml.dom import minidom, Node
-import json
-
-sys.path.append(str(os.environ['QTRADEPYTHON']))
-from utils.LogSubsystem import LogSubsystem
-from QuantDB import QuantSQLite, yahooCode, Fields
-from utils.utils import epochToDate, reIndexDF
-
-#TODO: Uniform Quote dict structure to implement (and fill in different methods)
-#tmp
-class Alias (object):
-    SYMBOL = 't'
-    MARKET = 'e'
-    VALUE = 'l'
-    DATE = 'lt'
-    VARIATION = 'c'
-    VAR_PER_CENT = 'cp'
+sys.path.append(str(os.environ['QTRADE']))
+from pyTrade.utils.LogSubsystem import LogSubsystem
+from pyTrade.data.QuantDB import QuantSQLite, Fields
+from pyTrade.data.RemoteData import RemoteData
 
 
 class DataAgent(object):
@@ -37,258 +18,210 @@ class DataAgent(object):
             name, code, current value, bought value,
             market, actions owned,
             and date, open, close, volume, of asked period'''
-    # Handling different sources like in QSTK ?
-    def __init__(self, db_location=None, logger=None):
-        # Logger initialisation
-        if logger == None:
-          self._logger = LogSubsystem(DataAgent.__name__, "debug").getLog()
+    def __init__(self, sources=None, tz=pytz.utc, logger=None, lvl='debug'):
+        self.tz = tz
+        if logger is None:
+            self._logger = LogSubsystem(DataAgent.__name__, lvl).getLog()
         else:
-          self._logger = logger
-        #TODO: Trouver ici la database, boulot du prochain module
-        if db_location != None:
-            self._db = QuantSQLite(db_location)
-            self._logger.info('Database location provided, Connected to %s' % db_location)
+            self._logger = logger
+        self.connected = {'remote': False, 'database': False, 'csv': False}
+        if isinstance(sources, list):
+            self.connectTo(sources, lvl=lvl, timezone=tz, logger=logger)
 
-    def getQuotes(self, tickers, fields, index=None, *args, **kwargs):
-        ''' 
+    def connectTo(self, connections, **kwargs):
+        ''' Set up allowed data sources '''
+        tz = kwargs.get('timezone', self.tz)
+        log = kwargs.get('logger', None)
+        lvl = kwargs.get('lvl', 'debug')
+        if 'database' in connections:
+            db_name = kwargs.get('db_name', str(os.environ['QTRADEDB']))
+            self.db = QuantSQLite(db_name, timezone=tz, logger=log, lvl=lvl)
+            self._logger.info('Database location provided, Connected to %s' % db_name)
+            self.connected['database'] = True
+        if 'remote' in connections:
+            self.remote = RemoteData(timezone=tz, logger=log, lvl=lvl)
+            self.connected['remote'] = True
+        if 'csv' in connections:
+            raise NotImplementedError()
+
+    def _makeIndex(self, args):
+        ''' Take getQuotes input and produce suitable index '''
+        #TODO implement elapse
+        start_day = args.get('start', None)
+        end_day = args.get('end', dt.datetime.now(self.tz))
+        delta = args.get('delta', self._guessResolution(start_day, end_day))
+        period = args.get('period', None)
+        if period:
+            if not start_day:
+                start_day = end_day - period
+        if not start_day:
+            if not delta:
+                start_day = dt.datetime.now(self.tz).date()
+                delta = pd.datetools.Minute()
+            else:
+                self._logger.error('** No suitable date informations provided')
+                return None
+        return pd.date_range(start=start_day, end=end_day, freq=delta)
+
+    def _inspectDB(self, ticker, request_idx, fields=Fields.QUOTES):
+        ''' Check available df in db, according to the requested index '''
+        self._logger.info('Inspecting database.')
+        assert (isinstance(ticker, str))
+        assert (isinstance(request_idx, pd.Index))
+        assert (isinstance(fields, list))
+        #TODO comparisons are too strics
+        #TODO identificate NaN columns, that will erase everything at dropna
+        if not self.connected['database']:
+            self._logger.info('No database access allowed.')
+            return DataFrame(), request_idx
+
+        db_index = self.db.getDataIndex(ticker, fields, summary=False)
+        if not isinstance(db_index, pd.Index):
+            self._logger.info('No quotes stored in database.')
+            return DataFrame(), request_idx
+        elif db_index.freq > request_idx.freq:
+            self._logger.info('Superior asked frequency,\
+                    dropping and downloading along whole timestamp')
+            return DataFrame(), request_idx
+        else:
+            if db_index[0] > request_idx[0] and db_index[-1] < request_idx[-1]:
+                return DataFrame(), request_idx
+                raise NotImplementedError()
+                #TODO Two different timestamps to download !
+                #to dl: start_day -> first_db_date and last_db_date -> end_day
+            else:
+                #NOTE Intersection and other seemed cool but don't work
+                if db_index[0].hour != 0:
+                    db_index = pd.date_range(db_index[0] - pd.datetools.relativedelta(hours=db_index[0].hour),
+                            db_index[-1] - pd.datetools.relativedelta(hours=db_index[0].hour), freq=db_index.freq)
+                intersect = db_index & request_idx
+                idx_to_get = pd.date_range(self.tz.localize(intersect[0] - request_idx.freq),
+                                           intersect[-1], freq=request_idx.freq)
+                if idx_to_get is None or idx_to_get.size == 0:
+                    self._logger.info('No quotes available in database.')
+                    return DataFrame(), request_idx
+                #NOTE try union minus intersect
+                if db_index[0] > request_idx[0]:
+                    idx_to_dl = request_idx[request_idx < idx_to_get[0]]
+                else:
+                    idx_to_dl = request_idx[request_idx > idx_to_get[-1]]
+                db_df = DataFrame(self.db.getQuotesDB(ticker, idx_to_get),
+                                  columns=fields).dropna()
+                if not db_df.index.tzinfo:
+                    db_df.index.tz_localize(self.tz)
+        return db_df, idx_to_dl
+
+    #TODO each retriever, remote and db, takes care of dropna and columns
+    def getQuotes(self, tickers, fields=Fields.QUOTES, index=None, **kwargs):
+        '''
         @summary: retrieve google finance data asked while initializing
-        and store it: Date, open, low, high, close, volume 
-        @param quotes: list of quotes to fill
+        and store it: Date, open, low, high, close, volume
+        @param quotes: list of quotes to fetch
         @param fields: list of fields to store per quotes
         @param index: pandas.Index object, used for dataframes
-        @param args: unuse
         @param kwargs.start: date or datetime of the first values
                kwargs.end: date or datetime of the last value
                kwargs.delta: datetime.timedelta object, period of time to fill
                kwargs.save: save to database downloaded quotes
-               kwargs.reverse: reverse companie name and field in panel data structure
-        @param reverse: fields as columns, comapnies as index
-        @return a panel/dataframe/timeserie like closeAt9 = data['google'][['close']][date]
+               kwargs.reverse: reverse companie name and field in panel
+               kwargs.symbols
+               kwargs.markets
+        @return a panel/dataframe/timeserie like close = data['google']['close'][date]
         '''
+        #FIXME reversed dataframe could be store in database ?
         save = kwargs.get('save', False)
         reverse = kwargs.get('reverse', False)
-        if isinstance(index, pd.tseries.index.DatetimeIndex):
-            self._logger.debug('Index requested: \n{}'.format(index))
-            start_day = index[0]
-            end_day = index[len(index)-1]
-            delta = index[1] - index[0]  #timedelta object ?
-        else:
-            start_day = kwargs.get('start', None)
-            end_day = kwargs.get('end', pd.datetime.now())
-            if start_day != None:
-                delta = kwargs.get('delta', self._guessResolution(start_day, end_day))
-            else:
-                delta = kwargs.get('delta', None)
-            if start_day == None and delta != None:
-                start_day = end_day - delta
-            elif start_day == None and delta == None:
-                #TODO: today with a minute precision
-                self._logger.error('** Neither index, start, end or elapse (or just end) parameters provided')
+        markets = kwargs.get('markets', None)
+        symbols = kwargs.get('symbols', None)
+        if not isinstance(index, pd.tseries.index.DatetimeIndex):
+            index = self._makeIndex(kwargs)
+            if not isinstance(index, pd.DatetimeIndex):
                 return None
-        #TODO: multithread !
+        if not index.tzinfo:
+            index = index.tz_localize(self.tz)
+
+        assert (index.tzinfo is not None)
+        assert (isinstance(index, pd.DatetimeIndex))
+
         df = dict()
-        symbols, markets = self._db.getTickersCodes(tickers)
+        if self.connected['database']:
+            symbols, markets = self.db.getTickersCodes(tickers)
+        elif not symbols or not markets:
+            self._logger.error('** No database neither informations provided')
+            return None
         for ticker in tickers:
-            downloaded = False
+            if not ticker in symbols:
+                self._logger.warning('No code availablefor {}, going on'.format(ticker))
+                continue
             self._logger.info('Processing {} stock'.format(ticker))
-            self._logger.info('Inspecting database.')
-            #TODO comparison are too strics
-            #TODO identificate NaN columns, that will erase everything at dropna() time
-            first_db_date, last_db_date, db_freq = self._db.getDataIndex(ticker, summary=True)
-            self._logger.debug('Delta: db vs asked {} / {}'.format(delta, db_freq))
-            self._logger.debug('Start, db vs asked: {} / {}'.format(first_db_date, start_day))
-            self._logger.debug('End, db vs asked: {} / {}'.format(last_db_date, end_day))
-            if first_db_date == None or last_db_date == None or db_freq == None:
-                self._logger.info('No quotes stored in database, dowloading everything')
-            elif db_freq > delta:
-                self._logger.info('Superior asked frequency, dropping and downloading along whole timestamp')
-            elif first_db_date > end_day:
-                self._logger.info('No quotes available in database, downloading along whole timestamp')
-            else:
-                downloaded = True
-                if first_db_date > start_day and last_db_date < end_day:
-                    self._db.getQuotesDB(ticker, first_db_date, last_db_date, delta)
-                    db_df = DataFrame(dataobj._db.getQuotesDB(ticker, start=startday, \
-                            end=end_day, delta=2 * pd.datetools.Day()), columns=fields).dropna()
-                    #TODO: Two different timestamps to download !
-                    #to dl: start_day -> first_db_date and last_db_date -> end_day
-                elif first_db_date > start_day and last_db_date > end_day:
-                    db_df = DataFrame(self._db.getQuotesDB(ticker, start=first_db_date, \
-                            end=end_day, delta=delta), columns=fields).dropna()
-                    #to dl: start_day -> first_db_date 
-                    end_day = first_db_date
-                elif first_db_date < start_day and last_db_date < end_day:
-                    db_df = DataFrame(self._db.getQuotesDB(ticker, start=start_day, \
-                            end=last_db_date, delta=delta), columns=fields)
-                    #last_db_date -> end_day
-                    start_day = last_db_date
-                elif first_db_date <= start_day and last_db_date >= end_day:
+
+            db_df, index = self._inspectDB(ticker, index, fields)
+            assert (index.tzinfo)
+            if not db_df.empty:
+                assert (db_df.index.tzinfo)
+                if index.size == 0:
+                #if db_df.index.equals(index):
                     save = False
-                    self._logger.info('Quotes available offline, in database')
-                    df[ticker] = DataFrame(self._db.getQuotesDB(ticker, start=start_day, \
-                            end=end_day, delta=delta), columns=fields).dropna()
+                    df[ticker] = db_df
                     continue
 
-            self._logger.info('Downloading missing data, from {} to {}'.format(start_day, end_day))
+            self._logger.info('Downloading missing data, from {} to {}'
+                              .format(index[0], index[-1]))
             # Running the appropriate retriever
-            if delta.seconds != 0:
-                network_df = DataFrame(self._RTFetcher(symbols[ticker], markets[ticker], \
-                        abs(delta.days), abs(delta.seconds)), columns=fields)
-                network_df.truncate(after=end_day)
-                #NOTES like truncate() which does : df[q] = df[q].ix[start_day:end_day]
+            if (index[1] - index[0]) < pd.datetools.timedelta(days=1):
+                self._logger.info('Fetching minutely quotes ({})'
+                                  .format(index.freq))
+                network_df = DataFrame(self.remote.getMinutelyQuotes(
+                                       symbols[ticker], markets[ticker], index),
+                                       columns=fields).truncate(after=index[-1])
             else:
-                self._logger.info('Fetching historical data from yahoo finance')
-                network_df = DataFrame(self._getHistoricalQuotes(symbols[ticker], \
-                        start_day, end_day, delta), columns=fields)
-            if downloaded:
-                self._logger.debug('Checking db index ({}) vs network index ({})'.format(db_df.index[0], network_df.index[0]))
-                #if db_df.index[0] > network_df.index[0]: 
-                    #df[ticker] = pd.concat([network_df, db_df])
-                #else:
-                df[ticker] = pd.concat([db_df, network_df]).sort_index()
+                network_df = DataFrame(self.remote.getHistoricalQuotes(
+                                       symbols[ticker], index), columns=fields)
+
+            if not db_df.empty:
+                self._logger.debug('Checking db index ({}) vs network index ({})'
+                                   .format(db_df.index, network_df.index))
+                if db_df.index[0] > network_df.index[0]:
+                    df[ticker] = pd.concat([network_df, db_df])
+                else:
+                    df[ticker] = pd.concat([db_df, network_df]).sort_index()
             else:
                 df[ticker] = network_df
 
         data = Panel.from_dict(df, intersect=True)
         if save:
             #TODO: accumulation and compression of data issue, drop always true at the moment
-            self._db.updateStockDb(data, Fields.QUOTES, drop=True)  
+            if self.connected['database']:
+                self.db.updateStockDb(data, Fields.QUOTES, drop=True)
+            else:
+                self._logger.warning('! No database connection for saving.')
         if reverse:
             return Panel.from_dict(df, intersect=True, orient='minor')
         #NOTE if data used here, insert every FIELD.QUOTES columns
+        #NOTE Only return Panel when one ticker and/or one field ?
         return Panel.from_dict(df, intersect=True)
-        
 
     def _guessResolution(self, start, end):
-        #TODO: Find a more subtil, like proportional, relation
+        if not start or not end:
+            return None
         elapse = end - start
-        if abs(elapse.days) > 5:
-            delta = dt.timedelta(days=1)
+        if abs(elapse.days) > 5 and abs(elapse.days) < 30:
+            delta = pd.datetools.BDay()
         elif abs(elapse.days) <= 5 and abs(elapse.days) > 1:
-            delta = dt.timedelta(days=1, hours=1)
+            delta = pd.datetools.Hour()
+        elif abs(elapse.days) >= 30:
+            delta = pd.datetools.BMonthEnd(round(elapse.days / 30))
         else:
-            delta = dt.timedelta(days=1, minutes=10)
+            delta = pd.datetools.Minute(10)
         self._logger.info('Automatic delta fixing: {}'.format(delta))
         return delta
-
-    def _RTFetcher(self, symbol, market, days, freq):
-        params = urllib2.urlencode({'q': symbol, 'x': market, 'p': str(days)+d, 'i': str(freq+1)})
-        url = 'http://www.google.com/finance/getprices?q=%s&x=%s&p=%sd&i=%s' % (symbol, market, str(days), str(freq+1))
-        self._logger.info('on %d days with a precision of %d secs' % (days, freq) )
-        try:
-            page = urllib2.urlopen(url)
-        except urllib2.HTTPError:
-            self._logger.error('** Unable to fetch data for stock: %s'.format(symbol))
-            return None
-        except urllib2.URLError:
-            self._logger.error('** URL error for stock: %s'.format(symbol))
-            return None
-        feed = ''
-        data = []
-        while (re.search('^a', feed) == None):
-            feed = page.readline()
-        while ( feed != '' ):
-            data.append(np.array(map(float, feed[:-1].replace('a', '').split(','))))
-            feed = page.readline()
-        dates, open, close, high, low, volume = zip(*data)
-        data = {
-                'open' : open,
-                'close' : close,
-                'high' : high,
-                'low' : low,
-                'volume' : volume
-                }
-        index = Index(epochToDate(d) for d in dates)
-        df.index = df.index.tz_localize(pytz.utc)
-        return DataFrame(data, index=index)
-
-    def _getHistoricalQuotes(self, symbol, start, end=None, elapse=None):
-        print('Yahoo elapse: {}'.format(elapse))
-        source = 'yahoo'
-        if(end is None):
-            end = dt.datetime.today()
-        quotes = DataReader(symbol, source, start, end) 
-        if elapse != None:
-            #NOTE reIndexDF has a column arg but here not provided
-            quotes = reIndexDF(quotes, delta=elapse)
-        #quotes.index.tz_localize(pytz.utc)
-        quotes.index = quotes.index.tz_localize(pytz.utc)
-        quotes.columns = Fields.QUOTES
-        return quotes
-
-    def getSnaphot(self, tickers, light=True):
-        symbols, markets = self._db.getTickersCodes(tickers)
-        snapshot = {q : dict() for q in tickers}
-        if light:
-            data = self._lightSummary(symbols, markets)
-        else:
-            data = self._heavySummary(symbols)
-        i = 0
-        for item in tickers:
-            snapshot[item] = data[i]
-            i += 1
-        return snapshot
-
-    def _lightSummary(self, symbols, markets):
-        #TODO: finir de changer les index et comprendre tous les champs
-        url = 'http://finance.google.com/finance/info?client=ig&q=%s:%s' % (symbols[0], markets[0])
-        for i in range(1, len(symbols)):
-            url = url + ',%s:%s' % (symbols[i], markets[i])
-        return json.loads(urllib2.urlopen(url).read()[3:], encoding='latin-1')
-
-    def _heavySummary(self, symbols):
-        url = 'http://www.google.com/ig/api?stock=' + symbols[0]
-        for s in symbols[1:]:
-            url = url + '&stock=' + s
-        self._logger.info('Retrieving Snapshot from %s' % url)
-        try:
-            url_fd = urllib2.urlopen(url)
-        except IOError:
-            self._logger.error('** Bad url: %s' %url)
-        try:
-            xml_doc = minidom.parse(url_fd)
-            root_node = xml_doc.documentElement
-        except:
-            self._logger.error('** Parsing xml google response')
-        i = 0
-        #snapshot = {q : dict() for q in symbols}
-        snapshot = list()
-        ticker_data = dict()
-        for node in root_node.childNodes:  #node.Name=finance
-            if ( node.nodeName != 'finance' ): continue
-            ticker_data.clear()
-            for item_node in node.childNodes:
-                if ( item_node.nodeType != Node.ELEMENT_NODE ): continue
-                ticker_data[item_node.nodeName] = item_node.getAttribute('data')
-            i += 1
-            snapshot.append(ticker_data)
-        return snapshot
-
-    #TODO: a separate class with functions per categories of data
-    #NOTE: The YQL can fetch this data (http://www.yqlblog.net/blog/2009/06/02/getting-stock-information-with-%60yql%60-and-open-data-tables/)
-    def financeRequest(self, quotes, fields):
-        #TODO: checking if field is in yahooCode
-        #TODO: remove " from results
-        symbols, markets = self._db.getTickersCodes(index, quotes)
-        fields.append('error')
-        url = 'http://finance.yahoo.com/d/quotes.csv?s='
-        url = url + '+'.join(symbols) + '&f='
-        code = list()
-        url += ''.join([yahooCode[item.lower()] for item in fields])
-        data = urllib2.urlopen(url)
-        df = dict()
-        for item in symbols:
-            #FIXME: ask size return different length arrays !
-            df[item] = Series(data.readline().strip().strip('"').split(','), index=fields)
-        return DataFrame(df)
-
 
     def help(self, category):
         #TODO: stuff to know like fields and functions
         print('{} help'.format(category))
 
 
-''' Example'''
+''' Example
 if __name__ == '__main__':
     dataobj = DataAgent('stocks.db')        # Just needs the relative path to Database directory
     startday = pd.datetime(2011,6,20)      #in db: 2011-12-05
@@ -302,10 +235,11 @@ if __name__ == '__main__':
     #summary = dataobj.getSnaphot(['google', 'apple'], light=False)
     #print '(heavy) Apple market cap: %s' % summary['apple']['market_cap']
 
-    #dataobj._db.updateStockDb(data, Fields.QUOTES, drop=True)  
-    #first_date, last_date, freq = dataobj._db.getDataIndex('google', summary=True)
+    #dataobj.db.updateStockDb(data, Fields.QUOTES, drop=True)
+    #first_date, last_date, freq = dataobj.db.getDataIndex('google', summary=True)
     #print('Data from {} to {} with an interval of {}'.format(first_date, last_date, freq))
-    #quotes = DataFrame(dataobj._db.getQuotesDB('google', start=startday,\
+    #quotes = DataFrame(dataobj.db.getQuotesDB('google', start=startday,\
             #end=endday, delta=delta), columns=['open', 'volume']).dropna()
     #print quotes.head()
-    dataobj._db.close(commit=True)
+    dataobj.db.close(commit=True)
+'''

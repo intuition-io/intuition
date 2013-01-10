@@ -31,14 +31,12 @@ int Backtester::main(const vector<string>& args) {
   logger().information("Opearting system: Linux");
 #endif
 
-  //std::string tmp;
-  //cin >> tmp;
-  //logger().information("Received: " + tmp);
   if ( !_helpRequested ) {
-    //string command = "{\"name\": \"google\", \"days\": 2, \"deps\": false}";
-    //quantrade::DataSubsystem& database = getSubsystem<quantrade::DataSubsystem>();
-    //logger().information("Connected to database: " + toStr(database.name()));
-    //database.test();
+    /*
+     *quantrade::DataSubsystem& database = getSubsystem<quantrade::DataSubsystem>();
+     *logger().information("Connected to database: " + toStr(database.name()));
+     *database.test();
+     */
 
     string prog = config().getString("mod.backtest.script", "backtest.py");
     vector<string> args;
@@ -46,9 +44,15 @@ int Backtester::main(const vector<string>& args) {
     args.push_back("--tickers");
     args.push_back(config().getString("mod.backtest.tickers"));
     args.push_back("--algorithm");
-    args.push_back(config().getString("mod.backtest.algo", "dualMA"));
+    args.push_back(config().getString("mod.backtest.algo", "DualMA"));
+    args.push_back("--level");
+    args.push_back(config().getString("mod.backtest.level", "critical"));
     args.push_back("--delta");
     args.push_back(config().getString("mod.backtest.delta", "1"));
+    args.push_back("--start");
+    args.push_back(config().getString("mod.backtest.start", "1/1/2000"));
+    args.push_back("--end");
+    args.push_back(config().getString("mod.backtest.end", "1/12/2008"));
     int rc = runLocalModule(prog, args);
     if ( rc != 0 )
       logger().error("** Forking " + prog + " failed: " + toStr(rc));

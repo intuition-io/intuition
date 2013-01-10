@@ -1,8 +1,11 @@
-import sys, os
+import ipdb as pdb
+
+import sys
+import os
 
 import sqlite3 as sql
 import numpy as np
-from pandas import DataFrame, Index, DateOffset
+from pandas import DataFrame
 
 sys.path.append(str(os.environ['QTRADEPYTHON']))
 from utils.DatabaseSubsystem import SQLiteWrapper
@@ -10,18 +13,21 @@ from utils.LogSubsystem import LogSubsystem
 from utils.decorators import *
 from utils.utils import *
 
-#@singleton
+
 class QuantSQLite(SQLiteWrapper):
-    """ 
-    Specific database facilities for quanTrade software 
+    #NOTE @singleton
     """
-    def __init__(self, db_file='stocks.db', logger=None):
-        if logger == None:
-            self._logger = LogSubsystem(self.__class__.__name__, 'info').getLog()
+    Specific database facilities for quanTrade software
+    """
+    def __init__(self, db_file='stocks.db', timezone=pytz.utc,
+                 logger=None, lvl='debug'):
+        self.tz = timezone
+        if logger is None:
+            self._logger = LogSubsystem(self.__class__.__name__, lvl).getLog()
         else:
             self._logger = logger
         dbRootDir = os.environ['QTRADEDATA']
-        db_file = '/'.join((dbRootDir,db_file))
+        db_file = '/'.join((dbRootDir, db_file))
         SQLiteWrapper.__init__(self, db_file, self._logger)
 
     #TODO: code that !
@@ -41,15 +47,20 @@ class QuantSQLite(SQLiteWrapper):
         for t in tickers:
             selector = {'ticker': t}
             res = self.getData(table, selector, fields)
+            if res is None:
+                self._logger.warning('No references found in database.')
+                continue
             symbols[t] = res[fields[0]]
             markets[t] = res[fields[1]]
         return symbols, markets
 
     def updateStockDb(self, quotes, fields, drop=False):
-        ''' 
-        @summary store quotes and information in SQLiteDB
-        @param quotes: pandas.Panel not reversed, like quotes[companies][fields] 
         '''
+        @summary store quotes and information in SQLiteDB
+        @param quotes: pandas.Panel not reversed,
+                       like quotes[companies][fields]
+        '''
+        #pdb.set_trace()
         #TODO: maybe a general update function ?
         self._logger.info('Updating database...')
         #TODO: Handling data accumulation and compression, right now just drop
@@ -57,72 +68,105 @@ class QuantSQLite(SQLiteWrapper):
             self._logger.info('saving {} quotes'.format(name))
             for item in fields:
                 if item not in frame.columns:
-                    frame[item] = np.empty((len(frame.index)))
+                    frame[item] = np.empty(len(frame.index))
                     frame[item].fill(np.NaN)
             try:
                 if drop:
-                    res = self.execute('drop table if exists ' + name)
-                    self.execute('create table ' + name + \
-                            '(date int, {} real, {} real, {} real, {} real, {} int, {} real)'\
-                            .format(*Fields.QUOTES))
+                    self.execute('drop table if exists ' + name)
+                    self.execute('create table ' + name +
+                                 '(date int, {} real, {} real, {} real,\
+                                 {} real, {} int, {} real)'
+                                 .format(*Fields.QUOTES))
                 #NOTE: could it be possible in one line with executemany ?
+                frame = frame.fillna(-1)
+                #frame = frame.fillna(method='pad')
+                #frame = frame.dropna()
                 for i in range(len(frame.index)):
                     raw = (dateToEpoch(frame.index[i]),
-                        frame['open'][i], 
-                        frame['close'][i], 
-                        frame['high'][i],
-                        frame['low'][i],
-                        frame['volume'][i],
-                        frame['adj_close'][i])
-                    self.execute('insert into ' + name + ' values(?, ?, ?, ?, ?, ?, ?)', raw)
+                           frame['open'][i],
+                           frame['close'][i],
+                           frame['high'][i],
+                           frame['low'][i],
+                           frame['volume'][i],
+                           frame['adj_close'][i])
+                    self.execute('insert into ' + name +
+                                 ' values(?, ?, ?, ?, ?, ?, ?)', raw)
             except:
                 self._logger.error('While insering new values in database')
                 return 1
         return 0
 
-    def getDataIndex(self, ticker, summary=True):
+    def getDataIndex(self, ticker, fields=None, summary=True):
         '''
-        @summary retrieve the ticker data index from db, for storage optimization
+        @summary retrieve the ticker data index from db,
+                 for storage optimization
         @return a pandas.Index
         '''
         assert isinstance(ticker, str)
         if not self.isTableExists(ticker):
+            self._logger.warning('Table does not exist')
             return None, None, None
         self._logger.info('Getting index quotes properties.')
         try:
-            res = self.execute('select date from {}'.format(ticker))
+            dates = self.execute('select date from {}'.format(ticker))
         except sql.Error, e:
             self._logger.error('** While getting index: {}'.format(e.args[0]))
-            return None, None, None
-        if len(res) == 0 or not isinstance(res[0][0], int):
-            #No epoch time found
-            #TODO a check in epochToDate, but will probably be replaced py zipline function
-            return None, None, None
+            return None
+        if len(dates) < 2 or not isinstance(dates[0][0], int):
+            return None
+        if isinstance(fields, list):
+            selector = {'date': dates[0][0]}
+            res = self.getData(ticker, selector, fields)
+            if not res:
+                self._logger.error('** No data index found in database about {}'.format(ticker))
+                return None
+            #FIXME res is sometime a float, sometime a list
+            for value in res:
+                if not value:
+                    #TODO may be keep available fields and pop the others
+                    return None
         if summary:
-            oldest_date = epochToDate(res[0][0])
-            latest_date = epochToDate(res[len(res)-1][0])
-            freq = epochToDate(res[1][0]) - oldest_date
-            self._logger.debug('Data from {} to {} with an interval of {} days, {}mins'.format(oldest_date, latest_date, freq.days, freq.seconds/60))
-            return epochToDate(res[0][0]), epochToDate(res[len(res)-1][0]), freq
+            oldest_date = epochToDate(dates[0][0], self.tz)
+            latest_date = epochToDate(dates[-1][0], self.tz)
+            freq = epochToDate(dates[1][0], self.tz) - oldest_date
+            self._logger.debug('Data from {} to {} with an interval \
+                                of {} days, {}mins'
+                .format(oldest_date, latest_date,
+                        freq.days, freq.seconds / 60))
+            return [oldest_date, latest_date, freq]
         else:
-            return Index([epochToDate(res[i][0]) for i in range(len(res))])
+            dates = [epochToDate(dates[i][0]) for i in range(len(dates))]
+            return dateToIndex(dates, self.tz)
+            #return Index([dates-dt.timedelta(hours=23) for dates in index
+                          #if index[0].hour == 23]).tz_localize(self.tz)
 
-
-    def getQuotesDB(self, ticker, start=False, end=False, delta=False):
+    def getQuotesDB(self, ticker, index):
         '''
         @summary like network utilities, it gets from db data according params
         @params see getData
         @return a dataframe, still for other DataAgent functions compatibility
         '''
+        assert (isinstance(index, pd.Index))
+        assert (index.size > 0)
+        if not index.tzinfo:
+            index = index.tz_localize(self.tz)
         self._logger.info('Retrieving {} quotes from database'.format(ticker))
         db_dates = self.getDataIndex(ticker, summary=False)
-        #NOTE: Something more generic ?
-        self._logger.debug('Query: select {} from {}'.format(' ,'.join(Fields.QUOTES), ticker))
-        res = self.execute('select {} from {}'.format(' ,'.join(Fields.QUOTES), ticker))
-        df = DataFrame.from_records(res, index=db_dates, columns=Fields.QUOTES)
-        if ( start or end or delta ):
-            df = reIndexDF(df, start=start, end=end, delta=delta, market='euronext')
-        return df
+        if isinstance(db_dates, pd.DatetimeIndex):
+            #NOTE: Something more generic ?
+            self._logger.debug('Query: select {} from {}'
+                .format(' ,'.join(Fields.QUOTES), ticker))
+            #FIXME cut the last element because of indexing
+            res = self.execute('select {} from {}'
+                    .format(' ,'.join(Fields.QUOTES), ticker))
+            #TODO Handle dirty missed
+            print('Res: {}, dates: {}'.format(len(res), db_dates.size))
+            assert(len(res) == db_dates.size)
+            df = DataFrame.from_records(res, index=db_dates,
+                                        columns=Fields.QUOTES)
+            return reIndexDF(df, start=index[0], end=index[-1],
+                             delta=index.freq)
+        return None
 
 
 #TODO: Same for google json and xml retrievig
@@ -148,7 +192,7 @@ yahooCode = {'ask':'a', 'average daily volume':'a2', 'ask size':'a5',
         'high limit':'l2', 'low limit':'l3', 'day range':'m',
         'day range rt':'m2', '50-day ma':'m3', '200-day ma':'m4',
         'percent change from 50-day ma':'m8', 'name':'n', 'notes':'n4',
-        'open':'o', 'previous close':'p', 'price paid':'p1', 
+        'open':'o', 'previous close':'p', 'price paid':'p1',
         'change percent':'p2', 'price/sales':'p5', 'price/book':'p6',
         'ex-dividend date':'q', 'p/e ratio':'r', 'dividend date':'r1',
         'p/e ratio rt':'r2', 'peg ratio':'r5', 'price/eps estimate year':'r6',

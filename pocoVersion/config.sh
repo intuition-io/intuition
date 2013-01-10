@@ -10,4 +10,5 @@
 #-----------------------------------------------------------------
 export QTRADE=$HOME/dev/projects/ppQuanTrade
 export QTRADEDATA=$QTRADE/Database
+export QTRADEDB=stocks.db
 export QTRADEPYTHON=$QTRADE/pyTrade

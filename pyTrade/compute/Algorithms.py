@@ -1,6 +1,3 @@
-import matplotlib.pyplot as plt
-import numpy as np
-
 import datetime
 import pytz
 
@@ -9,14 +6,16 @@ from zipline.algorithm import TradingAlgorithm
 from zipline.transforms import MovingAverage
 from zipline.transforms import MovingVWAP
 from zipline.transforms import  BatchTransform, batch_transform
-from zipline.utils.factory import load_from_yahoo
+
 
 class SimpleBuy(TradingAlgorithm):
     '''Simpliest algorithm ever, just buy a stock at the first frame'''
     def initialize(self, properties):
         self.count = 0
-        self.amount = properties.get('amount', 1000)
+        # Otherwise, call the TradingAlgo __init__(capital_base=1000) himself
+        #self.capital_base = properties.get('amount', 1000)
     
+
     def handle_data(self, data):
         if self.count == 0:
             #TODO Find or implement logging system
@@ -44,12 +43,13 @@ class DualMovingAverage(TradingAlgorithm):
     momentum).
 
     """
-    def initialize(self, properties):
+    def initialize(self, **properties):
         short_window = properties.get('short_window', 200)
         long_window = properties.get('long_window', 400)
         self.amount = properties.get('amount', 10000)
         self.buy_on_event = properties.get('buy_on_event', 100)
         self.sell_on_event = properties.get('sell_on_event', 100)
+        self.capital_base = properties.get('capital_base', 1000)
 
         print('Dual Moving average parameters parameters')
         print('Short: {}, long: {}, amount: {}'.format(short_window, long_window, self.amount))
@@ -296,7 +296,7 @@ class Backtester(object):
             'VWAP': VolumeWeightAveragePrice, 'SimpleBuy': SimpleBuy}
 
     def __new__(self, algo, **kwargs):
-        if not Backtester.algos[algo]:
+        if algo not in Backtester.algos:
             raise NotImplementedError('Algorithm {} not available or implemented'.format(algo))
         print('[Debug] Algorithm {} available, getting a reference to it.'.format(algo))
-        return Backtester.algos[algo](kwargs)
+        return Backtester.algos[algo](**kwargs)
