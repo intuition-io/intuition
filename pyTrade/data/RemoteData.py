@@ -53,7 +53,7 @@ class RemoteData(object):
         elif index.freqstr[1] == 'H':
             freq *= 3601
         else:
-            self.logger.error('** No suitable time frequency: {}'.format(index.freqstr))
+            self._logger.error('** No suitable time frequency: {}'.format(index.freqstr))
             return None
         url = 'http://www.google.com/finance/getprices?q=%s&x=%s&p=%sd&i=%s' \
                 % (symbol, market, str(days), str(freq + 1))
@@ -90,7 +90,11 @@ class RemoteData(object):
     def getHistoricalQuotes(self, symbol, index, market=None):
         assert (isinstance(index, pd.Index))
         source = 'yahoo'
-        quotes = DataReader(symbol, source, index[0], index[-1])
+        try:
+            quotes = DataReader(symbol, source, index[0], index[-1])
+        except:
+            self._logger.error('** Could not get {} quotes'.format(symbol))
+            return pd.DataFrame()
         if index.freq != pd.datetools.BDay() or index.freq != pd.datetools.Day():
             #NOTE reIndexDF has a column arg but here not provided
             quotes = reIndexDF(quotes, delta=index.freq, reset_hour=False)

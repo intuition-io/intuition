@@ -50,7 +50,7 @@ int Backtester::main(const vector<string>& args) {
     args.push_back("--delta");
     args.push_back(config().getString("mod.backtest.delta", "1"));
     args.push_back("--start");
-    args.push_back(config().getString("mod.backtest.start", "1/1/2000"));
+    args.push_back(config().getString("mod.backtest.start", "1/1/2006"));
     args.push_back("--end");
     args.push_back(config().getString("mod.backtest.end", "1/12/2008"));
     int rc = runLocalModule(prog, args);

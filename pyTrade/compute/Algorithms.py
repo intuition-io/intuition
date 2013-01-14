@@ -1,36 +1,36 @@
 import datetime
 import pytz
 
-
 from zipline.algorithm import TradingAlgorithm
 from zipline.transforms import MovingAverage
 from zipline.transforms import MovingVWAP
 from zipline.transforms import  BatchTransform, batch_transform
 
 
-class SimpleBuy(TradingAlgorithm):
+class BuyAndHold(TradingAlgorithm):
     '''Simpliest algorithm ever, just buy a stock at the first frame'''
     def initialize(self, properties):
         self.count = 0
         # Otherwise, call the TradingAlgo __init__(capital_base=1000) himself
         #self.capital_base = properties.get('amount', 1000)
-    
 
     def handle_data(self, data):
-        if self.count == 0:
+        if self.count == 2:
             #TODO Find or implement logging system
             print('Starting cach = {}'.format(self.portfolio.starting_cash))
             for ticker in data:
-                stocks_n = round(self.amount / data[ticker].price)
+                print self.portfolio['cash']
+                print data[ticker].price
+                stocks_n = round(self.portfolio['cash'] / data[ticker].price)
                 print('Buying {} {} stocks ({})'.format(stocks_n, ticker, data[ticker].price))
                 self.order(ticker, stocks_n)
 
-        if self.count == len(data):
-            print self.portfolio
-            for ticker in data:
-                print('Selling {} {} stocks ({})'.format(\
-                        self.portfolio.positions[ticker].amount, ticker, data[ticker].price))
-                self.order(ticker, -self.portfolio.positions[ticker].amount)
+        #if self.count == len(data):
+            #print self.portfolio
+            #for ticker in data:
+                #print('Selling {} {} stocks ({})'.format(
+                        #self.portfolio.positions[ticker].amount, ticker, data[ticker].price))
+                #self.order(ticker, -self.portfolio.positions[ticker].amount)
         self.count += 1
 
 
@@ -43,13 +43,15 @@ class DualMovingAverage(TradingAlgorithm):
     momentum).
 
     """
-    def initialize(self, **properties):
+    def initialize(self, properties):
         short_window = properties.get('short_window', 200)
         long_window = properties.get('long_window', 400)
         self.amount = properties.get('amount', 10000)
         self.buy_on_event = properties.get('buy_on_event', 100)
         self.sell_on_event = properties.get('sell_on_event', 100)
-        self.capital_base = properties.get('capital_base', 1000)
+        #self.capital_base = properties.get('capital_base', 1000)
+        #TODO Change to args dict
+        self.debug = properties.get('debug', True)
 
         print('Dual Moving average parameters parameters')
         print('Short: {}, long: {}, amount: {}'.format(short_window, long_window, self.amount))
@@ -75,9 +77,14 @@ class DualMovingAverage(TradingAlgorithm):
             short_mavg = data[ticker].short_mavg['price']
             long_mavg = data[ticker].long_mavg['price']
             if short_mavg > long_mavg and not self.invested:
+                if self.debug:
+                    #TODO use self.logger (None right now)
+                    print('Buying {} stocks'.format(self.buy_on_event))
                 self.order(ticker, self.buy_on_event)
                 self.invested = True
             elif short_mavg < long_mavg and self.invested:
+                if self.debug:
+                    print('Selling {} stocks'.format(self.buy_on_event))
                 self.order(ticker, -self.sell_on_event)
                 self.invested = False
 
@@ -280,23 +287,24 @@ class MovingAverageCrossover(TradingAlgorithm):
             else:
                 self.breakoutFilter += 1
                             
-        if (self.holdingShortPosition == True and 
-                ((fastMovingAverage > 0.0 and slowMovingAverage > 0.0) 
-                 and (fastMovingAverage > mediumMovingAverage))):           
+        if (self.holdingShortPosition == True and
+                ((fastMovingAverage > 0.0 and slowMovingAverage > 0.0)
+                 and (fastMovingAverage > mediumMovingAverage))):          
             if self.breakoutFilter > 5:
-                order(self.stock, 100)   
-                self.holdingShortPosition = False  
+                order(self.stock, 100) 
+                self.holdingShortPosition = False
                 self.breakoutFilter = 0
             else:
-                self.breakoutFilter += 1    
+                self.breakoutFilter += 1
+
 
 class Backtester(object):
     ''' Factory class wrapping zipline Backtester, returns the requested algo '''
     algos = {'DualMA': DualMovingAverage, 'Momentum': Momentum, \
-            'VWAP': VolumeWeightAveragePrice, 'SimpleBuy': SimpleBuy}
+            'VWAP': VolumeWeightAveragePrice, 'BuyAndHold': BuyAndHold}
 
-    def __new__(self, algo, **kwargs):
+    def __new__(self, algo, params):
         if algo not in Backtester.algos:
             raise NotImplementedError('Algorithm {} not available or implemented'.format(algo))
         print('[Debug] Algorithm {} available, getting a reference to it.'.format(algo))
-        return Backtester.algos[algo](**kwargs)
+        return Backtester.algos[algo](params)

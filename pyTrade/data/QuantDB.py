@@ -60,7 +60,6 @@ class QuantSQLite(SQLiteWrapper):
         @param quotes: pandas.Panel not reversed,
                        like quotes[companies][fields]
         '''
-        #pdb.set_trace()
         #TODO: maybe a general update function ?
         self._logger.info('Updating database...')
         #TODO: Handling data accumulation and compression, right now just drop
@@ -78,8 +77,8 @@ class QuantSQLite(SQLiteWrapper):
                                  {} real, {} int, {} real)'
                                  .format(*Fields.QUOTES))
                 #NOTE: could it be possible in one line with executemany ?
-                frame = frame.fillna(-1)
-                #frame = frame.fillna(method='pad')
+                frame = frame.fillna(method='pad')
+                #frame = frame.fillna(-1)
                 #frame = frame.dropna()
                 for i in range(len(frame.index)):
                     raw = (dateToEpoch(frame.index[i]),
@@ -146,7 +145,7 @@ class QuantSQLite(SQLiteWrapper):
         @params see getData
         @return a dataframe, still for other DataAgent functions compatibility
         '''
-        assert (isinstance(index, pd.Index))
+        assert (isinstance(index, pd.DatetimeIndex))
         assert (index.size > 0)
         if not index.tzinfo:
             index = index.tz_localize(self.tz)
@@ -161,6 +160,7 @@ class QuantSQLite(SQLiteWrapper):
                     .format(' ,'.join(Fields.QUOTES), ticker))
             #TODO Handle dirty missed
             print('Res: {}, dates: {}'.format(len(res), db_dates.size))
+            pdb.set_trace()
             assert(len(res) == db_dates.size)
             df = DataFrame.from_records(res, index=db_dates,
                                         columns=Fields.QUOTES)

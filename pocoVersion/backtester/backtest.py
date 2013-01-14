@@ -17,30 +17,27 @@ import pandas as pd
 from zipline.data.benchmarks import *
 
 
-def runBacktest(args, **kwargs):
+def runBacktest(args, algo_params):
     '''--------------------------------------------    Parameters    -----'''
-    short_window = kwargs.get('short_window', 50)
-    long_window = kwargs.get('long_window', 100)
-    buy_on_event = kwargs.get('buy_on_event', 100)
-    sell_on_event = kwargs.get('sell_on_event', 100)
-    #start = pd.datetime(2001, 1, 20, 0, 0, 0, 0, pytz.utc)
-    #end = pd.datetime(2009, 12, 20, 0, 0, 0, 0, pytz.utc)
     start = pytz.utc.localize(pd.datetime.strptime(args.start, '%d/%m/%Y'))
     end = pytz.utc.localize(pd.datetime.strptime(args.end, '%d/%m/%Y'))
     timestamp = pd.date_range(start, end, freq=pd.datetools.BDay(args.delta))
 
     agent = DataAgent()
-    agent.connectTo(['remote', 'database'], db_name=args.database, lvl=args.level)
-    data_all = agent.getQuotes(args.tickers.split(','), ['adj_close'], index=timestamp, reverse=True)
-    data = data_all['adj_close']
+    agent.connectTo(['database'], db_name=args.database, lvl=args.level)
+    #data_all = agent.getQuotes(args.tickers.split(','), ['adj_close'], index=timestamp, reverse=True)
+    data_all = agent.load_from_csv(args.tickers.split(','), fields=['actual_close'],
+                                   index=timestamp, reverse=True)
+    data = data_all['actual_close']
     if not data.index.tzinfo:
         print('No timezone information')
         data.index = data.index.tz_localize(pytz.utc)
+    assert isinstance(data, pd.DataFrame)
+    assert data.index.tzinfo
 
     '''-----------------------------------------------    Running    -----'''
     print('\n-- Running backetester, algorithm: {}\n'.format(args.algorithm))
-    strategie = Backtester(args.algorithm, short_window=short_window, long_window=long_window,
-                           capital_base=5000, buy_on_event=buy_on_event, sell_on_event=sell_on_event)
+    strategie = Backtester(args.algorithm, algo_params)
     results = strategie.run(data, start, end)
     return strategie, results
 
@@ -55,13 +52,19 @@ if __name__ == '__main__':
     parser.add_argument('-b', '--database', action='store', default='stocks.db', required=False, help='Database location')
     parser.add_argument('-l', '--level', action='store', default='debug', required=False, help='Verbosity level')
     parser.add_argument('-t', '--tickers', action='store', required=True, help='target names to process')
-    parser.add_argument('-s', '--start', action='store', default='1/1/2000', required=False, help='Start date of the backtester')
+    parser.add_argument('-s', '--start', action='store', default='1/1/2006', required=False, help='Start date of the backtester')
     parser.add_argument('-e', '--end', action='store', default='1/12/2010', required=False, help='Stop date of the backtester')
     args = parser.parse_args()
 
     '''---------------------------------------------------------------------------------------'''
-    strategie, results = runBacktest(args, short_window=40, long_window=80,
-                                     buy_on_event=120, sell_on_event=80)
+    '''
+    2 solutions
+        - From command line + json configuration file
+        - From python server, command args as dict, others as json string
+    '''
+    params = {'short_window': 200, 'long_window': 400,
+              'buy_on_event': 120, 'sell_on_event': 80}
+    strategie, results = runBacktest(args, params)
     '''---------------------------------------------------------------------------------------'''
 
     print('-----------------------------------------------------------------    Results   ----')
@@ -72,7 +75,7 @@ if __name__ == '__main__':
     print('Benchmark returns: {}'.format(get_benchmark_returns()[-1]))
     # Alpha
     # Beta
-    # Sharpe
+    # Sharpe ratio
     # Volatility
     # Max Drawdown
 

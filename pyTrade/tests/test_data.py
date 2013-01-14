@@ -26,27 +26,33 @@ class test_DataAgent(unittest.TestCase):
     '''
     def setUp(self):
         ''' called at the beginning of each test '''
-        self.tickers      = ['starbucks']
-        self.fields       = ['low', 'adj_close', 'volume']
-        self.start        = dt.datetime(2004, 12, 1, tzinfo = pytz.utc)
-        self.end          = dt.datetime(2012, 12, 31, tzinfo = pytz.utc)
-        self.offset       = pd.datetools.BMonthEnd(4)
-        self.simple_agent = DataAgent()
+        self.tickers      = ['google', 'apple', 'starbucks']
+        self.fields       = ['close', 'volume']
+        self.start        = dt.datetime(2006, 1, 1, tzinfo = pytz.utc)
+        self.end          = dt.datetime(2010, 12, 31, tzinfo = pytz.utc)
+        self.offset       = pd.datetools.BMonthEnd()
+        self.agent = DataAgent()
+
+    def test_loadFromCSV(self):
+        self.agent.connectTo(['database'], timezone=pytz.utc, level='info')
+        timestamps = pd.date_range(self.start, self.end, freq=self.offset)
+        quotes = self.agent.load_from_csv(self.tickers, index=timestamps,
+                                          fields=self.fields, verbose=True)
 
     def test_connectToRemote(self):
         ''' DataAgent sources controller, make up connections with their initialisations '''
-        self.simple_agent.connectTo(['remote'], timezone=pytz.utc, level='info')
-        self.assertTrue(self.simple_agent.connected['remote'])
+        self.agent.connectTo(['remote'], timezone=pytz.utc, level='info')
+        self.assertTrue(self.agent.connected['remote'])
 
     def test_connectToDB(self):
-        self.simple_agent.connectTo(['database'], db_name='stocks.db')
-        self.assertTrue(self.simple_agent.connected['database'])
+        self.agent.connectTo(['database'], db_name='stocks.db')
+        self.assertTrue(self.agent.connected['database'])
 
     def test_getQuotes_Index(self):
         timestamp = pd.date_range(self.start, self.end, freq=self.offset)
-        self.simple_agent.connectTo(['remote', 'database'], db_name='stocks.db',
+        self.agent.connectTo(['remote', 'database'], db_name='stocks.db',
                                     lvl='critical')
-        quotes = self.simple_agent.getQuotes(
+        quotes = self.agent.getQuotes(
                 self.tickers,
                 self.fields,
                 index=timestamp,
@@ -55,8 +61,8 @@ class test_DataAgent(unittest.TestCase):
         self.assertTrue(isinstance(quotes[self.tickers[0]][self.fields[0]][5], float))
 
     def test_getQuotes_Dates(self):
-        self.simple_agent.connectTo(['remote', 'database'], db_name='stocks.db', lvl='critical')
-        quotes = self.simple_agent.getQuotes(
+        self.agent.connectTo(['remote', 'database'], db_name='stocks.db', lvl='critical')
+        quotes = self.agent.getQuotes(
                 self.tickers,
                 self.fields,
                 start=self.start,
@@ -71,12 +77,12 @@ class test_DataAgent(unittest.TestCase):
         pass
 
     def test_help(self):
-        self.simple_agent.help('test')
+        self.agent.help('test')
 
     def tearDown(self):
-        if self.simple_agent.connected['database']:
+        if self.agent.connected['database']:
             print('Closing database')
-            self.simple_agent.db.close(commit=True)
+            self.agent.db.close(commit=True)
     #TODO A datetime/timestamp handler, monitor ? inhereting from functions in utils
 
 

@@ -6,6 +6,10 @@ import pytz
 
 import pandas as pd
 from pandas import DataFrame, Panel
+import numpy as np
+
+import qstkutil.qsdateutil as du
+import qstkutil.DataAccess as da
 
 sys.path.append(str(os.environ['QTRADE']))
 from pyTrade.utils.LogSubsystem import LogSubsystem
@@ -79,7 +83,7 @@ class DataAgent(object):
         if not isinstance(db_index, pd.Index):
             self._logger.info('No quotes stored in database.')
             return DataFrame(), request_idx
-        elif db_index.freq > request_idx.freq:
+        elif db_index.freq > request_idx.freq and not db_index.freq == request_idx.freq:
             self._logger.info('Superior asked frequency,\
                     dropping and downloading along whole timestamp')
             return DataFrame(), request_idx
@@ -95,12 +99,17 @@ class DataAgent(object):
                     db_index = pd.date_range(db_index[0] - pd.datetools.relativedelta(hours=db_index[0].hour),
                             db_index[-1] - pd.datetools.relativedelta(hours=db_index[0].hour), freq=db_index.freq)
                 intersect = db_index & request_idx
-                idx_to_get = pd.date_range(self.tz.localize(intersect[0] - request_idx.freq),
+                #start_to_get = intersect[0] - request_idx.freq
+                #if not start_to_get.tzinfo:
+                    #self.tz.localize(start_to_get)
+                #idx_to_get = pd.date_range(start_to_get, intersect[-1], freq=request_idx.freq)
+                idx_to_get = pd.date_range(intersect[0] - request_idx.freq,
                                            intersect[-1], freq=request_idx.freq)
                 if idx_to_get is None or idx_to_get.size == 0:
                     self._logger.info('No quotes available in database.')
                     return DataFrame(), request_idx
                 #NOTE try union minus intersect
+                #TODO getQuotesDB and others take care of dataframe cast and fields cut
                 if db_index[0] > request_idx[0]:
                     idx_to_dl = request_idx[request_idx < idx_to_get[0]]
                 else:
@@ -128,49 +137,54 @@ class DataAgent(object):
                kwargs.markets
         @return a panel/dataframe/timeserie like close = data['google']['close'][date]
         '''
+        ''' ----------------------------------------------------------------------------'''
+        ''' ----------------------------------  Index check and build  -----------------'''
         #FIXME reversed dataframe could be store in database ?
-        save = kwargs.get('save', False)
+        df      = dict()
+        save    = kwargs.get('save', False)
         reverse = kwargs.get('reverse', False)
         markets = kwargs.get('markets', None)
         symbols = kwargs.get('symbols', None)
-        if not isinstance(index, pd.tseries.index.DatetimeIndex):
+        if not isinstance(index, pd.DatetimeIndex):
             index = self._makeIndex(kwargs)
             if not isinstance(index, pd.DatetimeIndex):
                 return None
         if not index.tzinfo:
             index = index.tz_localize(self.tz)
+        assert (index.tzinfo)
 
-        assert (index.tzinfo is not None)
-        assert (isinstance(index, pd.DatetimeIndex))
-
-        df = dict()
         if self.connected['database']:
             symbols, markets = self.db.getTickersCodes(tickers)
         elif not symbols or not markets:
             self._logger.error('** No database neither informations provided')
             return None
+
         for ticker in tickers:
             if not ticker in symbols:
                 self._logger.warning('No code availablefor {}, going on'.format(ticker))
                 continue
             self._logger.info('Processing {} stock'.format(ticker))
 
+            ''' ----------------------------------------------------------------------------'''
+            ''' ----------------------------------------------  Database check  ------------'''
             db_df, index = self._inspectDB(ticker, index, fields)
             assert (index.tzinfo)
             if not db_df.empty:
                 assert (db_df.index.tzinfo)
                 if index.size == 0:
-                #if db_df.index.equals(index):
-                    save = False
+                    save       = False
                     df[ticker] = db_df
                     continue
 
+            ''' ----------------------------------------------------------------------------'''
+            ''' ----------------------------------------------  Remote retrievers  ---------'''
             self._logger.info('Downloading missing data, from {} to {}'
                               .format(index[0], index[-1]))
-            # Running the appropriate retriever
-            if (index[1] - index[0]) < pd.datetools.timedelta(days=1):
-                self._logger.info('Fetching minutely quotes ({})'
-                                  .format(index.freq))
+            #FIXME No index.freq for comaprison?
+            #if (index[1] - index[0]) < pd.datetools.timedelta(days=1):
+            if index.freq > pd.datetools.BDay():
+                self._logger.info('Fetching minutely quotes ({})'.format(index.freq))
+                #TODO truncate in the method
                 network_df = DataFrame(self.remote.getMinutelyQuotes(
                                        symbols[ticker], markets[ticker], index),
                                        columns=fields).truncate(after=index[-1])
@@ -178,6 +192,8 @@ class DataAgent(object):
                 network_df = DataFrame(self.remote.getHistoricalQuotes(
                                        symbols[ticker], index), columns=fields)
 
+            ''' ----------------------------------------------------------------------------'''
+            ''' ----------------------------------------------  Merging  -------------------'''
             if not db_df.empty:
                 self._logger.debug('Checking db index ({}) vs network index ({})'
                                    .format(db_df.index, network_df.index))
@@ -188,6 +204,8 @@ class DataAgent(object):
             else:
                 df[ticker] = network_df
 
+        ''' ----------------------------------------------------------------------------'''
+        ''' ----------------------------------------------  Manage final panel  --------'''
         data = Panel.from_dict(df, intersect=True)
         if save:
             #TODO: accumulation and compression of data issue, drop always true at the moment
@@ -215,6 +233,35 @@ class DataAgent(object):
             delta = pd.datetools.Minute(10)
         self._logger.info('Automatic delta fixing: {}'.format(delta))
         return delta
+
+    def load_from_csv(self, tickers, index, fields=Fields.QUOTES, **kwargs):
+        ''' Return a quote panel '''
+        #TODO Replace adj_close with actual_close
+        #TODO Add reindex methods, and start, end, delta parameters
+        reverse = kwargs.get('reverse', False)
+        verbose = kwargs.get('verbose', False)
+        if self.connected['database']:
+            symbols, markets = self.db.getTickersCodes(tickers)
+            sym_array = [symbols[t] for t in tickers]
+        elif not symbols:
+            self._logger.error('** No database neither informations provided')
+            return None
+        timestamps = du.getNYSEdays(index[0], index[-1], dt.timedelta(hours=16))
+        csv = da.DataAccess('Yahoo')
+        df = csv.get_data(timestamps, sym_array, fields, verbose=verbose)
+        quotes_dict = dict()
+        for ticker in tickers:
+            j = 0
+            quotes_dict[ticker] = dict()
+            for field in fields:
+                serie = df[j][symbols[ticker]].groupby(index.freq.rollforward).aggregate(np.mean)
+                #TODO add a function parameter to decide what to do about it
+                clean_serie = serie.fillna(method='pad')
+                quotes_dict[ticker][field] = clean_serie
+                j += 1
+        if reverse:
+            return Panel.from_dict(quotes_dict, intersect=True, orient='minor')
+        return Panel.from_dict(quotes_dict, intersect=True)
 
     def help(self, category):
         #TODO: stuff to know like fields and functions
