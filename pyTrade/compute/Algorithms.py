@@ -6,7 +6,6 @@ from zipline.transforms import MovingAverage
 from zipline.transforms import MovingVWAP
 from zipline.transforms import  BatchTransform, batch_transform
 
-
 class BuyAndHold(TradingAlgorithm):
     '''Simpliest algorithm ever, just buy a stock at the first frame'''
     def initialize(self, properties):
@@ -19,8 +18,6 @@ class BuyAndHold(TradingAlgorithm):
             #TODO Find or implement logging system
             print('Starting cach = {}'.format(self.portfolio.starting_cash))
             for ticker in data:
-                print self.portfolio['cash']
-                print data[ticker].price
                 stocks_n = round(self.portfolio['cash'] / data[ticker].price)
                 print('Buying {} {} stocks ({})'.format(stocks_n, ticker, data[ticker].price))
                 self.order(ticker, stocks_n)
@@ -84,7 +81,7 @@ class DualMovingAverage(TradingAlgorithm):
                 self.invested = True
             elif short_mavg < long_mavg and self.invested:
                 if self.debug:
-                    print('Selling {} stocks'.format(self.buy_on_event))
+                    print('Selling {} stocks'.format(self.sell_on_event))
                 self.order(ticker, -self.sell_on_event)
                 self.invested = False
 
@@ -298,13 +295,13 @@ class MovingAverageCrossover(TradingAlgorithm):
                 self.breakoutFilter += 1
 
 
-class Backtester(object):
+class BacktesterEngine(object):
     ''' Factory class wrapping zipline Backtester, returns the requested algo '''
     algos = {'DualMA': DualMovingAverage, 'Momentum': Momentum, \
             'VWAP': VolumeWeightAveragePrice, 'BuyAndHold': BuyAndHold}
 
     def __new__(self, algo, params):
-        if algo not in Backtester.algos:
+        if algo not in BacktesterEngine.algos:
             raise NotImplementedError('Algorithm {} not available or implemented'.format(algo))
         print('[Debug] Algorithm {} available, getting a reference to it.'.format(algo))
-        return Backtester.algos[algo](params)
+        return BacktesterEngine.algos[algo](params)

@@ -33,3 +33,17 @@ testClient <- function()
 
     close.socket(socket)
 }
+
+remoteNodeWorker <- function(request, host='localhost', port=2000, print=TRUE)
+{
+    socket <- make.socket(host, port)
+    on.exit(close.socket(socket))
+    output <- read.socket(socket)
+    if (print) print(output)
+    # Check here if are indeed correctly connected
+    output <- remoteCmd(socket, toJSON(request), print=print)
+    print(output)
+    close.socket(socket)
+    return(output)
+}
+

@@ -9,7 +9,7 @@ if (!require(quantmod)) {
 library(shiny)
 
 
-source('../../clientInterface.R')
+source('../clientInterface.R')
 source('bt_analyser.R')
 
 
@@ -34,32 +34,32 @@ shinyServer(function(input, output)
     # include outliers if requested
     output$performance <- reactivePlot(function() 
     {
-        data <- getTradeData(name=input$table)
+        data <- getTradeData(name='test')
         charts.PerformanceSummary(data[, c('algo_rets', 'bench_rets')], colorset=rich6equal, main='Performance of the strategie')
     })
 
     output$distribution <- reactivePlot(function() 
     {
-        data <- getTradeData(name=input$table)
+        data <- getTradeData(name='test')
         drawDistribution(data[, 'algo_rets'])
     })
 
     output$relations <- reactivePlot(function() 
     {
-        data <- getTradeData(name=input$table)
+        data <- getTradeData(name='test')
         drawRelations(data[, c('algo_rets', 'bench_rets' )])
     })
 
     # Generate a summary stats table of the dataset
     output$stats <- reactiveTable(function() 
     {
-        data <- getTradeData(name=input$table)
+        data <- getTradeData(name='test')
         t(table.Stats(data[, 'algo_rets']))
     })
 
     output$drawdown <- reactiveTable(function()
     {
-        data <- getTradeData(name=input$table)
+        data <- getTradeData(name='test')
         #table.DownsideRisk(data[, 'algo_rets'], Rf=.03/12)
         #table.Drawdowns(data[, 'algo_rets', drop=F])
         #table.CalendarReturns(data[, c('algo_rets', 'bench_rets')], digit=2)
@@ -68,14 +68,28 @@ shinyServer(function(input, output)
 
     output$correlation <- reactiveTable(function() 
     {
-        data <- getTradeData(name=input$table)
+        data <- getTradeData(name='test')
         table.Correlation(data[, 'algo_rets'], data[, 'bench_rets'], legend.loc='lowerleft')
     })
 
-    output$debug <- reactiveText(function() 
+    output$request <- reactivePrint(function() 
     {
-        #remoteExecute(input$command, port=1234)
-        print(input$table)
-        input$table
+        arguments <- list(ticker   = list(prefix = '--ticker'    , value = input$ticker),
+                         algorithm = list(prefix = '--algorithm' , value = input$strategie),
+                         delta     = list(prefix = '--delta'     , value = 1),
+                         start     = list(prefix = '--start'     , value = paste('30/1/', min(input$dateSlider), sep='')),
+                         end       = list(prefix = '--end'       , value = paste('30/7/', max(input$dateSlider), sep='')))
+                         
+        configuration <- list(short_window  = round(input$shortW * input$longW),
+                       long_window   = input$longW,
+                       buy_on_event  = 120,
+                       sell_on_event = 80)
+
+        request <- list(command   = 'run',
+                       script     = 'pocoVersion/backtester/backtest.py',
+                       monitoring = 0,
+                       args       = arguments,
+                       config     = configuration)
+        remoteNodeWorker(request, port=8124, print=T)
     })
 })
