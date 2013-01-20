@@ -1,7 +1,7 @@
 // Use of the cluster plugin
 // colors, socket.io, jade, stylus, express, websocket
 
-function run_worker(request_txt)
+function run_worker(request_txt, socket)
 {
     var request = JSON.parse(request_txt);
 
@@ -17,43 +17,44 @@ function run_worker(request_txt)
         child = spawn(script, script_args);
 
     child.stdout.on('data', function (data) {
-        console.log('stdout: ' + data);
+        console.log('[Node:worker:stdout] ' + data);
     });
 
     child.stderr.on('data', function (data) {
-        console.log('stderr: ' + data);
+        console.log('[Node:worker:stderr] ' + data);
     });
 
     child.on('exit', function (code, signal) {
         if (code === 0) {
-            console.log('Node: Child exited normaly ('+code+')')
+            console.log('[Node:worker] Child exited normaly ('+code+')')
         } else {
-            console.log('Node: Child process terminated with code ' + code + ', due to receipt of signal ' + signal);
+            console.log('[Node:worker] Child process terminated with code ' + code + ', signal: ' + signal);
         }
         child.stdin.end()
         child = undefined
+        socket.write('done:' + code)
     });
 
     process.on("SIGTERM", function() {
-        console.log("Parent SIGTERM detected");
+        console.log("[Node:worker] Parent SIGTERM detected");
         process.exit();
     });
 
     process.on("exit", function() {
         if (child != undefined) {
-            console.log("Kill child");
+            console.log("[Node:worker] Kill child");
             child.kill('SIGHUP');
         }
     });
 
     process.on('uncaughtException', function (err) {
-        console.error('An uncaught error occurred!');
+        console.error('[Node:worker] An uncaught error occurred!');
         console.error(err.stack);
     });
 
 
     console.log(process.pid + ' - ' + process.title + ': Spawned child pid: ' + child.pid);
-    console.log('Running worker: ' + script)
+    console.log('[Node:worker] Running worker: ' + script)
     child.stdin.write(JSON.stringify(request.config) + '\n')
 }
 

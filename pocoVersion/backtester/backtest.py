@@ -92,13 +92,13 @@ class Simulation(object):
 
     def _get_index(self, perfs):
         #NOTE No frequency infos or just period number ?
-        start = pytz.utc.localize(pd.datetime.strptime(perfs[0]['period_label'] + '-30', '%Y-%m-%d'))
-        end = pytz.utc.localize(pd.datetime.strptime(perfs[-1]['period_label'] + '-30', '%Y-%m-%d'))
-        return pd.date_range(start, end, freq=pd.datetools.BMonthEnd())
+        start = pytz.utc.localize(pd.datetime.strptime(perfs[0]['period_label'] + '-01', '%Y-%m-%d'))
+        end = pytz.utc.localize(pd.datetime.strptime(perfs[-1]['period_label'] + '-01', '%Y-%m-%d'))
+        return pd.date_range(start, end, freq=pd.datetools.BMonthBegin())
 
     def _extract_perf(self, perfs, field):
         index = self._get_index(perfs)
-        values = [perfs[i][field] for i in range(len(perfs) - 1)]
+        values = [perfs[i][field] for i in range(len(perfs))]
         return pd.Series(values, index=index)
 
     #TODO Move everything toward QuantDB
@@ -155,20 +155,19 @@ if __name__ == '__main__':
         - From command line + json configuration file
         - From python server, command args as dict, others as json string
     '''
-    config_str = raw_input()
+    #config_str = raw_input('config > ')
+    config_str = '{"short_window": 100, "long_window": 200, "buy_on_event": 120, "sell_on_event": 80}'
     try:
         config = json.loads(config_str)
-        print('Config: {}'.format(config_str))
     except:
         print('** Error loading json configuration.')
-    params = {'short_window': 200, 'long_window': 400,
-              'buy_on_event': 120, 'sell_on_event': 80}
+        sys.exit(1)
 
     engine = Simulation(access=['database'], db_name=args.database, lvl=args.level)
     strategie, results = engine.runBacktest(args, config)
     '''---------------------------------------------------------------------------------------'''
 
-    print('-----------------------------------------------------------------    Results   ----')
+    '''-----------------------------------------------------------------    Results   ----'''
     engine._log.info('Last day result returns: {}'.format(results.returns[-1]))
     engine._log.info('Portfolio returns: {}'.format(strategie.portfolio['returns']))
     # Benchmark returns, see zipline/data/benchmark.py (s&p500, implement others and change to parametric calls)
@@ -182,13 +181,13 @@ if __name__ == '__main__':
     test = engine.readDFFromDB(table)
     #pdb.set_trace()
 
-    results.portfolio_value.plot()
-    results.returns.plot()
+    #results.portfolio_value.plot()
+    #results.returns.plot()
     #data['short'] = strategie.short_mavgs
     #data['long'] = strategie.long_mavgs
     #data[['google', 'short', 'long']].plot()
-    plt.legend(loc=0)
-    plt.show()
+    #plt.legend(loc=0)
+    #plt.show()
 
 
 ''' Notes

@@ -1,15 +1,17 @@
 #suppressPackageStartupMessages(library("zoo"))
-if (!require("RSQLite")) {
+if (!suppressPackageStartupMessages(require("RSQLite"))) {
     stop('This app needs sqlite database access. To install it, run "install.packages("RSQLite")".)')
 }
 
-#if (!require(PerformanceAnalytics)) {
-  #stop("This app requires the PerformanceAnalytics package. To install it, run 'install.packages(\"PerformanceAnalytics\")'.\n")
-#}
-#if (!require(quantmod)) {
-  #stop("This app requires the quantmod package. To install it, run 'install.packages(\"quantmod\")'.\n")
-#}
+if (!suppressPackageStartupMessages(require(PerformanceAnalytics))) {
+    stop("This app requires the PerformanceAnalytics package. To install it, run 'install.packages(\"PerformanceAnalytics\")'.\n")
+}
 
+if (!suppressPackageStartupMessages(require(quantmod))) {
+    stop("This app requires the quantmod package. To install it, run 'install.packages(\"quantmod\")'.\n")
+}
+
+source('../RClientInterface.R')
 
 ## =========================    Preparing data    ========================== ##
 getTradeData <- function(name='test', database='stocks.db', debug=FALSE)
@@ -100,3 +102,5 @@ test <- function()
     quit(save="no", status=0)
 }
 
+data <- getTradeData(name='test')
+#data <- NULL

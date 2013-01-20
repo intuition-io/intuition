@@ -16,18 +16,10 @@ class BuyAndHold(TradingAlgorithm):
     def handle_data(self, data):
         if self.count == 2:
             #TODO Find or implement logging system
-            print('Starting cach = {}'.format(self.portfolio.starting_cash))
             for ticker in data:
                 stocks_n = round(self.portfolio['cash'] / data[ticker].price)
-                print('Buying {} {} stocks ({})'.format(stocks_n, ticker, data[ticker].price))
                 self.order(ticker, stocks_n)
 
-        #if self.count == len(data):
-            #print self.portfolio
-            #for ticker in data:
-                #print('Selling {} {} stocks ({})'.format(
-                        #self.portfolio.positions[ticker].amount, ticker, data[ticker].price))
-                #self.order(ticker, -self.portfolio.positions[ticker].amount)
         self.count += 1
 
 
@@ -49,10 +41,6 @@ class DualMovingAverage(TradingAlgorithm):
         #self.capital_base = properties.get('capital_base', 1000)
         #TODO Change to args dict
         self.debug = properties.get('debug', True)
-
-        print('Dual Moving average parameters parameters')
-        print('Short: {}, long: {}, amount: {}'.format(short_window, long_window, self.amount))
-        print('Buy number: {}, sell number: {}'.format(self.buy_on_event, self.sell_on_event))
 
         # Add 2 mavg transforms, one with a long window, one
         # with a short window.

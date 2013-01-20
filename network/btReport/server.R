@@ -1,78 +1,10 @@
-if (!require(PerformanceAnalytics)) {
-    stop("This app requires the PerformanceAnalytics package. To install it, run 'install.packages(\"PerformanceAnalytics\")'.\n")
-}
-
-if (!require(quantmod)) {
-    stop("This app requires the quantmod package. To install it, run 'install.packages(\"quantmod\")'.\n")
-}
-
-library(shiny)
-
-
-source('../clientInterface.R')
-source('bt_analyser.R')
-
-
-# Download data for a stock, if needed
-remoteExecute  <- function(cmd, host='localhost', port=2000)
-{
-    #FIXME First run quit annying
-    cmds = unlist(strsplit(cmd, ' '))
-    socket  <- make.socket(host, port)
-    on.exit(close.socket(socket))
-    output  <- read.socket(socket)
-    answer <- remoteCmd(socket, 'state', print=FALSE)
-    answer <- remoteJsonCmd(socket, 'user', cmd, print=FALSE)
-    close.socket(socket)
-}
-
-
 # Define server logic required to summarize and view the selected dataset
+
 shinyServer(function(input, output) 
 {
     # Generate a plot of the system and buy/hold benchmark given nmonths parameter
     # include outliers if requested
-    output$performance <- reactivePlot(function() 
-    {
-        data <- getTradeData(name='test')
-        charts.PerformanceSummary(data[, c('algo_rets', 'bench_rets')], colorset=rich6equal, main='Performance of the strategie')
-    })
-
-    output$distribution <- reactivePlot(function() 
-    {
-        data <- getTradeData(name='test')
-        drawDistribution(data[, 'algo_rets'])
-    })
-
-    output$relations <- reactivePlot(function() 
-    {
-        data <- getTradeData(name='test')
-        drawRelations(data[, c('algo_rets', 'bench_rets' )])
-    })
-
-    # Generate a summary stats table of the dataset
-    output$stats <- reactiveTable(function() 
-    {
-        data <- getTradeData(name='test')
-        t(table.Stats(data[, 'algo_rets']))
-    })
-
-    output$drawdown <- reactiveTable(function()
-    {
-        data <- getTradeData(name='test')
-        #table.DownsideRisk(data[, 'algo_rets'], Rf=.03/12)
-        #table.Drawdowns(data[, 'algo_rets', drop=F])
-        #table.CalendarReturns(data[, c('algo_rets', 'bench_rets')], digit=2)
-        t(table.DownsideRisk(data[, 'algo_rets'], Rf=1.86))
-    })
-
-    output$correlation <- reactiveTable(function() 
-    {
-        data <- getTradeData(name='test')
-        table.Correlation(data[, 'algo_rets'], data[, 'bench_rets'], legend.loc='lowerleft')
-    })
-
-    output$request <- reactivePrint(function() 
+    compute <- reactive(function() 
     {
         arguments <- list(ticker   = list(prefix = '--ticker'    , value = input$ticker),
                          algorithm = list(prefix = '--algorithm' , value = input$strategie),
@@ -90,6 +22,55 @@ shinyServer(function(input, output)
                        monitoring = 0,
                        args       = arguments,
                        config     = configuration)
-        remoteNodeWorker(request, port=8124, print=T)
+        if ( input$done )
+        {
+            remoteNodeWorker(request, port=8124, debug=F)
+        } 
+        getTradeData(name=input$dataTable)
     })
+
+    output$performance <- reactivePlot(function() 
+    {
+        charts.PerformanceSummary(compute()[, c('algo_rets', 'bench_rets')], colorset=rich6equal, main='Performance of the strategie')
+    })
+
+    output$distribution <- reactivePlot(function() 
+    {
+        drawDistribution(compute()[, 'algo_rets'])
+    })
+
+    output$relations <- reactivePlot(function() 
+    {
+        drawRelations(compute()[, c('algo_rets', 'bench_rets' )])
+    })
+
+    ## Generate a summary stats table of the dataset
+    output$stats <- reactiveTable(function() 
+    {
+        t(table.Stats(compute()[, 'algo_rets']))
+    })
+
+    output$drawdown <- reactiveTable(function()
+    {
+        #table.DownsideRisk(data[, 'algo_rets'], Rf=.03/12)
+        #table.Drawdowns(data[, 'algo_rets', drop=F])
+        #table.CalendarReturns(data[, c('algo_rets', 'bench_rets')], digit=2)
+        t(table.DownsideRisk(compute()[, 'algo_rets'], Rf=1.86))
+    })
+
+    output$correlation <- reactiveTable(function() 
+    {
+        table.Correlation(compute()[, 'algo_rets'], compute()[, 'bench_rets'], legend.loc='lowerleft')
+    })
+
+    output$results <- reactivePrint(function()
+    {
+        summary(compute())
+    })
+
+    output$outhead <- reactivePrint(function()
+    {
+        tail(compute())
+    })
+
 })
