@@ -5,7 +5,8 @@ import os
 
 import sqlite3 as sql
 import numpy as np
-from pandas import DataFrame
+import pandas as pd
+import pandas.io.sql as pd_sql
 
 sys.path.append(str(os.environ['QTRADEPYTHON']))
 from utils.DatabaseSubsystem import SQLiteWrapper
@@ -23,12 +24,12 @@ class QuantSQLite(SQLiteWrapper):
                  logger=None, lvl='debug'):
         self.tz = timezone
         if logger is None:
-            self._logger = LogSubsystem(self.__class__.__name__, lvl).getLog()
+            self._log = LogSubsystem(self.__class__.__name__, lvl).getLog()
         else:
-            self._logger = logger
+            self._log = logger
         dbRootDir = os.environ['QTRADEDATA']
         db_file = '/'.join((dbRootDir, db_file))
-        SQLiteWrapper.__init__(self, db_file, self._logger)
+        SQLiteWrapper.__init__(self, db_file, self._log)
 
     #TODO: code that !
     @deprecated
@@ -38,7 +39,7 @@ class QuantSQLite(SQLiteWrapper):
     def getTickersCodes(self, tickers):
         ''' simple function often used '''
         if self._db_name.find('stocks.db') == -1:
-            self._logger.error('** Bad DB, You are not connected to stocks.db')
+            self._log.error('** Bad DB, You are not connected to stocks.db')
             return None, None
         symbols = dict()
         markets = dict()
@@ -48,7 +49,7 @@ class QuantSQLite(SQLiteWrapper):
             selector = {'ticker': t}
             res = self.getData(table, selector, fields)
             if res is None:
-                self._logger.warning('No references found in database.')
+                self._log.warning('No references found in database.')
                 continue
             symbols[t] = res[fields[0]]
             markets[t] = res[fields[1]]
@@ -61,10 +62,10 @@ class QuantSQLite(SQLiteWrapper):
                        like quotes[companies][fields]
         '''
         #TODO: maybe a general update function ?
-        self._logger.info('Updating database...')
+        self._log.info('Updating database...')
         #TODO: Handling data accumulation and compression, right now just drop
         for name, frame in quotes.iteritems():
-            self._logger.info('saving {} quotes'.format(name))
+            self._log.info('saving {} quotes'.format(name))
             for item in fields:
                 if item not in frame.columns:
                     frame[item] = np.empty(len(frame.index))
@@ -91,7 +92,7 @@ class QuantSQLite(SQLiteWrapper):
                     self.execute('insert into ' + name +
                                  ' values(?, ?, ?, ?, ?, ?, ?)', raw)
             except:
-                self._logger.error('While insering new values in database')
+                self._log.error('While insering new values in database')
                 return 1
         return 0
 
@@ -103,13 +104,13 @@ class QuantSQLite(SQLiteWrapper):
         '''
         assert isinstance(ticker, str)
         if not self.isTableExists(ticker):
-            self._logger.warning('Table does not exist')
+            self._log.warning('Table does not exist')
             return None, None, None
-        self._logger.info('Getting index quotes properties.')
+        self._log.info('Getting index quotes properties.')
         try:
             dates = self.execute('select date from {}'.format(ticker))
         except sql.Error, e:
-            self._logger.error('** While getting index: {}'.format(e.args[0]))
+            self._log.error('** While getting index: {}'.format(e.args[0]))
             return None
         if len(dates) < 2 or not isinstance(dates[0][0], int):
             return None
@@ -117,7 +118,7 @@ class QuantSQLite(SQLiteWrapper):
             selector = {'date': dates[0][0]}
             res = self.getData(ticker, selector, fields)
             if not res:
-                self._logger.error('** No data index found in database about {}'.format(ticker))
+                self._log.error('** No data index found in database about {}'.format(ticker))
                 return None
             #FIXME res is sometime a float, sometime a list
             for value in res:
@@ -128,7 +129,7 @@ class QuantSQLite(SQLiteWrapper):
             oldest_date = epochToDate(dates[0][0], self.tz)
             latest_date = epochToDate(dates[-1][0], self.tz)
             freq = epochToDate(dates[1][0], self.tz) - oldest_date
-            self._logger.debug('Data from {} to {} with an interval \
+            self._log.debug('Data from {} to {} with an interval \
                                 of {} days, {}mins'
                 .format(oldest_date, latest_date,
                         freq.days, freq.seconds / 60))
@@ -149,24 +150,51 @@ class QuantSQLite(SQLiteWrapper):
         assert (index.size > 0)
         if not index.tzinfo:
             index = index.tz_localize(self.tz)
-        self._logger.info('Retrieving {} quotes from database'.format(ticker))
+        self._log.info('Retrieving {} quotes from database'.format(ticker))
         db_dates = self.getDataIndex(ticker, summary=False)
         if isinstance(db_dates, pd.DatetimeIndex):
             #NOTE: Something more generic ?
-            self._logger.debug('Query: select {} from {}'
+            self._log.debug('Query: select {} from {}'
                 .format(' ,'.join(Fields.QUOTES), ticker))
             #FIXME cut the last element because of indexing
             res = self.execute('select {} from {}'
-                    .format(' ,'.join(Fields.QUOTES), ticker))
+                               .format(' ,'.join(Fields.QUOTES), ticker))
             #TODO Handle dirty missed
             print('Res: {}, dates: {}'.format(len(res), db_dates.size))
             pdb.set_trace()
             assert(len(res) == db_dates.size)
-            df = DataFrame.from_records(res, index=db_dates,
-                                        columns=Fields.QUOTES)
+            df = pd.DataFrame.from_records(res, index=db_dates,
+                                           columns=Fields.QUOTES)
             return reIndexDF(df, start=index[0], end=index[-1],
                              delta=index.freq)
         return None
+
+    def fromCSVtoSQL(self, csv_file):
+        data = pd.read_table(csv_file)
+        self.saveDFToDB(data)
+
+    def readDFFromDB(self, table_name, limit=None):
+        if not limit:
+            df = pd_sql.read_frame('select * from %s' % table_name, self._connection)
+        else:
+            df = pd_sql.read_frame('select * from %s limit %s' % (table_name, limit), self._connection)
+        try:
+            df.index = pd.DatetimeIndex(df['date'])
+            df.pop('date')
+        except:
+            self._log.error('** Creating dataframe index from sqlite read')
+        return df
+
+    def saveDFToDB(self, results, table_name=None):
+        #NOTE Always drop ?
+        if not table_name:
+            table_name = '_'.join(('dataframe', dt.datetime.strftime(dt.datetime.now(), format='%d%m%Y')))
+        self._log.info('Dropping previous table')
+        self.execute('drop table if exists %s' % table_name)
+        #self._log.info('Saving results (id:{})'.format(self.monthly_perfs['created']))
+        results['date'] = results.index
+        pd_sql.write_frame(results, table_name, self._connection)
+        return table_name
 
 
 #TODO: Same for google json and xml retrievig

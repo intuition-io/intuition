@@ -1,0 +1,47 @@
+Openstack: hosting and distributed platform
+    http://wiki.openstack.org/StartingPage
+
+Econometric tools, R:
+    http://braverock.com/brian/R/PerformanceAnalytics/html/PerformanceAnalytics-package.html
+
+4 parts article about portfolio optimization:
+    http://statsadventure.blogspot.fr/2011/12/portfolio-optimization-in-r-part-1.html
+
+Coursera dude, some repos about comput. Invest.
+    https://github.com/thinklancer
+
+OpenQuant, strategie lab:
+    https://github.com/maihde/quant
+    under res/quant
+
+High performance trading and execution engine:
+    https://github.com/danielflam/Mervin
+
+Simulation and live trading, but seems obscure:
+    https://github.com/kpnolan/stock_db_capture
+
+Javascript development:
+    boostrap, express, jade, stylus, socket.io, , coffeescript
+
+Node.js web framework, real time stuff:
+    https://github.com/socketstream/socketstream
+
+
+
+
+
+Automated trading in r, recommended with socketstream or std:
+    https://github.com/yiransheng/rTrader
+    under res/rTrader
+
+std, for shaky trading desk. Real time:
+    https://github.com/yiransheng/std
+    under res/fetcehr/std
+
+The above project is a fork of quote-stream:
+    https://github.com/nodesocket/quote-stream
+    under res/fetcher/quote-stream
+
+SQL Database environment for stocks:
+    https://github.com/hamiltonkibbe/stocks
+    under res/stocks
