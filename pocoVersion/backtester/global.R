@@ -127,5 +127,8 @@ test <- function()
     quit(save="no", status=0)
 }
 
+# Some use 3months treasury bound
+# It has to match the returns period
+Rf <- .04/12  # My bank CD
 #data <- getTradeData(name='test')
 #data <- NULL

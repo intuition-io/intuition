@@ -8,24 +8,38 @@ sys.path.append(str(os.environ['ZIPLINE']))
 from zipline.algorithm import TradingAlgorithm
 from zipline.transforms import MovingAverage
 #from zipline.transforms import MovingVWAP
-from zipline.transforms import batch_transform
+#from zipline.transforms import batch_transform
+
+sys.path.append(str(os.environ['QTRADE']))
+from pyTrade.ai.manager import PortfolioManager
 
 import ipdb as pdb
 
 
+#TODO Should handle in parameter all of the set_*
 class BuyAndHold(TradingAlgorithm):
     '''Simpliest algorithm ever, just buy a stock at the first frame'''
     def initialize(self, properties):
         self.count = 0
-        # Otherwise, call the TradingAlgo __init__(capital_base=1000) himself
+        self.manager = PortfolioManager(self.commission.cost)
         #self.capital_base = properties.get('amount', 1000)
 
     def handle_data(self, data):
+        ''' ----------------------------------------------------------    Init   --'''
+        self.frame_count += 1
+        self.manager.update(self.portfolio)
+        signals = dict()
+
+        ''' ----------------------------------------------------------    Scan   --'''
         if self.count == 2:
-            #TODO Find or implement logging system
             for ticker in data:
-                stocks_n = round(self.portfolio['cash'] / data[ticker].price)
-                self.order(ticker, stocks_n)
+                signals[ticker] = data[ticker].price
+
+        ''' ----------------------------------------------------------   Orders  --'''
+        if signals:
+            orderBook = self.manager.trade_signals_handler(signals)
+            for order in orderBook:
+                self.order(order, orderBook[order])
         self.count += 1
 
 
@@ -40,10 +54,8 @@ class DualMovingAverage(TradingAlgorithm):
         short_window = properties.get('short_window', 200)
         long_window = properties.get('long_window', 400)
         self.amount = properties.get('amount', 10000)
-        self.buy_on_event = properties.get('buy_on_event', 100)
-        self.sell_on_event = properties.get('sell_on_event', 100)
+        self.intersect = properties.get('intersect', 0)
         #self.capital_base = properties.get('capital_base', 1000)
-        #TODO Change to args dict
         self.debug = properties.get('debug', True)
 
         self.add_transform(MovingAverage, 'short_mavg', ['price'],
@@ -53,26 +65,41 @@ class DualMovingAverage(TradingAlgorithm):
                            window_length=long_window)
 
         # To keep track of whether we invested in the stock or not
-        self.invested = False
+        self.invested = {}
 
         self.short_mavgs = []
         self.long_mavgs = []
 
+        self.manager = PortfolioManager(self.commission.cost)
+
     def handle_data(self, data):
+        ''' ----------------------------------------------------------    Init   --'''
+        self.frame_count += 1
+        if (self.frame_count == 1):
+            for t in data:
+                self.invested[t] = False
+        self.manager.update(self.portfolio)
+        signals = dict()
+
+        ''' ----------------------------------------------------------    Scan   --'''
         for ticker in data:
             short_mavg = data[ticker].short_mavg['price']
             long_mavg = data[ticker].long_mavg['price']
-            if short_mavg > long_mavg and not self.invested:
+            if short_mavg - long_mavg > self.intersect and not self.invested[ticker]:
+                signals[ticker] = data[ticker].price
+                self.invested[ticker] = True
+            elif short_mavg - long_mavg < -self.intersect and self.invested[ticker]:
+                signals[ticker] = - data[ticker].price
+                self.invested[ticker] = False
+
+        ''' ----------------------------------------------------------   Orders  --'''
+        if signals:
+            orderBook = self.manager.trade_signals_handler(signals)
+            #pdb.set_trace()
+            for ticker in orderBook:
                 if self.debug:
-                    #TODO use self.logger (None right now)
-                    print('Buying {} stocks'.format(self.buy_on_event))
-                self.order(ticker, self.buy_on_event)
-                self.invested = True
-            elif short_mavg < long_mavg and self.invested:
-                if self.debug:
-                    print('Selling {} stocks'.format(self.sell_on_event))
-                self.order(ticker, -self.sell_on_event)
-                self.invested = False
+                    print('Ordering {} {} stocks'.format(ticker, orderBook[ticker]))
+                self.order(ticker, orderBook[ticker])
 
         # Save mavgs for later analysis.
         self.short_mavgs.append(short_mavg)

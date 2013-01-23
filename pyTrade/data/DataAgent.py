@@ -242,13 +242,12 @@ class DataAgent(object):
         verbose = kwargs.get('verbose', False)
         if self.connected['database']:
             symbols, markets = self.db.getTickersCodes(tickers)
-            sym_array = [symbols[t] for t in tickers]
         elif not symbols:
             self._logger.error('** No database neither informations provided')
             return None
         timestamps = du.getNYSEdays(index[0], index[-1], dt.timedelta(hours=16))
         csv = da.DataAccess('Yahoo')
-        df = csv.get_data(timestamps, sym_array, fields, verbose=verbose)
+        df = csv.get_data(timestamps, symbols.values(), fields, verbose=verbose)
         quotes_dict = dict()
         for ticker in tickers:
             j = 0

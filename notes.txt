@@ -4,9 +4,6 @@ Openstack: hosting and distributed platform
 Econometric tools, R:
     http://braverock.com/brian/R/PerformanceAnalytics/html/PerformanceAnalytics-package.html
 
-4 parts article about portfolio optimization:
-    http://statsadventure.blogspot.fr/2011/12/portfolio-optimization-in-r-part-1.html
-
 Coursera dude, some repos about comput. Invest.
     https://github.com/thinklancer
 
@@ -45,3 +42,19 @@ The above project is a fork of quote-stream:
 SQL Database environment for stocks:
     https://github.com/hamiltonkibbe/stocks
     under res/stocks
+    tested once, problem with indicators, otherwise work !
+
+
+Portfolio optimization on r-bloggers:
+    http://www.r-bloggers.com/universal-portfolio-part-10/
+    http://www.r-bloggers.com/expected-shortfall-portfolio-optimization-in-r-using-nloptr/
+    http://www.r-bloggers.com/portfolio-diversity/
+    http://www.r-bloggers.com/backtesting-asset-allocation-portfolios/
+    http://www.r-bloggers.com/adaptive-asset-allocation/
+    http://www.r-bloggers.com/portfolio-optimization-specify-constraints-with-gnu-mathprog-language/
+    http://www.r-bloggers.com/portfolio-optimization-%E2%80%93-why-do-we-need-a-risk-model/
+    http://www.r-bloggers.com/the-most-diversified-or-the-least-correlated-efficient-frontier/
+    http://www.r-bloggers.com/minimum-investment-and-number-of-assets-portfolio-cardinality-constraints/
+    http://www.r-bloggers.com/2-dimensions-of-portfolio-diversity/
+
+    http://www.r-bloggers.com/the-top-7-portfolio-optimization-problems/ 

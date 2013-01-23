@@ -1,6 +1,6 @@
 from Algorithms import *
 
-#import ipdb as pdb
+import ipdb as pdb
 import sys
 import os
 
@@ -51,11 +51,11 @@ class Simulation(object):
             raise NotImplementedError()
         else:
             raise NotImplementedError()
-        self.timestamp = pd.date_range(start, end, freq=pd.datetools.BDay(args.delta))
+        timestamp = pd.date_range(start, end, freq=pd.datetools.BDay(args.delta))
 
         #data_all = agent.getQuotes(args.tickers.split(','), ['adj_close'], index=timestamp, reverse=True)
         data_all = self.agent.load_from_csv(args.tickers.split(','), fields=[price],
-                                            index=self.timestamp, reverse=True)
+                                            index=timestamp, reverse=True)
         data = data_all[price]
         if not data.index.tzinfo:
             self._log.warning('No timezone information')
@@ -100,7 +100,7 @@ class Simulation(object):
         #NOTE No frequency infos or just period number ?
         start = pytz.utc.localize(pd.datetime.strptime(perfs[0]['period_label'] + '-01', '%Y-%m-%d'))
         end = pytz.utc.localize(pd.datetime.strptime(perfs[-1]['period_label'] + '-01', '%Y-%m-%d'))
-        return pd.date_range(start, end, freq=pd.datetools.BMonthBegin())
+        return pd.date_range(start - pd.datetools.BDay(10), end, freq=pd.datetools.BMonthBegin())
 
     def _extract_perf(self, perfs, field):
         index = self._get_index(perfs)

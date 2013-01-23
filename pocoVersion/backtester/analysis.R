@@ -23,7 +23,7 @@ opt <- parse_args(OptionParser(option_list=option_list,
 
 ## =========================    Preparing data    ========================== ##
 data <- getTradeData(name='test')
-head(data)
+tail(data)
 
 if (opt$mode == 'regular') 
 {
@@ -56,6 +56,10 @@ if (opt$mode == 'regular')
     # Autocorrellation
     chart.ACFplus(data[, 'algo_rets'])
     table.Autocorrelation(data[, 'algo_rets'])
+
+    # From portfolio optimization
+    # In this table, we can considere the stddev square as the risk
+    table.AnnualizedReturns(merged[,vars],Rf=mean(merged[,"shy.Return"],na.rm=TRUE))
 }
 
 ## ============================    Cleaning    ============================= ##

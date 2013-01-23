@@ -1,6 +1,3 @@
-#!/usr/bin/python
-# -*- coding: utf8 -*-
-
 import sys
 import os
 
@@ -164,7 +161,7 @@ class Quantitative(object):
         rets_df = ts / ts.shift(period) - 1 + relative
         if cumulative:
             return rets_df.cumprod()
-        return rets_df
+        return rets_df[1:]
 
     def dailyReturns(self, ts, **kwargs):
         relative = kwargs.get('relative', 0)

@@ -1,18 +1,20 @@
-from decorators import *
 import numpy as np
 from numpy import recfromcsv
 from itertools import combinations
-import os, sys
+import os
+import sys
 
-sys.path.append('..')
-from compute.QuantSubsystem import Quantitative
+sys.path.append(str(os.environ['QTRADE']))
+from pyTrade.compute.QuantSubsystem import Quantitative
+from pyTrade.utils.decorators import *
 
 import qstkutil.tsutil as tsu
 
+
 def getAllFromCSV(path='../QSData'):
-        files = [f for f in os.listdir(path) if f.endswith('.csv')] 
+        files = [f for f in os.listdir(path) if f.endswith('.csv')]
         files = [path + f for f in files]
-        symbols = [os.path.splitext(f)[0] for f in files] 
+        symbols = [os.path.splitext(f)[0] for f in files]
         return symbols, files
 
 
@@ -22,29 +24,30 @@ class Portfolio(object):
         super(Portfolio, self).__init__()
         self.compute = Quantitative()
         self.symbols = list()
-        if holds != None:
+        if holds is not None:
             self.symbols.append(holds)
-        
+
     def selectOnSharpeRatio(self, ls_symbols, top_n_equities=10):
-        ''' Choose the best portfolio over the stock universe, 
+        ''' Choose the best portfolio over the stock universe,
         according to their sharpe ratio'''
         #TODO: change this to a DataAccess utilitie --------------
         symbols, files = getAllFromCSV()
-        datalength = len(recfromcsv(files[0])['close']) 
+        datalength = len(recfromcsv(files[0])['close'])
         print('Datalength: {}'.format(datalength))
         #---------------------------------------------------------
         #Initiaing data arrays
         closes = np.recarray((datalength,), dtype=[(symbol, 'float') for symbol in symbols])
-        daily_ret = np.recarray((datalength-1,), dtype=[(symbol, 'float') for symbol in symbols])
+        daily_ret = np.recarray((datalength - 1,), dtype=[(symbol, 'float') for symbol in symbols])
         average_returns = np.zeros(len(files))
         return_stdev = np.zeros(len(files))
         sharpe_ratios = np.zeros(len(files))
-        cumulative_returns = np.recarray((datalength-1,), dtype=[(symbol, 'float') for symbol in symbols])
+        cumulative_returns = np.recarray((datalength - 1,), dtype=[(symbol, 'float') for symbol in symbols])
 
         # Here is the meat
         #TODO: data = dataobj.getData(ls_symbols)
         for i, symbol in enumerate(ls_symbols):
-            if len(data) != datalength: continue
+            if len(data) != datalength:
+                continue
             print('Processing {} file'.format(file))
             closes[symbols[i]] = data['close'][::-1]
             daily_ret[symbols[i]] = compute.dailyReturns()
@@ -60,9 +63,9 @@ class Portfolio(object):
 
     def covarianceNpOpt(self, symbols, sorted_sharpe_indices, pf_size):
         top_n_equities = len(sorted_sharpe_indices)
-        cov_data = np.zeros(datalength-1, top_n_equities)
+        cov_data = np.zeros(datalength - 1, top_n_equities)
         for i, symbol_index in enumerate(sorted_sharpe_indices):
-            cov_data[:,i] = daily_ret[symbols[symbol_index]]
+            cov_data[:, i] = daily_ret[symbols[symbol_index]]
         cor_mat = np.corrcoef(cov_data.transpose())
         portfolios = list(combinations(range(0, top_n_equities), pf_size))
         total_corr = [sum([cor_mat[x[0]][x[1]] for x in combinations(p, 2)]) for p in portfolios]
@@ -72,14 +75,14 @@ class Portfolio(object):
         return best_portfolio
 
     def markowitzOptimization(self, dataPanel, ftarget, naLower=None, naUpper=None, naExpected=None, s_type='long'):
-        ''' 
-        See qstk documentation 
+        '''
+        See qstk documentation
         @data: pd.dataframe
         '''
         naData = self._panelToRetsArray(dataPanel)
         weight, minRet, maxRet = tsu.OptPort(naData, ftarget, naLower, naUpper, naExpected, s_type)
         return weight, minRet, maxRet    # could skip a line latter
-        
+
     def getFrontier(self, panelData, lRes=100, fUpper=0.2, fLower=0.00):
         naData = self._panelToRetsArray(dataPanel)
         return tsu.getFrontier(rets, lRes, fUpper, fLower)
@@ -91,7 +94,7 @@ class Portfolio(object):
         ''' assume target returns is average returns '''
 
     def pendingActions(self):
-        ''' 
+        '''
         @summary return symbols with their quantities to buy and sell, according to the optimization
         @return a dataframe, index = [quantity, order], columns=symbols
         '''
@@ -108,8 +111,9 @@ class Portfolio(object):
         @return same as getFrontier(), format parameter ?
         '''
 
-#TODO: when forecasted prices will be available, implement tsu.optimizePortfolio
 
+#TODO: when forecasted prices will be available, implement tsu.optimizePortfolio
+#if __name__ == '__main__':
 ''' Data stuff
 Implement DataAccess().getChildTickets(indice)    #Or country, ...
 '''
@@ -117,10 +121,10 @@ Implement DataAccess().getChildTickets(indice)    #Or country, ...
 daily_ret = Qant.dailyRets(data['google']['close'])   # smart index handler
 average_returns = np.mean(daily_ret)
 return_stdev = Qant.stdev(daily_ret)
-sharpe_ratios = Qant.sharpeRatio(daily_ret) 
-'''               
+sharpe_ratios = Qant.sharpeRatio(daily_ret)
+'''
 
-''' Usage 
+''' Usage
 holds = {'google' : 15, 'archos' : 56}
 #NOTE: date stuff ?
 p = Portfolio(holds)
