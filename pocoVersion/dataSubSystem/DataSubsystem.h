@@ -1,11 +1,12 @@
 #ifndef DATASUBSYSTEM_H
 #define DATASUBSYSTEM_H
 
-#include <Poco/Logger.h>
 #include <Poco/Mutex.h>
 #include <Poco/RWLock.h>
 #include <Poco/Data/SessionPool.h>
 #include <Poco/Util/Subsystem.h>
+#include <Poco/File.h>
+#include <Poco/Data/SQLite/Connector.h>
 
 
 namespace quantrade {

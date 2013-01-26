@@ -1,14 +1,4 @@
 #include "DataSubsystem.h"
-#include "../logger/tradeLogger.cpp"
-
-#include <Poco/File.h>
-#include <Poco/Data/SQLite/Connector.h>
-#include <Poco/Util/Application.h>
-
-#include <iostream>
-#include <cassert>
-#include <algorithm>
-#include <iterator>
 
 using namespace std;
 using namespace Poco::Data;
@@ -61,7 +51,7 @@ void DataSubsystem::disconnect()
 void DataSubsystem::initialize(Poco::Util::Application& app)
 {
     //TODO Get env variable here and add it  
-    string dbFilename = app.config().getString("mod.database.location", "stocks.db");
+    string dbFilename = app.config().getString("mod.database.path", "stocks.db");
     _logger.information("Initiating database subsystem, connecting to database.");
     connect(dbFilename);
 }

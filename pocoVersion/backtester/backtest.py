@@ -55,10 +55,10 @@ if __name__ == '__main__':
     engine._log.info('Max drawdown: {}'.format(perfs['one_month'][-1]['max_drawdown']))
 
     df, table = engine.evaluateBacktest(timestamp='one_month', table_name='test', save=True)
-    test = engine.agent.db.readDFFromDB(table)
-    engine.agent.db.commit()
-    os.system('./analysis.R')
-    os.system('evince Rplots.pdf')
+    #test = engine.agent.db.readDFFromDB(table)
+    #engine.agent.db.commit()
+    #os.system('./analysis.R')
+    #os.system('evince Rplots.pdf')
 
     #results.portfolio_value.plot()
     #results.returns.plot()

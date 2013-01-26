@@ -40,7 +40,8 @@ endif
 BIN_DIR = ./dist
 
 #Conditionné 
-LDFLAGS = -lPocoFoundation -lPocoUtil -lsqlite3
+LDFLAGS = -lPocoFoundation -lPocoUtil -lPocoData -lPocoDataSQLite
+#-lsqlite3
 #SRC = $(wildcard *.$(EXT))
 SRC = TradeCenter.cpp
 HDR = $(wildcard *.h)

@@ -154,7 +154,7 @@ class RemoteData(object):
 
     #TODO: a separate class with functions per categories of data
     #NOTE: The YQL can fetch this data (http://www.yqlblog.net/blog/2009/06/02/getting-stock-information-with-%60yql%60-and-open-data-tables/)
-    def getStockInfo(self, symbols, markets, fields):
+    def getStockInfo(self, symbols, fields):
         for f in fields:
             #NOTE could just remove field and continue
             if f not in yahooCode:

@@ -1,4 +1,4 @@
-#include <Poco/Util/Application.h>
+#include <Poco/Util/ServerApplication.h>
 #include <Poco/Util/Option.h>
 #include <Poco/Util/OptionSet.h>
 #include <Poco/Util/HelpFormatter.h>
@@ -10,9 +10,17 @@
 #include <Poco/StreamCopier.h>
 #include <Poco/Format.h>
 
+#include <Poco/Task.h>
+#include <Poco/TaskManager.h>
+
 #include <iostream>
 
+#include "logger/tradeLogger.cpp"
+#include "dataSubSystem/DataSubsystem.cpp"
+#include "tmp/Backtester.cpp"
+
 using Poco::Util::Application;
+using Poco::Util::ServerApplication;
 using Poco::Util::Option;
 using Poco::Util::OptionSet;
 using Poco::Util::HelpFormatter;
@@ -20,37 +28,39 @@ using Poco::Util::AbstractConfiguration;
 using Poco::Util::OptionCallback;
 using Poco::AutoPtr;
 
-class TradeCenter: public Application
+class TradeCenter: public ServerApplication
 {
 public:
-	TradeCenter(): _helpRequested(false) {}
+	TradeCenter(): _helpRequested(false) {
+        setUnixOptions(true);
+        addSubsystem(new quantrade::DataSubsystem);
+        addSubsystem(new quantrade::Backtester);
+    }
 
 protected:	
-	void initialize(Application& self)
+	void initialize(ServerApplication& self)
 	{
-        setUnixOptions(true);
-		loadConfiguration(); // load default configuration files, if present
-		Application::initialize(self);
-        logger().information("Initiating application...");
-		// add your own initialization code here
+		loadConfiguration(); 
+		ServerApplication::initialize(self);
+        logger().information("Initiating ServerApplication...");
 	}
 	
 	void uninitialize()
 	{
 		// add your own uninitialization code here
-        logger().information("Shutting down root application...");
-		Application::uninitialize();
+        logger().information("Shutting down root ServerApplication...");
+		ServerApplication::uninitialize();
 	}
 	
-	void reinitialize(Application& self)
+	void reinitialize(ServerApplication& self)
 	{
-		Application::reinitialize(self);
+		ServerApplication::reinitialize(self);
 		// add your own reinitialization code here
 	}
 	
 	void defineOptions(OptionSet& options)
 	{
-		Application::defineOptions(options);
+		ServerApplication::defineOptions(options);
 
 		options.addOption(
 			Option("help", "h", "display help information on command line arguments")
@@ -91,7 +101,7 @@ protected:
     /* Doesn't work */
     void handleOption(const std::string& name, const std::string& value)
     {
-        Application::handleOption(name, value);
+        ServerApplication::handleOption(name, value);
         logger().warning("Handling options");
         if (name == "num-threads")
             logger().critical("Threads requested: " + value);
@@ -122,7 +132,7 @@ protected:
         helpFormatter.setUnixStyle(true);
 		helpFormatter.setCommand(commandName());
 		helpFormatter.setUsage("OPTIONS");
-		helpFormatter.setHeader("A sample application that demonstrates some of the features of the Poco::Util::Application class.");
+		helpFormatter.setHeader("A sample ServerApplication that demonstrates some of the features of the Poco::Util::ServerApplication class.");
 		helpFormatter.format(std::cout);
 	}
 	
@@ -141,7 +151,8 @@ protected:
 	}
 
 	int main(const std::vector<std::string>& args);
-  int runModule(std::string moduleName, std::vector<std::string> args);
+
+    void run_backtest();
 	
 	void printProperties(const std::string& base)
 	{
@@ -174,22 +185,23 @@ private:
 	bool _helpRequested;
 };
 
-//POCO_APP_MAIN(TradeCenter);
+POCO_SERVER_MAIN(TradeCenter);
 
-int main (int argc, char** argv) {
-    std::cout << "===========\tRunning QuanTrade\t==========\n";
-    //Application::instance().addSubsystem(new TradeCenter);
-    Poco::AutoPtr<TradeCenter> pApp = new TradeCenter;
-    try {
-        pApp->init(argc, argv);
-    } catch (Poco::Exception& e) {
-        pApp->logger().log(e);
-        return Poco::Util::Application::EXIT_CONFIG;
-    }
-    if ( pApp->initialized() ) {
-        pApp->logger().information("Application has been successfully initialized");
-        if ( pApp->config().hasProperty("pouet") )
-            pApp->logger().warning("Pouet is defined !");
-    }
-    return pApp->run();
-}
+/*
+ *int main (int argc, char** argv) {
+ *    std::cout << "===========\tRunning QuanTrade\t==========\n";
+ *    Poco::AutoPtr<TradeCenter> pApp = new TradeCenter;
+ *    try {
+ *        pApp->init(argc, argv);
+ *    } catch (Poco::Exception& e) {
+ *        pApp->logger().log(e);
+ *        return Poco::Util::ServerApplication::EXIT_CONFIG;
+ *    }
+ *    if ( pApp->initialized() ) {
+ *        pApp->logger().information("ServerApplication has been successfully initialized");
+ *        if ( pApp->config().hasProperty("pouet") )
+ *            pApp->logger().warning("Pouet is defined !");
+ *    }
+ *    return pApp->run();
+ *}
+ */

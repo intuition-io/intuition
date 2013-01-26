@@ -4,11 +4,9 @@
 namespace quantrade {
 
 TradeLogger::TradeLogger() {
-
 }
 
 TradeLogger::~TradeLogger() {
-
 }
 
 void TradeLogger::init(const std::string &logLevel, const std::string &name) {
