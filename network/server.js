@@ -4,6 +4,11 @@ var worker = require('./workerNode')
 net.createServer(function (socket) {
     console.log('[Node:server] Client connected: ' + socket.remoteAddress + ':' + socket.remotePort);
     
+    process.on('SIGINT', function() {
+        console.log('Termination request, shutting down server...')
+        process.exit(0)
+    })
+
     socket.on('close', function() {
         console.log('[Node:server] Client disconnected')
     })

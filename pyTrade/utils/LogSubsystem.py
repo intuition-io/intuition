@@ -7,16 +7,16 @@ Logger class
 ---------------------------------------------------------------------------------------'''
 class LogSubsystem(object):
   ''' Trade logging version '''
-  def __init__(self, name='default', lvl_str='debug', file_channel=False):
-    if lvl_str == "debug":
+  def __init__(self, name='default', lvl='debug', file_channel=False):
+    if lvl == "debug":
       lvl = logging.DEBUG
-    elif lvl_str == "info":
+    elif lvl == "info":
       lvl = logging.INFO
-    elif lvl_str == 'error':
+    elif lvl == 'error':
         lvl = logging.ERROR
-    elif lvl_str == 'warning':
+    elif lvl == 'warning':
         lvl = logging.WARNING
-    elif lvl_str == "critical":
+    elif lvl == "critical":
       lvl = logging.CRITICAL
     else:
       print '[DEBUG] __LogSubSystem__ : Unsupported mode, setting default logger level: debug'

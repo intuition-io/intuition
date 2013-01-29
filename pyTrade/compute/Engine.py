@@ -6,10 +6,11 @@ import os
 
 
 sys.path.append(str(os.environ['QTRADE']))
+from pyTrade.data.datafeed import DataFeed
 from pyTrade.data.DataAgent import DataAgent
 from pyTrade.utils.LogSubsystem import LogSubsystem
 
-import datetime as dt
+#import datetime as dt
 import pytz
 import pandas as pd
 
@@ -31,32 +32,37 @@ class BacktesterEngine(object):
 
 class Simulation(object):
     ''' Take a trading strategie and evalute its results '''
-    def __init__(self, access=['database', 'csv'], db_name='stocks.db', logger=None, lvl='debug'):
-        if not logger:
-            self._log = LogSubsystem('Simulation', lvl).getLog()
-        else:
-            self._log = logger
+    def __init__(self, access=['database', 'csv'], db_name='stocks.db', lvl='debug'):
+        self._log = LogSubsystem('Simulation', lvl).getLog()
         self.agent = DataAgent()
         self.agent.connectTo(access, db_name=db_name, lvl=lvl)
         pass
 
     def runBacktest(self, args, algo_params, price='actual_close'):
-        #TODO This parameters make the class generic
+        #NOTE Do not like much to have to split here tickers
+        #TODO Implement portfolio stragegy selection
         '''--------------------------------------------    Parameters    -----'''
         self.trading_algo = args.algorithm
+        tickers = args.tickers.split(',')
         if isinstance(args.start, str) and isinstance(args.end, str):
-            start = pytz.utc.localize(pd.datetime.strptime(args.start, '%d/%m/%Y'))
-            end = pytz.utc.localize(pd.datetime.strptime(args.end, '%d/%m/%Y'))
+            start = pytz.utc.localize(pd.datetime.strptime(args.start, '%Y-%m-%d'))
+            end = pytz.utc.localize(pd.datetime.strptime(args.end, '%Y-%m-%d'))
         elif isinstance(args.start, dt.datetime) and isinstance(args.end, dt.datetime):
             raise NotImplementedError()
         else:
             raise NotImplementedError()
-        timestamp = pd.date_range(start, end, freq=pd.datetools.BDay(args.delta))
+        feeds = DataFeed()
+        if tickers[0] == 'random':
+            assert(len(tickers) == 2)
+            assert(int(tickers[1]))
+            tickers = feeds.random_stocks(int(tickers[1]))
+        data = feeds.quotes(tickers, start_date=args.start, end_date=args.end)
 
+        #timestamp = pd.date_range(start, end, freq=pd.datetools.BDay(args.delta))
         #data_all = agent.getQuotes(args.tickers.split(','), ['adj_close'], index=timestamp, reverse=True)
-        data_all = self.agent.load_from_csv(args.tickers.split(','), fields=[price],
-                                            index=timestamp, reverse=True)
-        data = data_all[price]
+        #data_all = self.agent.load_from_csv(args.tickers.split(','), fields=[price],
+                                            #index=timestamp, reverse=True)
+        #data = data_all[price]
         if not data.index.tzinfo:
             self._log.warning('No timezone information')
             data.index = data.index.tz_localize(pytz.utc)
