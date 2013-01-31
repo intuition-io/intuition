@@ -50,3 +50,6 @@ QSData
 
 # Example code in package build process
 *-Ex.R
+
+# Logs
+quantrade.log

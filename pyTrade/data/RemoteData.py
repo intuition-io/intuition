@@ -15,10 +15,10 @@ import numpy as np
 from xml.dom import minidom, Node
 import json
 
-sys.path.append(str(os.environ['QTRADEPYTHON']))
-from utils.LogSubsystem import LogSubsystem
-from QuantDB import yahooCode, Fields
-from utils.utils import epochToDate, reIndexDF
+sys.path.append(str(os.environ['QTRADE']))
+from pyTrade.utils.LogSubsystem import LogSubsystem
+from pyTrade.data.QuantDB import yahooCode, Fields
+from pyTrade.utils.utils import epochToDate, reIndexDF
 
 
 class Alias (object):

@@ -8,6 +8,8 @@ from pyTrade.data.DataAgent import DataAgent
 import pandas as pd
 
 import unittest
+import logbook
+
 import datetime as dt
 import pytz
 
@@ -26,6 +28,8 @@ class test_DataAgent(unittest.TestCase):
     '''
     def setUp(self):
         ''' called at the beginning of each test '''
+        self.log_handler = logbook.TestHandler()
+        self.log_handler.push_thread()
         self.tickers      = ['google', 'apple', 'starbucks']
         self.fields       = ['close', 'volume']
         self.start        = dt.datetime(2006, 1, 1, tzinfo = pytz.utc)
@@ -80,6 +84,7 @@ class test_DataAgent(unittest.TestCase):
         self.agent.help('test')
 
     def tearDown(self):
+        self.log_handler.pop_thread()
         if self.agent.connected['database']:
             print('Closing database')
             self.agent.db.close(commit=True)

@@ -9,7 +9,8 @@ import sys
 import os
 
 sys.path.append(str(os.environ['QTRADE']))
-from pyTrade.utils import LogSubsystem
+#from pyTrade.utils import LogSubsystem
+from logbook import Logger
 from pyTrade.data.database import Client
 
 
@@ -19,7 +20,8 @@ class DataFeed(object):
     """
     def __init__(self, level='debug'):
         self.stock_db = Client()
-        self.log = LogSubsystem(DataFeed.__name__, lvl=level).getLog()
+        #self.log = LogSubsystem(DataFeed.__name__, lvl=level).getLog()
+        self.log = Logger('DataFeed')
 
     def quotes(self, tickers, start_date=None, end_date=None, download=False):
         """ Get a series of quotes

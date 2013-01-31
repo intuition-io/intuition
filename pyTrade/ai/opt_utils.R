@@ -6,6 +6,8 @@ suppressPackageStartupMessages(require(fImport))
 suppressPackageStartupMessages(require(PerformanceAnalytics))
 suppressPackageStartupMessages(require(tseries))
 suppressPackageStartupMessages(require(stats))
+suppressPackageStartupMessages(require(RMySQL))
+suppressPackageStartupMessages(require(zoo))
 
 options(scipen=100)
 options(digits=4)
@@ -30,7 +32,7 @@ reweight = function(returns, startWeight){
       return (outReturn)
 }
 
-importOneSerie = function (symbol, from, to) {
+downloadOneSerie = function (symbol, from, to) {
     # Read data from Yahoo! Finance
     input = yahooSeries(symbol, from=from, to=to)
     
@@ -58,12 +60,54 @@ importOneSerie = function (symbol, from, to) {
     return(input)
 }
 
-importSeries <- function(symbols, from, to)
+serieFromDB <- function(symbol, from, to)
+{
+    stocksDB = dbConnect(MySQL(), user='xavier', password='quantrade', dbname='stock_data', host='localhost')
+    on.exit(dbDisconnect(stocksDB))
+    stmt <- paste("select Date, AdjClose from Quotes where Quotes.Ticker = ", symbol, " and Quotes.Date >= ", from, " and Quotes.Date <= ", to, "", sep="'") 
+    print(stmt)
+    rs = dbSendQuery(stocksDB, stmt)
+    inputTmp = fetch(rs, -1)
+    input <- xts(inputTmp['AdjClose'], order.by=as.Date(inputTmp$Date))
+
+    # Character Strings for Column Names
+    adjClose = paste(symbol, ".Adj.Close", sep="")
+    inputReturn = paste(symbol, ".Return", sep="")
+    CReturn = paste(symbol, ".CReturn", sep="")
+
+    # Calculate the Returns and put it on the time series
+    input.Return    = xts(returns(input), order.by=as.Date(inputTmp$Date))
+    input           = merge(input, input.Return)
+    colnames(input) = c(adjClose, inputReturn)
+
+    #Calculate the cumulative return and put it on the time series
+    input.first                = input[, adjClose][1]
+    input.CReturn              = fapply(timeSeries(input[,adjClose]), FUN = function(x) log(x) - log(input.first[[1]]))
+    colnames(input.CReturn)[1] = CReturn
+    input                      = merge(input,input.CReturn)
+
+    rm(input.first, input.Return, input.CReturn, adjClose, inputReturn, CReturn, inputTmp)
+
+    if (dbHasCompleted(rs))
+    {
+        dbClearResult(rs)
+    }
+    return(input)
+}
+
+importSeries <- function(symbols, from, to, source='yahoo')
 {
     merged <- NULL
     for(sym in symbols)
     {
-        returns = importOneSerie(sym, from, to)
+        if (source == 'yahoo')
+        {
+            returns = downloadOneSerie(sym, from, to)
+        }
+        else if (source == 'mysql')
+        {
+            returns = serieFromDB(sym, from, to)
+        }
         if (!is.null(merged))
             merged = merge(merged, returns)
         else
@@ -137,7 +181,7 @@ getEfficientFrontier <- function(returns, returnNames, periods=255, points=500, 
             #update the OK variable
             ok = (ok | TRUE)
         } else {
-            print("ERROR IN THIS TRY")
+            print("** Error in this try")
             #update the OK variable
             ok = (ok | FALSE)
         }
@@ -157,6 +201,7 @@ getEfficientFrontier <- function(returns, returnNames, periods=255, points=500, 
     return(solution)
 }
 
+#TODO A correctif is needed, see posts and reweight
 marketPortfolio = function(solution,
                            rf,
                            graph=FALSE,
@@ -237,7 +282,7 @@ usage <- function(symbols)
     to = "2011-12-16"
     #returnNames = c("xom.Return","ibm.Return","ief.Return")
 
-    data = importSeries(symbols, from, to)
+    data = importSeries(symbols, from, to, source='mysql')
     for (i in seq(length(symbols))) 
     { 
         symbols[i] = paste(symbols[i], '.Return', sep='')

@@ -36,7 +36,6 @@ class Simulation(object):
         self._log = LogSubsystem('Simulation', lvl).getLog()
         self.agent = DataAgent()
         self.agent.connectTo(access, db_name=db_name, lvl=lvl)
-        pass
 
     def runBacktest(self, args, algo_params, price='actual_close'):
         #NOTE Do not like much to have to split here tickers

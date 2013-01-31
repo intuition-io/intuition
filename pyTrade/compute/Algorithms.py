@@ -11,7 +11,7 @@ from zipline.transforms import MovingAverage
 #from zipline.transforms import batch_transform
 
 sys.path.append(str(os.environ['QTRADE']))
-from pyTrade.ai.manager import PortfolioManager
+from pyTrade.ai.manager import PortfolioManager, frontier_optimizer
 
 import ipdb as pdb
 
@@ -22,6 +22,7 @@ class BuyAndHold(TradingAlgorithm):
     def initialize(self, properties):
         self.count = 0
         self.manager = PortfolioManager(self.commission.cost)
+        self.manager.setup_strategie(frontier_optimizer, loopback=60, source='mysql')
         #self.capital_base = properties.get('amount', 1000)
 
     def handle_data(self, data):
@@ -71,15 +72,18 @@ class DualMovingAverage(TradingAlgorithm):
         self.long_mavgs = []
 
         self.manager = PortfolioManager(self.commission.cost)
+        self.manager.setup_strategie(frontier_optimizer, loopback=60, source='mysql')
 
     def handle_data(self, data):
         ''' ----------------------------------------------------------    Init   --'''
+        #pdb.set_trace()
+        self.manager.update(self.portfolio, self.datetime.to_pydatetime())
+        #self.manager.update(self.portfolio, datetime.datetime.now())
+        signals = dict()
         self.frame_count += 1
         if (self.frame_count == 1):
             for t in data:
                 self.invested[t] = False
-        self.manager.update(self.portfolio)
-        signals = dict()
 
         ''' ----------------------------------------------------------    Scan   --'''
         for ticker in data:
@@ -95,7 +99,6 @@ class DualMovingAverage(TradingAlgorithm):
         ''' ----------------------------------------------------------   Orders  --'''
         if signals:
             orderBook = self.manager.trade_signals_handler(signals)
-            #pdb.set_trace()
             for ticker in orderBook:
                 if self.debug:
                     print('Ordering {} {} stocks'.format(ticker, orderBook[ticker]))

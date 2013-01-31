@@ -12,4 +12,6 @@ export QTRADE=$HOME/dev/projects/ppQuanTrade
 export ZIPLINE=$HOME/dev/projects/zipline
 export QTRADEDATA=$QTRADE/database
 export QTRADEDB=stocks.db
-export QTRADEPYTHON=$QTRADE/pyTrade
+export QTRADE_LOG=$QTRADE/quantrade.log
+export QTRADE_CONFIGURATION=local
+export QTRADE_MODE=dev
