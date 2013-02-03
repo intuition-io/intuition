@@ -1,27 +1,33 @@
 # Define server logic required to summarize and view the selected dataset
 
+#FIXME Each change make the server to re-read the database (or data)
 shinyServer(function(input, output) 
 {
-    # Generate a plot of the system and buy/hold benchmark given nmonths parameter
-    # include outliers if requested
+    #NOTE parameters hard coded !
     compute <- reactive(function() 
     {
         arguments <- list(ticker   = list(prefix = '--ticker'    , value = input$ticker),
                          algorithm = list(prefix = '--algorithm' , value = input$strategie),
                          delta     = list(prefix = '--delta'     , value = 1),
-                         start     = list(prefix = '--start'     , value = paste('30/1/', min(input$dateSlider), sep='')),
-                         end       = list(prefix = '--end'       , value = paste('30/7/', max(input$dateSlider), sep='')))
+                         manager   = list(prefix = '--manager'   , value = 'OptimalFrontier'),
+                         start     = list(prefix = '--start'     , value = paste(min(input$dateSlider), '-10-01', sep='')),
+                         end       = list(prefix = '--end'       , value = paste(max(input$dateSlider), '-10-07', sep='')))
                          
-        configuration <- list(short_window  = round(input$shortW * input$longW),
-                       long_window   = input$longW,
-                       buy_on_event  = 120,
-                       sell_on_event = 80)
+        algorithm <- list(short_window  = round(input$shortW * input$longW),
+                          long_window   = input$longW,
+                          buy_on_event  = 120,
+                          sell_on_event = 80)
+
+        manager <- list(loopback = 60,
+                        source   = 'mysql')
 
         request <- list(command   = 'run',
-                       script     = 'pocoVersion/backtester/backtest.py',
+                       script     = 'backtester/backtest.py',
                        monitoring = 0,
                        args       = arguments,
-                       config     = configuration)
+                       algo       = algorithm,
+                       manager    = manager)
+        
         if ( input$done )
         {
             remoteNodeWorker(request, port=8124, debug=F)

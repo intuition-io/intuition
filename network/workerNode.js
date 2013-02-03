@@ -55,7 +55,8 @@ function run_worker(request_txt, socket)
 
     console.log(process.pid + ' - ' + process.title + ': Spawned child pid: ' + child.pid);
     console.log('[Node:worker] Running worker: ' + script)
-    child.stdin.write(JSON.stringify(request.config) + '\n')
+    child.stdin.write(JSON.stringify(request.algo) + '\n')
+    child.stdin.write(JSON.stringify(request.manager) + '\n')
 }
 
 exports.run_worker = run_worker;

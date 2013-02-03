@@ -1,4 +1,4 @@
-#suppressPackageStartupMessages(library("zoo"))
+suppressPackageStartupMessages(require(RMySQL))
 if (!suppressPackageStartupMessages(require("RSQLite"))) {
     stop('This app needs sqlite database access. To install it, run "install.packages("RSQLite")".)')
 }
@@ -13,19 +13,45 @@ if (!suppressPackageStartupMessages(require(quantmod))) {
 
 source('./RClientInterface.R')
 
-## =========================    Preparing data    ========================== ##
-getTradeData <- function(name='test', database='stocks.db', debug=FALSE)
+require(utils)
+assignInNamespace(
+  "Return.excess",
+  function (R, Rf = 0)
+  { # @author Peter Carl
+    # edited by orizon
+      # .. additional comments removed
+      R = checkData(R)
+      if(!is.null(dim(Rf))){
+          Rf = checkData(Rf)
+          indexseries=index(cbind(R,Rf))
+          columnname.Rf=colnames(Rf)
+      }
+      else {
+          indexseries=index(R)
+          columnname.Rf=Rf
+          Rf=xts(rep(Rf, length(indexseries)),order.by=indexseries)
+      }
+      return.excess <- function (R,Rf)
+      { 
+          xR = coredata(as.xts(R))-coredata(as.xts(Rf)) #fixed
+      }
+      result = apply(R, MARGIN=2, FUN=return.excess, Rf=Rf)
+      colnames(result) = paste(colnames(R), ">", columnname.Rf)
+      result = reclass(result, R)
+      return(result)
+  },
+  "PerformanceAnalytics"
+)
+
+getFromSQLite <- function(name='test', database='stocks.db', debug=FALSE)
 {
-    ## Zoo.CalculateReturns()
-    ## Data = c(strategkie, peers, indexes)
-    #Using getwd() to handle from where it was ran ?
-    #database <- '../../../Database/stocks.db'
+    ## Data = c(strategie, peers, indexes)
     dbRoot <- Sys.getenv('QTRADEDATA')
     dbPath <- paste(dbRoot, database, sep="/")
 
     drv <- dbDriver("SQLite")
     connection <- dbConnect(drv, dbPath)
-    ## Checking the connection
+    ##TODO Checking the connection
     dbListTables(connection)
     if ( dbExistsTable(connection, name) ) {
         dbListFields(connection, name)
@@ -54,54 +80,103 @@ getTradeData <- function(name='test', database='stocks.db', debug=FALSE)
     return(strategie)
 }
 
-drawDistribution <- function(portfolio) 
+getMetricsFromMySQL <- function(dataId, dbname='stock_data', password='', user='xavier', host='localhost', overall=FALSE, debug=FALSE)
 {
-    layout(rbind(c(1,2), c(3,4)))
+    db = dbConnect(MySQL(), user=user, password=password, dbname=dbname, host=host) 
+    on.exit(dbDisconnect(db))
+	if ( overall ) 
+	{
+		table <- 'Performances'
+	} else {
+		table <- 'Metrics'
+	}
+    stmt <- paste("SELECT * FROM ", table, " WHERE Name='", dataId, "'", sep="")
+    rs = dbSendQuery(db, stmt)
+    input <- fetch(rs, -1)
+    if (debug)
+    {
+        print(stmt)
+        head(input)
+        summary(input)
+    }
+	if ( !overall )
+    	input =  xts(subset(input, select=-c(Name, Period, Id)), order.by=as.Date(input$Period))
+	return(input)
+}
+
+#TODO Add dates selection
+getTradeData <- function(dataId='test', database='stocks.db', source='sqlite', overall=FALSE, debug=FALSE)
+{
+    if (source == 'sqlite')
+    {
+        perfs <- getFromSQLite(dataId, database, debug)
+    }
+    else if (source == 'mysql')
+    {
+        perfs <- getMetricsFromMySQL(dataId, password='quantrade', overall=overall, debug=debug)
+    }
+    if (debug)
+    {
+        head(perfs)
+        print('...')
+        tail(perfs)
+    }
+    return(perfs)
+}
+
+drawDistribution <- function(returns) 
+{
+	portfolio = returns[, 'Returns', drop=FALSE]
+    benchmark = returns[, 'BenchmarkReturns', drop=FALSE]
+    layout(rbind(c(1,2), c(3,4), c(5,6)))
     chart.Histogram(portfolio, main="Plain", methods = NULL)
     chart.Histogram(portfolio, main="Density", breaks=40, methods = c("add.density", "add.normal"))
     chart.Histogram(portfolio, main="Skew and Kurt", methods = c("add.centered", "add.rug"))
     chart.Histogram(portfolio, main="RiskMeasures", methods = c("add.risk"))
+	chart.QQPlot(portfolio, main="RiskMeasures")
+    chart.Boxplot(returns[, c(1, 2)])
 }
 
-drawRelations <- function(returns)
+drawRelations <- function(returns, riskfree=0.0)
 {
-    layout(rbind(c(1,2), c(3,4)))
-    portfolio = returns[, 'algo_rets', drop=FALSE]
-    benchmark = returns[, 'bench_rets', drop=FALSE]
-    chart.RelativePerformance(portfolio, benchmark, main="Relative performance", xaxis=TRUE)
+    portfolio = returns[, 'Returns', drop=FALSE]
+    benchmark = returns[, 'BenchmarkReturns', drop=FALSE]
+    #layout(rbind(c(1,2), c(3,4)))    
+	layout(rbind(1, 2)) 
+	chart.RelativePerformance(portfolio, benchmark, main="Relative performance", xaxis=TRUE)
     chart.RollingCorrelation(portfolio, benchmark, main="Relative Correlation")
-    chart.QQPlot(portfolio, main="RiskMeasures")
-    chart.Boxplot(returns[, c(1, 2)])
+}
+
+#Do not plot second serie
+Distributions <- function(series) 
+{
+    par(oma = c(5,0,2,1), mar=c(0,0,0,3))
+    layout(matrix(1:8, ncol=4, byrow=TRUE), widths=rep(c(.6,1,1,1),length(colnames(series))))
+    chart.mins=min(series)
+    chart.maxs=max(series)
+    row.names = sapply(colnames(series), function(x) paste(strwrap(x,10), collapse = "\n"), USE.NAMES=FALSE)
+    for(i in 1:length(colnames(series))){
+        plot.new()
+        text(x=1, y=0.5, adj=c(1,0.5), labels=row.names[i], cex=1.1)
+        chart.Histogram(series[,i], main="", xlim=c(chart.mins, chart.maxs), breaks=seq(-0.15,0.10, by=0.01), show.outliers=TRUE, methods=c("add.normal"))
+        abline(v=0, col="darkgray", lty=2)
+        chart.QQPlot(series[,i], main="", pch="*", envelope=0.95, col=c(1,"#005AFF"))
+        abline(v=0, col="darkgray", lty=2)
+        chart.ECDF(series[,i], main="", xlim=c(chart.mins, chart.maxs), lwd=2)
+        abline(v=0, col="darkgray", lty=2)
+    }
 }
 
 test <- function()
 {
-    strategie = getTradeData(name='test')
-
-    ## ===========================     Analysis     ============================= ##
-
-    charts.PerformanceSummary(strategie[,c("algo_rets", "bench_rets")], colorset=rich6equal, main="Performance of the strategy")
-
-    drawDistribution(strategie[, 'algo_rets'])
-
-    #chart.RiskReturnScatter(strategie[, "algo_rets"], Rf = .03/12, main = "Annualized Return and Risk", add.names = TRUE, xlab = "Annualized Risk", ylab = "Annualized Return", 
-                            #method = "calc", geometric = TRUE, scale = NA, add.sharpe = c(1, 2, 3), add.boxplots = TRUE, colorset = 1, symbolset = 1, element.color = "darkgray")
-    #charts.RollingPerformance(strategie[, c("algo_rets", "bench_rets")])
-    #charts.RollingRegression(strategie[, "algo_rets"], strategie[, "bench_rets"], Rf = 1.86, main = "Rolling Month CAPM analysis", envent.labels=TRUE)
-    drawRelations(strategie[, c('algo_rets', 'bench_rets')])
-
-
-    table.CalendarReturns(strategie[, c("algo_rets", "bench_rets")], digit=2)
-    table.Stats(strategie[, "algo_rets"])
-    table.Correlation(strategie[, "algo_rets"], strategie[, "bench_rets", drop=FALSE], legend.loc="lowerleft")
-    #table.CPAM(strategie[trailing36.rows, "algo_rets"], strategie[trailing36.rows, "bench_rets", drop=FALSE], Rf=strategie[trailing36.rows, "risk_free", drop=FALSE])
-    #table.CAPM(strategie[, "algo_rets"], strategie[, "bench_rets", drop=FALSE])
-    table.DownsideRisk(strategie[, "algo_rets"], Rf=.03/12)
-    table.Drawdowns(strategie[, "algo_rets", drop=F])
-
+    perfs = getTradeData(dataId='test', source='mysql')
     ## ============================    Cleaning    ============================= ##
     quit(save="no", status=0)
 }
 
-data <- getTradeData(name='test')
+# Some use 3months treasury bound
+# It has to match the returns period
+#Rf <- .04/12  # My bank CD
+riskfree <- mean(data[, 'TreasuryReturns'])
+data <- getTradeData(dataId='test', source='mysql')
 #data <- NULL

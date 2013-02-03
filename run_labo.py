@@ -20,7 +20,7 @@ def clear_log():
 def show_process():
     log.info('Running process:')
     os.system('ps -aux | grep server.js')
-    os.system('ps -aux | grep shiny-backtest')
+    os.system('ps -aux | grep shiny')
 
 
 def main(configuration):

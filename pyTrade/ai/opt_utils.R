@@ -116,6 +116,7 @@ importSeries <- function(symbols, from, to, source='yahoo')
     return(merged)
 }
 
+#TODO Instead or 'error in this try', count errors and print a bilan
 getEfficientFrontier <- function(returns, returnNames, periods=255, points=500, maxWeight=.334, Debug=FALSE, graph=FALSE)
 {
     #create an empty data frame for the portfolio weights

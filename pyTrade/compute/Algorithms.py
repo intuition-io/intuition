@@ -11,28 +11,29 @@ from zipline.transforms import MovingAverage
 #from zipline.transforms import batch_transform
 
 sys.path.append(str(os.environ['QTRADE']))
-from pyTrade.ai.manager import PortfolioManager, frontier_optimizer
+from pyTrade.ai.manager import PortfolioManager
 
+from logbook import Logger
 import ipdb as pdb
 
 
+#TODO Override initialiez function with portfolio, logger and parameters initialization
 #TODO Should handle in parameter all of the set_*
 class BuyAndHold(TradingAlgorithm):
     '''Simpliest algorithm ever, just buy a stock at the first frame'''
-    def initialize(self, properties):
-        self.count = 0
+    def initialize(self, properties, strategie, parameters):
+        self.set_logger(Logger('Algorithm'))
         self.manager = PortfolioManager(self.commission.cost)
-        self.manager.setup_strategie(frontier_optimizer, loopback=60, source='mysql')
-        #self.capital_base = properties.get('amount', 1000)
+        self.manager.setup_strategie(strategie, parameters)
 
     def handle_data(self, data):
         ''' ----------------------------------------------------------    Init   --'''
         self.frame_count += 1
-        self.manager.update(self.portfolio)
+        self.manager.update(self.portfolio, self.datetime.to_pydatetime())
         signals = dict()
 
         ''' ----------------------------------------------------------    Scan   --'''
-        if self.count == 2:
+        if self.frame_count == 2:
             for ticker in data:
                 signals[ticker] = data[ticker].price
 
@@ -41,7 +42,6 @@ class BuyAndHold(TradingAlgorithm):
             orderBook = self.manager.trade_signals_handler(signals)
             for order in orderBook:
                 self.order(order, orderBook[order])
-        self.count += 1
 
 
 class DualMovingAverage(TradingAlgorithm):
@@ -51,7 +51,7 @@ class DualMovingAverage(TradingAlgorithm):
     its shares once the averages cross again (indicating downwards
     momentum).
     """
-    def initialize(self, properties):
+    def initialize(self, properties, strategie, parameters):
         short_window = properties.get('short_window', 200)
         long_window = properties.get('long_window', 400)
         self.amount = properties.get('amount', 10000)
@@ -72,7 +72,8 @@ class DualMovingAverage(TradingAlgorithm):
         self.long_mavgs = []
 
         self.manager = PortfolioManager(self.commission.cost)
-        self.manager.setup_strategie(frontier_optimizer, loopback=60, source='mysql')
+        #self.manager.setup_strategie(strategie, loopback=parameters.get('loopback', 50), source=parameters.get('source', 'mysql'))
+        self.manager.setup_strategie(strategie, parameters)
 
     def handle_data(self, data):
         ''' ----------------------------------------------------------    Init   --'''

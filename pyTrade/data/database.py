@@ -1,8 +1,7 @@
-import sys
-import os
 import csv
 from datetime import date, timedelta
-from models import Base, Symbol, Quote, Indicator
+from models import Base, Symbol, Quote, Metrics, Performances
+#, Indicator
 from numpy import array
 #, asarray
 from sqlalchemy import create_engine, desc
@@ -10,11 +9,9 @@ from sqlalchemy.orm import sessionmaker
 #, joinedload
 from sqlalchemy.sql import and_
 
-import config
 #import indicators
-sys.path.append(str(os.environ['QTRADE']))
-#from database.sources import yahoofinance as quotes
-from pyTrade.data import yahoofinance as quotes
+import config
+import yahoofinance as quotes
 
 #import ipdb as pdb
 
@@ -52,9 +49,9 @@ class Manager(object):
         self.db = Database()
 
     def create_database(self):
-        """ Create stock database tables if they do not exist already
-
-        """
+        '''
+        Create stock database tables if they do not exist already
+        '''
         self.db.Base.metadata.create_all(self.db.Engine)
 
     #TODO Error handler if the symbol does not exist
@@ -191,17 +188,17 @@ class Manager(object):
             session.close()
         return exists
 
-    def check_indicator_exists(self, qid, session=None):
-        """ Return True if indicator is already in database
-        """
-        newsession = False
-        if session is None:
-            newsession = True
-            session = self.db.Session()
-        exists = bool(session.query(Indicator).filter_by(Id=qid).count())
-        if newsession:
-            session.close()
-        return exists
+    #def check_indicator_exists(self, qid, session=None):
+        #""" Return True if indicator is already in database
+        #"""
+        #newsession = False
+        #if session is None:
+            #newsession = True
+            #session = self.db.Session()
+        #exists = bool(session.query(Indicator).filter_by(Id=qid).count())
+        #if newsession:
+            #session.close()
+        #return exists
 
     #NOTE Redundant with available_stocks ?
     def _stocks(self, session=None):
@@ -234,6 +231,37 @@ class Client(object):
     def __init__(self):
         self.db = Database()
         self.manager = Manager()
+
+    def save_metrics(self, dataframe):
+        """
+        """
+        session = self.db.Session()
+        #TODO Id and other politics to define
+        session.execute("delete from Metrics where Name = '{}'".format(dataframe['Name'][0]))
+        #NOTE This function is not generic AT ALL
+        metrics_object = [Metrics(dataframe['Name'][i], dataframe['Period'][i], dataframe['Sharpe.Ratio'][i],
+                                  dataframe['Returns'][i], dataframe['Max.Drawdown'][i], dataframe['Volatility'][i],
+                                  dataframe['Beta'][i], dataframe['Alpha'][i], dataframe['Excess.Returns'][i],
+                                  dataframe['Benchmark.Returns'][i], dataframe['Benchmark.Volatility'][i],
+                                  dataframe['Treasury.Returns'][i])
+                    for i in range(len(dataframe.index))]
+        session.add_all(metrics_object)
+        session.commit()
+        session.close()
+
+    def save_performances(self, dataframe):
+        """
+        """
+        session = self.db.Session()
+        #TODO Id and other politics to define
+        session.execute("delete from Performances where Name = '{}'".format(dataframe['Name']))
+        #NOTE This function is not generic AT ALL
+        perfs_object = Performances(dataframe['Name'], dataframe['Sharpe.Ratio'], dataframe['Returns'],
+                                  dataframe['Max.Drawdown'], dataframe['Volatility'], dataframe['Beta'],
+                                  dataframe['Alpha'], dataframe['Benchmark.Returns'])
+        session.add(perfs_object)
+        session.commit()
+        session.close()
 
     def get_quotes(self, ticker, date=None, start_date=None, end_date=None, dl=False):
         """
@@ -321,7 +349,6 @@ class Client(object):
 if __name__ == '__main__':
     #TODO A much more efficient and elegant interface
     from sys import argv
-    #pdb.set_trace()
     if len(argv) > 1:
         db = Manager()
         opt = str(argv[1])

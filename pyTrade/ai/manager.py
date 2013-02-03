@@ -66,7 +66,7 @@ class PortfolioManager(object):
                 orderBook[ticker] = int(round((available_money * alloc[ticker]) / signals[ticker]))
         return orderBook
 
-    def setup_strategie(self, callback, **parameters):
+    def setup_strategie(self, callback, parameters):
         self._callback = callback
         self._optimizer_parameters = parameters
 
@@ -81,14 +81,24 @@ class PortfolioManager(object):
         return pos_alloc, e_ret, e_risk
 
 
-def frontier_optimizer(symbols, date, parameters):
+#NOTE A class for each, inhereted from manager that would override the strategie function ?
+def equity(symbols, date, parameters):
+    ''' Always allocate an equal part for each symbol '''
+    allocations = dict()
+    fraction = round(1.0 / float(len(symbols)), 2)
+    for s in symbols:
+        allocations[s] = fraction
+    return allocations, 1, 0
+
+
+def optimal_frontier(symbols, date, parameters):
     """ compute the weights of the given symbols to hold in the portfolio
         the R environment is set up, as well as inputs """
+    allocations = dict()
     loopback = parameters.get('loopback', 50)
     source = parameters.get('source', 'yahoo')
     start = pd.datetime.strftime(date - pd.datetools.BDay(loopback), format='%Y-%m-%d')
     date = pd.datetime.strftime(date, format='%Y-%m-%d')
-    allocations = dict()
     r_symbols   = r('c("{}")'.format('", "'.join(symbols)))
     r_names     = r('c("{}.Return")'.format('.Return", "'.join(symbols)))
     try:
@@ -109,6 +119,7 @@ def frontier_optimizer(symbols, date, parameters):
 
 if __name__ == '__main__':
     manager = PortfolioManager()
-    manager.setup_strategie(frontier_optimizer, lookback=60, source='mysql')
+    manager.setup_strategie(equity)
+    #manager.setup_strategie(optimal_frontier, lookback=60, source='mysql')
     allocations = manager._optimize_weigths(['google', 'apple', 'starbucks'], pd.datetime.now(pytz.utc))
     print allocations

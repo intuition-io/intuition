@@ -16,51 +16,54 @@ from pyTrade.compute.Engine import Simulation
 
 
 if __name__ == '__main__':
-    ''' --------------------------------------------    Parsing command line args    --------'''
+    ''' ----------------------------------------------------------------------------    Parsing Configuration    ----'''
     #TODO: the module allows many improvements
     parser = argparse.ArgumentParser(description='Backtester module, the terrific financial simukation')
     parser.add_argument('-v', '--version', action='version', version='%(prog)s v0.8.1 Licence rien du tout', help='Print program version')
     parser.add_argument('-d', '--delta', type=int, action='store', default=1, required=False, help='Delta in days betweend two quotes fetch')
     parser.add_argument('-a', '--algorithm', action='store', required=True, help='Trading algorithm to be used')
+    parser.add_argument('-m', '--manager', action='store', required=True, help='Portfolio strategie to be used')
     parser.add_argument('-b', '--database', action='store', default='stocks.db', required=False, help='Database location')
     parser.add_argument('-l', '--level', action='store', default='debug', required=False, help='Verbosity level')
     parser.add_argument('-t', '--tickers', action='store', required=True, help='target names to process')
     parser.add_argument('-s', '--start', action='store', default='1/1/2006', required=False, help='Start date of the backtester')
     parser.add_argument('-e', '--end', action='store', default='1/12/2010', required=False, help='Stop date of the backtester')
-    parser.add_argument('-m', '--manual', action='store', default=False, required=False, help='Indicates if the program was ran manually')
+    parser.add_argument('-i', '--interactive', action='store_true', help='Indicates if the program was ran manually or not')
     args = parser.parse_args()
 
-    if args.manual:
-        #config_str = '{"short_window": 100, "long_window": 200, "buy_on_event": 120, "sell_on_event": 80}'
-        config = json.load(open('algos.cfg', 'r'))[args.algorithm]
+    if args.interactive:
+        algo_config = json.load(open('algos.cfg', 'r'))[args.algorithm]
+        manager_config = json.load(open('managers.cfg', 'r'))[args.manager]
     else:
-        config_str = raw_input('config > ')
+        algo_config_str = raw_input('algo > ')
+        manager_config_str = raw_input('manager > ')
         try:
-            config = json.loads(config_str)
+            algo_config = json.loads(algo_config_str)
+            manager_config = json.loads(manager_config_str)
         except:
             print('** Error loading json configuration.')
             sys.exit(1)
 
-    '''---------------------------------------------------------------------------------------------    Backtest    --'''
+    '''-------------------------------------------------------------------------------------------    Backtest    ----'''
     engine = Simulation(access=['database'], db_name=args.database, lvl=args.level)
-    results, perfs = engine.runBacktest(args, config)
-    '''---------------------------------------------------------------------------------------------------------------'''
+    results = engine.runBacktest(args, algo_config, manager_config)
 
     '''---------------------------------------------------------------------------------------------    Results   ----'''
     engine._log.info('Last day result returns: {}'.format(results.returns[-1]))
     engine._log.info('Portfolio returns: {}'.format(results.portfolio_value[-1]))
-    # Benchmark returns, see zipline/data/benchmark.py (s&p500, implement others and change to parametric calls)
-    #TODO Create the overall metric
-    engine._log.info('Benchmark returns: {}'.format(perfs['one_month'][-1]['benchmark_period_return']))
-    #TODO Other ratios, see paper
-    engine._log.info('Sharpe ratio: {}'.format(perfs['one_month'][-1]['sharpe']))
-    engine._log.info('Max drawdown: {}'.format(perfs['one_month'][-1]['max_drawdown']))
+    #NOTE Benchmark returns, see zipline/data/benchmark.py (s&p500, implement others and change to parametric calls)
 
-    df, table = engine.evaluateBacktest(timestamp='one_month', table_name='test', save=True)
-    #test = engine.agent.db.readDFFromDB(table)
-    if args.manual:
-        engine.agent.db.commit()
-        os.system('./analysis.R')
+    #TODO implement in datafeed a generic save method which call the correct database save method
+    #NOTE Could do a generic save client method (retrieve the correct model, with correct fields)
+    perf_series  = engine.rolling_performances(timestamp='one_month', save=True, db_id='test')
+    #returns_df   = engine.get_returns(freq=pd.datetools.BDay(), benchmark=True, save=True, db_id='pouet')
+    risk_metrics = engine.overall_metrics(save=True, db_id='test')
+
+    if args.interactive:
+        engine._log.info('Returns: {} / {}\n\tVolatility: {}\n\tSharpe: {}\n\tMax drawdown: {}'.format(
+            risk_metrics['Returns'], risk_metrics['Benchmark.Returns'], risk_metrics['Volatility'],
+            risk_metrics['Sharpe.Ratio'], risk_metrics['Max.Drawdown']))
+        os.system('./analysis.R --mode debug')
         os.system('evince Rplots.pdf')
 
         results.portfolio_value.plot()
@@ -71,7 +74,6 @@ if __name__ == '__main__':
 ''' Notes
 Strategies to swich strategies =)
 Backtest the strategy on many datasets, and check correlations to test algorithm efficiecy
-What is pairs trading ?
 '''
 ''' Backtest stocks selection
 1.  a. Choose m stocks according to their best momentum or sharpe ratio for example
@@ -87,8 +89,4 @@ What is pairs trading ?
 7. Of course the portfolio final return and value
 8. Value at Risk
 9. Everything from coursera about returns distribution(max, min, mean, variance, kurtosis, skewness)
-
-Plot: R package suggest 3 charts: - Benchmark and strategie cummulative returns
-                                  - *ly returns around 0
-                                  - Drawdown
 '''
