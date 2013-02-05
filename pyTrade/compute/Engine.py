@@ -101,7 +101,10 @@ class Simulation(object):
         perfs['Benchmark.Volatility'] = np.array([self.monthly_perfs[timestamp][i]['benchmark_volatility'] for i in length])
         perfs['Treasury.Returns']     = np.array([self.monthly_perfs[timestamp][i]['treasury_period_return'] for i in length])
 
-        data = pd.DataFrame(perfs, index=index)
+        try:
+            data = pd.DataFrame(perfs, index=index)
+        except:
+            pdb.set_trace()
 
         if save:
             self.feeds.stock_db.save_metrics(data)

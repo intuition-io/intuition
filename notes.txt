@@ -1,3 +1,6 @@
+TODO:
+    A way to keep track of positions before yelling signals
+
 Openstack: hosting and distributed platform
     http://wiki.openstack.org/StartingPage
 

@@ -177,6 +177,6 @@ test <- function()
 # Some use 3months treasury bound
 # It has to match the returns period
 #Rf <- .04/12  # My bank CD
-riskfree <- mean(data[, 'TreasuryReturns'])
 data <- getTradeData(dataId='test', source='mysql')
+riskfree <- mean(data[, 'TreasuryReturns'])
 #data <- NULL

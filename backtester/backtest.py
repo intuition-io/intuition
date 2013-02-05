@@ -60,10 +60,10 @@ if __name__ == '__main__':
     risk_metrics = engine.overall_metrics(save=True, db_id='test')
 
     if args.interactive:
-        engine._log.info('Returns: {} / {}\n\tVolatility: {}\n\tSharpe: {}\n\tMax drawdown: {}'.format(
-            risk_metrics['Returns'], risk_metrics['Benchmark.Returns'], risk_metrics['Volatility'],
+        engine._log.info('\n\nReturns: {}% / {}%\nVolatility:\t{}\nSharpe:\t\t{}\nMax drawdown:\t{}\n\n'.format(
+            risk_metrics['Returns'] * 100.0, risk_metrics['Benchmark.Returns'] * 100.0, risk_metrics['Volatility'],
             risk_metrics['Sharpe.Ratio'], risk_metrics['Max.Drawdown']))
-        os.system('./analysis.R --mode debug')
+        os.system('./analysis.R')
         os.system('evince Rplots.pdf')
 
         results.portfolio_value.plot()

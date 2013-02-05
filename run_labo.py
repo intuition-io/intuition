@@ -22,6 +22,11 @@ def show_process():
     os.system('ps -aux | grep server.js')
     os.system('ps -aux | grep shiny')
 
+def kill_process():
+    log.info('Killing process...')
+    os.system('killall nodejs')
+    os.system('killall R')
+    show_process()
 
 def main(configuration):
     os.system('clear')
@@ -64,6 +69,7 @@ if __name__ == '__main__':
     parser.add_argument('-v', '--version', action='version', version='%(prog)s v0.8.1 Licence rien du tout', help='Print program version')
     parser.add_argument('-c', '--clear', action='store_true', required=False, help='If True, reset application log file')
     parser.add_argument('-p', '--ps', action='store_true', required=False, help='If True, show running nodejs and shiny process')
+    parser.add_argument('-k', '--kill', action='store_true', required=False, help='If True, kill nodejs and shiny process')
     args = parser.parse_args()
 
     with setup.applicationbound():
@@ -73,6 +79,8 @@ if __name__ == '__main__':
                          'mode': os.environ['QTRADE_MODE']}
         if args.clear:
             clear_log()
+        elif args.kill:
+            kill_process()
         elif args.ps:
             show_process()
         else:

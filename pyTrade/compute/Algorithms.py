@@ -6,8 +6,7 @@ import os
 
 sys.path.append(str(os.environ['ZIPLINE']))
 from zipline.algorithm import TradingAlgorithm
-from zipline.transforms import MovingAverage
-#from zipline.transforms import MovingVWAP
+from zipline.transforms import MovingAverage, MovingVWAP
 #from zipline.transforms import batch_transform
 
 sys.path.append(str(os.environ['QTRADE']))
@@ -52,12 +51,12 @@ class DualMovingAverage(TradingAlgorithm):
     momentum).
     """
     def initialize(self, properties, strategie, parameters):
-        short_window = properties.get('short_window', 200)
-        long_window = properties.get('long_window', 400)
-        self.amount = properties.get('amount', 10000)
-        self.intersect = properties.get('intersect', 0)
+        short_window       = properties.get('short_window', 200)
+        long_window        = properties.get('long_window', 400)
+        self.amount        = properties.get('amount', 10000)
+        self.threshold     = properties.get('threshold', 0)
         #self.capital_base = properties.get('capital_base', 1000)
-        self.debug = properties.get('debug', True)
+        self.debug         = properties.get('debug', True)
 
         self.add_transform(MovingAverage, 'short_mavg', ['price'],
                            window_length=short_window)
@@ -90,10 +89,10 @@ class DualMovingAverage(TradingAlgorithm):
         for ticker in data:
             short_mavg = data[ticker].short_mavg['price']
             long_mavg = data[ticker].long_mavg['price']
-            if short_mavg - long_mavg > self.intersect and not self.invested[ticker]:
+            if short_mavg - long_mavg > self.threshold and not self.invested[ticker]:
                 signals[ticker] = data[ticker].price
                 self.invested[ticker] = True
-            elif short_mavg - long_mavg < -self.intersect and self.invested[ticker]:
+            elif short_mavg - long_mavg < -self.threshold and self.invested[ticker]:
                 signals[ticker] = - data[ticker].price
                 self.invested[ticker] = False
 
@@ -112,7 +111,14 @@ class DualMovingAverage(TradingAlgorithm):
 
 class VolumeWeightAveragePrice(TradingAlgorithm):
     '''https://www.quantopian.com/posts/updated-multi-sid-example-algorithm-1'''
-    def initialize(self, properties):
+    def initialize(self, properties, strategie, parameters):
+        # Common setup
+        self.set_logger(Logger('Algorithm'))
+        self.debug    = properties.get('debug', 0)
+        window_length = properties.get('window_length', 3)
+        self.manager  = PortfolioManager(self.commission.cost)
+        self.manager.setup_strategie(strategie, parameters)
+
         # Here we initialize each stock.  Note that we're not storing integers; by
         # calling sid(123) we're storing the Security object.
         self.vwap = {}
@@ -126,7 +132,13 @@ class VolumeWeightAveragePrice(TradingAlgorithm):
         utc = pytz.timezone('UTC')
         self.d = datetime.datetime(2008, 6, 20, 0, 0, 0, tzinfo=utc)
 
+        self.add_transform(MovingVWAP, 'vwap', market_aware=True, window_length=window_length)
+
     def handle_data(self, data):
+        self.frame_count += 1
+        signals = dict()
+        self.manager.update(self.portfolio, self.datetime.to_pydatetime())
+
         # Initializing the position as zero at the start of each frame
         notional = 0
 
@@ -141,22 +153,27 @@ class VolumeWeightAveragePrice(TradingAlgorithm):
         # the volume-weighted average price.  If the price is moving quickly, and
         # we have not exceeded our position limits, it executes the order and
         # updates our position.
-        pdb.set_trace()
         for stock in data:
-            vwap = data[stock].vwap(3)
+            vwap = data[stock].vwap
             price = data[stock].price
 
             if price < vwap * 0.995 and notional > self.min_notional:
-                self.order(stock, -100)
-                notional = notional - price * 100
+                signals[stock] = price
             elif price > vwap * 1.005 and notional < self.max_notional:
-                self.order(stock, +100)
-                notional = notional + price * 100
+                signals[stock] = - price
 
         # If this is the first trade of the day, it logs the notional.
         if (self.d + datetime.timedelta(days=1)) < tradeday:
-            self.log.debug(str(notional) + ' - notional start ' + tradeday.strftime('%m/%d/%y'))
+            self.logger.debug(str(notional) + ' - notional start ' + tradeday.strftime('%m/%d/%y'))
             self.d = tradeday
+
+        if signals and self.datetime.to_pydatetime() > self.portfolio.start_date:
+            order_book = self.manager.trade_signals_handler(signals)
+            for stock in order_book:
+                if self.debug:
+                    self.logger.info('Ordering {} {} stocks'.format(stock, order_book[stock]))
+                self.order(stock, order_book[stock])
+                notional = notional + price * order_book[stock]
 
 '''
 class MultiMA(TradingAlgorithm):
@@ -188,26 +205,47 @@ class MultiMA(TradingAlgorithm):
 '''
 
 
-#https://www.quantopian.com/posts/this-is-amazing
 class Momentum(TradingAlgorithm):
-    def initialize(self, properties):
-        # Use of spy
-        #self.spy = sid(8554)
-        self.max_notional = 200000.1
-        self.min_notional = -200000.0
+    '''
+    https://www.quantopian.com/posts/this-is-amazing
+    !! Many transactions, so make the algorithm explode when traded with many positions
+    '''
+    def initialize(self, properties, strategie, parameters):
+        self.set_logger(Logger('Algorithm'))
+        self.debug    = properties.get('debug', 0)
+        window_length = properties.get('window_length', 3)
+        self.manager = PortfolioManager(self.commission.cost)
+        self.manager.setup_strategie(strategie, parameters)
+
+        self.max_notional = 100000.1
+        self.min_notional = -100000.0
+
+        self.add_transform(MovingAverage, 'mavg', ['price'], window_length=window_length)
 
     def handle_data(self, data):
+        self.manager.update(self.portfolio, self.datetime.to_pydatetime())
+        signals = dict()
+        notional = 0
         for ticker in data:
-            sma = data[ticker].mavg(3)
-            price = data[ticker].price
-            notional = self.portfolio.positions[ticker].amount * price
-            cash = self.portfolio.cash
+            sma          = data[ticker].mavg.price
+            price        = data[ticker].price
+            cash         = self.portfolio.cash
+            notional     = self.portfolio.positions[ticker].amount * price
             capital_used = self.portfolio.capital_used
 
-            if sma >= price and notional > -0.2 * (capital_used + cash):
-                self.order(data[ticker], -100)
-            elif sma <= price and notional < 0.2 * (capital_used + cash):
-                self.order(data[ticker], +100)
+            # notional stuff are portfolio strategies, implement a new one, combinaison => parameters !
+            #pdb.set_trace()
+            if sma >= price and notional > -0.2 * (capital_used[0] + cash):
+                signals[ticker] = - price
+            elif sma <= price and notional < 0.2 * (capital_used[0] + cash):
+                signals[ticker] = price
+
+        if signals:
+            order_book = self.manager.trade_signals_handler(signals)
+            for ticker in order_book:
+                self.order(ticker, order_book[ticker])
+                if self.debug:
+                    self.logger.info('{}: Ordering {} {} stocks'.format(self.datetime, ticker, order_book[ticker]))
 
 
 class MovingAverageCrossover(TradingAlgorithm):

@@ -22,14 +22,35 @@ shinyUI(pageWithSidebar(
             selectInput(inputId = 'strategie',
                         label = p(strong('Trading strategie')),
                         choices = list('Dual moving-average' = 'DualMA',
+                                       'Momentum' = 'Momentum',
                                     'Buy and hold' = 'BuyAndHold'),
                         selected = 'Buy and hold'),
 
+            checkboxInput(inputId = "debug", label="Debug"),
+
             conditionalPanel(condition = "input.strategie == 'DualMA'",
-                            numericInput('longW', 'Long window', 200),
+                            numericInput('longW', 'Long window', 100),
                             sliderInput(inputId = 'shortW', label = 'Short window', 
-                                        min = 0.1, max = 1, step = 0.05, value = 0.75))
+                                        min = 0.1, max = 1, step = 0.05, value = 0.75),
+                            numericInput('threshold', 'Threshold', 0)),
+
+            conditionalPanel(condition = "input.strategie == 'Momentum'",
+                            numericInput('window', 'Moving average window', 3))
         ),
+        
+        wellPanel (
+            selectInput(inputId = 'manager',
+                        label = p(strong('Portfolio Manager')),
+                        choices = list('Equity' = 'Equity',
+                                    'Optimal Frontier' = 'OptimalFrontier'),
+                        selected = 'Equity'),
+
+            conditionalPanel(condition = "input.manager == 'OptimalFrontier'",
+                            numericInput('loopback', 'Loopback period', 50),
+                            textInput("source", "Data source", value="mysql")
+
+        )),
+
 
         #submitButton("Backtest")
         checkboxInput(inputId = "done", label = "Update database")
@@ -50,11 +71,27 @@ shinyUI(pageWithSidebar(
                  br(), br(),
                  plotOutput('relations'),
                  br(), br(),
+                 plotOutput('rollperfs'),
+                 br(), br(),
+                 plotOutput('rollregression'),
+                 br(), br(),
+                 plotOutput('snailtrail'),
+                 br(), br(),
+                 plotOutput('plotcorr'),
+                 br(), br(),
+                 plotOutput('regression'),
+                 br(), br(),
                  downloadButton('dlReport', 'Download Report')
         ),
         tabPanel('Statistics',
                  h4('Summary'),
                  tableOutput("stats"),
+                 br(), br(),
+                 h4('CAPM'),
+                 tableOutput("capm"),
+                 br(), br(),
+                 h4('Annualized returns'),
+                 tableOutput("annualizedRets"),
                  br(), br(),
                  h4('Benchmark correlation'),
                  tableOutput('correlation'),

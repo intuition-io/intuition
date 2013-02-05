@@ -329,7 +329,7 @@ class Client(object):
             asset = session.query(Symbol).get(asset.Ticker)
         #NOTE This prints ensure the assetQuotes persistence
         print('Got infos: {}'.format(asset))
-        print('Got associated quotes: {}'.format(asset.Quotes[0]))
+        #print('Got associated quotes: {}'.format(asset.Quotes[0]))
         session.close()
         return asset
 

@@ -14,6 +14,8 @@ from pyTrade.data.datafeed import DataFeed
 import rpy2.robjects as robjects
 r = robjects.r
 
+#import ipdb as pdb
+
 
 class PortfolioManager(object):
     '''
@@ -28,6 +30,7 @@ class PortfolioManager(object):
         self.feeds = DataFeed()
         self.portfolio = None
         self.date = None
+        self.max_weight = None
         self.commission_cost = commission_cost
         r('source("{}")'.format(portfolio_opt_file))
 
@@ -43,23 +46,29 @@ class PortfolioManager(object):
         @return: dict orderBook, like {"google": 34, "apple": -56}
         '''
         available_money = self.portfolio.portfolio_value
-        orderBook = dict()
-        alloc = dict()
-        to_buy = [t for t in signals if signals[t] > 0]
-        to_sell = set(self.portfolio.positions.keys()).intersection([t for t in signals if signals[t] < 0])
+        orderBook       = dict()
+        alloc           = dict()
+        to_buy          = [t for t in signals if signals[t] > 0]
+        to_sell         = set(self.portfolio.positions.keys()).intersection([t for t in signals if signals[t] < 0])
         for t in to_sell:
             orderBook[t] = - self.portfolio.positions[t].amount
             if self.portfolio.positions[t].amount > 250:
                 available_money -= ((self.portfolio.positions[t].amount - 250) * abs(signals[t]))
-        positions = set(self.portfolio.positions.keys()).union(to_buy).symmetric_difference(to_sell)
+        #positions = set(self.portfolio.positions.keys()).union(to_buy).symmetric_difference(to_sell)
+        #positions = set([stock for stock in self.portfolio.positions.keys() if stock in signals or self.portfolio.positions[stock].amount != 0]).symmetric_difference(to_sell)
+        positions = [stock for stock in self.portfolio.positions.keys() if stock in to_buy or self.portfolio.positions[stock].amount != 0]
 
         if positions:
             if len(positions) == 1:
-                alloc = {iter(positions).next(): 1}
+                alloc = {iter(positions).next(): self.max_weight}
             else:
                 alloc, e_ret, e_risk = self._optimize_weigths(positions, self.date)
+            #pdb.set_trace()
         for ticker in alloc:
-            if ticker in self.portfolio.positions:
+            if alloc[ticker] > self.max_weight:
+                #NOTE Recompute without this substracted sotck ?
+                alloc[ticker] = self.max_weight
+            if self.portfolio.positions[ticker].amount != 0:
                 n = int(round((available_money * alloc[ticker]) / self.portfolio.positions[ticker].last_sale_price))
                 orderBook[ticker] = n - self.portfolio.positions[ticker].amount
             else:
@@ -69,6 +78,10 @@ class PortfolioManager(object):
     def setup_strategie(self, callback, parameters):
         self._callback = callback
         self._optimizer_parameters = parameters
+        # General parameters
+        self.max_weight = parameters.get('max_weight', 1)
+        #NOTE Could measure transaction frequency and limit it
+        self.max_frequency = parameters.get('max_frequency', 2)
 
     def _optimize_weigths(self, positions, date):
         symbols = []
