@@ -21,9 +21,13 @@ shinyUI(pageWithSidebar(
         wellPanel (
             selectInput(inputId = 'strategie',
                         label = p(strong('Trading strategie')),
-                        choices = list('Dual moving-average' = 'DualMA',
-                                       'Momentum' = 'Momentum',
-                                    'Buy and hold' = 'BuyAndHold'),
+                        choices = list('Dual moving-average'         = 'DualMA',
+                                       'Momentum'                    = 'Momentum',
+                                       'OLMAR'                       = 'OLMAR',
+                                       'Moving Average Crossover'    = 'MultiMA',
+                                       'Volume Weight Average Price' = 'VWAP',
+                                       'Standard Deviation Based'    = 'StdBased',
+                                       'Buy and hold'                = 'BuyAndHold'),
                         selected = 'Buy and hold'),
 
             checkboxInput(inputId = "debug", label="Debug"),

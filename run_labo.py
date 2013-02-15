@@ -56,7 +56,7 @@ def main(configuration):
             raise ValueError()
 
         log.info('Opening web-browser to shiny remote interface')
-        time.sleep(2)
+        time.sleep(3)
         os.system('chromium-browser http://{}:{}{}'.format(host, port, app_path))
 
     else:
@@ -75,8 +75,8 @@ if __name__ == '__main__':
     with setup.applicationbound():
         #NOTE Future remote backtest implementation, etc...
         #NOTE Automatic detection ?
-        configuration = {'architecture': os.environ['QTRADE_CONFIGURATION'],
-                         'mode': os.environ['QTRADE_MODE']}
+        configuration = {'architecture' : os.environ['QTRADE_CONFIGURATION'],
+                         'mode'         : os.environ['QTRADE_MODE']}
         if args.clear:
             clear_log()
         elif args.kill:

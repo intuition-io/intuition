@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-source('./global.R')
+source('/home/xavier/dev/projects/ppQuanTrade/backtester/global.R')
 
 ## ==========================    Args handle    =========================== ##
 if(!suppressPackageStartupMessages(require(optparse)))

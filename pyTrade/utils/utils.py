@@ -19,7 +19,7 @@ import ccy
 from decorators import *
 
 '''___________________________________________________________________________________    Logging    ________'''
-# Distributed logging with zeroMQ
+#NOTE Distributed logging with zeroMQ
 import os
 from logbook import Logger
 from logbook import NestedSetup, FileHandler, Processor, StderrHandler
@@ -30,7 +30,7 @@ def inject_information(record):
 
 # a nested handler setup can be used to configure more complex setups
 setup = NestedSetup([
-    StderrHandler(format_string=u'[{record.time:%Y-%m-%d %H:%M}]{record.channel} - {record.level_name}: {record.message} \t({record.extra[ip]})'),
+    StderrHandler(format_string=u'[{record.time:%Y-%m-%d %H:%M}] {record.channel} - {record.level_name}: {record.message} \t({record.extra[ip]})'),
     # then write messages that are at least warnings to to a logfile
     FileHandler(os.environ['QTRADE_LOG'], level='WARNING'),
     Processor(inject_information)

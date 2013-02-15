@@ -21,7 +21,7 @@ class DataFeed(object):
     def __init__(self, level='debug'):
         self.stock_db = Client()
         #self.log = LogSubsystem(DataFeed.__name__, lvl=level).getLog()
-        self.log = Logger('DataFeed')
+        self.log = Logger(self.__class__.__name__)
 
     def quotes(self, tickers, start_date=None, end_date=None, download=False):
         """ Get a series of quotes

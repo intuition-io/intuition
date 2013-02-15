@@ -47,6 +47,7 @@ QSData
 # R
 # History files
 .Rhistory
+Rplots.pdf
 
 # Example code in package build process
 *-Ex.R

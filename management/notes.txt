@@ -1,5 +1,7 @@
 TODO:
     A way to keep track of positions before yelling signals
+    2 new initialize and handle_data functions to factorize manager stuff
+    pots du 13/02 sur r-bloggers !!
 
 Openstack: hosting and distributed platform
     http://wiki.openstack.org/StartingPage
@@ -61,6 +63,12 @@ Portfolio optimization on r-bloggers:
     http://www.r-bloggers.com/2-dimensions-of-portfolio-diversity/
 
     http://www.r-bloggers.com/the-top-7-portfolio-optimization-problems/ 
+
+
+Quantopian:
+    They added sortino and informations ration as risk metrics
+    http://www.investopedia.com/terms/s/sortinoratio.asp#axzz2KUJ6ZYyV
+    http://www.investopedia.com/terms/i/informationratio.asp#axzz2KUJ6ZYyV
 
 Ideas:
     logbook lib enable logging to twitter, might be a better way than email to remote notify

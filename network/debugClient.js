@@ -1,40 +1,43 @@
 var request = {
-    command: 'run', 
-    script: 'pocoVersion/backtester/backtest.py',
+    command: "run",
+    script: "backtester/backtest.py",
+    monitoring:      0,
     args: {
         ticker: {
-            prefix: '--ticker',
-            value: 'starbucks'
+            prefix: "--ticker",
+            value: "random,1" 
         },
         algorithm: {
-            prefix: '--algorithm',
-            value: 'DualMA'
+            prefix: "--algorithm",
+            value: "Momentum" 
         },
-        level: {
-            prefix: '--level',
-            value: 'critical'
+        delta: {
+            prefix: "--delta",
+            value:      1 
         },
-        level: {
-            prefix: '--delta',
-            value: 1
+        manager: {
+            prefix: "--manager",
+            value: "Equity" 
         },
         start: {
-            prefix: '-s',
-            value: '1/1/2001'
+            prefix: "--start",
+            value: "2005-01-10" 
         },
         end: {
-            prefix: '-e',
-            value: '1/7/2012'
-        }
+            prefix: "--end",
+            value: "2010-07-03" 
+        } 
     },
-    config: {
-        short_window: 100, 
-        long_window: 200,
-        buy_on_event: 120,
-        sell_on_event: 80
-     },
-    monitor: 'notImplemented'
+    algo: {
+        debug: false 
+    },
+    manager: {
+        loopback:     50,
+        source: "mysql" 
+    },
+    monitor: "notImplemented"
 };
+
 var txt_request = JSON.stringify(request);
 
 var net = require('net');

@@ -6,7 +6,7 @@ import os
 
 sys.path.append(str(os.environ['ZIPLINE']))
 from zipline.algorithm import TradingAlgorithm
-from zipline.transforms import MovingAverage, MovingVWAP
+from zipline.transforms import MovingAverage, MovingVWAP, batch_transform, MovingStandardDev
 #from zipline.transforms import batch_transform
 
 sys.path.append(str(os.environ['QTRADE']))
@@ -21,7 +21,7 @@ import ipdb as pdb
 class BuyAndHold(TradingAlgorithm):
     '''Simpliest algorithm ever, just buy a stock at the first frame'''
     def initialize(self, properties, strategie, parameters):
-        self.set_logger(Logger('Algorithm'))
+        self.set_logger(Logger(self.__class__.__name__))
         self.manager = PortfolioManager(self.commission.cost)
         self.manager.setup_strategie(strategie, parameters)
 
@@ -76,7 +76,6 @@ class DualMovingAverage(TradingAlgorithm):
 
     def handle_data(self, data):
         ''' ----------------------------------------------------------    Init   --'''
-        #pdb.set_trace()
         self.manager.update(self.portfolio, self.datetime.to_pydatetime())
         #self.manager.update(self.portfolio, datetime.datetime.now())
         signals = dict()
@@ -113,7 +112,7 @@ class VolumeWeightAveragePrice(TradingAlgorithm):
     '''https://www.quantopian.com/posts/updated-multi-sid-example-algorithm-1'''
     def initialize(self, properties, strategie, parameters):
         # Common setup
-        self.set_logger(Logger('Algorithm'))
+        self.set_logger(Logger(self.__class__.__name__))
         self.debug    = properties.get('debug', 0)
         window_length = properties.get('window_length', 3)
         self.manager  = PortfolioManager(self.commission.cost)
@@ -129,8 +128,7 @@ class VolumeWeightAveragePrice(TradingAlgorithm):
         self.min_notional = -1000000.0
 
         # initializing the time variables we use for logging
-        utc = pytz.timezone('UTC')
-        self.d = datetime.datetime(2008, 6, 20, 0, 0, 0, tzinfo=utc)
+        self.d = datetime.datetime(2005, 1, 10, 0, 0, 0, tzinfo=pytz.utc)
 
         self.add_transform(MovingVWAP, 'vwap', market_aware=True, window_length=window_length)
 
@@ -171,50 +169,21 @@ class VolumeWeightAveragePrice(TradingAlgorithm):
             order_book = self.manager.trade_signals_handler(signals)
             for stock in order_book:
                 if self.debug:
-                    self.logger.info('Ordering {} {} stocks'.format(stock, order_book[stock]))
+                    self.logger.info('{}: Ordering {} {} stocks'.format(self.datetime, stock, order_book[stock]))
                 self.order(stock, order_book[stock])
                 notional = notional + price * order_book[stock]
-
-'''
-class MultiMA(TradingAlgorithm):
-    #https://www.quantopian.com/posts/batch-transform-testing-trailing-window-updated-minutely
-    #https://www.quantopian.com/posts/code-example-multi-security-batch-transform-moving-average
-    # batch transform decorator settings
-    R_P = 1   # refresh_period
-    W_L = 1   # window_length
-
-    def initialize(self, properties):
-        # Lots of sids !
-        #self.stocks = [sid(21090), sid(698),sid(6872),sid(4415),sid(6119),\
-                #sid(8229),sid(39778),sid(14328),sid(630),sid(4313)]
-        pass
-
-    def handle_data(self, data):
-        # data AND self.stocks ??
-        avgs = self.get_avg(data, self.stocks)
-        event_time = data[self.stocks[0]].datetime
-        self.logger.debug(event_time)
-        self.logger.debug(avgs)
-
-    @batch_transform(refresh_period=R_P, window_length=W_L)
-    def get_avg(datapanel, sids):
-        avgs = np.zeros(len(sids))
-        for i, s in enumerate(sids):
-            avgs[i] = np.average(datapanel['price'][s].values)
-        return avgs
-'''
 
 
 class Momentum(TradingAlgorithm):
     '''
     https://www.quantopian.com/posts/this-is-amazing
-    !! Many transactions, so make the algorithm explode when traded with many positions
+    !! Many transactions, so makes the algorithm explode when traded with many positions
     '''
     def initialize(self, properties, strategie, parameters):
         self.set_logger(Logger('Algorithm'))
         self.debug    = properties.get('debug', 0)
         window_length = properties.get('window_length', 3)
-        self.manager = PortfolioManager(self.commission.cost)
+        self.manager  = PortfolioManager(self.commission.cost)
         self.manager.setup_strategie(strategie, parameters)
 
         self.max_notional = 100000.1
@@ -234,10 +203,9 @@ class Momentum(TradingAlgorithm):
             capital_used = self.portfolio.capital_used
 
             # notional stuff are portfolio strategies, implement a new one, combinaison => parameters !
-            #pdb.set_trace()
-            if sma >= price and notional > -0.2 * (capital_used[0] + cash):
+            if sma > price and notional > -0.2 * (capital_used[0] + cash):
                 signals[ticker] = - price
-            elif sma <= price and notional < 0.2 * (capital_used[0] + cash):
+            elif sma < price and notional < 0.2 * (capital_used[0] + cash):
                 signals[ticker] = price
 
         if signals:
@@ -246,13 +214,19 @@ class Momentum(TradingAlgorithm):
                 self.order(ticker, order_book[ticker])
                 if self.debug:
                     self.logger.info('{}: Ordering {} {} stocks'.format(self.datetime, ticker, order_book[ticker]))
+                    #self.logger.info('{}:  {} / {}'.format(self.datetime, sma, price))
 
 
 class MovingAverageCrossover(TradingAlgorithm):
     '''
     https://www.quantopian.com/posts/moving-average-crossover
     '''
-    def initialize(self, properties):
+    def initialize(self, properties, strategie, parameters):
+        self.set_logger(Logger(self.__class__.__name__))
+        self.debug    = properties.get('debug', 0)
+        #window_length = properties.get('window_length', 3)
+        self.manager  = PortfolioManager(self.commission.cost)
+        self.manager.setup_strategie(strategie, parameters)
         self.fast = []
         self.slow = []
         self.medium = []
@@ -266,66 +240,70 @@ class MovingAverageCrossover(TradingAlgorithm):
 
         self.entryPrice = 0.0
 
-    def handle_data(data, self):
-        self.fast.append(data[self.stock].price)
-        self.slow.append(data[self.stock].price)
-        self.medium.append(data[self.stock].price)
+    def handle_data(self, data):
+        self.manager.update(self.portfolio, self.datetime.to_pydatetime())
+        #signals = dict()
 
-        fastMovingAverage = 0.0
-        mediumMovingAverage = 0.0
-        slowMovingAverage = 0.0
+        for ticker in data:
+            self.fast.append(data[ticker].price)
+            self.slow.append(data[ticker].price)
+            self.medium.append(data[ticker].price)
 
-        if len(self.fast) > 30:
-            self.fast.pop(0)
-            fastMovingAverage = sum(self.fast) / len(self.fast)
+            fastMovingAverage = 0.0
+            mediumMovingAverage = 0.0
+            slowMovingAverage = 0.0
 
-        if len(self.medium) > 60 * 30:
-            self.medium.pop(0)
-            mediumMovingAverage = sum(self.medium) / len(self.medium)
+            if len(self.fast) > 30:
+                self.fast.pop(0)
+                fastMovingAverage = sum(self.fast) / len(self.fast)
 
-        if len(self.slow) > 60 * 60:
-            self.slow.pop(0)
-            slowMovingAverage = sum(self.slow) / len(self.slow)
+            if len(self.medium) > 60 * 30:
+                self.medium.pop(0)
+                mediumMovingAverage = sum(self.medium) / len(self.medium)
 
-        if ((self.holdingLongPosition is False and self.holdingShortPosition is False)
-                and ((mediumMovingAverage > 0.0 and slowMovingAverage > 0.0)
-                and (mediumMovingAverage > slowMovingAverage))):
-            self.passedMediumLong = True
+            if len(self.slow) > 60 * 60:
+                self.slow.pop(0)
+                slowMovingAverage = sum(self.slow) / len(self.slow)
 
-        if ((self.holdingLongPosition is False and self.holdingShortPosition is False)
-                 and ((mediumMovingAverage > 0.0 and slowMovingAverage > 0.0)
-                 and (mediumMovingAverage < slowMovingAverage))):
-            self.passedMediumShort = True
+            if ((self.holdingLongPosition is False and self.holdingShortPosition is False)
+                    and ((mediumMovingAverage > 0.0 and slowMovingAverage > 0.0)
+                    and (mediumMovingAverage > slowMovingAverage))):
+                self.passedMediumLong = True
 
-        # Entry Strategies
-        if (self.holdingLongPosition is False and self.holdingShortPosition is False
-                 and self.passedMediumLong is True
-                 and ((fastMovingAverage > 0.0 and slowMovingAverage > 0.0)
-                 and (fastMovingAverage > mediumMovingAverage))):
+            if ((self.holdingLongPosition is False and self.holdingShortPosition is False)
+                     and ((mediumMovingAverage > 0.0 and slowMovingAverage > 0.0)
+                     and (mediumMovingAverage < slowMovingAverage))):
+                self.passedMediumShort = True
 
-            if self.breakoutFilter > 5:
-                self.logger.info("ENTERING LONG POSITION")
-                self.order(self.stock, 100)
+            # Entry Strategies
+            if (self.holdingLongPosition is False and self.holdingShortPosition is False
+                     and self.passedMediumLong is True
+                     and ((fastMovingAverage > 0.0 and slowMovingAverage > 0.0)
+                     and (fastMovingAverage > mediumMovingAverage))):
 
-                self.holdingLongPosition = True
-                self.breakoutFilter = 0
-                self.entryPrice = data[self.stock].price
-            else:
-                self.breakoutFilter += 1
+                if self.breakoutFilter > 5:
+                    self.logger.info("ENTERING LONG POSITION")
+                    self.order(ticker, 100)
 
-        if (self.holdingShortPosition is False and self.holdingLongPosition is False
-                and self.passedMediumShort is True
-                and ((fastMovingAverage > 0.0 and slowMovingAverage > 0.0)
-                and (fastMovingAverage < mediumMovingAverage))):
+                    self.holdingLongPosition = True
+                    self.breakoutFilter = 0
+                    self.entryPrice = data[ticker].price
+                else:
+                    self.breakoutFilter += 1
 
-            if self.breakoutFilter > 5:
-                self.logger.info("ENTERING SHORT POSITION")
-                self.order(self.stock, -100)
-                self.holdingShortPosition = True
-                self.breakoutFilter = 0
-                self.entryPrice = data[self.stock].price
-            else:
-                self.breakoutFilter += 1
+            if (self.holdingShortPosition is False and self.holdingLongPosition is False
+                    and self.passedMediumShort is True
+                    and ((fastMovingAverage > 0.0 and slowMovingAverage > 0.0)
+                    and (fastMovingAverage < mediumMovingAverage))):
+
+                if self.breakoutFilter > 5:
+                    self.logger.info("ENTERING SHORT POSITION")
+                    self.order(ticker, -100)
+                    self.holdingShortPosition = True
+                    self.breakoutFilter = 0
+                    self.entryPrice = data[ticker].price
+                else:
+                    self.breakoutFilter += 1
 
         # Exit Strategies
         if (self.holdingLongPosition is True
@@ -333,7 +311,7 @@ class MovingAverageCrossover(TradingAlgorithm):
                     and (fastMovingAverage < mediumMovingAverage))):
 
             if self.breakoutFilter > 5:
-                self.order(self.stock, -100)
+                self.order(ticker, -100)
                 self.holdingLongPosition = False
                 self.breakoutFilter = 0
             else:
@@ -343,7 +321,7 @@ class MovingAverageCrossover(TradingAlgorithm):
                 and ((fastMovingAverage > 0.0 and slowMovingAverage > 0.0)
                 and (fastMovingAverage > mediumMovingAverage))):
             if self.breakoutFilter > 5:
-                self.order(self.stock, 100)
+                self.order(ticker, 100)
                 self.holdingShortPosition = False
                 self.breakoutFilter = 0
             else:
@@ -351,21 +329,25 @@ class MovingAverageCrossover(TradingAlgorithm):
 
 
 class OLMAR(TradingAlgorithm):
-    def initialize(self, properties):
+    def initialize(self, properties, strategie, parameters):
+        self.set_logger(Logger(self.__class__.__name__))
         # http://money.usnews.com/funds/etfs/rankings/small-cap-funds
-        #self.stocks = [sid(27796),sid(33412),sid(38902),sid(21508),sid(39458),sid(25899),sid(40143),sid(21519),sid(39143),sid(26449)]
-        self.m = len(self.stocks)
+        #tickers = [sid(27796),sid(33412),sid(38902),sid(21508),sid(39458),sid(25899),sid(40143),sid(21519),sid(39143),sid(26449)]
+        self.m = 1
         self.price = {}
         self.b_t = np.ones(self.m) / self.m
         self.eps = 1.04   # Change epsilon here
         self.init = False
 
-        self.set_slippage(self.slippage.VolumeShareSlippage(volume_limit=0.25, price_impact=0))
-        self.set_commission(self.commission.PerShare(cost=0))
+        #FIXME try self.slippage.simulate()
+        #self.set_slippage(self.slippage.VolumeShareSlippage(volume_limit=0.25, price_impact=0))
+        #self.set_commission(self.commission.PerShare(cost=0))
+
+        self.add_transform(MovingAverage, 'mavg', ['price'], window_length=5)
 
     def handle_data(self, data):
         if not self.init:
-            self.rebalance_portfolio(self, data, self.b_t)
+            self.rebalance_portfolio(data, self.b_t)
             self.init = True
             return
 
@@ -374,9 +356,9 @@ class OLMAR(TradingAlgorithm):
         b = np.zeros(m)
 
         # find relative moving average price for each security
-        for i, stock in enumerate(self.stocks):
+        for i, stock in enumerate(data.keys()):
             price = data[stock].price
-            x_tilde[i] = float(data[stock].mavg(5)) / price   # change moving average window here
+            x_tilde[i] = float(data[stock].mavg.price) / price   # change moving average window here
 
         ###########################
         # Inside of OLMAR (algo 2)
@@ -396,7 +378,7 @@ class OLMAR(TradingAlgorithm):
 
         b = self.b_t + lam * (x_tilde - x_bar)
         b_norm = self.simplex_projection(b)
-        self.rebalance_portfolio(self, data, b_norm)
+        self.rebalance_portfolio(data, b_norm)
 
         # update portfolio
         self.b_t = b_norm
@@ -412,16 +394,16 @@ class OLMAR(TradingAlgorithm):
         else:
             positions_value = self.portfolio.positions_value + self.portfolio.cash
 
-        for i, stock in enumerate(self.stocks):
+        for i, stock in enumerate(data.keys()):
             current_amount[i] = self.portfolio.positions[stock].amount
             desired_amount[i] = desired_port[i] * positions_value / data[stock].price
 
         diff_amount = desired_amount - current_amount
 
-        for i, stock in enumerate(self.stocks):
+        for i, stock in enumerate(data.keys()):
             self.order(stock, diff_amount[i])   # order_stock
 
-    def simplex_projection(v, b=1):
+    def simplex_projection(self, v, b=1):
         """Projection vectors to the simplex domain
 
         Implemented according to the paper: Efficient projections onto the
@@ -460,7 +442,8 @@ class OLMAR(TradingAlgorithm):
 
 
 class StddevBased(TradingAlgorithm):
-    def initialize(self, properties):
+    def initialize(self, properties, strategie, parameters):
+        self.set_logger(Logger(self.__class__.__name__))
         # Variable to hold opening price of long trades
         self.long_open_price = 0
 
@@ -486,6 +469,9 @@ class StddevBased(TradingAlgorithm):
         # trading ability will be turned off... tut tut tut :shakes head dissapprovingly:)
         self.plug_pulled = False
 
+        self.add_transform(MovingStandardDev, 'stddev', window_length=9)
+        self.add_transform(MovingVWAP, 'vwap', window_length=5)
+
     def handle_data(self, data):
         # Reporting Variables
         profit = 0
@@ -494,62 +480,99 @@ class StddevBased(TradingAlgorithm):
 
         # Data Variables
         starting_cash = self.portfolio.starting_cash
-        price = data[self.stock].price
-        vwap_5_day = data[self.stock].vwap(5)
-        equity = self.portfolio.cash + self.portfolio.positions_value
-        standard_deviation = data[self.stock].stddev(9)
+        for i, stock in enumerate(data.keys()):
+            price = data[stock].price
+            vwap_5_day = data[stock].vwap
+            equity = self.portfolio.cash + self.portfolio.positions_value
+            standard_deviation = data[stock].stddev
+            if not standard_deviation:
+                continue
 
-        # Set order size
+            # Set order size
 
-        # (Set here as "starting_cash/1000" - which coupled with the below
-        # "and price < 1000" - is a scalable way of setting (initially :P)
-        # affordable order quantities (for most stocks).
+            # (Set here as "starting_cash/1000" - which coupled with the below
+            # "and price < 1000" - is a scalable way of setting (initially :P)
+            # affordable order quantities (for most stocks).
 
-        order_amount = starting_cash / 1000
+            order_amount = starting_cash / 1000
 
-        # Open Long Position if current price is larger than the 9 day volume weighted average
-        # plus 60% of the standard deviation (meaning the price has broken it's range to the
-        # up-side by 10% more than the range value)
-        if price > vwap_5_day + (standard_deviation * 0.6) and self.long_open is False and price < 1000:
-            self.order(self.stock, +order_amount)
-            self.long_open = True
-            self.long_open_price = price
-            self.long_stoploss = self.long_open_price - standard_deviation * 0.6
-            self.long_takeprofit = self.long_open_price + standard_deviation * 0.5
-            print 'Long Position Ordered'
+            # Open Long Position if current price is larger than the 9 day volume weighted average
+            # plus 60% of the standard deviation (meaning the price has broken it's range to the
+            # up-side by 10% more than the range value)
+            if price > vwap_5_day + (standard_deviation * 0.6) and self.long_open is False and price < 1000:
+                self.order(stock, +order_amount)
+                self.long_open = True
+                self.long_open_price = price
+                self.long_stoploss = self.long_open_price - standard_deviation * 0.6
+                self.long_takeprofit = self.long_open_price + standard_deviation * 0.5
+                print 'Long Position Ordered'
 
-        # Close Long Position if takeprofit value hit
+            # Close Long Position if takeprofit value hit
 
-        # Note that less volatile stocks can end up hitting takeprofit at a small loss
-        if price >= self.long_takeprofit and self.long_open is True:
-            self.order(self.stock, -order_amount)
-            self.long_open = False
-            self.long_takeprofit = 0
-            profit = (price * order_amount) - (self.long_open_price * order_amount)
-            self.successes = self.successes + 1
-            print 'Long Position Closed by Takeprofit at $%d profit' % (profit)
-            print 'Total Equity now at $%d' % (equity)
-            print 'So far you have had %d successful trades and %d failed trades' % (self.successes, self.fails)
-            print 'That leaves you with a winning percentage of %d percent' % (winning_percentage)
+            # Note that less volatile stocks can end up hitting takeprofit at a small loss
+            if price >= self.long_takeprofit and self.long_open is True:
+                self.order(stock, -order_amount)
+                self.long_open = False
+                self.long_takeprofit = 0
+                profit = (price * order_amount) - (self.long_open_price * order_amount)
+                self.successes = self.successes + 1
+                print 'Long Position Closed by Takeprofit at $%d profit' % (profit)
+                print 'Total Equity now at $%d' % (equity)
+                print 'So far you have had %d successful trades and %d failed trades' % (self.successes, self.fails)
+                print 'That leaves you with a winning percentage of %d percent' % (winning_percentage)
 
-        # Close Long Position if stoploss value hit
-        if price <= self.long_stoploss and self.long_open is True:
-            self.order(self.stock, -order_amount)
-            self.long_open = False
-            self.long_stoploss = 0
-            profit = (price * order_amount) - (self.long_open_price * order_amount)
-            self.fails = self.fails + 1
-            print 'Long Position Closed by Stoploss at $%d profit' % (profit)
-            print 'Total Equity now at $%d' % (equity)
-            print 'So far you have had %d successful trades and %d failed trades' % (self.successes, self.fails)
-            print 'That leaves you with a winning percentage of %d percent' % (winning_percentage)
+            # Close Long Position if stoploss value hit
+            if price <= self.long_stoploss and self.long_open is True:
+                self.order(stock, -order_amount)
+                self.long_open = False
+                self.long_stoploss = 0
+                profit = (price * order_amount) - (self.long_open_price * order_amount)
+                self.fails = self.fails + 1
+                print 'Long Position Closed by Stoploss at $%d profit' % (profit)
+                print 'Total Equity now at $%d' % (equity)
+                print 'So far you have had %d successful trades and %d failed trades' % (self.successes, self.fails)
+                print 'That leaves you with a winning percentage of %d percent' % (winning_percentage)
 
-        # Pull Plug?
-        if equity < starting_cash * 0.7:
-            self.plug_pulled = True
-            print "Ouch! We've pulled the plug..."
+            # Pull Plug?
+            if equity < starting_cash * 0.7:
+                self.plug_pulled = True
+                print "Ouch! We've pulled the plug..."
 
-        if self.plug_pulled is True and self.long_open is True:
-            self.order(self.stock, -order_amount)
-            self.long_open = False
-            self.long_stoploss = 0
+            if self.plug_pulled is True and self.long_open is True:
+                self.order(stock, -order_amount)
+                self.long_open = False
+                self.long_stoploss = 0
+
+
+class MultiMA(TradingAlgorithm):
+    ''' This class is for learning zipline decorator only '''
+    #FIXME decorator screw everything
+    #https://www.quantopian.com/posts/batch-transform-testing-trailing-window-updated-minutely
+    #https://www.quantopian.com/posts/code-example-multi-security-batch-transform-moving-average
+    # batch transform decorator settings
+    R_P = 1   # refresh_period
+    W_L = 1   # window_length
+
+    def initialize(self, properties, strategie, parameters):
+        #tickers = [sid(21090), sid(698),sid(6872),sid(4415),sid(6119),\
+                #sid(8229),sid(39778),sid(14328),sid(630),sid(4313)]
+        self.set_logger(Logger(self.__class__.__name__))
+        self.debug    = properties.get('debug', 0)
+        self.window_length = properties.get('window_length', 3)
+        self.manager  = PortfolioManager(self.commission.cost)
+        self.manager.setup_strategie(strategie, parameters)
+
+    def handle_data(self, data):
+        self.manager.update(self.portfolio, self.datetime.to_pydatetime())
+        avgs = get_avg(refresh_period=1, window_length=3)
+        self.logger.debug('{}: avgs: {}'.format(self.datetime, avgs))
+
+
+#@batch_transform(refresh_period=R_P, window_length=W_L)
+#def get_avg(datapanel, refresh_period=R_P, window_length=W_L):
+@batch_transform
+def get_avg(data, refresh_period=1, window_length=3):
+    avgs = np.zeros(len(data))
+    for ticker in data:
+        avgs[ticker] = np.average(data[ticker].price)
+    return avgs

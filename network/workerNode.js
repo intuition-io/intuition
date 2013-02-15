@@ -8,7 +8,8 @@ function run_worker(request_txt, socket)
     var script_args = []
     for (var arg in request.args) {
         script_args.push(request.args[arg].prefix);
-        script_args.push(request.args[arg].value);
+        if (request.args[arg].prefix != '--interactive')
+            script_args.push(request.args[arg].value);
     };
 
     //var script = require('path').join(__dirname, request.script);

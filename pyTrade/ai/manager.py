@@ -24,6 +24,7 @@ class PortfolioManager(object):
     @param positions : list holding active positions like ["google", "apple"]
     @param level     : verbose level
     '''
+    #TODO Add in the constructor or setup parameters some general settings like maximum weights, positions, frequency,...
     def __init__(self, commission_cost=0, lvl='debug'):
         super(PortfolioManager, self).__init__()
         self.log = Logger('Manager')
@@ -56,7 +57,8 @@ class PortfolioManager(object):
                 available_money -= ((self.portfolio.positions[t].amount - 250) * abs(signals[t]))
         #positions = set(self.portfolio.positions.keys()).union(to_buy).symmetric_difference(to_sell)
         #positions = set([stock for stock in self.portfolio.positions.keys() if stock in signals or self.portfolio.positions[stock].amount != 0]).symmetric_difference(to_sell)
-        positions = [stock for stock in self.portfolio.positions.keys() if stock in to_buy or self.portfolio.positions[stock].amount != 0]
+        positions = [stock for stock in self.portfolio.positions.keys()
+                     if stock in to_buy or self.portfolio.positions[stock].amount != 0]
 
         if positions:
             if len(positions) == 1:
@@ -75,14 +77,6 @@ class PortfolioManager(object):
                 orderBook[ticker] = int(round((available_money * alloc[ticker]) / signals[ticker]))
         return orderBook
 
-    def setup_strategie(self, callback, parameters):
-        self._callback = callback
-        self._optimizer_parameters = parameters
-        # General parameters
-        self.max_weight = parameters.get('max_weight', 1)
-        #NOTE Could measure transaction frequency and limit it
-        self.max_frequency = parameters.get('max_frequency', 2)
-
     def _optimize_weigths(self, positions, date):
         symbols = []
         pos_alloc = dict()
@@ -92,6 +86,14 @@ class PortfolioManager(object):
         for s, t in zip(symbols, positions):
             pos_alloc[t] = syms_alloc[s]
         return pos_alloc, e_ret, e_risk
+
+    def setup_strategie(self, callback, parameters):
+        self._callback = callback
+        self._optimizer_parameters = parameters
+        # General parameters
+        self.max_weight = parameters.get('max_weight', 1)
+        #NOTE Could measure transaction frequency and limit it
+        self.max_frequency = parameters.get('max_frequency', 2)
 
 
 #NOTE A class for each, inhereted from manager that would override the strategie function ?
