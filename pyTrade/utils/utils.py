@@ -38,6 +38,7 @@ setup = NestedSetup([
 log = Logger('Trade Labo')
 '''__________________________________________________________________________________________________________'''
 
+
 class Currency(object):
     #TODO: A class for common methods and a currency object ?
     #TODO: inheritant from ccy.currency ?

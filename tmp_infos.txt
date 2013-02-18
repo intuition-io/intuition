@@ -1,0 +1,69 @@
+data = remote.getStockSnaphot(['goog'], ['nasdaq'])
+{'goog': {u'c': u'+5.07',
+  u'ccol': u'chg',
+  u'cp': u'0.64',
+  u'e': u'NASDAQ',
+  u'id': u'694653',
+  u'l': u'792.89',
+  u'l_cur': u'792.89',
+  u'lt': u'Feb 15, 4:00PM EST',
+  u'ltt': u'4:00PM EST',
+  u's': u'0',
+  u't': u'GOOG'}}
+
+
+from pyTrade.data.RemoteData import *
+remote = RemoteData()
+data = remote.getStockSnaphot(['goog'], ['nasdaq'], light=False)
+
+{'goog': 
+{u'avg_volume'           : u'2461',
+  u'brut_last'           : u'',
+  u'brut_trade_date_utc' : u'',
+  u'brut_trade_time_utc' : u'',
+  u'change'              : u'+5.07',
+  u'chart_url'           : u'/finance/chart?q=NASDAQ:GOOG&tlf=12',
+  u'company'             : u'Google Inc',
+  u'currency'            : u'USD',
+  u'current_date_utc'    : u'20130216',
+  u'current_time_utc'    : u'120246',
+  u'daylight_savings'    : u'false',
+  u'delay'               : u'0',
+  u'disclaimer_url'      : u'/help/stock_disclaimer.html',
+  u'divisor'             : u'2',
+  u'ecn_url'             : u'',
+  u'exchange'            : u'Nasdaq',
+  u'exchange_closing'    : u'960',
+  u'exchange_timezone'   : u'ET',
+  u'exchange_utc_offset' : u'+05:00',
+  u'high'                : u'793.26',
+  u'isld_last'           : u'',
+  u'isld_trade_date_utc' : u'',
+  u'isld_trade_time_utc' : u'',
+  u'last'                : u'792.89',
+  u'low'                 : u'787.07',
+  u'market_cap'          : u'261386.66',
+  u'open'                : u'787.40',
+  u'perc_change'         : u'0.64',
+  u'pretty_symbol'       : u'GOOG',
+  u'symbol'              : u'GOOG',
+  u'symbol_lookup_url'   : u'/finance?client=ig&q=GOOG',
+  u'symbol_url'          : u'/finance?client=ig&q=GOOG',
+  u'trade_date_utc'      : u'20130215',
+  u'trade_time_utc'      : u'210000',
+  u'trade_timestamp'     : u'15 hours ago',
+  u'volume'              : u'2729917',
+  u'y_close'             : u'787.82'}}
+
+
+In [8]: data = remote.getStockInfo(['goog'], ['ask', 'change'])
+
+In [9]: data
+Out[9]: 
+          goog
+ask     792.75
+change   +5.07
+error     "N/A
+
+In [10]: type(data)
+Out[10]: pandas.core.frame.DataFrame

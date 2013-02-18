@@ -1,7 +1,34 @@
+Most great websites ressource
+    https://www.sigfig.com/
+    http://timetotrade.eu/
+    http://www.academictrader.org/
+    https://lucenaresearch.com/our-products/
+    http://www.rapidquant.com/
+    https://github.com/trbck    Datafeed and zipline stuffs
+    https://gist.github.com/fawce   One of quantopian contributor
+    https://github.com/quantopian/quantopian-algos    pairs-trade worth a try
+    https://github.com/ravster/pleasance
+    https://github.com/aivgit/aivengo
+    https://github.com/fxmozart/encog-dotnet-core    Encog markte examples
+    http://www.estimize.com/
+    https://www.recordedfuture.com/
+    http://stocktwits.com/
+    http://gekkoquant.com/
+    https://github.com/ermakus/pyquik
+    https://github.com/gbeced/pyalgotrade
+    http://stockcharts.com/school/doku.php?id=chart_school:trading_strategies
+    http://quantsignals.wordpress.com/
+
+
+Zipline data:
+    self.add_source(source)   Could provide more informations
+    CustomObject(DataSource)  Implement a custom source 
+    Custom zipline adapter to produce data
+
 TODO:
-    A way to keep track of positions before yelling signals
+    A way to keep track of positions before yelling signals, see https://gist.github.com/fawce/1578485 for state machine, monitoring
     2 new initialize and handle_data functions to factorize manager stuff
-    pots du 13/02 sur r-bloggers !!
+    posts du 13/02 sur r-bloggers !!
 
 Openstack: hosting and distributed platform
     http://wiki.openstack.org/StartingPage
@@ -72,3 +99,13 @@ Quantopian:
 
 Ideas:
     logbook lib enable logging to twitter, might be a better way than email to remote notify
+
+Web dev:
+    http://howtonode.org/heat-tracer
+    https://github.com/Sly777/Chat-Tutorial-with-Node.js--Socket.io-and-Express
+    http://www.danielbaulig.de/socket-ioexpress/
+    https://github.com/haganbt/Datasift-Interaction-Counter
+    http://www.aerotwist.com/tutorials/getting-started-with-three-js/
+    http://processingjs.org/learning/
+    http://knockoutjs.com/examples/twitter.html
+    http://backbonejs.org/

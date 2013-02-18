@@ -43,6 +43,7 @@ res
 deprecated
 dist
 QSData
+node_modules
 
 # R
 # History files

@@ -14,7 +14,7 @@ import qstkutil.DataAccess as da
 sys.path.append(str(os.environ['QTRADE']))
 from pyTrade.utils.LogSubsystem import LogSubsystem
 from pyTrade.data.QuantDB import QuantSQLite, Fields
-from pyTrade.data.RemoteData import RemoteData
+from pyTrade.data.remote import Fetcher
 
 
 class DataAgent(object):
@@ -43,7 +43,7 @@ class DataAgent(object):
             self._logger.info('Database location provided, Connected to %s' % db_name)
             self.connected['database'] = True
         if 'remote' in connections:
-            self.remote = RemoteData(timezone=tz, logger=log, lvl=lvl)
+            self.remote = Fetcher(timezone=tz, logger=log, lvl=lvl)
             self.connected['remote'] = True
         if 'csv' in connections:
             raise NotImplementedError()

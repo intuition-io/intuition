@@ -4,13 +4,12 @@ import numpy as np
 import sys
 import os
 
-sys.path.append(str(os.environ['ZIPLINE']))
+sys.path.append(os.environ['ZIPLINE'])
 from zipline.algorithm import TradingAlgorithm
 from zipline.transforms import MovingAverage, MovingVWAP, batch_transform, MovingStandardDev
-#from zipline.transforms import batch_transform
 
 sys.path.append(str(os.environ['QTRADE']))
-from pyTrade.ai.manager import PortfolioManager
+from pyTrade.ai.old_manager import PortfolioManager
 
 from logbook import Logger
 import ipdb as pdb
@@ -20,14 +19,15 @@ import ipdb as pdb
 #TODO Should handle in parameter all of the set_*
 class BuyAndHold(TradingAlgorithm):
     '''Simpliest algorithm ever, just buy a stock at the first frame'''
-    def initialize(self, properties, strategie, parameters):
-        self.set_logger(Logger(self.__class__.__name__))
-        self.manager = PortfolioManager(self.commission.cost)
-        self.manager.setup_strategie(strategie, parameters)
+    def initialize(self, properties):
+        #NOTE You can't use it here, no self.manager yet. Issue ? Could configure every common parameters in Backtester engine
+        #     and use setupe_strategie as an update
+        #self.manager.setup_strategie({'commission_cost': self.commission.cost})
+        pass
 
     def handle_data(self, data):
+        #NOTE as self.frame_count, manager could be update in zipline.gens.tradesimulation, or use decorator ?
         ''' ----------------------------------------------------------    Init   --'''
-        self.frame_count += 1
         self.manager.update(self.portfolio, self.datetime.to_pydatetime())
         signals = dict()
 
@@ -39,8 +39,9 @@ class BuyAndHold(TradingAlgorithm):
         ''' ----------------------------------------------------------   Orders  --'''
         if signals:
             orderBook = self.manager.trade_signals_handler(signals)
-            for order in orderBook:
-                self.order(order, orderBook[order])
+            for stock in orderBook:
+                self.logger.info('{}: Ordering {} {} stocks'.format(self.datetime, stock, orderBook[stock]))
+                self.order(stock, orderBook[stock])
 
 
 class DualMovingAverage(TradingAlgorithm):
@@ -50,7 +51,7 @@ class DualMovingAverage(TradingAlgorithm):
     its shares once the averages cross again (indicating downwards
     momentum).
     """
-    def initialize(self, properties, strategie, parameters):
+    def initialize(self, properties):
         short_window       = properties.get('short_window', 200)
         long_window        = properties.get('long_window', 400)
         self.amount        = properties.get('amount', 10000)
@@ -65,21 +66,15 @@ class DualMovingAverage(TradingAlgorithm):
                            window_length=long_window)
 
         # To keep track of whether we invested in the stock or not
-        self.invested = {}
+        self.invested    = {}
 
         self.short_mavgs = []
-        self.long_mavgs = []
-
-        self.manager = PortfolioManager(self.commission.cost)
-        #self.manager.setup_strategie(strategie, loopback=parameters.get('loopback', 50), source=parameters.get('source', 'mysql'))
-        self.manager.setup_strategie(strategie, parameters)
+        self.long_mavgs  = []
 
     def handle_data(self, data):
         ''' ----------------------------------------------------------    Init   --'''
         self.manager.update(self.portfolio, self.datetime.to_pydatetime())
-        #self.manager.update(self.portfolio, datetime.datetime.now())
         signals = dict()
-        self.frame_count += 1
         if (self.frame_count == 1):
             for t in data:
                 self.invested[t] = False
@@ -100,7 +95,7 @@ class DualMovingAverage(TradingAlgorithm):
             orderBook = self.manager.trade_signals_handler(signals)
             for ticker in orderBook:
                 if self.debug:
-                    print('Ordering {} {} stocks'.format(ticker, orderBook[ticker]))
+                    self.logger.info('Ordering {} {} stocks'.format(ticker, orderBook[ticker]))
                 self.order(ticker, orderBook[ticker])
 
         # Save mavgs for later analysis.
@@ -110,13 +105,9 @@ class DualMovingAverage(TradingAlgorithm):
 
 class VolumeWeightAveragePrice(TradingAlgorithm):
     '''https://www.quantopian.com/posts/updated-multi-sid-example-algorithm-1'''
-    def initialize(self, properties, strategie, parameters):
+    def initialize(self, properties):
         # Common setup
-        self.set_logger(Logger(self.__class__.__name__))
         self.debug    = properties.get('debug', 0)
-        window_length = properties.get('window_length', 3)
-        self.manager  = PortfolioManager(self.commission.cost)
-        self.manager.setup_strategie(strategie, parameters)
 
         # Here we initialize each stock.  Note that we're not storing integers; by
         # calling sid(123) we're storing the Security object.
@@ -130,16 +121,17 @@ class VolumeWeightAveragePrice(TradingAlgorithm):
         # initializing the time variables we use for logging
         self.d = datetime.datetime(2005, 1, 10, 0, 0, 0, tzinfo=pytz.utc)
 
-        self.add_transform(MovingVWAP, 'vwap', market_aware=True, window_length=window_length)
+        self.add_transform(MovingVWAP, 'vwap', market_aware=True, window_length=properties.get('window_length', 3))
 
     def handle_data(self, data):
-        self.frame_count += 1
+        ''' ----------------------------------------------------------    Init   --'''
         signals = dict()
         self.manager.update(self.portfolio, self.datetime.to_pydatetime())
 
         # Initializing the position as zero at the start of each frame
         notional = 0
 
+        ''' ----------------------------------------------------------    Scan   --'''
         # This runs through each stock.  It computes
         # our position at the start of each frame.
         for stock in data:
@@ -165,6 +157,7 @@ class VolumeWeightAveragePrice(TradingAlgorithm):
             self.logger.debug(str(notional) + ' - notional start ' + tradeday.strftime('%m/%d/%y'))
             self.d = tradeday
 
+        ''' ----------------------------------------------------------   Orders  --'''
         if signals and self.datetime.to_pydatetime() > self.portfolio.start_date:
             order_book = self.manager.trade_signals_handler(signals)
             for stock in order_book:
@@ -179,12 +172,9 @@ class Momentum(TradingAlgorithm):
     https://www.quantopian.com/posts/this-is-amazing
     !! Many transactions, so makes the algorithm explode when traded with many positions
     '''
-    def initialize(self, properties, strategie, parameters):
-        self.set_logger(Logger('Algorithm'))
+    def initialize(self, properties):
         self.debug    = properties.get('debug', 0)
         window_length = properties.get('window_length', 3)
-        self.manager  = PortfolioManager(self.commission.cost)
-        self.manager.setup_strategie(strategie, parameters)
 
         self.max_notional = 100000.1
         self.min_notional = -100000.0
@@ -192,9 +182,12 @@ class Momentum(TradingAlgorithm):
         self.add_transform(MovingAverage, 'mavg', ['price'], window_length=window_length)
 
     def handle_data(self, data):
+        ''' ----------------------------------------------------------    Init   --'''
         self.manager.update(self.portfolio, self.datetime.to_pydatetime())
         signals = dict()
         notional = 0
+
+        ''' ----------------------------------------------------------    Scan   --'''
         for ticker in data:
             sma          = data[ticker].mavg.price
             price        = data[ticker].price
@@ -208,6 +201,7 @@ class Momentum(TradingAlgorithm):
             elif sma < price and notional < 0.2 * (capital_used[0] + cash):
                 signals[ticker] = price
 
+        ''' ----------------------------------------------------------   Orders  --'''
         if signals:
             order_book = self.manager.trade_signals_handler(signals)
             for ticker in order_book:
@@ -241,9 +235,11 @@ class MovingAverageCrossover(TradingAlgorithm):
         self.entryPrice = 0.0
 
     def handle_data(self, data):
+        ''' ----------------------------------------------------------    Init   --'''
         self.manager.update(self.portfolio, self.datetime.to_pydatetime())
         #signals = dict()
 
+        ''' ----------------------------------------------------------    Scan   --'''
         for ticker in data:
             self.fast.append(data[ticker].price)
             self.slow.append(data[ticker].price)
@@ -326,11 +322,11 @@ class MovingAverageCrossover(TradingAlgorithm):
                 self.breakoutFilter = 0
             else:
                 self.breakoutFilter += 1
+        ''' ----------------------------------------------------------   Orders  --'''
 
 
 class OLMAR(TradingAlgorithm):
-    def initialize(self, properties, strategie, parameters):
-        self.set_logger(Logger(self.__class__.__name__))
+    def initialize(self, properties):
         # http://money.usnews.com/funds/etfs/rankings/small-cap-funds
         #tickers = [sid(27796),sid(33412),sid(38902),sid(21508),sid(39458),sid(25899),sid(40143),sid(21519),sid(39143),sid(26449)]
         self.m = 1
@@ -346,6 +342,7 @@ class OLMAR(TradingAlgorithm):
         self.add_transform(MovingAverage, 'mavg', ['price'], window_length=5)
 
     def handle_data(self, data):
+        ''' ----------------------------------------------------------    Init   --'''
         if not self.init:
             self.rebalance_portfolio(data, self.b_t)
             self.init = True
@@ -355,6 +352,7 @@ class OLMAR(TradingAlgorithm):
         x_tilde = np.zeros(m)
         b = np.zeros(m)
 
+        ''' ----------------------------------------------------------    Scan   --'''
         # find relative moving average price for each security
         for i, stock in enumerate(data.keys()):
             price = data[stock].price
@@ -383,6 +381,7 @@ class OLMAR(TradingAlgorithm):
         # update portfolio
         self.b_t = b_norm
         self.logger.debug(b_norm)
+        ''' ----------------------------------------------------------   Orders  --'''
 
     def rebalance_portfolio(self, data, desired_port):
         #rebalance portfolio
@@ -442,8 +441,8 @@ class OLMAR(TradingAlgorithm):
 
 
 class StddevBased(TradingAlgorithm):
-    def initialize(self, properties, strategie, parameters):
-        self.set_logger(Logger(self.__class__.__name__))
+    def initialize(self, properties):
+        self.debug    = properties.get('debug', 0)
         # Variable to hold opening price of long trades
         self.long_open_price = 0
 
@@ -461,7 +460,6 @@ class StddevBased(TradingAlgorithm):
         # Initialised at 0.0000000001 to avoid dividing by 0 in winning_percentage calculation
         # (meaning that reporting will get more accurate as more trades are made, but may start
         # off looking strange)
-
         self.successes = 0.0000000001
         self.fails = 0.0000000001
 
@@ -469,17 +467,19 @@ class StddevBased(TradingAlgorithm):
         # trading ability will be turned off... tut tut tut :shakes head dissapprovingly:)
         self.plug_pulled = False
 
-        self.add_transform(MovingStandardDev, 'stddev', window_length=9)
-        self.add_transform(MovingVWAP, 'vwap', window_length=5)
+        self.add_transform(MovingStandardDev, 'stddev', window_length=properties.get('stddev', 9))
+        self.add_transform(MovingVWAP, 'vwap', window_length=properties.get('vwap_window', 5))
 
     def handle_data(self, data):
+        ''' ----------------------------------------------------------    Init   --'''
         # Reporting Variables
         profit = 0
         total_trades = self.successes + self.fails
         winning_percentage = self.successes / total_trades * 100
 
+        #pdb.set_trace()
+        ''' ----------------------------------------------------------    Scan   --'''
         # Data Variables
-        starting_cash = self.portfolio.starting_cash
         for i, stock in enumerate(data.keys()):
             price = data[stock].price
             vwap_5_day = data[stock].vwap
@@ -494,7 +494,7 @@ class StddevBased(TradingAlgorithm):
             # "and price < 1000" - is a scalable way of setting (initially :P)
             # affordable order quantities (for most stocks).
 
-            order_amount = starting_cash / 1000
+            order_amount = self.portfolio.starting_cash / 1000
 
             # Open Long Position if current price is larger than the 9 day volume weighted average
             # plus 60% of the standard deviation (meaning the price has broken it's range to the
@@ -505,7 +505,7 @@ class StddevBased(TradingAlgorithm):
                 self.long_open_price = price
                 self.long_stoploss = self.long_open_price - standard_deviation * 0.6
                 self.long_takeprofit = self.long_open_price + standard_deviation * 0.5
-                print 'Long Position Ordered'
+                self.logger.info('{}: Long Position Ordered'.format(self.datetime))
 
             # Close Long Position if takeprofit value hit
 
@@ -516,10 +516,10 @@ class StddevBased(TradingAlgorithm):
                 self.long_takeprofit = 0
                 profit = (price * order_amount) - (self.long_open_price * order_amount)
                 self.successes = self.successes + 1
-                print 'Long Position Closed by Takeprofit at $%d profit' % (profit)
-                print 'Total Equity now at $%d' % (equity)
-                print 'So far you have had %d successful trades and %d failed trades' % (self.successes, self.fails)
-                print 'That leaves you with a winning percentage of %d percent' % (winning_percentage)
+                self.logger.info('Long Position Closed by Takeprofit at ${} profit'.format(profit))
+                self.logger.info('Total Equity now at ${}'.format(equity))
+                self.logger.info('So far you have had {} successful trades and {} failed trades'.format(self.successes, self.fails))
+                self.logger.info('That leaves you with a winning percentage of {} percent'.format(winning_percentage))
 
             # Close Long Position if stoploss value hit
             if price <= self.long_stoploss and self.long_open is True:
@@ -528,20 +528,21 @@ class StddevBased(TradingAlgorithm):
                 self.long_stoploss = 0
                 profit = (price * order_amount) - (self.long_open_price * order_amount)
                 self.fails = self.fails + 1
-                print 'Long Position Closed by Stoploss at $%d profit' % (profit)
-                print 'Total Equity now at $%d' % (equity)
-                print 'So far you have had %d successful trades and %d failed trades' % (self.successes, self.fails)
-                print 'That leaves you with a winning percentage of %d percent' % (winning_percentage)
+                self.logger.info('Long Position Closed by Stoploss at ${} profit'.format(profit))
+                self.logger.info('Total Equity now at ${}'.format(equity))
+                self.logger.info('So far you have had {} successful trades and {} failed trades'.format(self.successes, self.fails))
+                self.logger.info('That leaves you with a winning percentage of {} percent'.format(winning_percentage))
 
             # Pull Plug?
-            if equity < starting_cash * 0.7:
+            if equity < self.portfolio.starting_cash * 0.7:
                 self.plug_pulled = True
-                print "Ouch! We've pulled the plug..."
+                self.logger.info("Ouch! We've pulled the plug...")
 
             if self.plug_pulled is True and self.long_open is True:
                 self.order(stock, -order_amount)
                 self.long_open = False
                 self.long_stoploss = 0
+        ''' ----------------------------------------------------------   Orders  --'''
 
 
 class MultiMA(TradingAlgorithm):

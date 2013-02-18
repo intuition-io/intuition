@@ -73,7 +73,7 @@ class Quote(Base):
 
 class Metrics(Base):
     """
-    Backtester metrics Table Model
+    Backtester monthly metrics
     """
     __tablename__ = 'Metrics'
 

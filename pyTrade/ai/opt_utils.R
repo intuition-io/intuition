@@ -13,42 +13,42 @@ options(scipen=100)
 options(digits=4)
 
 reweight = function(returns, startWeight){
-      n = nrow(returns)
+      n          = nrow(returns)
       lastWeight = as.vector(startWeight)
-      outReturn = data.frame()
+      outReturn  = data.frame()
      
       for(i in seq(1,n)){
-            rts = as.vector(exp(returns[i,]))
-            w = lastWeight * rts
-            sumW = sum(w)
-            w = w/sumW
-           
-            r = as.matrix(returns[i,]) %*% w
-           
+            rts        = as.vector(exp(returns[i,]))
+            w          = lastWeight * rts
+            sumW       = sum(w)
+            w          = w/sumW
+
+            r          = as.matrix(returns[i,]) %*% w
+
             lastWeight = w
-           
-            outReturn = rbind(outReturn,r)
+
+            outReturn  = rbind(outReturn,r)
       }
       return (outReturn)
 }
 
 downloadOneSerie = function (symbol, from, to) {
     # Read data from Yahoo! Finance
-    input = yahooSeries(symbol, from=from, to=to)
-    
+    input       = yahooSeries(symbol, from        = from, to = to)
+
     # Character Strings for Column Names
-    adjClose = paste(symbol, ".Adj.Close", sep="")
-    inputReturn = paste(symbol, ".Return", sep="")
-    CReturn = paste(symbol, ".CReturn", sep="")
+    adjClose    = paste(symbol, ".Adj.Close", sep = "")
+    inputReturn = paste(symbol, ".Return", sep    = "")
+    CReturn     = paste(symbol, ".CReturn", sep   = "")
     
     # Calculate the Returns and put it on the time series
-    input.Return = returns(input[,adjClose])
+    input.Return = returns(input[, adjClose])
     colnames(input.Return)[1] = inputReturn
     input = merge(input,input.Return)
     
     #Calculate the cumulative return and put it on the time series
-    input.first = input[,adjClose][1]
-    input.CReturn = fapply(input[,adjClose],FUN=function(x) log(x) - log(input.first))
+    input.first   = input[, adjClose][1]
+    input.CReturn = fapply(input[,adjClose],FUN = function(x) log(x) - log(input.first))
     colnames(input.CReturn)[1] = CReturn
     input = merge(input,input.CReturn)
     
@@ -71,9 +71,9 @@ serieFromDB <- function(symbol, from, to)
     input <- xts(inputTmp['AdjClose'], order.by=as.Date(inputTmp$Date))
 
     # Character Strings for Column Names
-    adjClose = paste(symbol, ".Adj.Close", sep="")
-    inputReturn = paste(symbol, ".Return", sep="")
-    CReturn = paste(symbol, ".CReturn", sep="")
+    adjClose    = paste(symbol, ".Adj.Close", sep = "")
+    inputReturn = paste(symbol, ".Return", sep    = "")
+    CReturn     = paste(symbol, ".CReturn", sep   = "")
 
     # Calculate the Returns and put it on the time series
     input.Return    = xts(returns(input), order.by=as.Date(inputTmp$Date))
@@ -182,17 +182,18 @@ getEfficientFrontier <- function(returns, returnNames, periods=255, points=500, 
             #update the OK variable
             ok = (ok | TRUE)
         } else {
-            print("** Error in this try")
+            #print("** Error in this try")
             #update the OK variable
             ok = (ok | FALSE)
         }
     }
     #if no feasible solutions were found for the frontier, return NULL
     if (!ok){
+        print('! No feasible solutions found for the frontier')
         return (NULL)
     }
-    solution = weights
-    solution$er = er
+    solution      = weights
+    solution$er   = er
     solution$eStd = eStd
     if (graph)
     {
@@ -222,25 +223,25 @@ marketPortfolio = function(solution,
     #for each value in the subset, count the number of points
     #that lay below a line drawn through the point and the RF asset
     for (i in seq(1,maxIdx-minIdx+1)){
-        toFit = data.frame(er=rf,eStd=0)
-        toFit = rbind(toFit,subset[i,c("er","eStd")])
-        fit = lm(toFit$er ~ toFit$eStd)
-        poly = polynomial(coef = fit$coefficients)
-        toPred = subset
-        colnames(toPred) = c("actEr","eStd")
-        toPred$er = predict(poly,toPred[,"eStd"])
-        toPred$diff = toPred$er - toPred$actEr
+        toFit              = data.frame(er=rf, eStd=0)
+        toFit              = rbind(toFit,subset[i,c("er","eStd")])
+        fit                = lm(toFit$er ~ toFit$eStd)
+        poly               = polynomial(coef=fit$coefficients)
+        toPred             = subset
+        colnames(toPred)   = c("actEr","eStd")
+        toPred$er          = predict(poly,toPred[,"eStd"])
+        toPred$diff        = toPred$er - toPred$actEr
         subset[i,"nAbove"] = nrow(toPred[which(toPred$diff > 0),])
     }
 
     #get the point of tangency -- where the number of points
     #below the line is maximized
-    max = max(subset$nAbove)
-    er = subset[which(subset$nAbove == max),"er"]
+    max  = max(subset$nAbove)
+    er   = subset[which(subset$nAbove == max),"er"]
     eStd = subset[which(subset$nAbove == max),"eStd"]
     #if more than one portfolio is found, return the first
     if (length(er) > 1){
-        er = er[1]
+        er   = er[1]
         eStd = eStd[1]
     }
     #index of the market portfolio
@@ -280,7 +281,7 @@ marketPortfolio = function(solution,
 usage <- function(symbols)
 {
     from = "2005-01-01"
-    to = "2011-12-16"
+    to   = "2011-12-16"
     #returnNames = c("xom.Return","ibm.Return","ief.Return")
 
     data = importSeries(symbols, from, to, source='mysql')

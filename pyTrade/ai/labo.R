@@ -24,9 +24,9 @@ input <- xts(inputTmp['AdjClose'], order.by=as.Date(inputTmp$Date))
 #index(input) <- as.Date(inputTmp$Date)
 
 # Character Strings for Column Names
-adjClose = paste(symbol, ".Adj.Close", sep="")
-inputReturn = paste(symbol, ".Return", sep="")
-CReturn = paste(symbol, ".CReturn", sep="")
+adjClose    = paste(symbol, ".Adj.Close", sep = "")
+inputReturn = paste(symbol, ".Return", sep    = "")
+CReturn     = paste(symbol, ".CReturn", sep   = "")
 
 # Calculate the Returns and put it on the time series
 input.Return    = xts(returns(input), order.by=as.Date(inputTmp$Date))
