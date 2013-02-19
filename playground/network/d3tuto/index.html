@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>D3 Test</title>
+        <script type="text/javascript" src="http://mbostock.github.com/d3/d3.js"></script>
+        <script type="text/javascript" src="http://localhost:4000/socket.io/socket.io.js"></script>
+    </head>
+    <body>
+        <script type="text/javascript">
+            var socket = io.connect("http://localhost:4000");
+
+            socket.on("quote", function(data) {
+                    console.log(data)
+                    update(data)
+            })
+
+            //var dataset = [ 5, 10, 15, 20, 25 ];           
+            //update(dataset)
+
+            function update(dataset) {
+            d3.select("body").selectAll("p")
+                .data(dataset)
+                .enter()
+                .append("p")
+                .text(function(d) { return d; });
+            }
+        </script>
+    </body>
+</html> 

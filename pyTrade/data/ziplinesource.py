@@ -15,6 +15,7 @@ from zipline.sources.data_source import DataSource
 
 sys.path.append(os.environ['QTRADE'])
 from pyTrade.data.remote import Fetcher
+from pyTrade.data.datafeed import DataFeed
 
 import logbook
 log = logbook.Logger('DataLiveSource')
@@ -39,9 +40,9 @@ class DataLiveSource(DataSource):
 
         self.data = data
         # Unpack config dictionary with default values.
-        self.sids = kwargs.get('sids', data['tickers'])
+        self.sids  = kwargs.get('sids', data['tickers'])
         self.start = kwargs.get('start', data['index'][0])
-        self.end = kwargs.get('end', data['index'][-1])
+        self.end   = kwargs.get('end', data['index'][-1])
 
         # Hash_value for downstream sorting.
         self.arg_string = hash_args(data, **kwargs)
@@ -49,6 +50,7 @@ class DataLiveSource(DataSource):
         self._raw_data = None
 
         self.remote = Fetcher()
+        self.feed = DataFeed()
 
     @property
     def mapping(self):
@@ -75,21 +77,26 @@ class DataLiveSource(DataSource):
                 current_dt = datetime.datetime.now()
                 print('Waiting {} / {}'.format(current_dt, dt))
             '''
+            log.debug('Waiting for next tick...')
+            time.sleep(70)
+            #pdb.set_trace()
             for sid in self.data['tickers']:
             #for sid, price in series.iterkv():
                 if sid in self.sids:
                     #TODO Retrieving market and probably symbol informations from database
-                    data = self.remote.get_stock_snapshot([sid], ['nasdaq'], light=False)
-                    if not data:
+                    symbol = self.feed.guess_name(sid).lower()
+                    snapshot = self.remote.get_stock_snapshot([symbol], ['nasdaq'], light=False)
+                    log.debug('Data available:\n{}'.format(snapshot))
+                    if not snapshot:
                         log.error('** No data snapshot available, maybe stopped by google ?')
                         sys.exit(2)
                     event = {
                         'dt': dt,
                         'sid': sid,
-                        'price': float(data[sid]['last']),
-                        'currency': data[sid]['currency'],
-                        'perc_change': float(data[sid]['perc_change']),
-                        'volume': int(data[sid]['volume']),
+                        'price': float(snapshot[symbol]['last']),
+                        'currency': snapshot[symbol]['currency'],
+                        'perc_change': float(snapshot[symbol]['perc_change']),
+                        'volume': int(snapshot[symbol]['volume']),
                     }
                     yield event
 

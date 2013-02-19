@@ -1,0 +1,169 @@
+<!DOCTYPE HTML>
+<html lang="en">
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge;chrome=1">
+	
+		<title>Data visualisation demo</title>
+		<style>
+			body
+			{
+				background-color: #333;
+				font-family: sans-serif;
+				color: #fff;
+				font-size: 10px;
+			}
+			.coastertype-5
+			{
+				fill: #4C4A12;
+				color: #4C4A12;
+			}
+			.coastertype-2
+			{
+				fill: #989415;
+				color: #989415;
+			}
+			.coastertype-3
+			{
+				fill: #1E4559;
+				color: #1E4559;
+			}
+			.coastertype-4
+			{
+				fill: #7F7274;
+				color: #7F7274;
+			}
+			.coastertype-1
+			{
+				fill: #981C30;
+				color: #981C30;
+			}
+			.coastertype-6
+			{
+				fill: #fff;
+				color: #fff;
+			}
+			.coastertype-7
+			{
+				fill: #4B0612;
+				color: #4B0612;
+			}
+			.coastertype-8
+			{
+				fill: #1EAAE4;
+				color: #1EAAE4;
+			}
+			.coastertype-9
+			{
+				fill: #AD5E71;
+				color: #AD5E71;
+			}
+			.coastertype-10
+			{
+				fill: #000;
+				color: #000;
+			}
+			ul
+			{
+				list-style-type: none;
+				margin: 0;
+				padding: 0;
+			}
+			div
+			{
+				float: left;
+				width: 200px;
+
+			}
+			.axis text
+			{
+				fill: #fff;
+			}
+			.axis .domain
+			{
+				opacity: 0;
+			}
+			.tick
+			{
+				stroke: #fff;
+			}
+		</style>
+
+		
+	</head>
+	<body>
+		<h1>Visualising roller coaster data</h1>
+		<svg id="visualisation" width="800" height="600"></svg>
+
+		<form id="controls">
+			<div>
+				<h2>X axis</h2>
+				<ul id="x-axis">
+					<li><label><input checked="checked" type="radio" name="x-axis" value="opened">Year opened</label></li>
+					<li><label><input type="radio" name="x-axis" value="inversions">Inversions</label></li>
+					<li><label><input type="radio" name="x-axis" value="height">Height</label></li>
+					<li><label><input type="radio" name="x-axis" value="speed">Speed</label></li>
+					<li><label><input type="radio" name="x-axis" value="duration">Duration</label></li>
+					<li><label><input type="radio" name="x-axis" value="length">Length</label></li>
+				</ul>
+			</div>
+			<div>
+				<h2>Y axis</h2>
+				<ul id="y-axis">
+					<li><label><input checked="checked" type="radio" name="y-axis" value="opened">Year opened</label></li>
+					<li><label><input type="radio" name="y-axis" value="inversions">Inversions</label></li>
+					<li><label><input checked="checked" type="radio" name="y-axis" value="height">Height</label></li>
+					<li><label><input type="radio" name="y-axis" value="speed">Speed</label></li>
+					<li><label><input type="radio" name="y-axis" value="duration">Duration</label></li>
+					<li><label><input type="radio" name="y-axis" value="length">Length</label></li>
+				</ul>
+			</div>
+			<div>
+				<h2>Radius</h2>
+				<ul id="r-axis">
+					<li><label><input checked="checked" type="radio" name="r-axis" value="opened">Year opened</label></li>
+					<li><label><input  checked="checked" type="radio" name="r-axis" value="inversions">Inversions</label></li>
+					<li><label><input type="radio" name="r-axis" value="height">Height</label></li>
+					<li><label><input type="radio" name="r-axis" value="speed">Speed</label></li>
+					<li><label><input type="radio" name="r-axis" value="duration">Duration</label></li>
+					<li><label><input type="radio" name="r-axis" value="length">Length</label></li>
+				</ul>
+			</div>
+			<div>
+				<h2>Types of coaster</h2>
+				<ul id="coaster-types">
+					<li><label><input type="checkbox" checked="checked" value="floorless">Floorless</label></li>
+					<li><label><input type="checkbox" checked="checked" value="inverted">Inverted</label></li>
+					<li><label><input type="checkbox" checked="checked" value="flying">Flying</label></li>
+					<li><label><input type="checkbox" checked="checked" value="sit-down">Sit down</label></li>
+					<li><label><input type="checkbox" checked="checked" value="mega">Mega</label></li>
+					<li><label><input type="checkbox" checked="checked" value="stand-up">Stand up</label></li>
+					<li><label><input type="checkbox" checked="checked" value="dive-machine">Dive machine</label></li>
+					<li><label><input type="checkbox" checked="checked" value="wing-rider">Wing rider</label></li>
+				</ul>
+			</div>
+			<div>
+				<h2>Dataset</h2>
+				<ul>
+					<li>
+						<select id="dataset">
+							<option value="arrow">Arrow dynamics</option>
+							<option selected="selected" value="bolliger-mabillard">Bolliger &amp; Mabillard</option>
+							<option value="gerstlauer">Gerstlauer</option>
+							<option value="intamin">Intamin AG</option>
+							<option value="maurer-sohne">Maurer Sohne</option>
+							<option value="morgan">Morgan</option>
+							<option value="schwarzkopf">Schwarzkopf</option>
+							<option value="vekoma">Vekoma</option>
+						</select>
+					</li>
+					<li><label><input type="checkbox" id="cull-dirty"> Cull dirty data</label></li>
+				</ul>
+
+			</div>
+		</form>
+	</body>
+	<script src="d3/d3.js"></script>
+	<script src="d3/d3.csv.js"></script>
+	<script src="datavis-demo.js"></script>
+</html>

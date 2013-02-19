@@ -1,3 +1,7 @@
+d3.js tutos:
+    http://alignedleft.com/tutorials/d3/using-your-data/
+    http://www.dashingd3js.com/adding-a-dom-element
+
 Most great websites ressource
     https://www.sigfig.com/
     http://timetotrade.eu/

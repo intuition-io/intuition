@@ -139,8 +139,9 @@ class Simulation(object):
         if self.backtest_cfg['live']:
             dates = pd.date_range(self.backtest_cfg['start'], self.backtest_cfg['end'], freq=self.backtest_cfg['delta'])
             if dates.freq > pd.datetools.Day():
-                selector = ((dates.hour > 8) & (dates.hour < 17)) | ((dates.hour == 17) & (dates.minute < 31))
-                dates    = dates[selector]
+                fr_selector = ((dates.hour > 8) & (dates.hour < 17)) | ((dates.hour == 17) & (dates.minute < 31))
+                us_selector = ((dates.hour > 15) & (dates.hour < 22)) | ((dates.hour == 15) & (dates.minute > 31))
+                dates    = dates[us_selector]
             data = {'tickers': self.backtest_cfg['tickers'], 'index': dates}
         else:
             data = self.feeds.quotes(self.backtest_cfg['tickers'],

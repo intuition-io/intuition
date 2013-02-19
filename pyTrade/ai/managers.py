@@ -82,7 +82,7 @@ class OptimalFrontier(PortfolioManager):
         if len(positions) == 1:
             return {positions.pop(): parameters.get('max_weigths', 0.2)}, 0, 1
         for p in positions:
-            symbols.append(DataFeed().guess_name(p).lower())
+            symbols.append(self.feeds.guess_name(p).lower())
 
         loopback    = parameters.get('loopback', 50)
         source      = parameters.get('source', 'yahoo')

@@ -1,37 +1,4 @@
-
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Simple Tree Demo</title>
-    <script type="text/javascript" src="http://mbostock.github.com/d3/d3.js"></script>
-    <script type="text/javascript" src="http://mbostock.github.com/d3/d3.layout.js"></script>
-    <!--<script type="text/javascript" src="lib/d3.layout.js"></script>-->
-    <!--<script type="text/javascript" src="/d3/d3.js"></script>-->
-    <script type="text/javascript" src="/socket.io/socket.io.js"></script>
-<style>
-
-.link {
-  fill: none;
-  stroke: #ccc;
-  stroke-width: 4.5px;
-}
-</style>
-
-  </head>
-  <body>
-    <script>
-      var socket = io.connect('http://localhost');
-      socket.on('news', function (data) {
-        console.log(data);
-        socket.emit('my other event', { my: 'data' });
-      });
-    </script>
-
-    <div id="viz"></div>
-
-    <script type="text/javascript">
-
-      //JSON object with the data
+//JSON object with the data
       var treeData = {"name" : "A", "info" : "tst", "children" : [
 			{"name" : "A1" },
 			{"name" : "A2" },
@@ -87,7 +54,3 @@
 	  .attr("dy", 3)
 	  .attr("text-anchor", function(d) { return d.children ? "end" : "start"; })
 	  .text(function(d) { return d.name; })
-
-    </script>
-  </body>
-</html>

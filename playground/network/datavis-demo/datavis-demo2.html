@@ -1,0 +1,74 @@
+<!DOCTYPE HTML>
+<html lang="en">
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge;chrome=1">
+		<style>
+			svg {
+				border: 1px solid #000;
+			}
+		</style>
+	
+		<title>Data visualisation demo</title>
+	</head>
+	<body>
+		<svg id="visualisation" width="200" height="200"></svg>
+		<script src="d3/d3.js"></script>
+		<script>
+var vis = d3.select("#visualisation"),
+	xRange = d3.scale.linear().range ([20, 180]).domain([0, 300]),
+	yRange = d3.scale.linear().range ([20, 180]).domain([0, 300]);
+
+function update () {
+	var circles = vis.selectAll("circle").data(randomData(), function (d) { return d.id; })
+	circles
+		.enter()
+			.insert("svg:circle")
+				.attr("cx", function (d) { return xRange (d.value1); })
+				.attr("cy", function (d) { return yRange (d.value2); })
+				.style("fill", "red")
+	
+	circles
+		.transition().duration(1000)
+			.attr("cx", function (d) { return xRange(d.value1); })
+			.attr("cy", function (d) { return yRange(d.value2); })
+			.attr("r", function (d) { return d.value3; })
+
+	circles.exit ()
+		.transition().duration(1000)
+			.attr("r", 0)
+				.remove ();
+
+	
+	setTimeout (update, 2000)
+}
+
+function randomData () {
+	var n = randomRange (1, 6),
+		dataset = [];
+
+	for (var i = 0; i < n; i++) {
+		var data = {
+			id: i,
+			value1: randomRange (0, 300),
+			value2: randomRange (0, 300),
+			value3: randomRange (3, 20)
+		}
+		dataset.push (data);
+	}
+
+	return dataset;
+}
+
+function randomRange (min, max) {
+	return Math.round (Math.random() * (max - min) + min); 
+}
+
+update ();
+
+
+		</script>
+	</body>
+</html>
+
+
