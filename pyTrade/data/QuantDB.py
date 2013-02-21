@@ -8,9 +8,9 @@ import numpy as np
 import pandas as pd
 import pandas.io.sql as pd_sql
 
-sys.path.append(str(os.environ['QTRADE']))
+sys.path.append(os.environ['QTRADE'])
 from pyTrade.utils.DatabaseSubsystem import SQLiteWrapper
-from pyTrade.utils.LogSubsystem import LogSubsystem
+from pyTrade.utils.logger import LogSubsystem
 from pyTrade.utils.decorators import *
 from pyTrade.utils.utils import *
 

@@ -28,7 +28,6 @@ class BuyAndHold(TradingAlgorithm):
     def handle_data(self, data):
         #NOTE as self.frame_count, manager could be update in zipline.gens.tradesimulation, or use decorator ?
         ''' ----------------------------------------------------------    Init   --'''
-        pdb.set_trace()
         self.manager.update(self.portfolio, self.datetime.to_pydatetime())
         signals = dict()
 
@@ -43,6 +42,10 @@ class BuyAndHold(TradingAlgorithm):
             for stock in orderBook:
                 self.logger.info('{}: Ordering {} {} stocks'.format(self.datetime, stock, orderBook[stock]))
                 self.order(stock, orderBook[stock])
+
+        ''' ------------------------------------------------------------   Emit  --'''
+        self.logger('Broadcasting universe message...')
+        pdb.set_trace()
 
 
 class DualMovingAverage(TradingAlgorithm):

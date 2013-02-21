@@ -8,6 +8,8 @@ import pandas as pd
 
 from logbook import Logger
 
+log = Logger('Manager')
+
 app_path = os.environ['QTRADE']
 sys.path.append(app_path)
 portfolio_opt_file = '/'.join((app_path, 'pyTrade/ai/opt_utils.R'))
@@ -26,20 +28,21 @@ class PortfolioManager(object):
     #TODO Add in the constructor or setup parameters some general settings like maximum weights, positions, frequency,...
     def __init__(self, parameters):
         super(PortfolioManager, self).__init__()
-        self.log             = Logger('Manager')
         #self.feeds           = DataFeed()
         self.portfolio       = None
         self.date            = None
         self._optimizer_parameters = parameters
+        self.server = parameters.get('server', None)
         r('source("{}")'.format(portfolio_opt_file))
 
     def optimize(self):
-        ''' The user must be overwrite this method '''
+        ''' Users must overwrite this method '''
         pass
 
     def update(self, portfolio, date):
         self.portfolio = portfolio
         self.date      = date
+        self.server.socket.send(str(portfolio)[10:-1])
 
     def trade_signals_handler(self, signals):
         '''

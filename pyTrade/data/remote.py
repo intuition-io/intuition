@@ -19,7 +19,8 @@ from logbook import Logger
 
 sys.path.append(str(os.environ['QTRADE']))
 from pyTrade.data.QuantDB import yahooCode, Fields
-from pyTrade.utils.utils import epochToDate, reIndexDF
+from pyTrade.utils.dates import epochToDate
+from pyTrade.utils.utils import reIndexDF
 
 
 class Alias (object):

@@ -6,6 +6,7 @@ import ipdb as pdb
 import sys
 import os
 import time
+import json
 import datetime
 import pandas as pd
 
@@ -44,6 +45,8 @@ class DataLiveSource(DataSource):
         self.start = kwargs.get('start', data['index'][0])
         self.end   = kwargs.get('end', data['index'][-1])
 
+        self.fake_index = pd.date_range(self.start, self.end, freq=pd.datetools.BDay())
+
         # Hash_value for downstream sorting.
         self.arg_string = hash_args(data, **kwargs)
 
@@ -68,30 +71,30 @@ class DataLiveSource(DataSource):
         return self.arg_string
 
     def raw_data_gen(self):
-        for dt in self.data['index']:
-        #for dt, series in self.data.iterrows():
-            '''
-            current_dt = datetime.datetime.now()
-            while (current_dt.minute != dt.minute) and (current_dt.hour != dt.hour) :
+        current_dt = datetime.datetime.now()
+        index = self.data['index']
+        selector = (index.day > current_dt.day) \
+                | ((index.day == current_dt.day) & (index.hour > current_dt.hour)) \
+                | ((index.day == current_dt.day) & (index.hour == current_dt.hour) & (index.minute >= current_dt.minute))
+        for fake_dt, dt in zip(self.fake_index, index[selector]):
+            while (current_dt.minute != dt.minute) or (current_dt.hour != dt.hour) :
                 time.sleep(15)
                 current_dt = datetime.datetime.now()
                 print('Waiting {} / {}'.format(current_dt, dt))
-            '''
-            log.debug('Waiting for next tick...')
-            time.sleep(70)
-            #pdb.set_trace()
+            #time.sleep(70)
+            #for fake_dt, dt in zip(self.fake_index, self.data['index']):
             for sid in self.data['tickers']:
-            #for sid, price in series.iterkv():
                 if sid in self.sids:
-                    #TODO Retrieving market and probably symbol informations from database
                     symbol = self.feed.guess_name(sid).lower()
                     snapshot = self.remote.get_stock_snapshot([symbol], ['nasdaq'], light=False)
-                    log.debug('Data available:\n{}'.format(snapshot))
+                    log.debug('Data available:\n{}'.format(json.dumps(snapshot,
+                                                           sort_keys=True, indent=4, separators=(',', ': '))))
                     if not snapshot:
                         log.error('** No data snapshot available, maybe stopped by google ?')
                         sys.exit(2)
                     event = {
-                        'dt': dt,
+                        'dt': fake_dt,
+                        'trade_time': dt,
                         'sid': sid,
                         'price': float(snapshot[symbol]['last']),
                         'currency': snapshot[symbol]['currency'],

@@ -9,6 +9,7 @@ import json
 sys.path.append(os.environ['QTRADE'])
 from pyTrade.data.datafeed import DataFeed
 from pyTrade.ai.managers import Constant, Equity, OptimalFrontier
+from pyTrade.network.transport import ZMQ_Server
 
 import pytz
 import pandas as pd
@@ -60,10 +61,10 @@ class Simulation(object):
         self.manager_cfg   = None
         self.monthly_perfs = None
 
-    def read_config(self, bt_cfg=None, a_cfg=None, m_cfg=None, bt_root=None):
+        self.server        = ZMQ_Server()
+
+    def configure(self, bt_cfg=None, a_cfg=None, m_cfg=None):
         ''' Reads and provides a clean configuration for the simulation '''
-        if not bt_root:
-            bt_root = os.environ['QTRADE'] + '/backtester/'
 
         if not bt_cfg:
             parser = argparse.ArgumentParser(description='Backtester module, the terrific financial simukation')
@@ -78,6 +79,7 @@ class Simulation(object):
             parser.add_argument('-e', '--end', action='store', default='1/12/2010', required=False, help='Stop date of the backtester')
             parser.add_argument('-i', '--interactive', action='store_true', help='Indicates if the program was ran manually or not')
             parser.add_argument('-r', '--realtime', action='store_true', help='makes the engine work in real-time !')
+            parser.add_argument('-p', '--port', action='store', default=5555, required=False, help='Activates the diffusion of the universe on the network, on the port provided')
             args = parser.parse_args()
 
             self.backtest_cfg = {'algorithm'   : args.algorithm,
@@ -88,13 +90,15 @@ class Simulation(object):
                                  'tickers'     : args.tickers.split(','),
                                  'start'       : args.start,
                                  'end'         : args.end,
-                                 'live'         : args.realtime,
+                                 'live'        : args.realtime,
+                                 'port'   : args.port,
                                  'interactive' : args.interactive}
         else:
             bt_cfg['tickers'] = bt_cfg['tickers'].split(',')
             self.backtest_cfg = bt_cfg
 
         if isinstance(self.backtest_cfg['start'], str) and isinstance(self.backtest_cfg['end'], str):
+            ###############test = pd.datetime.strptime('2012-02-01:14:00', '%Y-%m-%d:%H:%M')
             self.backtest_cfg['start'] = pytz.utc.localize(pd.datetime.strptime(self.backtest_cfg['start'], '%Y-%m-%d'))
             self.backtest_cfg['end']   = pytz.utc.localize(pd.datetime.strptime(self.backtest_cfg['end'], '%Y-%m-%d'))
         elif isinstance(self.backtest_cfg['start'], dt.datetime) and isinstance(self.backtest_cfg['end'], dt.datetime):
@@ -102,28 +106,36 @@ class Simulation(object):
         else:
             raise NotImplementedError()
 
-        try:
-            if self.backtest_cfg['interactive']:
-                if a_cfg:
-                    self.algo_cfg = a_cfg
-                else:
-                    self.algo_cfg    = json.load(open('{}/algos.cfg'.format(bt_root), 'r'))[self.backtest_cfg['algorithm']]
-                if m_cfg:
-                    self.manager_cfg = m_cfg
-                else:
-                    self.manager_cfg = json.load(open('{}/managers.cfg'.format(bt_root), 'r'))[self.backtest_cfg['manager']]
-            else:
-                self.algo_cfg    = json.loads(raw_input('algo >'))
-                self.manager_cfg = json.loads(raw_input('manager >'))
-                #algo_cfg_str    = raw_input('algo > ')
-                #manager_cfg_str = raw_input('manager > ')
-                #self.algo_cfg    = json.loads(algo_cfg_str)
-                #self.manager_cfg = json.loads(manager_cfg_str)
-        except:
-            log.error('** loading json configuration.')
-            sys.exit(1)
+        if self.backtest_cfg['interactive']:
+            self.read_config(manager=m_cfg, algorithm=a_cfg)
+        else:
+            self.server.run_forever(port=self.backtest_cfg['port'], on_recv=self.read_config)
 
         return self.backtest_cfg
+
+    def read_config(self, *args, **kwargs):
+        port = kwargs.get('id', None)
+        if port:
+            assert len(args) == 1
+            log.info('Fetching backtest configuration from client')
+            for msg in args:
+                assert isinstance(msg, dict)
+                self.manager_cfg = msg['manager']
+                self.algo_cfg    = msg['algorithm']
+        else:
+            bt_root          = os.environ['QTRADE'] + '/backtester/'
+            self.manager_cfg = kwargs.get('manager', None)
+            self.algo_cfg    = kwargs.get('algorithm', None)
+            try:
+                if self.manager_cfg is None:
+                    self.manager_cfg = json.load(open('{}/managers.cfg'.format(bt_root), 'r'))[self.backtest_cfg['manager']]
+                if self.algo_cfg is None:
+                    self.algo_cfg    = json.load(open('{}/algos.cfg'.format(bt_root), 'r'))[self.backtest_cfg['algorithm']]
+            except:
+                log.error('** loading json configuration.')
+                sys.exit(1)
+        self.manager_cfg['server'] = self.server
+        log.info('Done.')
 
     def runBacktest(self):
         if self.backtest_cfg is None or self.algo_cfg is None or self.manager_cfg is None:
@@ -137,12 +149,20 @@ class Simulation(object):
             self.backtest_cfg['tickers'] = self.feeds.random_stocks(int(self.backtest_cfg['tickers'][1]))
 
         if self.backtest_cfg['live']:
-            dates = pd.date_range(self.backtest_cfg['start'], self.backtest_cfg['end'], freq=self.backtest_cfg['delta'])
+            #dates = pd.date_range(self.backtest_cfg['start'], self.backtest_cfg['end'], freq=self.backtest_cfg['delta'])
+            #NOTE A temporary hack to avoid zipline dirty modification
+            periods = self.backtest_cfg['end'] - self.backtest_cfg['start']
+            dates = pd.date_range(pd.datetime.now(), periods=periods.days + 1, freq=self.backtest_cfg['delta'])
+            '''
             if dates.freq > pd.datetools.Day():
-                fr_selector = ((dates.hour > 8) & (dates.hour < 17)) | ((dates.hour == 17) & (dates.minute < 31))
+                #fr_selector = ((dates.hour > 8) & (dates.hour < 17)) | ((dates.hour == 17) & (dates.minute < 31))
                 us_selector = ((dates.hour > 15) & (dates.hour < 22)) | ((dates.hour == 15) & (dates.minute > 31))
-                dates    = dates[us_selector]
-            data = {'tickers': self.backtest_cfg['tickers'], 'index': dates}
+                dates = dates[us_selector]
+            if not dates:
+                log.warning('! Market closed.')
+                sys.exit(0)
+            '''
+            data = {'tickers': self.backtest_cfg['tickers'], 'index': dates.tz_localize(pytz.utc)}
         else:
             data = self.feeds.quotes(self.backtest_cfg['tickers'],
                                      start_date = self.backtest_cfg['start'],

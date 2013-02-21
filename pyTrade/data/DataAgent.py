@@ -12,7 +12,7 @@ import qstkutil.qsdateutil as du
 import qstkutil.DataAccess as da
 
 sys.path.append(str(os.environ['QTRADE']))
-from pyTrade.utils.LogSubsystem import LogSubsystem
+from pyTrade.utils.logger import LogSubsystem
 from pyTrade.data.QuantDB import QuantSQLite, Fields
 from pyTrade.data.remote import Fetcher
 

@@ -1,8 +1,8 @@
 import sys
 import os
 
-sys.path.append(str(os.environ['QTRADE']))
-from pyTrade.utils.LogSubsystem import LogSubsystem
+sys.path.append(os.environ['QTRADE'])
+from pyTrade.utils.logger import LogSubsystem
 from pyTrade.utils.utils import reIndexDF
 
 import pandas as pd
@@ -20,7 +20,7 @@ Quant
 ---------------------------------------------------------------------------------------'''
 
 
-log = LogSubsystem('Computer', lvl).getLog()
+log = LogSubsystem('Computer', 'debug').getLog()
 
 def movingAverage(self, x, n, type='simple'):
     """

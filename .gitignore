@@ -1,4 +1,27 @@
-*.py[cod]
+*.py[coxd]
+
+# General and C++
+.*
+!.gitignore
+*~
+res
+*.o
+*.pyc
+deprecated
+dist
+QSData
+node_modules/*
+
+# R
+# History files
+.Rhistory
+Rplots.pdf
+
+# Example code in package build process
+*-Ex.R
+
+# Logs
+quantrade.log
 
 # C extensions
 *.so
@@ -32,26 +55,3 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
-
-# General and C++
-.*
-!.gitignore
-*~
-res
-*.o
-*.pyc
-deprecated
-dist
-QSData
-node_modules
-
-# R
-# History files
-.Rhistory
-Rplots.pdf
-
-# Example code in package build process
-*-Ex.R
-
-# Logs
-quantrade.log

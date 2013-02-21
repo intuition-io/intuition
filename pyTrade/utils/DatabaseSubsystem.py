@@ -3,7 +3,7 @@ import time
 import sqlite3 as sql
 
 from decorators import *
-from LogSubsystem import LogSubsystem
+from logger import LogSubsystem
 
 '''---------------------------------------------------------------------------------------
 SQLite Wrapper

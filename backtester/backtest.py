@@ -20,7 +20,7 @@ if __name__ == '__main__':
     with setup.applicationbound():
         '''-------------------------------------------------------------------------------------------    Backtest    ----'''
         engine  = Simulation()
-        args    = engine.read_config()
+        args    = engine.configure()
         results = engine.runBacktest()
 
         '''---------------------------------------------------------------------------------------------    Results   ----'''

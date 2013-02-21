@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <style>
+        </style>
+
+        <title>D3 Test</title>
+        <script type="text/javascript" src="http://mbostock.github.com/d3/d3.js"></script>
+        <!--<script type="text/javascript" src="http://mbostock.github.com/d3/d3.laout.js"></script>-->
+    </head>
+    <body>
+
+        <script type="text/javascript">
+
+            var width = 500,
+                height = 100;
+                barpadding = 1;
+
+            var svg = d3.select("body")
+                        .append("svg")
+                        .attr("width", width)
+                        .attr("height", height);
+
+            var dataset = [];                        //Initialize empty array
+            for (var i = 0; i < 15; i++) {           //Loop 25 times
+                var newNumber = Math.random() * 30;  //New random number (0-30)
+                dataset.push(newNumber);             //Add new number to array
+            }
+
+            svg.selectAll("rect")
+               .data(dataset)
+               .enter()
+               .append("rect")
+               .attr("x", function(d, i) {
+                        return i * (width / dataset.length);
+                       })
+                .attr("y", function(d) {
+                        return height - d * 4
+                        })
+               .attr("width", width / dataset.length - barpadding)
+               .attr("height", function(d) {
+                        return d * 4;
+                        })
+                .attr("fill", function(d) {
+                            return "rgb(0, 0, " + (d * 50) + ")";
+                        });
+
+            svg.selectAll("text")
+               .data(dataset)
+               .enter()
+               .append("text")
+                .text(function(d) {
+                    return Math.round(d);
+                    })
+                .attr("x", function(d, i) {
+                        return i * (width / dataset.length) + (w /dataset.length - barpadding) / 2;
+                   })
+                .attr("y", function(d) {
+                        return height - (d * 4) + 14;
+                   })
+                .attr("text-anchor", "middle")
+                .attr("font-family", "sans-serif")
+                .attr("font-size", "11px")
+                .attr("fill", "white");
+
+        </script>
+    </body>
+</html> 
