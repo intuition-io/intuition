@@ -21,8 +21,9 @@ class ZMQ_Base(object):
         self.timeout = timeout
         if timeout:
             signals.append(signal.SIGALRM)
-        s_manager = SignalManager(signal_codes=signals)
-        log.info(s_manager)
+        self.s_manager = SignalManager(signal_codes=signals)
+        self.ports = None
+        log.info(self.s_manager)
 
     def send(self, msg, acknowledgment=False):
         log.info('Sending message {}'.format(msg))
@@ -48,7 +49,7 @@ class ZMQ_Server(ZMQ_Base):
         self.socket = context.socket(zmq.REP)
 
     def run(self, port=5555, on_recv=None, forever=False):
-        self.port = port
+        self.ports = port
         if not on_recv:
             on_recv = self.default_on_recv
         log.info('Server listening on port {}...'.format(port))
@@ -80,6 +81,7 @@ class ZMQ_Client(ZMQ_Base):
         self.socket = context.socket(zmq.REQ)
 
     def connect(self, host='localhost', ports=[5555]):
+        self.ports = ports
         for port in ports:
             log.info('Client connecting to {} on port {}...'.format(host, port))
             self.socket.connect('tcp://{}:{}'.format(host, port))

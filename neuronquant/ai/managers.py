@@ -7,8 +7,8 @@ import pandas as pd
 import rpy2.robjects as robjects
 
 sys.path.append(os.environ['QTRADE'])
-from pyTrade.data.datafeed import DataFeed
-from pyTrade.ai.portfolio import PortfolioManager
+from neuronquant.data.datafeed import DataFeed
+from neuronquant.ai.portfolio import PortfolioManager
 
 
 class Constant(PortfolioManager):

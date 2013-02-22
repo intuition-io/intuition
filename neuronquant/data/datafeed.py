@@ -8,10 +8,11 @@ import re
 import sys
 import os
 
-sys.path.append(str(os.environ['QTRADE']))
-#from pyTrade.utils import LogSubsystem
+sys.path.append(os.environ['QTRADE'])
 from logbook import Logger
-from pyTrade.data.database import Client
+from neuronquant.data.database import Client
+
+log = Logger('DataFeed')
 
 
 class DataFeed(object):
@@ -20,8 +21,6 @@ class DataFeed(object):
     """
     def __init__(self, level='debug'):
         self.stock_db = Client()
-        #self.log = LogSubsystem(DataFeed.__name__, lvl=level).getLog()
-        self.log = Logger(self.__class__.__name__)
 
     def quotes(self, tickers, start_date=None, end_date=None, download=False):
         """ Get a series of quotes
@@ -42,7 +41,7 @@ class DataFeed(object):
         df_tmp = dict()
         for ticker in tickers:
             symbol = self.guess_name(ticker)
-            self.log.info('Retrieving {} quotes from database'.format(ticker))
+            log.info('Retrieving {} quotes from database'.format(ticker))
             data = self.stock_db.get_quotes(symbol, start_date=start_date, end_date=end_date, dl=download)
             if data is None:
                 continue
@@ -58,11 +57,11 @@ class DataFeed(object):
 
     def random_stocks(self, n=5):
         ''' Return n random stock names from database '''
-        self.log.info('Generating {} random stocks'.format(n))
+        log.info('Generating {} random stocks'.format(n))
         stocks = self.stock_db.available_stocks()
         random.shuffle(stocks)
         if n > len(stocks):
-            self.log.warning('{} asked symbols but only {} availables'.format(n, len(stocks)))
+            log.warning('{} asked symbols but only {} availables'.format(n, len(stocks)))
             n = len(stocks)
         return stocks[:n]
 
@@ -71,7 +70,7 @@ class DataFeed(object):
         ''' Find the closest math of partial_input in stocks database, and return its symbol '''
         match = [name for name in self.stock_db.available_stocks(key='name') if re.match(partial_input, name, re.IGNORECASE) is not None]
         if not match:
-            self.log.debug('No matching name, trying symbol list...')
+            log.debug('No matching name, trying symbol list...')
             match = [name for name in self.stock_db.available_stocks(key='symbol') if re.match(partial_input, name, re.IGNORECASE) is not None]
             if match:
                 infos = self.stock_db.get_infos(symbol=match[0])

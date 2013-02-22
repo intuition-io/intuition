@@ -1,6 +1,3 @@
-#!/usr/bin/python
-# -*- coding: utf8 -*-
-
 import re, argparse, sys
 import urllib2
 #from ConfigParser import SafeConfigParser

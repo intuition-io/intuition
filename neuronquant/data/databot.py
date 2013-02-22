@@ -11,10 +11,10 @@ import numpy as np
 import qstkutil.qsdateutil as du
 import qstkutil.DataAccess as da
 
-sys.path.append(str(os.environ['QTRADE']))
-from pyTrade.utils.logger import LogSubsystem
-from pyTrade.data.QuantDB import QuantSQLite, Fields
-from pyTrade.data.remote import Fetcher
+sys.path.append(os.environ['QTRADE'])
+from neuronquant.utils.logger import LogSubsystem
+from neuronquant.data.QuantDB import QuantSQLite, Fields
+from neuronquant.data.remote import Fetcher
 
 
 class DataAgent(object):

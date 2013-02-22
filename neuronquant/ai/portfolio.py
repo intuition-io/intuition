@@ -2,6 +2,8 @@ import ipdb as pdb
 
 import os
 import sys
+import json
+import signal
 
 import pytz
 import pandas as pd
@@ -32,7 +34,17 @@ class PortfolioManager(object):
         self.portfolio       = None
         self.date            = None
         self._optimizer_parameters = parameters
+        self.connected = False
         self.server = parameters.get('server', None)
+        #TODO Message emission only if a client exists ? Could try to bind and give up if no connections
+        if self.server.ports is not None:
+            startup_msg = self.server.receive()
+            self.connected = True
+            log.info(json.dumps(startup_msg, indent=4, separators=(',', ': ')))
+        #TODO Should send stuff anyway, and accept new connections while running
+        else:
+            log.info('Binding manager on default port...')
+            self.server.run()
         r('source("{}")'.format(portfolio_opt_file))
 
     def optimize(self):
@@ -42,7 +54,25 @@ class PortfolioManager(object):
     def update(self, portfolio, date):
         self.portfolio = portfolio
         self.date      = date
-        self.server.socket.send(str(portfolio)[10:-1])
+        #FIXME A generic method: f(ndict) = dict()
+        portfolio.capital_used = portfolio.capital_used[0]
+        if self.connected:
+            #portfolio.start_date = portfolio.start_date.strftime(format='%Y-%m-%d %H:%M')
+            try:
+                response = self.server.send({'date': date.strftime(format='%Y-%m-%d %H:%M'),
+                                             'portfolio': {
+                                                 'positions': json.loads(str(portfolio.positions).replace('Position(', '').replace(')', '').replace("'", '"')),
+                                                 'value': portfolio.portfolio_value,
+                                                 'cash': portfolio.cash,
+                                                 'returns': portfolio.returns,
+                                                 'pnl': portfolio.pnl,
+                                                 'capital_used': portfolio.capital_used,
+                                                 'actif': portfolio.positions_value}
+                                             },
+                                             acknowledgment=True)
+                log.info(json.dumps(response, indent=4, separators=(',', ': ')))
+            except:
+                log.error('** Sending portfolio snapshot to client')
 
     def trade_signals_handler(self, signals):
         '''

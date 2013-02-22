@@ -3,6 +3,7 @@
 
 function run_worker(config_txt, socket)
 {
+    var zmq_client = require('zmq').socket('req');
     var config = JSON.parse(config_txt);
 
     var script_args = []
@@ -12,7 +13,6 @@ function run_worker(config_txt, socket)
             script_args.push(config.args[arg].value);
     };
 
-    //var script = require('path').join(__dirname, config.script);
     var script = require('path').join(process.env.QTRADE, config.script);
     var spawn = require('child_process').spawn,
         child = spawn(script, script_args);
@@ -42,15 +42,26 @@ function run_worker(config_txt, socket)
         
     //child.stdin.write(JSON.stringify(config.algo) + '\n')
     //child.stdin.write(JSON.stringify(config.manager) + '\n')
-    
-    var zmq_client = require('zmq').socket('req');
 
     zmq_client.on('message', function(reply) {
-        console.log('Server replied: ', JSON.parse(reply))
+        reply_str = reply.toString()
+        data = JSON.parse(reply)
+        console.log('Server replied: ', data)
+        console.log('date', data.date)
+        if (reply_str.search('portfolio') > 0)
+        {
+            console.log('Portfolio value:', data.portfolio['value'])
+        }
+        else if (reply_str.search('statut') > 0)
+        {
+            console.log('Server acknowledgment:', data.statut)
+        }
+        zmq_client.send(JSON.stringify({statut: 'ok'}))
     })
 
     console.log('Connecting to tcp://localhost:' + config.port);
     zmq_client.connect('tcp://localhost:' + config.port);
+    console.log('Connected.')
 
     console.log('Sending configuration...');
     zmq_client.send(JSON.stringify({algorithm: config.algorithm, manager: config.manager, done:true}))

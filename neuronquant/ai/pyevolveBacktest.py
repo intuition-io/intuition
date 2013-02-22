@@ -1,11 +1,12 @@
-import sys, os
+import sys
+import os
 import argparse
 
 import matplotlib.pyplot as plt
 
 sys.path.append(str(os.environ['QTRADE']))
-from pyTrade.data.DataAgent import DataAgent
-from pyTrade.compute.Algorithms import Backtester 
+from neuronquant.data.DataAgent import DataAgent
+from neuronquant.calculus.Algorithms import Backtester
 import pytz
 import pandas as pd
 
@@ -16,24 +17,29 @@ from pyevolve import Initializators, Mutators, Scaling, Consts
 
 target_return = 20
 
-start = pd.datetime(2008,6,20, 0, 0, 0, 0, pytz.utc)
-end = pd.datetime(2010,4,1, 0, 0, 0, 0, pytz.utc)
+start = pd.datetime(2008, 6, 20, 0, 0, 0, 0, pytz.utc)
+end = pd.datetime(2010, 4, 1, 0, 0, 0, 0, pytz.utc)
 delta = pd.datetools.timedelta(days=1)
 
 dataobj = DataAgent('stocks.db')
-data_tmp = dataobj.getQuotes(['altair'], ['open'], \
-        start=start, end=end, delta=delta, reverse=True)
+data_tmp = dataobj.getQuotes(['altair'], ['open'],
+                             start=start,
+                             end=end,
+                             delta=delta,
+                             reverse=True)
 data = data_tmp['open']
 print data.head()
-print(20*'-')
+print(20 * '-')
 #data.index = data.index.tz_localize(pytz.utc)
 
+
 def evolveCallback(ga_engine):
-   generation = ga_engine.getCurrentGeneration()
-   if generation % 1 == 0:
-      print "Current generation: %d" % (generation,)
-      print ga_engine.getStatistics()
-   return False
+    generation = ga_engine.getCurrentGeneration()
+    if generation % 1 == 0:
+        print "Current generation: %d" % (generation,)
+        print ga_engine.getStatistics()
+    return False
+
 
 def runBacktest(chromosome):
     '''--------------------------------------------    Parameters    -----'''
@@ -44,19 +50,19 @@ def runBacktest(chromosome):
     sell_on_event = chromosome[3] * 10
     '''-----------------------------------------------    Running    -----'''
     print('\n-- Running backetester, algorithm: {}\n'.format('DualMA'))
-    strategie = Backtester('DualMA', short_window=short_window, long_window=long_window, \
-            amount=50000, buy_on_event=buy_on_event, sell_on_event=sell_on_event)
-    results = strategie.run(data, start, end)
+    strategie = Backtester('DualMA', short_window=short_window, long_window=long_window,
+                           amount=50000, buy_on_event=buy_on_event, sell_on_event=sell_on_event)
+    #results = strategie.run(data, start, end)
     score = strategie.portfolio.returns
-    print('-------------------------------------> Returns performance: {}'.format(round(10000.0*score)))
-    return round(10000.0*score)
+    print('-------------------------------------> Returns performance: {}'.format(round(10000.0 * score)))
+    return round(10000.0 * score)
 
 
 if __name__ == '__main__':
     '''---------------------------------------------------------------------------------------'''
     genome = G1DList.G1DList(4)
-    genome.setParams(rangemin=5, rangemax=20, roundDecimal=2, \
-            bestrawscore=target_return)
+    genome.setParams(rangemin=5, rangemax=20, roundDecimal=2,
+                     bestrawscore=target_return)
     genome.initializator.set(Initializators.G1DListInitializatorInteger)
     #genome.mutator.set(Mutators.G1DListMutatorRealGaussian)
     genome.evaluator.set(runBacktest)
@@ -70,7 +76,7 @@ if __name__ == '__main__':
     ga.setElitism(True)
     pop = ga.getPopulation()
     pop.scaleMethod.set(Scaling.SigmaTruncScaling)
-    
+
     ga.evolve(10)
 
     best = ga.bestIndividual()

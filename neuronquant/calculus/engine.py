@@ -7,9 +7,9 @@ import argparse
 import json
 
 sys.path.append(os.environ['QTRADE'])
-from pyTrade.data.datafeed import DataFeed
-from pyTrade.ai.managers import Constant, Equity, OptimalFrontier
-from pyTrade.network.transport import ZMQ_Server
+from neuronquant.data.datafeed import DataFeed
+from neuronquant.ai.managers import Constant, Equity, OptimalFrontier
+from neuronquant.network.transport import ZMQ_Server
 
 import pytz
 import pandas as pd
@@ -61,7 +61,7 @@ class Simulation(object):
         self.manager_cfg   = None
         self.monthly_perfs = None
 
-        self.server        = ZMQ_Server()
+        self.server        = ZMQ_Server(timeout=5)
 
     def configure(self, bt_cfg=None, a_cfg=None, m_cfg=None):
         ''' Reads and provides a clean configuration for the simulation '''

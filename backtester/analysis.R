@@ -1,31 +1,30 @@
 #!/usr/bin/env Rscript
 
-source('/home/xavier/dev/projects/ppQuanTrade/backtester/global.R')
+source(paste(Sys.getenv('QTRADE'), 'backtester/global.R', sep='/'))
 
 ## ==========================    Args handle    =========================== ##
 if(!suppressPackageStartupMessages(require(optparse)))
-  stop('The optparse package is required to use the command line interface.')
+    stop('The optparse package is required to use the command line interface.')
 
 option_list <- list( 
     make_option(c("-v", "--version"), 
-        action="store_true", default=FALSE,
-        help="Print version info and exit"),
+        action = "store_true", default = FALSE,
+        help   = "Print version info and exit"),
     make_option(c("-m", "--mode"), 
-        action="store_true", default="regular",
-        type="character", help="Specified wether it musts run experimental or regular analysis"),
+        action = "store_true", default = "regular",
+        type   = "character", help     = "Specified wether it musts run experimental or regular analysis"),
     make_option(c("-d", "--db-location"), 
-        action="store_true", default="../../metricsbase/stocks.db",
-        type="character" ,help="SQLite metricsbase location")
+        action = "store_true", default = "../../metricsbase/stocks.db",
+        type   = "character" ,help     = "SQLite metricsbase location")
     )
 
-opt <- parse_args(OptionParser(option_list=option_list, 
-    usage = "./script [options] <args>"))
+opt <- parse_args(OptionParser(option_list=option_list, usage="./script [options] <args>"))
 
 ## =========================    Preparing metrics    ========================== ##
 
-metrics  <- getTradeData(dataId='test', source='mysql', debug=F)
-perfs    <- getTradeData(dataId='test', source='mysql', overall=T, debug=F)
-riskfree <- mean(metrics[,"TreasuryReturns"])
+metrics   <- getTradeData(dataId='test', source='mysql', debug=F)
+perfs     <- getTradeData(dataId='test', source='mysql', overall=T, debug=F)
+riskfree  <- mean(metrics[,"TreasuryReturns"])
 portfolio <- metrics[, 'Returns']
 benchmark <- metrics[, 'BenchmarkReturns']
 

@@ -1,19 +1,14 @@
 #!/usr/bin/python
 # encoding: utf-8
 
-import ipdb as pdb
 import sys
 import os
-import argparse
-import json
-
-import pandas as pd
 
 import pylab as plt
 
 sys.path.append(os.environ['QTRADE'])
-from pyTrade.compute.engine import Simulation
-from pyTrade.utils import setup, log
+from neuronquant.compute.engine import Simulation
+from neuronquant.utils import setup, log
 
 
 if __name__ == '__main__':

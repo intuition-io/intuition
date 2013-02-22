@@ -2,8 +2,8 @@ import sys
 import os
 
 sys.path.append(os.environ['QTRADE'])
-from pyTrade.utils.logger import LogSubsystem
-from pyTrade.utils.utils import reIndexDF
+import logbook
+from neuronquant.utils.utils import reIndexDF
 
 import pandas as pd
 from pandas.core.datetools import BDay
@@ -19,10 +19,10 @@ import datetime as dt
 Quant
 ---------------------------------------------------------------------------------------'''
 
+log = logbook.Logger('finance')
 
-log = LogSubsystem('Computer', 'debug').getLog()
 
-def movingAverage(self, x, n, type='simple'):
+def moving_average(x, n, type='simple'):
     """
     compute an n period moving average.
     type is 'simple' | 'exponential'
@@ -39,7 +39,8 @@ def movingAverage(self, x, n, type='simple'):
     a[:n] = a[n]
     return a
 
-def relativeStrength(self, prices, n=14):
+
+def relative_strength(prices, n=14):
     """
     compute the n period relative strength indicator
     http://stockcharts.com/school/doku.php?id=chart_school:glossary_r#relativestrengthindex
@@ -71,26 +72,30 @@ def relativeStrength(self, prices, n=14):
 
     return rsi
 
-def movingAverageConvergence(x, nslow=26, nfast=12):
+
+def moving_average_convergence(x, nslow=26, nfast=12):
     """
     compute the MACD (Moving Average Convergence/Divergence) using a fast and slow exponential moving avg'
     return value is emaslow, emafast, macd which are len(x) arrays
     """
-    emaslow = movingAverage(x, nslow, type='exponential')
-    emafast = movingAverage(x, nfast, type='exponential')
+    emaslow = moving_average(x, nslow, type='exponential')
+    emafast = moving_average(x, nfast, type='exponential')
     return emaslow, emafast, emafast - emaslow
 
-def CCAnnualizedReturns(ret_per_period, periods_per_year):
-    return math.log(1 + annualizedReturns(ret_per_period, periods_per_year))
 
-def annualizedReturns(ret_per_period, periods_per_year):
+def CC_annualize_returns(ret_per_period, periods_per_year):
+    return math.log(1 + annualized_returns(ret_per_period, periods_per_year))
+
+
+def annualized_returns(ret_per_period, periods_per_year):
     ''' Could use:
     res1 = averageReturns(Series([ret_per_period]*periods_per_year), \
             period=1, type='net')
     '''
     return pow(1 + ret_per_period, periods_per_year) - 1
 
-def averageReturns(ts, **kwargs):
+
+def average_returns(ts, **kwargs):
     ''' Compute geometric average returns from a returns time serie'''
     type = kwargs.get('type', 'net')
     if type == 'net':
@@ -112,13 +117,15 @@ def averageReturns(ts, **kwargs):
             avg_ret *= (1 + ts[idx] + relative)
     return avg_ret - 1
 
-def CCReturns(ts, **kwargs):
+
+def CC_returns(ts, **kwargs):
     start = kwargs.get('start', None)
     end = kwargs.get('end', dt.datetime.today())
     delta = kwargs.get('deltaya', BDay())
     period = kwargs.get('period', None)
     rets = returns(ts, type='net', start=start, end=end, delta=delta, period=period)
     return math.log(1 + rets)
+
 
 #TODO dividends in account
 #TODO inflation in account
@@ -155,11 +162,13 @@ def returns(ts, **kwargs):
         return rets_df.cumprod()
     return rets_df[1:]
 
-def dailyReturns(ts, **kwargs):
+
+def daily_returns(ts, **kwargs):
     relative = kwargs.get('relative', 0)
     return returns(ts, delta=BDay(), relative=relative)
 
-def panelToRetsDF(dataPanel, kept_field='close', type='dataframe'):
+
+def panel_to_retsDF(dataPanel, kept_field='close', type='dataframe'):
     '''
     @summary transform data in DataAccess format to a dataframe suitable for qstk.tsutils.optimizePortfolio()
     @param dataPanel get with the reverse flag: data like quotes['close']['google']
@@ -173,12 +182,14 @@ def panelToRetsDF(dataPanel, kept_field='close', type='dataframe'):
         return returns(df, relative=0).values
     return returns(df, relative=0)  # 1 in doc, 0 in example
 
-def sharpeRatio(ts):
+
+def sharpe_ratio(ts):
     #TODO: Dataframe handler
-    rets = dailyReturns(ts)
+    rets = daily_returns(ts)
     return (np.mean(rets) / rets.stdev()) * np.sqrt(len(rets))
 
-def HighLowSpread(df, offset):
+
+def high_low_spread(df, offset):
     ''' Compute continue spread on given datafrme every offset period '''
     #TODO: handling the offset period with reindexing or resampling, sthg like:
     # subIndex = df.index[conditions]
@@ -186,10 +197,3 @@ def HighLowSpread(df, offset):
     return df['high'] - df['low']
 
 #TODO: updateDB, every class has this method, factorisation ? shared memory map to synchronize
-
-'''---------------------------------------------------------------------------------------
-Usage Exemple
----------------------------------------------------------------------------------------'''
-'''
-if __name__ == '__main__':
-'''

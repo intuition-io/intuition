@@ -8,8 +8,8 @@ sys.path.append(os.environ['ZIPLINE'])
 from zipline.algorithm import TradingAlgorithm
 from zipline.transforms import MovingAverage, MovingVWAP, batch_transform, MovingStandardDev
 
-sys.path.append(str(os.environ['QTRADE']))
-from pyTrade.ai.old_manager import PortfolioManager
+sys.path.append(os.environ['QTRADE'])
+from neuronquant.ai.old_manager import PortfolioManager
 
 from logbook import Logger
 import ipdb as pdb
@@ -31,8 +31,9 @@ class BuyAndHold(TradingAlgorithm):
         self.manager.update(self.portfolio, self.datetime.to_pydatetime())
         signals = dict()
 
+        pdb.set_trace()
         ''' ----------------------------------------------------------    Scan   --'''
-        if self.frame_count == 2:
+        if self.frame_count == 3:
             for ticker in data:
                 signals[ticker] = data[ticker].price
 
@@ -42,10 +43,6 @@ class BuyAndHold(TradingAlgorithm):
             for stock in orderBook:
                 self.logger.info('{}: Ordering {} {} stocks'.format(self.datetime, stock, orderBook[stock]))
                 self.order(stock, orderBook[stock])
-
-        ''' ------------------------------------------------------------   Emit  --'''
-        self.logger('Broadcasting universe message...')
-        pdb.set_trace()
 
 
 class DualMovingAverage(TradingAlgorithm):
@@ -200,9 +197,9 @@ class Momentum(TradingAlgorithm):
             capital_used = self.portfolio.capital_used
 
             # notional stuff are portfolio strategies, implement a new one, combinaison => parameters !
-            if sma > price and notional > -0.2 * (capital_used[0] + cash):
+            if sma > price and notional > -0.2 * (capital_used + cash):
                 signals[ticker] = - price
-            elif sma < price and notional < 0.2 * (capital_used[0] + cash):
+            elif sma < price and notional < 0.2 * (capital_used + cash):
                 signals[ticker] = price
 
         ''' ----------------------------------------------------------   Orders  --'''

@@ -6,9 +6,9 @@ import os
 import pandas as pd
 import pytz
 
-sys.path.append(str(os.environ['QTRADE']))
-from pyTrade.data.QuantDB import QuantSQLite, Fields
-from pyTrade.data.DataAgent import DataAgent
+sys.path.append(os.environ['QTRADE'])
+from neuronquant.data.QuantDB import QuantSQLite, Fields
+from neuronquant.data.DataAgent import DataAgent
 
 
 def fillQuotes(tickers, timestamp):

@@ -3,14 +3,14 @@ QuanTrade
 '''
 
 import ai
-import compute
+import calculus
 import data
 import graph
 import utils
 
 __all__ = [
         'ai',
-        'compute',
+        'calculus',
         'data', 
         'graph',
         'utils'

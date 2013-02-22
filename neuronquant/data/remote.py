@@ -17,10 +17,10 @@ import json
 
 from logbook import Logger
 
-sys.path.append(str(os.environ['QTRADE']))
-from pyTrade.data.QuantDB import yahooCode, Fields
-from pyTrade.utils.dates import epochToDate
-from pyTrade.utils.utils import reIndexDF
+sys.path.append(os.environ['QTRADE'])
+from neuronquant.data.QuantDB import yahooCode, Fields
+from neuronquant.utils.dates import epochToDate
+from neuronquant.utils.utils import reIndexDF
 
 
 class Alias (object):

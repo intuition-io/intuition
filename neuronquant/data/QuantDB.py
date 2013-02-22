@@ -9,10 +9,10 @@ import pandas as pd
 import pandas.io.sql as pd_sql
 
 sys.path.append(os.environ['QTRADE'])
-from pyTrade.utils.DatabaseSubsystem import SQLiteWrapper
-from pyTrade.utils.logger import LogSubsystem
-from pyTrade.utils.decorators import *
-from pyTrade.utils.utils import *
+from neuronquant.utils.DatabaseSubsystem import SQLiteWrapper
+from neuronquant.utils.logger import LogSubsystem
+from neuronquant.utils.decorators import *
+from neuronquant.utils.utils import *
 
 
 class QuantSQLite(SQLiteWrapper):

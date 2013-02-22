@@ -16,13 +16,15 @@ class SignalManager(object):
 
         self.signals = signal_codes
         self.handlers = handlers
+        self.alarmed = False
 
     def catcher(self, signal, frame):
         log.info('Signal code {} catched ({}), calling user method'.format(signal, frame))
         if signal == 2:
             self.shutdown('Shutting down the application...', signal)
         elif signal == 14:
-            self.shutdown('Alarm timed out...', signal)
+            self.alarmed = True
+            log.warning('Alarm timed out...')
         else:
             raise NotImplementedError()
 
