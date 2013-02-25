@@ -8,27 +8,41 @@ import time
 try:
     sys.path.append(os.environ['QTRADE'])
 except:
+    # Local config not sourced, does it now
     os.system('source /home/xavier/dev/projects/ppQuanTrade/config.sh')
-from pyTrade.utils import setup, log
+from neuronquant.utils import setup, log
 
 
 def clear_log():
+    ''' Reset log file with a UNIX trick '''
     log.info('Reseting log file')
     os.system('echo "" > ' + os.environ['QTRADE_LOG'])
 
 
 def show_process():
+    ''' Use system "ps" command to check if server daemons are still running '''
     log.info('Running process:')
     os.system('ps -aux | grep server.js')
     os.system('ps -aux | grep shiny')
 
 def kill_process():
+    ''' When done, stop daemons by sending them SIGINT signal '''
     log.info('Killing process...')
     os.system('killall nodejs')
     os.system('killall R')
+    # Check
     show_process()
 
 def main(configuration):
+    ''' Setup labo: run shiny webapp frontend and node.js distributed bridge
+    Parameters
+    ----------
+    configuration: dict
+        local settings, from config.sh
+    Returns
+    -------
+    None
+    '''
     os.system('clear')
     log.info('Building up trade laboratory environment...')
     if configuration['architecture'] == 'local':
@@ -46,6 +60,7 @@ def main(configuration):
             with log.catch_exceptions():
                 os.system('R -q -e "shiny::runApp(\\\"{}/network/shiny-backtest\\\")" &'.format(root_path))
         elif configuration['mode'] == 'prod':
+            # Use node.js shiny-server module to ensure public and reliable webapp deployment
             port = '3838'
             app_path = '/users/xavier/shiny-backtest'
             with log.catch_exceptions():
@@ -73,7 +88,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     with setup.applicationbound():
-        #NOTE Future remote backtest implementation, etc...
         #NOTE Automatic detection ?
         configuration = {'architecture' : os.environ['QTRADE_CONFIGURATION'],
                          'mode'         : os.environ['QTRADE_MODE']}

@@ -11,8 +11,10 @@ if (!suppressPackageStartupMessages(require(quantmod))) {
     stop("This app requires the quantmod package. To install it, run 'install.packages(\"quantmod\")'.\n")
 }
 
-source('./RClientInterface.R')
+# This file defined json network bridge with R
+source(paste(Sys.getenv('QTRADE'), 'server/shiny-backtest/RClientInterface.R', sep='/'))
 
+# Fix a bug in performanceanalytics package
 require(utils)
 assignInNamespace(
   "Return.excess",
@@ -177,6 +179,6 @@ test <- function()
 # Some use 3months treasury bound
 # It has to match the returns period
 #Rf <- .04/12  # My bank CD
-data <- getTradeData(dataId='test', source='mysql')
-riskfree <- mean(data[, 'TreasuryReturns'])
 #data <- NULL
+#data <- getTradeData(dataId='test', source='mysql')
+#riskfree <- mean(data[, 'TreasuryReturns'])

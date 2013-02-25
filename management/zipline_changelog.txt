@@ -1,2 +1,0 @@
-- algorithm.py: if statement for new data source 
-- finance/trading.py: line 88 Avoiding last_trading_day assertion

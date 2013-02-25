@@ -1,7 +1,83 @@
-// Use of the cluster plugin
-// colors, socket.io, jade, stylus, express, websocket
+//NOTE Use of the cluster plugin
+//NOTE colors, socket.io, jade, stylus, express, websocket
 
-function run_worker(config_txt, socket)
+
+/*
+ *Process forker, using backend forwarder socket
+ */
+function run(config, backSocket, frontSocket, channel)
+{
+    // Creating command line args from the 'args' field in json config
+    var script_args = []
+    for (var arg in config.args) {
+        script_args.push(config.args[arg].prefix);
+        if (config.args[arg].prefix != '--remote' && config.args[arg].prefix != '--live')
+            script_args.push(config.args[arg].value);
+    };
+
+    // Spawning script (path relative to project's root directory)
+    var script = require('path').join(process.env.QTRADE, config.script);
+    var spawn = require('child_process').spawn,
+        child = spawn(script, script_args);
+    console.log(script_args)
+
+    child.stdout.on('data', function (data) {
+        console.log('[Node:worker:stdout] ' + data);
+    });
+
+    child.stderr.on('data', function (data) {
+        console.log('[Node:worker:stderr] ' + data);
+    });
+
+    child.on('exit', function (code, signal) {
+        if (code === 0) {
+            console.log('[Node:worker] Child exited normaly (' + code + ')')
+        } else {
+            console.log('[Node:worker] Child process terminated with code ' + code + ', signal: ' + signal);
+        }
+        child.stdin.end();
+        child = undefined;
+        frontSocket.send([channel, JSON.stringify({'time': new Date(), 'type': 'acknowledgment', 'msg': code})]);
+    });
+
+    console.log(process.pid + ' - ' + process.title + ': Spawned child pid: ' + child.pid);
+    console.log('[Node:worker] Running worker: ' + script)
+        
+    console.log('[Node:worker] Sending configuration to worker...');
+    backSocket.send(JSON.stringify({algorithm: config.algorithm, manager: config.manager, done:true}))
+
+    process.on("SIGTERM", function() {
+        console.log("[Node:worker] Parent SIGTERM detected");
+        backSocket.close();
+        process.exit();
+    });
+
+    process.on("SIGINT", function() {
+        console.log("[Node:worker] Signal SIGINT detected");
+        backSocket.close();
+        process.exit();
+    });
+
+    process.on("exit", function() {
+        if (child != undefined) {
+            console.log("[Node:worker] Killing child");
+            child.kill('SIGHUP');
+        }
+        frontSocket.send([channel, JSON.stringify({'time': new Date(), 'type': 'acknowledgment', 'msg': 1})]);
+    });
+
+    process.on('uncaughtException', function (err) {
+        console.error('[Node:worker] An uncaught error occurred!');
+        backSocket.close();
+        console.error(err.stack);
+    });
+}
+
+/*
+ *Process forker, using http socket
+ *Merge or delete later
+ */
+function run_standalone(config_txt, socket)
 {
     var zmq_client = require('zmq').socket('req');
     var config = JSON.parse(config_txt);
@@ -92,4 +168,5 @@ function run_worker(config_txt, socket)
     });
 }
 
-exports.run_worker = run_worker;
+exports.run = run;
+exports.run_standalone = run_standalone;

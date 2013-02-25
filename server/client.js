@@ -1,5 +1,5 @@
 var config = {
-    command: "run",
+    type: "fork",
     script: "backtester/backtest.py",
     port: 5555,
     args: {
@@ -28,7 +28,7 @@ var config = {
             value: "2010-07-03" 
         } ,
         mode: {
-            prefix: "--realtime"
+            prefix: "--remote"
         } 
     },
     algorithm: {
@@ -54,34 +54,16 @@ function createClient (port, channel) {
 
     socket.on('message', function(data) {
         json_data = JSON.parse(data)
-        console.log(json_data.time + ': Incomming data from ' + json_data.channel)
+        console.log(json_data.time + ': Incomming data on ' + channel)
         console.log(json_data.msg);
         socket.send(JSON.stringify({statut: 0}));
     });
 
     socket.connect(port);
-    console.log('client connected');
+    console.log('[Node:Client] ' + socket.identity + ' connected');
 
     socket.send(JSON.stringify(config));
 }    
 
-function createClient (port, channel) {
-    var socket = zmq.socket('dealer');
-
-    socket.identity = channel
-
-    socket.on('message', function(data) {
-        json_data = JSON.parse(data)
-        console.log(json_data.time + ': Incomming data from ' + json_data.channel)
-        console.log(json_data.msg);
-        socket.send(JSON.stringify({statut: 0}));
-    });
-
-    socket.connect(port);
-    console.log('client connected');
-
-    socket.send(JSON.stringify(config));
-};;
-
-createClient(broker_uri, 'ZMQ Messaging');
+//createClient(broker_uri, 'ZMQ Messaging');
 createClient(broker_uri, 'dashboard');

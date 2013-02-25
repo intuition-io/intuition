@@ -1,6 +1,7 @@
 #!/usr/bin/env Rscript
 
-source(paste(Sys.getenv('QTRADE'), 'backtester/global.R', sep='/'))
+# file of analysis functions
+source(paste(Sys.getenv('QTRADE'), 'server/shiny-backtest/global.R', sep='/'))
 
 ## ==========================    Args handle    =========================== ##
 if(!suppressPackageStartupMessages(require(optparse)))

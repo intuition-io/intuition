@@ -79,7 +79,7 @@ class ZMQ_Dealer(ZMQ_Base):
     def send_to_android(self, msg):
         assert isinstance(msg, dict)
         msg['channel'] = 'android'
-        msg['appname'] = 'NeuroQuant'
+        msg['appname'] = 'NeuronQuant'
         self.send(msg)
 
     def send(self, msg, json=True, channel=''):

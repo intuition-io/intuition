@@ -32,15 +32,15 @@ global_bt_cfg = {'algorithm'   : 'DualMA',
 
 
 def evaluate_backtest(genes):
-    '''--------------------------------------------    Parameters    -----'''
-    '''chromosome[short_window, long_window, buy_on_event, sell_on_event]
-    log.debug('chromosome: {}'.format(genes))
-    short_window  = genes['short_window']
-    long_window   = round(short_window * genes['ma_rate'] / 2)
-    buy_on_event  = genes['buy_n']
-    sell_on_event = round(buy_on_event * genes['buy_rate'] / 100)
+    ''' 
+    @summary Cost function in the optimization process  
+    @args genes: vector of parameters or dict, depending of the algos used (tie break very soon)
     '''
-    #FIXME float encoding screws the idea
+    '''
+    genes = [long_window, ma_rate, threshold]
+    or: 
+    genes = {'long_window': 200, 'ma_rate': 3, 'threshold': 10}
+    '''
     #genes['ma_rate'] = float(genes['ma_rate']) / 10.0
     genes[1] = float(genes[1]) / 10.0
 

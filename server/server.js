@@ -1,3 +1,7 @@
+/*
+ *Simple server waiting for instruction to fork
+ */
+
 var net = require('net');
 var worker = require('./workerNode')
 

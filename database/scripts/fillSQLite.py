@@ -1,4 +1,4 @@
-import ipdb as pdb
+#NOTE SQLite (as well as DataAgent) is deprecated for now (MySQL is used instead) and will be re-written later with SQLAlchimy
 
 import sys
 import os
@@ -8,10 +8,10 @@ import pytz
 
 sys.path.append(os.environ['QTRADE'])
 from neuronquant.data.QuantDB import QuantSQLite, Fields
-from neuronquant.data.DataAgent import DataAgent
+from neuronquant.data.databot import DataAgent
 
 
-def fillQuotes(tickers, timestamp):
+def fill_quotes(tickers, timestamp):
     ''' Download missing ticker data according
     to the given timestamp '''
     agent = DataAgent(['remote', 'database'], lvl='info')
@@ -20,13 +20,34 @@ def fillQuotes(tickers, timestamp):
         agent.db.close(commit=True)
 
 if __name__ == '__main__':
-    db = QuantSQLite('feeds.db')
+    # Configuration
+    assert len(sys.argv) == 2
+    if sys.argv[1] == 'twitter':
+        database = 'feeds.db'
+        script = 'twitterBuild.sql'
+    elif sys.argv[1] == 'stocks':
+        database = 'stocks.db'
+        script = 'stocksBuild.sql'
+    else:
+        raise NotImplementedError()
+
+    # Open or create the desired sqlite database
+    db = QuantSQLite(database)
+    # Test everything is alright
     print db.execute('select sqlite_version()')
-    db.queryFromScript('twitterBuild.sql')
+
+    # Execute sql script
+    db.queryFromScript(script)
     db.close()
 
-    #timestamp = pd.date_range(pd.datetime(2005, 1, 1, tzinfo=pytz.utc),
-                              #pd.datetime(2012, 11, 30, tzinfo=pytz.utc),
-                              #freq=pd.datetools.BDay())
-    #tickers = ['starbucks', 'google', 'apple', 'altair']
-    #fillQuotes(tickers, timestamp)
+    if sys.argv[1] == 'stocks':
+        # getQuotes() method will fetch data that is not available in database and then store it
+        timestamp = pd.date_range(pd.datetime(2005, 1, 1, tzinfo=pytz.utc),
+                                  pd.datetime(2012, 11, 30, tzinfo=pytz.utc),
+                                  freq=pd.datetools.BDay())
+        tickers = ['starbucks', 'google', 'apple', 'altair']
+        fill_quotes(tickers, timestamp)
+
+    elif sys.argv[1] == 'twitter':
+        #TODO Use script in ppQuantrade/playground/nlp/twit.py
+        raise NotImplementedError()
