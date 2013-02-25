@@ -1,42 +1,53 @@
-==================================================
 NeuronQuant: Automated quantitative trading system
 ==================================================
 
 Overview
-========
+--------
 
 **NeuronQuant** is a set of tools and an engine meant to let you easily and intuitively build your own **automated quantitative trading system**.
 It is designed to let financial, developer and scientist dudes (together sounds great) explore, test and deploy market technical hacks.
-While the project is still at an early age, you can already write, or use, a **buy/sell signal algorithm, and a portfolio allocation strategie**, 
-and then just plug it in the system and watch it from the web app run on **backtest** or **live-trading** mode.
-In addition the project propose facilities to build a distributed system and 21st century web application (d3.js and other html5 stuff),
+
+While the project is still at an early age, you can already write, or use, **buy/sell signal algorithms, and portfolio allocation strategies**.
+Then just plug it in the system and watch it from your dev-console or the web app run on **backtest** or **live-trading** mode.
+
+In addition the project propose facilities to build a distributed system and 21st century application (big data, fat computations, d3.js and other html5 stuff),
 tools to mix languages like Python, node.js and R and a financial library.
 You will find some goodies like machine learning forecast, markowitz portfolio optimization, genetic optimization, sentiment analysis from twitter, ...
+
+
+Installation
+------------
+    - Clone this repos
+    - Clone my zipline fork, or the original and apply changes in management/changelog
+    - Edit config.sh to suit your needs
+    - Run a mysql database and edit neuronquant/data/config.py 
+    - Create the tables with neuronquant/data/database.py create, then populate it with neuronquant/data/database.py add symbols.csv (see database/QSDATA for a huge list)
+    - You should be ready to use, see below 
 
 
 Getting started
 ---------------
 
-To run a backtest manually, configure algos.cfg and manager.cfg file, and then run::
+To run a backtest manually, configure algos.cfg and manager.cfg file, and then run
 
-    ./backtest.py --tickers google,apple --algorithm DualMA --manager OptimalFrontier --start 2005-01-10 --end 2010-07-03
+```./backtest.py --tickers google,apple --algorithm DualMA --manager OptimalFrontier --start 2005-01-10 --end 2010-07-03```
 
-Or in live mode::
+Or in realtime mode:
 
-    ./backtest.py --tickers random,6 --algorithm StdBased --manager Equity --delta 2min --live
+```./backtest.py --tickers random,6 --algorithm StdBased --manager Equity --delta 2min --live```
 
-More examples in bactester/runBacktest.sh
+More examples available in bactester/runBacktest.sh
 
 As mentionned you can easily write your own algorithms. Here is the equity manager example, which allocates the same weight
-to all your assets:
+to all of your assets:
 
 ```python
 from neuronquant.ai.portfolio import PortfolioManager
 
 class Equity(PortfolioManager):
-    '''
+    """"
     dispatch equals weigths
-    '''
+    """
     def optimize(self, date, to_buy, to_sell, parameters):
         allocations = dict()
         if to_buy:
@@ -48,8 +59,8 @@ class Equity(PortfolioManager):
         return allocations, 0, 1
 ```
 
-Strategies triggering buy or sell signals are used with great zipline backtester engine and therefor use quite the same scheme,
-plus the manager, and some config paarmeters. Here a classic momentum strategie:
+Strategies triggering buy or sell signals are used with great zipline backtester engine and therefore use quite the same scheme,
+plus the manager, and some config parameters. Here a classic momentum strategie:
 
 ```python
 class Momentum(TradingAlgorithm):
@@ -94,13 +105,13 @@ class Momentum(TradingAlgorithm):
 
 Rememeber that managers and algorithms should be configured in their own \*.cfg files or through the webapp.
 
-Indeed you can run from the root directory::
+You can setup your trading environment by running from the root directory::
     ./run_labo.py
 and access to the shiny frontend page. From there configure the backtest, run it and explore detailed results.
 
 
-Thanks
-------
+Credits
+-------
 
 Projects and websites below are awesome works that i heavily use, learn from and want to gratefully thank:
     * pandas http://github.com/pydata/pandas
