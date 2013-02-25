@@ -15,8 +15,8 @@ from zipline.gens.utils import hash_args
 from zipline.sources.data_source import DataSource
 
 sys.path.append(os.environ['QTRADE'])
-from pyTrade.data.remote import Fetcher
-from pyTrade.data.datafeed import DataFeed
+from neuronquant.data.remote import Fetcher
+from neuronquant.data.datafeed import DataFeed
 
 import logbook
 log = logbook.Logger('DataLiveSource')

@@ -9,7 +9,7 @@ import pandas as pd
 import pandas.io.sql as pd_sql
 
 sys.path.append(os.environ['QTRADE'])
-from neuronquant.utils.DatabaseSubsystem import SQLiteWrapper
+from neuronquant.utils.databasefactory import SQLiteWrapper
 from neuronquant.utils.logger import LogSubsystem
 from neuronquant.utils.decorators import *
 from neuronquant.utils.utils import *

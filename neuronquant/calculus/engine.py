@@ -9,7 +9,7 @@ import json
 sys.path.append(os.environ['QTRADE'])
 from neuronquant.data.datafeed import DataFeed
 from neuronquant.ai.managers import Constant, Equity, OptimalFrontier
-from neuronquant.network.transport import ZMQ_Server
+from neuronquant.network.transport import ZMQ_Dealer
 
 import pytz
 import pandas as pd
@@ -50,18 +50,20 @@ class BacktesterEngine(object):
         return trading_algorithm
 
 
+#NOTE engine.feed_data(tickers, start, end, freq) ?
 class Simulation(object):
     ''' Take a trading strategie and evalute its results '''
-    def __init__(self, flavor='mysql', lvl='debug'):
+    def __init__(self, data=None, flavor='mysql', lvl='debug'):
         #NOTE Allowing different data access ?
-        #log          = LogSubsystem('Simulation', lvl).getLog()
-        self.feeds         = DataFeed()
+        self.data          = data
+        if not data:
+            self.feeds         = DataFeed()
         self.backtest_cfg  = None
         self.algo_cfg      = None
         self.manager_cfg   = None
         self.monthly_perfs = None
 
-        self.server        = ZMQ_Server(timeout=5)
+        self.server        = ZMQ_Dealer(id=self.__class__.__name__)
 
     def configure(self, bt_cfg=None, a_cfg=None, m_cfg=None):
         ''' Reads and provides a clean configuration for the simulation '''
@@ -73,54 +75,57 @@ class Simulation(object):
             parser.add_argument('-a', '--algorithm', action='store', required=True, help='Trading algorithm to be used')
             parser.add_argument('-m', '--manager', action='store', required=True, help='Portfolio strategie to be used')
             parser.add_argument('-b', '--database', action='store', default='stocks.db', required=False, help='Database location')
-            parser.add_argument('-l', '--level', action='store', default='debug', required=False, help='Verbosity level')
             parser.add_argument('-t', '--tickers', action='store', required=True, help='target names to process')
             parser.add_argument('-s', '--start', action='store', default='1/1/2006', required=False, help='Start date of the backtester')
             parser.add_argument('-e', '--end', action='store', default='1/12/2010', required=False, help='Stop date of the backtester')
-            parser.add_argument('-i', '--interactive', action='store_true', help='Indicates if the program was ran manually or not')
-            parser.add_argument('-r', '--realtime', action='store_true', help='makes the engine work in real-time !')
-            parser.add_argument('-p', '--port', action='store', default=5555, required=False, help='Activates the diffusion of the universe on the network, on the port provided')
+            parser.add_argument('-r', '--remote', action='store_true', help='Indicates if the program was ran manually or not')
+            parser.add_argument('-l', '--live', action='store_true', help='makes the engine work in real-time !')
+            parser.add_argument('-p', '--port', action='store', default=5570, required=False, help='Activates the diffusion of the universe on the network, on the port provided')
             args = parser.parse_args()
 
             self.backtest_cfg = {'algorithm'   : args.algorithm,
                                  'delta'       : args.delta,
                                  'manager'     : args.manager,
                                  'database'    : args.database,
-                                 'level'       : args.level,
                                  'tickers'     : args.tickers.split(','),
                                  'start'       : args.start,
                                  'end'         : args.end,
-                                 'live'        : args.realtime,
-                                 'port'   : args.port,
-                                 'interactive' : args.interactive}
+                                 'live'        : args.live,
+                                 'port'        : args.port,
+                                 'remote'      : args.remote}
         else:
-            bt_cfg['tickers'] = bt_cfg['tickers'].split(',')
             self.backtest_cfg = bt_cfg
 
         if isinstance(self.backtest_cfg['start'], str) and isinstance(self.backtest_cfg['end'], str):
             ###############test = pd.datetime.strptime('2012-02-01:14:00', '%Y-%m-%d:%H:%M')
             self.backtest_cfg['start'] = pytz.utc.localize(pd.datetime.strptime(self.backtest_cfg['start'], '%Y-%m-%d'))
             self.backtest_cfg['end']   = pytz.utc.localize(pd.datetime.strptime(self.backtest_cfg['end'], '%Y-%m-%d'))
-        elif isinstance(self.backtest_cfg['start'], dt.datetime) and isinstance(self.backtest_cfg['end'], dt.datetime):
-            raise NotImplementedError()
+        elif isinstance(self.backtest_cfg['start'], pd.datetime) and isinstance(self.backtest_cfg['end'], pd.datetime):
+            if not self.backtest_cfg['start'].tzinfo:
+                self.backtest_cfg['start'] = pytz.utc.localize(self.backtest_cfg['start'])
+            if not self.backtest_cfg['end'].tzinfo:
+                self.backtest_cfg['end'] = pytz.utc.localize(self.backtest_cfg['end'])
         else:
             raise NotImplementedError()
 
-        if self.backtest_cfg['interactive']:
-            self.read_config(manager=m_cfg, algorithm=a_cfg)
-        else:
-            self.server.run_forever(port=self.backtest_cfg['port'], on_recv=self.read_config)
+        #if self.backtest_cfg['interactive']:
+        self.read_config(remote=self.backtest_cfg['remote'], manager=m_cfg, algorithm=a_cfg)
+        #else:
+            #self.server.run_forever(port=self.backtest_cfg['port'], on_recv=self.read_config)
 
         return self.backtest_cfg
 
     def read_config(self, *args, **kwargs):
-        port = kwargs.get('id', None)
-        if port:
-            assert len(args) == 1
+        self.manager_cfg = kwargs.get('manager', None)
+        self.algo_cfg = kwargs.get('algorithm', None)
+        if kwargs.get('remote', False):
             log.info('Fetching backtest configuration from client')
-            for msg in args:
-                assert isinstance(msg, dict)
+            self.server.run(host='127.0.0.1', port=self.backtest_cfg['port'])
+            msg = self.server.receive()
+            assert isinstance(msg, dict)
+            if self.manager_cfg is None:
                 self.manager_cfg = msg['manager']
+            if self.algo_cfg is None:
                 self.algo_cfg    = msg['algorithm']
         else:
             bt_root          = os.environ['QTRADE'] + '/backtester/'
@@ -137,7 +142,7 @@ class Simulation(object):
         self.manager_cfg['server'] = self.server
         log.info('Done.')
 
-    def runBacktest(self):
+    def run_backtest(self):
         if self.backtest_cfg is None or self.algo_cfg is None or self.manager_cfg is None:
             log.error('** Backtester not configured properly')
             return 1
@@ -229,7 +234,7 @@ class Simulation(object):
         riskfree = np.mean(metrics['Treasury.Returns'])
 
         if db_id is None:
-            db_id = self.algorithm + pd.datetime.strftime(pd.datetime.now(), format='%Y%m%d')
+            db_id = self.backtest_cfg['algorithm'] + pd.datetime.strftime(pd.datetime.now(), format='%Y%m%d')
         perfs['Name']              = db_id
         perfs['Sharpe.Ratio']      = tsu.get_sharpe_ratio(metrics['Returns'].values, risk_free = riskfree)
         perfs['Returns']           = (((metrics['Returns'] + 1).cumprod()) - 1)[-1]
@@ -281,3 +286,8 @@ class Simulation(object):
         index = self._get_index(perfs)
         values = [perfs[i][field] for i in range(len(perfs))]
         return pd.Series(values, index=index)
+
+    def __del__(self):
+        del self.server
+        #self.server.socket.close()
+        #self.server.context.term()

@@ -1,7 +1,4 @@
 """Genetic Algorithmn Implementation """
-import random
-import bisect
-
 import sys
 import os
 

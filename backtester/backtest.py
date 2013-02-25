@@ -7,7 +7,7 @@ import os
 import pylab as plt
 
 sys.path.append(os.environ['QTRADE'])
-from neuronquant.compute.engine import Simulation
+from neuronquant.calculus.engine import Simulation
 from neuronquant.utils import setup, log
 
 
@@ -16,7 +16,7 @@ if __name__ == '__main__':
         '''-------------------------------------------------------------------------------------------    Backtest    ----'''
         engine  = Simulation()
         args    = engine.configure()
-        results = engine.runBacktest()
+        results = engine.run_backtest()
 
         '''---------------------------------------------------------------------------------------------    Results   ----'''
         log.info('Last day result returns: {}'.format(results.returns[-1]))
@@ -32,7 +32,7 @@ if __name__ == '__main__':
         risk_metrics = engine.overall_metrics(save=True, db_id='test')
 
         #FIXME Should be executed when ran from nodejs debugger, which is non-interactive
-        if args['interactive']:
+        if not args['remote']:
             log.info('\n\nReturns: {}% / {}%\nVolatility:\t{}\nSharpe:\t\t{}\nMax drawdown:\t{}\n\n'.format(
                      risk_metrics['Returns'] * 100.0, risk_metrics['Benchmark.Returns'] * 100.0, risk_metrics['Volatility'],
                      risk_metrics['Sharpe.Ratio'], risk_metrics['Max.Drawdown']))

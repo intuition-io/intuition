@@ -39,7 +39,7 @@ class SignalManager(object):
         return self.__repr__()
 
     def __del__(self):
-        self._logger.info('Current signal handler {} deleted'.format(self._name))
+        log.info('Current signal handler deleted')
 
 
 ''' Usage: Set the signal handler and a 5-second alarm

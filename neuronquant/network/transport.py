@@ -1,55 +1,128 @@
+import threading
 import signal
 import logbook
+import ipdb as pdb
 
 import zmq
 import time
 import json
 import sys
 import os
+import datetime as dt
 
 sys.path.append(os.environ['QTRADE'])
-from pyTrade.utils.signals import SignalManager
+from neuronquant.utils.signals import SignalManager
+from neuronquant.utils import remote_setup, color_setup, setup
 
 log = logbook.Logger('ZMQ Messaging')
+#https://github.com/JustinTulloss/zeromq.node/blob/master/examples/devices/queue.js
+#https://github.com/zeromq/pyzmq/blob/master/examples/device/server.py
 #TODO http://pythonhosted.org/Logbook/setups.html
 #     http://pythonhosted.org/Logbook/api/queues.html
 
 
 class ZMQ_Base(object):
-    def __init__(self, signal_manager=True, timeout=None):
+    def __init__(self, id=None, signal_manager=True):
+        self.identity = id
         signals = [signal.SIGINT]
-        self.timeout = timeout
-        if timeout:
-            signals.append(signal.SIGALRM)
         self.s_manager = SignalManager(signal_codes=signals)
-        self.ports = None
         log.info(self.s_manager)
+        self.context = zmq.Context()
+        self.port = None
 
-    def send(self, msg, acknowledgment=False):
-        log.info('Sending message {}'.format(msg))
-        self.socket.send_json(msg)
+    def receive(self, json=True, acknowledgment=None):
+        msg = None
+        #msg = self.socket.recv_json() if json else self.socket.recv()
+        msg = self.socket.recv()
+        log.debug('Server received {}'.format(msg))
         if acknowledgment:
-            if self.timeout:
-                signal.alarm(self.timeout)
-            log.debug('Waiting for response...')
-            msg = self.socket.recv_json()
-            log.info('Acknowledgment: {}'.format(msg))
-            if self.timeout:
-                signal.alarm(0)
+            if json:
+                self.socket.send_json({'time': dt.datetime.strftime(dt.datetime.now(), format='%Y-%m-%dT%H:%M:%S'),
+                                       'id': self.identity, 'channel': 'dashboard', 'msg': 0})
+            else:
+                self.socket.send('{}:{}'.format(self.identity, 0))
         return msg
 
-    def receive(self):
-        return self.socket.recv_json()
+    def __del__(self):
+        if not self.socket.closed:
+            self.socket.close()
+            self.context.term()
+
+
+class ZMQ_Dealer(ZMQ_Base):
+    def run(self, uri=None, host='localhost', port=5555):
+        self.socket = self.context.socket(zmq.DEALER)
+        self.port = port
+        self.socket.setsockopt(zmq.IDENTITY, self.identity if self.identity else str(self.port))
+        if uri is None:
+            uri = 'tcp://{}:{}'.format(host, port)
+        self.socket.connect(uri)
+        self.poll = zmq.Poller()
+        self.poll.register(self.socket, zmq.POLLIN)
+        log.info('Client connected to {}.'.format(uri))
+
+    def noblock_recv(self, timeout=0, json=True, acknowledgment=None):
+        socks = dict(self.poll.poll(timeout))
+        msg = None
+        if self.socket in socks:
+            if socks[self.socket] == zmq.POLLIN:
+                msg = self.socket.recv_json() if json else self.socket.recv()
+                log.debug('Client received {}'.format(msg))
+                if acknowledgment:
+                    if json:
+                        self.socket.send_json({'time': dt.datetime.strftime(dt.datetime.now(), format='%Y-%m-%dT%H:%M:%S'),
+                                               'id': self.identity, 'channel': 'dashboard', 'msg': 0})
+                    else:
+                        self.socket.send('{}:{}'.format(self.identity, 0))
+        return msg
+
+    def send_to_android(self, msg):
+        assert isinstance(msg, dict)
+        msg['channel'] = 'android'
+        msg['appname'] = 'NeuroQuant'
+        self.send(msg)
+
+    def send(self, msg, json=True, channel=''):
+        if isinstance(msg, dict):
+            #log.debug('Client sends: %s' % msg)
+            self.socket.send_json(msg)
+        elif isinstance(msg, str):
+            if json:
+                log.info('Client sends: %s' % msg)
+                self.socket.send_json({'time': dt.datetime.strftime(dt.datetime.now(), format='%Y-%m-%dT%H:%M:%S'),
+                                       'id': self.identity, 'channel': channel, 'msg': msg})
+            else:
+                assert isinstance(msg, str)
+                log.info('Client sends: %s' % msg)
+                self.socket.send(msg)
+        else:
+            raise NotImplementedError()
+
+
+class ZMQ_Broker(threading.Thread):
+    """ServerTask"""
+    def __init__(self):
+        threading.Thread.__init__(self)
+
+    def run(self):
+        context = zmq.Context()
+        frontend = context.socket(zmq.ROUTER)
+        frontend.bind('tcp://*:5555')
+
+        backend = context.socket(zmq.DEALER)
+        backend.bind('tcp://127.0.0.1:5570')
+
+        zmq.device(zmq.QUEUE, frontend, backend)
+
+        frontend.close()
+        backend.close()
+        context.term()
 
 
 class ZMQ_Server(ZMQ_Base):
-    def __init__(self, *args, **kwargs):
-        ZMQ_Base.__init__(self, *args, **kwargs)
-        context = zmq.Context()
-        self.socket = context.socket(zmq.REP)
-
     def run(self, port=5555, on_recv=None, forever=False):
-        self.ports = port
+        self.socket = self.context.socket(zmq.REP)
+        self.port = port
         if not on_recv:
             on_recv = self.default_on_recv
         log.info('Server listening on port {}...'.format(port))
@@ -75,12 +148,9 @@ class ZMQ_Server(ZMQ_Base):
 
 
 class ZMQ_Client(ZMQ_Base):
-    def __init__(self, *args, **kwargs):
-        ZMQ_Base.__init__(self, *args, **kwargs)
-        context = zmq.Context()
-        self.socket = context.socket(zmq.REQ)
 
     def connect(self, host='localhost', ports=[5555]):
+        self.socket = self.context.socket(zmq.REQ)
         self.ports = ports
         for port in ports:
             log.info('Client connecting to {} on port {}...'.format(host, port))
@@ -104,8 +174,18 @@ def client_test():
         reply = client.send('Hello', acknowledgment=True)
         assert(reply)
 
+
+def dealer_test():
+    client = ZMQ_Dealer(id='client_test')
+    client.run(host='127.0.0.1', port=5570)
+    client.receive()
+    for request in range(2):
+        client.noblock_recv()
+        time.sleep(0.5)
+        client.send('test number {}'.format(request), channel='dashboard', json=True)
+    client.send_to_android({'title': 'Buy signal on google', 'priority': 4,
+                 'description': 'Google dual moving average crossed: you should buy 23 stocks with a risk of 0.23'})
+
 if __name__ == '__main__':
-    if sys.argv[1] == 'server':
-        server_test()
-    elif sys.argv[1] == 'client':
-        client_test()
+    with remote_setup.applicationbound():
+        dealer_test()

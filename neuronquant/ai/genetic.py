@@ -3,15 +3,13 @@ import random
 import bisect
 import sys
 import os
-
-sys.path.append(os.environ['QTRADE'])
-from neuronquant.utils import LogSubsystem
+import logbook
 
 # Default values, oviously...
 #TODO some are in percent, others are decimals
 CROSSOVER_DEFAULT   = 0.9
 MUTATION_DEFAULT    = 0.02
-ELITISM_DEFAULT     = 10
+ELITISM_DEFAULT     = 0.1
 POPULATION_DEFAULT  = 80
 GENERATIONS_DEFAULT = 100
 
@@ -63,16 +61,16 @@ def roulette0(fs):
 class GeneticAlgorithm(object):
     ''' population is a set of chromosomes'''
     def __init__(self, genetics, selection='roulette'):
-        self._logger = LogSubsystem(self.__class__.__name__, 'debug').getLog()
-        self._logger.info('Initiating genetic algorithm.')
+        self.log = logbook.Logger(self.__class__.__name__)
+        self.log.info('Initiating genetic algorithm.')
         self.genetics = genetics
         self.selection = selection
 
     def run(self, generations=10, freq=10):
-        self._logger.info('Running genetic algorithm')
-        self._logger.info('Generating random population')
+        self.log.info('Running genetic algorithm')
+        self.log.info('Generating random population')
         population = self.genetics.generatePopulation()
-        self._logger.debug('Initial population: {}'.format(population))
+        self.log.debug('Initial population: {}'.format(population))
         while True:
             fits_pops = sorted([(self.genetics.fitness(ch), ch) for ch in population], reverse=True)
             if self.genetics.checkStop(fits_pops, generations, freq):
@@ -88,12 +86,12 @@ class GeneticAlgorithm(object):
                 continue
             else:
                 break
-        #self._logger.debug('Index [{},{}] selected'.format(idx1, idx2))
+        #self.log.debug('Index [{},{}] selected'.format(idx1, idx2))
         return [ranked_chromos[idx1], ranked_chromos[idx2]]
 
     def iteratePopulation(self, ranked_pop):
         # This parents selection use tournement method
-        #self._logger.info('Evolving population')
+        #self.log.info('Evolving population')
         if self.selection == 'tournament' or self.selection == 'sorted':
             parents_generator = self.genetics.parents(ranked_pop, self.selection)
         fitness_scores = [item[0] for item in ranked_pop]
@@ -106,7 +104,7 @@ class GeneticAlgorithm(object):
             elif self.selection == 'roulette':
                 parents = self.rouletteWheel(fitness_scores, ranked_chromos)
             else:
-                self._logger.error('** Selector not implemented, exiting')
+                self.log.error('** Selector not implemented, exiting')
                 sys.exit(1)
             cross = random.random() < self.genetics._probabilityCrossover()
             children = self.genetics.crossover(parents) if cross else parents
@@ -121,16 +119,16 @@ class GeneticAlgorithm(object):
 class Genetic(object):
     def __init__(self, evaluator, elitism_rate=ELITISM_DEFAULT, prob_crossover=CROSSOVER_DEFAULT,
                  prob_mutation=MUTATION_DEFAULT, target=None):
-        self._logger = LogSubsystem(self.__class__.__name__, 'debug').getLog()
+        self.log = logbook.Logger(self.__class__.__name__)
         self.target = target
         self.counter = 0
         self.evaluator = evaluator
-        self.elitism_rate = elitism_rate
+        self.elitism_rate = elitism_rate * 100
         self.prob_crossover = prob_crossover
         self.prob_mutation = prob_mutation
 
     def describeGenome(self, gene_code, popN=POPULATION_DEFAULT):
-        self._logger.info('Generating population of described genome')
+        self.log.info('Generating population of described genome')
         self.popN = popN
         self.gene_code = gene_code
 
@@ -158,7 +156,7 @@ class Genetic(object):
 
     #TODO other stop conditions
     def checkStop(self, fits_populations, generations=GENERATIONS_DEFAULT, freq=10):
-        self._logger.debug('generations {} and freq {}'.format(generations, freq))
+        self.log.debug('generations {} and freq {}'.format(generations, freq))
         self.counter += 1
         if self.counter % (round(generations / freq)) == 0:
             best_match = list(sorted(fits_populations))[-1][1]
@@ -166,7 +164,7 @@ class Genetic(object):
             best = max(fits)
             worst = min(fits)
             ave = sum(fits) / len(fits)
-            self._logger.info('[G %3d] score=(%4f, %4f, %4f): %r' %
+            self.log.info('[G %3d] score=(%4f, %4f, %4f): %r' %
                 (self.counter, best, ave, worst, best_match))
         return self.counter >= generations
 
@@ -183,7 +181,7 @@ class Genetic(object):
                 mother = self._tournament(fits_populations)
                 yield (father, mother)
         else:
-            self._logger.error('** Type selection not implemented: {}'.format(type))
+            self.log.error('** Type selection not implemented: {}'.format(type))
         return
 
     def crossover(self, parents, type='single'):
@@ -199,7 +197,7 @@ class Genetic(object):
         elif type == 'single':
             return (father[:index1] + mother[index1:], mother[:index1] + father[index1:])
         else:
-            self._logger.error('** Crossover type not implemented: {}'.format(type))
+            self.log.error('** Crossover type not implemented: {}'.format(type))
             raise NotImplementedError()
         return (None, None)
 
@@ -233,7 +231,7 @@ class Genetic(object):
             mutated[index] += vary
             return mutated
         else:
-            self._logger.error('** Mutation type not implemented: {}'.format(type))
+            self.log.error('** Mutation type not implemented: {}'.format(type))
         return chromosome
 
     # internals

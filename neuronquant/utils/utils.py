@@ -11,6 +11,19 @@ import numpy as np
 #import babel.numbers
 #import decimal
 
+import re
+import socket
+from urllib2 import urlopen
+
+
+def get_ip(public=False):
+    if public:
+        data = str(urlopen('http://checkip.dyndns.com/').read())
+        return re.compile(r'Address: (\d+\.\d+\.\d+\.\d+)').search(data).group(1)
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(('google.com', 0))
+    return s.getsockname()[0]
+
 
 def BIndexGenerator(start, end, delta=pd.datetools.bday, market=''):
     '''

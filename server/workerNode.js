@@ -9,7 +9,7 @@ function run_worker(config_txt, socket)
     var script_args = []
     for (var arg in config.args) {
         script_args.push(config.args[arg].prefix);
-        if (config.args[arg].prefix != '--interactive')
+        if (config.args[arg].prefix != '--interactive' && config.args[arg].prefix != '--realtime')
             script_args.push(config.args[arg].value);
     };
 
@@ -28,7 +28,7 @@ function run_worker(config_txt, socket)
 
     child.on('exit', function (code, signal) {
         if (code === 0) {
-            console.log('[Node:worker] Child exited normaly ('+code+')')
+            console.log('[Node:worker] Child exited normaly (' + code + ')')
         } else {
             console.log('[Node:worker] Child process terminated with code ' + code + ', signal: ' + signal);
         }

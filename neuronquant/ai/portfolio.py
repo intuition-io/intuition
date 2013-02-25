@@ -14,7 +14,7 @@ log = Logger('Manager')
 
 app_path = os.environ['QTRADE']
 sys.path.append(app_path)
-portfolio_opt_file = '/'.join((app_path, 'pyTrade/ai/opt_utils.R'))
+portfolio_opt_file = '/'.join((app_path, 'neuronquant/ai/opt_utils.R'))
 #from pyTrade.data.datafeed import DataFeed
 
 import rpy2.robjects as robjects
@@ -37,14 +37,17 @@ class PortfolioManager(object):
         self.connected = False
         self.server = parameters.get('server', None)
         #TODO Message emission only if a client exists ? Could try to bind and give up if no connections
-        if self.server.ports is not None:
-            startup_msg = self.server.receive()
-            self.connected = True
-            log.info(json.dumps(startup_msg, indent=4, separators=(',', ': ')))
+        #NOTE Non blocking recv(): https://github.com/zeromq/pyzmq/issues/132   /  zmq.NOBLOCK ?
+        #NOTE good example: http://zguide2.zeromq.org/py:peering3
+        #if self.server.ports is not None:
+            #startup_msg = self.server.receive()
+            #self.connected = True
+            #log.info(json.dumps(startup_msg, indent=4, separators=(',', ': ')))
         #TODO Should send stuff anyway, and accept new connections while running
-        else:
+        #else:
+        if self.server.port is None:
             log.info('Binding manager on default port...')
-            self.server.run()
+            self.server.run(host='127.0.0.1', port=5570)
         r('source("{}")'.format(portfolio_opt_file))
 
     def optimize(self):
@@ -56,23 +59,20 @@ class PortfolioManager(object):
         self.date      = date
         #FIXME A generic method: f(ndict) = dict()
         portfolio.capital_used = portfolio.capital_used[0]
-        if self.connected:
-            #portfolio.start_date = portfolio.start_date.strftime(format='%Y-%m-%d %H:%M')
-            try:
-                response = self.server.send({'date': date.strftime(format='%Y-%m-%d %H:%M'),
-                                             'portfolio': {
-                                                 'positions': json.loads(str(portfolio.positions).replace('Position(', '').replace(')', '').replace("'", '"')),
-                                                 'value': portfolio.portfolio_value,
-                                                 'cash': portfolio.cash,
-                                                 'returns': portfolio.returns,
-                                                 'pnl': portfolio.pnl,
-                                                 'capital_used': portfolio.capital_used,
-                                                 'actif': portfolio.positions_value}
-                                             },
-                                             acknowledgment=True)
-                log.info(json.dumps(response, indent=4, separators=(',', ': ')))
-            except:
-                log.error('** Sending portfolio snapshot to client')
+        #portfolio.start_date = portfolio.start_date.strftime(format='%Y-%m-%d %H:%M')
+        try:
+            self.server.send({'portfolio': {
+                              'positions': json.loads(str(portfolio.positions).replace('Position(', '').replace(')', '').replace("'", '"')),
+                              'value': portfolio.portfolio_value,
+                              'cash': portfolio.cash,
+                              'returns': portfolio.returns,
+                              'pnl': portfolio.pnl,
+                              'capital_used': portfolio.capital_used,
+                              'actif': portfolio.positions_value}},
+                             channel='dashboard')
+            #log.info(json.dumps(response, indent=4, separators=(',', ': ')))
+        except:
+            log.error('** Sending portfolio snapshot to client')
 
     def trade_signals_handler(self, signals):
         '''

@@ -5,7 +5,7 @@ var config = {
     args: {
         ticker: {
             prefix: "--ticker",
-            value: "random,1" 
+            value: "google,apple" 
         },
         algorithm: {
             prefix: "--algorithm",
@@ -13,7 +13,7 @@ var config = {
         },
         delta: {
             prefix: "--delta",
-            value:      'D'
+            value:      '1min'
         },
         manager: {
             prefix: "--manager",
@@ -26,6 +26,9 @@ var config = {
         end: {
             prefix: "--end",
             value: "2010-07-03" 
+        } ,
+        mode: {
+            prefix: "--realtime"
         } 
     },
     algorithm: {

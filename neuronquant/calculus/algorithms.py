@@ -8,9 +8,6 @@ sys.path.append(os.environ['ZIPLINE'])
 from zipline.algorithm import TradingAlgorithm
 from zipline.transforms import MovingAverage, MovingVWAP, batch_transform, MovingStandardDev
 
-sys.path.append(os.environ['QTRADE'])
-from neuronquant.ai.old_manager import PortfolioManager
-
 from logbook import Logger
 import ipdb as pdb
 
@@ -31,7 +28,6 @@ class BuyAndHold(TradingAlgorithm):
         self.manager.update(self.portfolio, self.datetime.to_pydatetime())
         signals = dict()
 
-        pdb.set_trace()
         ''' ----------------------------------------------------------    Scan   --'''
         if self.frame_count == 3:
             for ticker in data:
@@ -53,12 +49,14 @@ class DualMovingAverage(TradingAlgorithm):
     momentum).
     """
     def initialize(self, properties):
-        short_window       = properties.get('short_window', 200)
         long_window        = properties.get('long_window', 400)
+        short_window       = properties.get('short_window', None)
+        if short_window is None:
+            short_window = int(round(properties.get('ma_rate', 0.5) * float(long_window), 2))
         self.amount        = properties.get('amount', 10000)
         self.threshold     = properties.get('threshold', 0)
         #self.capital_base = properties.get('capital_base', 1000)
-        self.debug         = properties.get('debug', True)
+        self.debug         = properties.get('debug', 0)
 
         self.add_transform(MovingAverage, 'short_mavg', ['price'],
                            window_length=short_window)
@@ -76,7 +74,8 @@ class DualMovingAverage(TradingAlgorithm):
         ''' ----------------------------------------------------------    Init   --'''
         self.manager.update(self.portfolio, self.datetime.to_pydatetime())
         signals = dict()
-        if (self.frame_count == 1):
+        #FIXME 2 is the first frame...
+        if (self.frame_count == 2):
             for t in data:
                 self.invested[t] = False
 
@@ -217,11 +216,8 @@ class MovingAverageCrossover(TradingAlgorithm):
     https://www.quantopian.com/posts/moving-average-crossover
     '''
     def initialize(self, properties, strategie, parameters):
-        self.set_logger(Logger(self.__class__.__name__))
         self.debug    = properties.get('debug', 0)
         #window_length = properties.get('window_length', 3)
-        self.manager  = PortfolioManager(self.commission.cost)
-        self.manager.setup_strategie(strategie, parameters)
         self.fast = []
         self.slow = []
         self.medium = []
@@ -478,7 +474,6 @@ class StddevBased(TradingAlgorithm):
         total_trades = self.successes + self.fails
         winning_percentage = self.successes / total_trades * 100
 
-        #pdb.set_trace()
         ''' ----------------------------------------------------------    Scan   --'''
         # Data Variables
         for i, stock in enumerate(data.keys()):
@@ -558,11 +553,8 @@ class MultiMA(TradingAlgorithm):
     def initialize(self, properties, strategie, parameters):
         #tickers = [sid(21090), sid(698),sid(6872),sid(4415),sid(6119),\
                 #sid(8229),sid(39778),sid(14328),sid(630),sid(4313)]
-        self.set_logger(Logger(self.__class__.__name__))
         self.debug    = properties.get('debug', 0)
         self.window_length = properties.get('window_length', 3)
-        self.manager  = PortfolioManager(self.commission.cost)
-        self.manager.setup_strategie(strategie, parameters)
 
     def handle_data(self, data):
         self.manager.update(self.portfolio, self.datetime.to_pydatetime())
