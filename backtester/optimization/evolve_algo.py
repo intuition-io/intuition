@@ -1,17 +1,16 @@
 #!/usr/bin/python
 # encoding: utf-8
 
-"""Genetic Algorithmn Implementation """
+""" Genetic Algorithmn Implementation """
 import ipdb as pdb
-
 import sys
 import os
+import argparse
 
 sys.path.append(os.environ['QTRADE'])
 from neuronquant.calculus.engine import Simulation
-from neuronquant.ai.genetic import Genetic, GeneticAlgorithm
 from neuronquant.ai.optimize import genetic_optimize
-from neuronquant.utils import log, color_setup
+from neuronquant.utils import log, color_setup, remote_setup
 
 #NOTE Could run the script like any backtest, with a --optimization parameter ??
 global_bt_cfg = {'algorithm'   : 'DualMA',
@@ -25,66 +24,66 @@ global_bt_cfg = {'algorithm'   : 'DualMA',
                  'port'        : '5570',
                  'remote'      : False}
 
-#data = DataFeed().quotes(global_bt_cfg['tickers'],
-                         #start_date=global_bt_cfg['start'],
-                         #end_date=global_bt_cfg['end'])
-#engine = Simulation(data)
 
-
+#TODO A class with __init__, fitness and evaluate metthods
+#     Then Logging configuration (should be able to choose at least if it's remote from the remote client !)
+#     Then write generic workerNode to make modules (with forwarder and console client) re-usuable
+#     Then develop genetic function (cf old class and methods choice)
+#     Then Integrate more optimization functions on same model
+#     Then store and analyse the data in database
 def evaluate_backtest(genes):
-    ''' 
-    @summary Cost function in the optimization process  
+    '''
+    @summary Cost function in the optimization process
     @args genes: vector of parameters or dict, depending of the algos used (tie break very soon)
     '''
     '''
     genes = [long_window, ma_rate, threshold]
-    or: 
+    or:
     genes = {'long_window': 200, 'ma_rate': 3, 'threshold': 10}
     '''
-    #genes['ma_rate'] = float(genes['ma_rate']) / 10.0
-    genes[1] = float(genes[1]) / 10.0
 
     '''-----------------------------------------------    Running    -----'''
     # No evoluation in manager (Constant) configuration so reads it statically from file
     # We want here to optimize the algorithm parameters
     engine = Simulation()
-    #engine.configure(bt_cfg=global_bt_cfg, a_cfg=genes, m_cfg=None)
-    engine.configure(bt_cfg=global_bt_cfg, a_cfg={'long_window': genes[0], 'ma_rate': genes[1], 'threshold': genes[2]}, m_cfg=None)
-    results = engine.run_backtest()
+    try:
+        #engine.configure(bt_cfg=global_bt_cfg, a_cfg=genes, m_cfg=None)
+        engine.configure(bt_cfg=global_bt_cfg, a_cfg={'long_window': genes[0], 'ma_rate': float(genes[1] / 10.0), 'threshold': genes[2]}, m_cfg=None)
+        results = engine.run_backtest()
+    except:
+        pdb.set_trace()
 
     risk_metrics = engine.overall_metrics()
+    log.notice(risk_metrics)
     score = [risk_metrics['Returns'], risk_metrics['Sharpe.Ratio'], risk_metrics['Max.Drawdown'], risk_metrics['Volatility']]
-    score = [results['portfolio_value'][-1], results['pnl'].cumsum()[-1], (results['returns'] + 1).cumprod()[-1]]
+    log.notice([results['portfolio_value'][-1], results['pnl'].cumsum()[-1], (results['returns'] + 1).cumprod()[-1]])
 
-    score = score[0]
-    log.info('-----------> Returns performance: {}'.format(score))
+    score = 1 - score[0]
     return score
 
 
-class EvolveQuant(Genetic):
-    def __init__(self, evaluator, elitism_rate=10,
-                 prob_crossover=0.8, prob_mutation=0.2):
-        Genetic.__init__(self, evaluator, elitism_rate, prob_crossover, prob_mutation)
-
-'''
-Gene code description {'name': [length_bit_code, offset], ...}
-long_window = 73 -> 200 : 0000000 > 1111111 + 73
-ma_rate = 3 -> 10 : 000 > 111 + 2
-buy_n = 10 -> 300 : 11111111 + 25
-buy_rate = 37 -> 100 : 111111 + 37
-'''
-
 if __name__ == "__main__":
-    with color_setup.applicationbound():
-        ''' So a new algorithm needs a gene_description and an evaluator '''
-        #TODO enter the possible values
-        #gene_code = {'long_window': [7, 73], 'ma_rate': [3, 3], 'threshold': [3, 0]}
-        #ga = EvolveQuant(evaluate_backtest, elitism_rate=0.4)
-        #ga.describeGenome(gene_code, popN=5)
-        #GeneticAlgorithm(ga, selection='roulette').run(generations=5, freq=1)
+    parser = argparse.ArgumentParser(description='Trading strategie optimization through genetic algorithm')
+    parser.add_argument('-v', '--version', action='version', version='%(prog)s v0.8.1 Licence rien du tout', help='Print program version')
+    parser.add_argument('-p', '--popsize', type=int, action='store', default=10, required=False, help='number of chromosomes in a population')
+    parser.add_argument('-e', '--elitism', type=float, action='store', default=0.2, required=False, help='% of best chromosomes keep as is for the next generation')
+    parser.add_argument('-s', '--step', type=float, action='store', default=1.0, required=False, help='Mutation leverage')
+    parser.add_argument('-i', '--iteration', type=int, action='store', default=20, required=False, help='Max number of evolution iteration')
+    parser.add_argument('-m', '--mutation', type=float, action='store', default=0.5, required=False, help='Probability for a mutation to happen')
+    parser.add_argument('-n', '--notify', action='store_true', help='Flag to send android notification')
+    args = parser.parse_args()
 
+    with remote_setup.applicationbound():
+        ''' So a new algorithm needs a gene_description and an evaluator '''
         #TODO float parameters handler
         #NOTE A dico would be more readable
-        best_parameters = genetic_optimize([(100, 200), (3, 10), (0, 20)], evaluate_backtest,
-                                           popsize=10, step=4, elite=0.3, maxiter=10, mutprob=0.3)
-        print('Best parameters evolved: {}'.format(best_parameters))
+        #NOTE Step is the same whatever the parameter, scale issue
+        score, best_parameters = genetic_optimize([(100, 200), (3, 9), (0, 20)],
+                                                  evaluate_backtest,
+                                                  popsize=args.popsize,
+                                                  step=args.step,
+                                                  elite=args.elitism,
+                                                  maxiter=args.iteration,
+                                                  mutprob=args.mutation,
+                                                  notify_android=args.notify)
+        print('Best parameters evolved: {} -> {}'.format(best_parameters, score))

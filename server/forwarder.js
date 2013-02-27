@@ -13,6 +13,12 @@ var zmq = require('zmq')
     
 
 function createQueueDevice(frontPort, backPort) {
+    // Logging level
+    var log_level = 0;
+
+    // Type of data the forwarder will route to the client
+    var filters = [];
+
     // Socket connected to client
     var frontSocket = zmq.socket('router'),
     // Socket connected to local processes
@@ -36,8 +42,9 @@ function createQueueDevice(frontPort, backPort) {
             worker.run(json_data, backSocket, frontSocket, envelope);
         }
         else if (json_data.type == 'configure') {
-            //TODO ... like channel or logging level filters
-            console.log('Configuring forwarder...')
+            console.log('Configuring forwarder...');
+            log_level = json_data.level;
+            filters = json_data.filters
         }
         else {
             console.log('Routing data to backend socket...')
@@ -52,22 +59,26 @@ function createQueueDevice(frontPort, backPort) {
     // Route every message from clients, connected to backsocket, to clients connected to frontsocket
     // whose identity is json_data.channel.
     backSocket.on('message', function(data) {
-        console.log(backSocket.identity + ': received ' + data.toString());
+        console.log(backSocket.identity + ': route data to frontend');
         json_data = JSON.parse(data)
+
         // For android channel use NotifyMyAndroid module
         if (json_data.channel == 'android') {
             //nma.check_key(nma.apikey)
             nma.notify(nma.apikey, json_data.appname, json_data.title, json_data.description, json_data.priority);
         }
         else {
-            frontSocket.send([json_data.channel, JSON.stringify(json_data)]);
+            for (var i=0; i < filters.length; i++) {
+                if (json_data.type == filters[i]) {
+                    frontSocket.send([json_data.channel, JSON.stringify(json_data)]);
+                }
+            }
         } 
     });
 
-    //TODO level filtrage configured by client
     // Route logbook zmq messages to clients with json_data.channel identity
     // see notes.rst for message json fields
-    function createZmQLogHandler (port, frontSocket) {
+    function createZmQLogHandler (port, logSocket) {
         // Subscriber socker as logbook use publisher socket whith channel ''
         var socket = zmq.socket('sub');
 
@@ -75,10 +86,12 @@ function createQueueDevice(frontPort, backPort) {
 
         socket.subscribe('');
         socket.on('message', function(data) {
-            console.log('app logged: ' + data.toString());
             json_data = JSON.parse(data)
-            // Sends to 'ZMQ Messaging' client
-            frontSocket.send([json_data.channel, JSON.stringify(json_data)])
+            console.log('App logged: ' + json_data.msg);
+            // Sends to 'ZMQ Messaging' client if the level is relevant
+            if (json_data.level >= log_level) {
+                logSocket.send([json_data.channel, JSON.stringify(json_data)])
+            }
         });
 
         socket.connect(port, function(err) {
@@ -89,5 +102,4 @@ function createQueueDevice(frontPort, backPort) {
     createZmQLogHandler(logger_uri, frontSocket);
 }
 
-//TODO Wrap it into a net server
 createQueueDevice(frontPort, backPort);

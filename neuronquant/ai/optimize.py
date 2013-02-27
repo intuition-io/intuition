@@ -1,6 +1,15 @@
 import time
 import random
 import math
+import os
+import sys
+import numpy as np
+
+import logbook
+log = logbook.Logger('Optimization')
+
+sys.path.append(os.environ['QTRADE'])
+from neuronquant.network.transport import ZMQ_Dealer
 
 
 def randomoptimize(domain, costf):
@@ -87,21 +96,34 @@ def annealingoptimize(domain, costf, T=10000.0, cool=0.95, step=1):
 
 
 def genetic_optimize(domain, costf, popsize=50, step=1,
-                    mutprob=0.2, elite=0.2, maxiter=100):
+                     mutprob=0.2, elite=0.2, maxiter=100, stop=0, notify_android=False):
+    # Initialisation
+    client = ZMQ_Dealer(id=genetic_optimize.__name__)
+    client.run(host='127.0.0.1', port=5570)
+    check_buffer = [1] * 4
+    #NOTE Getting parameters remotely ?
+
     # Mutation Operation
     def mutate(vec):
         i = random.randint(0, len(domain) - 1)
         if random.random() < 0.5 and vec[i] > domain[i][0]:
-            return vec[0:i] + [vec[i] - step] + vec[i + 1:]
+            mutated_param = vec[i] - step if vec[i] - step >= domain[i][0] else domain[i][0]
         elif vec[i] < domain[i][1]:
-            return vec[0:i] + [vec[i] + step] + vec[i + 1:]
+            mutated_param = vec[i] + step if vec[i] + step <= domain[i][0] else domain[i][0]
+        return vec[0:i] + [mutated_param] + vec[i + 1:]
 
     # Crossover Operation
     def crossover(r1, r2):
         i = random.randint(1, len(domain) - 2)
         return r1[0:i] + r2[i:]
 
-    # Build the initial population
+    def should_stop(best):
+        ''' Break the loop if no longer evolution, or reached stop criteria '''
+        check_buffer.append(best)
+        check_buffer.pop(0)
+        return (best >= check_buffer[0]) or (best <= stop)
+
+    log.info('Build the initial population')
     pop = []
     for i in range(popsize):
         vec = [random.randint(domain[i][0], domain[i][1])
@@ -111,27 +133,51 @@ def genetic_optimize(domain, costf, popsize=50, step=1,
     # How many winners from each generation?
     topelite = int(elite * popsize)
 
-    # Main loop
+    log.info('Run main loop')
     for i in range(maxiter):
+        log.info('Rank population')
         scores = [(costf(v), v) for v in pop]
         scores.sort()
         ranked = [v for (s, v) in scores]
 
         # Start with the pure winners
+        log.info('Select elite')
         pop = ranked[0:topelite]
 
         # Add mutated and bred forms of the winners
+        log.info('Evolve loosers')
         while len(pop) < popsize:
             if random.random() < mutprob:
+                log.debug('Process mutation')
                 # Mutation
                 c = random.randint(0, topelite)
                 pop.append(mutate(ranked[c]))
             else:
                 # Crossover
+                log.debug('Process crossover')
                 c1 = random.randint(0, topelite)
                 c2 = random.randint(0, topelite)
                 pop.append(crossover(ranked[c1], ranked[c2]))
 
-        # Print current best score
-        print scores[0][0]
-    return scores[0][1]
+        #TODO add worst
+        log.error(scores)
+        log.notice('Best score so far: {}'.format(scores[0][0]))
+        client.send({'best': scores[0],
+                     'worst': scores[-1],
+                     'parameters': scores[0][1],
+                     'mean': np.mean([s[0] for s in scores]),
+                     'std': np.std([s[0] for s in scores]),
+                     'iteration': i + 1,
+                     'progress': round(float(i + 1) / float(maxiter), 2) * 100.0},
+                     type='optimization',
+                     channel='dashboard')
+        if should_stop(scores[0][0]):
+            log.info('Stop criteria reached, done with optimization.')
+            break
+
+    if notify_android:
+        client.send_to_android({'title': 'Optimization done',
+                                'priority': 1,
+                                'description': 'Genetic algorithm evolved the solution to {} \
+                                               (with parameters {})'.format(scores[0][0], scores[0][1])})
+    return scores[0][0], scores[0][1]

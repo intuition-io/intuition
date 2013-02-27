@@ -12,13 +12,7 @@ from logbook import Logger
 
 log = Logger('Manager')
 
-app_path = os.environ['QTRADE']
-sys.path.append(app_path)
-portfolio_opt_file = '/'.join((app_path, 'neuronquant/ai/opt_utils.R'))
-#from pyTrade.data.datafeed import DataFeed
-
-import rpy2.robjects as robjects
-r = robjects.r
+sys.path.append(os.environ['QTRADE'])
 
 
 class PortfolioManager(object):
@@ -30,7 +24,6 @@ class PortfolioManager(object):
     #TODO Add in the constructor or setup parameters some general settings like maximum weights, positions, frequency,...
     def __init__(self, parameters):
         super(PortfolioManager, self).__init__()
-        #self.feeds           = DataFeed()
         self.portfolio       = None
         self.date            = None
         self._optimizer_parameters = parameters
@@ -45,10 +38,11 @@ class PortfolioManager(object):
             #log.info(json.dumps(startup_msg, indent=4, separators=(',', ': ')))
         #TODO Should send stuff anyway, and accept new connections while running
         #else:
-        if self.server.port is None:
+
+        self.connected = parameters.get('connected', False)
+        if self.server.port is None and self.connected:
             log.info('Binding manager on default port...')
             self.server.run(host='127.0.0.1', port=5570)
-        r('source("{}")'.format(portfolio_opt_file))
 
     def optimize(self):
         ''' Users must overwrite this method '''
@@ -60,19 +54,17 @@ class PortfolioManager(object):
         #FIXME A generic method: f(ndict) = dict()
         portfolio.capital_used = portfolio.capital_used[0]
         #portfolio.start_date = portfolio.start_date.strftime(format='%Y-%m-%d %H:%M')
-        try:
-            self.server.send({'portfolio': {
-                              'positions': json.loads(str(portfolio.positions).replace('Position(', '').replace(')', '').replace("'", '"')),
+        if self.connected:
+            self.server.send({'positions': json.loads(str(portfolio.positions).replace('Position(', '').replace(')', '').replace("'", '"')),
                               'value': portfolio.portfolio_value,
                               'cash': portfolio.cash,
                               'returns': portfolio.returns,
                               'pnl': portfolio.pnl,
                               'capital_used': portfolio.capital_used,
-                              'actif': portfolio.positions_value}},
-                             channel='dashboard')
+                              'actif': portfolio.positions_value},
+                              type='portfolio',
+                              channel='dashboard')
             #log.info(json.dumps(response, indent=4, separators=(',', ': ')))
-        except:
-            log.error('** Sending portfolio snapshot to client')
 
     def trade_signals_handler(self, signals):
         '''

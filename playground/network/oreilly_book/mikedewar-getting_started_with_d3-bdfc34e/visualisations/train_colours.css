@@ -1,0 +1,50 @@
+.Line_A, .Line_C, .Line_E{
+    stroke:#2850AD;
+    fill:#2850AD;
+    background-color:#2850AD;
+}
+.Line_B, .Line_D, .Line_F, .Line_M {
+    stroke:#FF6319;
+    fill:#FF6319;
+    background-color:#FF6319;
+}
+.Line_G {
+    stroke:#6CBE45;
+    fill:#6CBE45;
+    background-color:#6CBE45;
+}
+.Line_Z_J {
+    stroke:#996633;
+    fill:#996633;
+    background-color:#996633;
+}
+.Line_L {
+    stroke:#A7A9AC;
+    fill:#A7A9AC;
+    background-color:#A7A9AC;
+}
+.Line_N, .Line_Q, .Line_R {
+    stroke:#FCCC0A;
+    fill:#FCCC0A;
+    background-color:#FCCC0A;
+}
+.Line_S {
+    stroke:#808183;
+    fill:#808183;
+    background-color:#808183;
+}
+.Line_1, .Line_2, .Line_3{
+    stroke:#EE352E;
+    fill:#EE352E;
+    background-color:#EE352E;
+}
+.Line_4, .Line_5, .Line_6{
+    stroke:#00933C;
+    fill:#00933C;
+    background-color:#00933C;
+}
+.Line_7 {
+    stroke:#B933AD;
+    fill:#B933AD;
+    background-color:#B933AD;
+}

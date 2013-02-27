@@ -32,8 +32,8 @@ class ZMQ_Base(object):
 
     def receive(self, json=True, acknowledgment=None):
         msg = None
-        #msg = self.socket.recv_json() if json else self.socket.recv()
-        msg = self.socket.recv()
+        msg = self.socket.recv_json() if json else self.socket.recv()
+        #msg = self.socket.recv()
         log.debug('Server received {}'.format(msg))
         if acknowledgment:
             if json:
@@ -44,9 +44,10 @@ class ZMQ_Base(object):
         return msg
 
     def __del__(self):
-        if not self.socket.closed:
-            self.socket.close()
-            self.context.term()
+        #if not self.socket.closed:
+        #self.socket.close()
+        #self.context.term()
+        pass
 
 
 class ZMQ_Dealer(ZMQ_Base):
@@ -78,25 +79,20 @@ class ZMQ_Dealer(ZMQ_Base):
 
     def send_to_android(self, msg):
         assert isinstance(msg, dict)
+        msg['time'] = dt.datetime.strftime(dt.datetime.now(), format='%Y-%m-%dT%H:%M:%S')
+        msg['type'] = 'notification'
         msg['channel'] = 'android'
         msg['appname'] = 'NeuronQuant'
-        self.send(msg)
+        log.debug('Client sends android notification: {}'.format(msg))
+        self.send(msg, format=False)
 
-    def send(self, msg, json=True, channel=''):
-        if isinstance(msg, dict):
-            #log.debug('Client sends: %s' % msg)
-            self.socket.send_json(msg)
-        elif isinstance(msg, str):
-            if json:
-                log.info('Client sends: %s' % msg)
-                self.socket.send_json({'time': dt.datetime.strftime(dt.datetime.now(), format='%Y-%m-%dT%H:%M:%S'),
-                                       'id': self.identity, 'channel': channel, 'msg': msg})
-            else:
-                assert isinstance(msg, str)
-                log.info('Client sends: %s' % msg)
-                self.socket.send(msg)
+    def send(self, msg, format=True, **kwargs):
+        #log.debug('Client sends: %s' % msg)
+        if format:
+            self.socket.send_json({'time': dt.datetime.strftime(dt.datetime.now(), format='%Y-%m-%dT%H:%M:%S'), 'msg': msg,
+                                   'id': self.identity, 'channel': kwargs.get('channel', ''), 'type': kwargs.get('type', '')})
         else:
-            raise NotImplementedError()
+            self.socket.send_json(msg) if isinstance(msg, dict) else self.socket.send(msg)
 
 
 class ZMQ_Broker(threading.Thread):

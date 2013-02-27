@@ -19,7 +19,7 @@ Installation
 ------------
     - Clone this repos
     - Clone my zipline fork, or the original and apply changes in management/changelog
-    - Edit config.sh to suit your needs
+    - Edit config.sh to suit your machine
     - Run a mysql database and edit neuronquant/data/config.py 
     - Create the tables with neuronquant/data/database.py create, then populate it with neuronquant/data/database.py add symbols.csv (see database/QSDATA for a huge list)
     - You should be ready to use, see below 
@@ -46,7 +46,7 @@ from neuronquant.ai.portfolio import PortfolioManager
 
 class Equity(PortfolioManager):
     """"
-    dispatch equals weigths
+    dispatch equal weigths
     """
     def optimize(self, date, to_buy, to_sell, parameters):
         allocations = dict()
@@ -114,11 +114,19 @@ Credits
 -------
 
 Projects and websites below are awesome works that i heavily use, learn from and want to gratefully thank:
-    * pandas http://github.com/pydata/pandas
-    * r-bloggers http://www.r-bloggers.com/
-    * zipline http://github.com/quantopian/zipline and quantopian http://wwww.quantopian.com
-    * QSTK https://github.com/tucker777/QSTK
-    * coursera http://www.coursera.org/
-    * udeacity http://www.udacity.com/
-    * Babypips http://www.babypips.com/
-    * GLMF http://www.unixgarden.com/
+
+* pandas http://github.com/pydata/pandas
+
+* r-bloggers http://www.r-bloggers.com/
+
+* zipline http://github.com/quantopian/zipline and quantopian http://wwww.quantopian.com
+
+* QSTK https://github.com/tucker777/QSTK
+
+* coursera http://www.coursera.org/
+
+* udeacity http://www.udacity.com/
+
+* Babypips http://www.babypips.com/
+
+* GLMF http://www.unixgarden.com/

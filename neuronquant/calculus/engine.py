@@ -121,7 +121,8 @@ class Simulation(object):
         if kwargs.get('remote', False):
             log.info('Fetching backtest configuration from client')
             self.server.run(host='127.0.0.1', port=self.backtest_cfg['port'])
-            msg = self.server.receive()
+            msg = self.server.receive(json=True)
+            log.info(msg)
             assert isinstance(msg, dict)
             if self.manager_cfg is None:
                 self.manager_cfg = msg['manager']

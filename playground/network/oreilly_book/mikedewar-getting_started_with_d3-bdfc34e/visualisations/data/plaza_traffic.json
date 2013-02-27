@@ -1,0 +1,106 @@
+{
+    "cash": [
+        {
+            "count": 26774.09756097561, 
+            "id": 1, 
+            "name": "Robert F. Kennedy Bridge Bronx Plaza"
+        }, 
+        {
+            "count": 18612.77618364419, 
+            "id": 2, 
+            "name": "Robert F. Kennedy Bridge Manhattan Plaza"
+        }, 
+        {
+            "count": 31343.0631276901, 
+            "id": 3, 
+            "name": "Bronx-Whitestone Bridge"
+        }, 
+        {
+            "count": 9863.7658045977, 
+            "id": 4, 
+            "name": "Henry Hudson Bridge"
+        }, 
+        {
+            "count": 3805.8350071736013, 
+            "id": 5, 
+            "name": "Marine Parkway-Gil Hodges Memorial Bridge"
+        }, 
+        {
+            "count": 4577.186513629842, 
+            "id": 6, 
+            "name": "Cross Bay Veterans Memorial Bridge"
+        }, 
+        {
+            "count": 13830.994261119082, 
+            "id": 7, 
+            "name": "Queens Midtown Tunnel"
+        }, 
+        {
+            "count": 6900.047345767575, 
+            "id": 8, 
+            "name": "Brooklyn-Battery Tunnel"
+        }, 
+        {
+            "count": 25262.48493543759, 
+            "id": 9, 
+            "name": "Throgs Neck Bridge"
+        }, 
+        {
+            "count": 18275.3543758967, 
+            "id": 11, 
+            "name": "Verrazano-Narrows Bridge"
+        }
+    ], 
+    "electronic": [
+        {
+            "count": 51316.53802008608, 
+            "id": 1, 
+            "name": "Robert F. Kennedy Bridge Bronx Plaza"
+        }, 
+        {
+            "count": 67502.12482065997, 
+            "id": 2, 
+            "name": "Robert F. Kennedy Bridge Manhattan Plaza"
+        }, 
+        {
+            "count": 76906.89383070302, 
+            "id": 3, 
+            "name": "Bronx-Whitestone Bridge"
+        }, 
+        {
+            "count": 51861.5933908046, 
+            "id": 4, 
+            "name": "Henry Hudson Bridge"
+        }, 
+        {
+            "count": 17488.73888091822, 
+            "id": 5, 
+            "name": "Marine Parkway-Gil Hodges Memorial Bridge"
+        }, 
+        {
+            "count": 16056.855093256814, 
+            "id": 6, 
+            "name": "Cross Bay Veterans Memorial Bridge"
+        }, 
+        {
+            "count": 65148.13916786227, 
+            "id": 7, 
+            "name": "Queens Midtown Tunnel"
+        }, 
+        {
+            "count": 38908.203730272595, 
+            "id": 8, 
+            "name": "Brooklyn-Battery Tunnel"
+        }, 
+        {
+            "count": 84575.18794835007, 
+            "id": 9, 
+            "name": "Throgs Neck Bridge"
+        }, 
+        {
+            "count": 74291.31420373028, 
+            "id": 11, 
+            "name": "Verrazano-Narrows Bridge"
+        }
+    ]
+}
