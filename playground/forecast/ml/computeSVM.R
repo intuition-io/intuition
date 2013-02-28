@@ -1,3 +1,5 @@
+# http://www.quintuitive.com/2012/11/30/trading-with-support-vector-machines-svm/
+
 require(e1071)
 require(quantmod)
 require(parallel)
@@ -16,7 +18,7 @@ data = data[index(rets)]
 
 stopifnot( NROW( rets ) == NROW( data ) )
 
-fore = svmComputeForecasts(
+forecast = svmComputeForecasts(
                data=data,
                history=500,
                response=rets,
@@ -27,4 +29,7 @@ fore = svmComputeForecasts(
                endDate="1959-12-31",
                featureSelection="all" )
 
-# An other attempt: http://quantumfinancier.wordpress.com/2010/06/26/support-vector-machine-rsi-system/
+# An other attempt (list of 3):
+    #http://quantumfinancier.wordpress.com/2010/05/21/application-of-svms/
+    #http://quantumfinancier.wordpress.com/2010/06/10/svm-classification-using-rsi-from-various-lengths/
+    #http://quantumfinancier.wordpress.com/2010/06/26/support-vector-machine-rsi-system/

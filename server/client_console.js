@@ -1,8 +1,19 @@
 #!/usr/bin/env node
 
-//http://tjholowaychuk.com/post/9103188408/commander-js-nodejs-command-line-interfaces-made-easy
+//http://tjholowaychuk.com/post/9103188408/commander-js-nodejs-command-line-interfaces-made-easy    (http://www.slalompoint.com/node-command-line-interface-p2/)
+//https://github.com/mscdex/node-ncurses
+//https://github.com/jussi-kalliokoski/node-blessings
+
+//https://github.com/hij1nx/complete
+
+//https://cliff.readthedocs.org/en/latest/
+//http://cement.readthedocs.org/en/portland
+
+//http://twitter.github.com/bootstrap/
+//https://github.com/visionmedia/uikit
+
 //https://github.com/LearnBoost/cli-table
-//https://github.com/substack/node-multimeter
+//https://github.com/substack/node-multimeter   or   https://github.com/visionmedia/node-progress
 //https://github.com/baryon/tracer
 //https://github.com/LearnBoost/console-trace
 //https://github.com/LearnBoost/distribute
@@ -100,7 +111,8 @@ var opt_config = {
 var fd_config = {
     type: "configure",
     filters: ["portfolio", "acknowledgment", "optimization"],
-    level: argv.verbose
+    log_redirection: "dashboard",
+    verbose: argv.verbose
 };
 
 var zmq = require('zmq')
@@ -114,19 +126,22 @@ function createClient (port, channel) {
 
     socket.on('message', function(data) {
         json_data = JSON.parse(data);
-        if (channel == 'ZMQ Messaging') {
-            console.log(json_data.time + ' ' + json_data.func_name + ': ' + json_data.msg +' (' + json_data.level + ')');
-            //console.log(data.toString())
-        }
         if (json_data.type == 'portfolio') {
             console.log(json_data.time + ' Portfolio:', json_data.msg['value']);
         }
         else if (json_data.type == 'acknowledgment') {
             console.log(json_data.time + 'Worker returned: ' + json_data.msg);
-            socket.send(JSON.stringify({statut: 0}));
+            socket.send(JSON.stringify({type: 'acknowledgment', statut: 0}));
         }
         else if (json_data.type == 'optimization') {
             console.log(json_data.msg['iteration'] + ' ' + json_data.msg['progress'] + '% | ' + json_data.msg['best'] + ' (' + json_data.msg['mean'] +')');
+        }
+        else {
+            //NOTE Should be dedicated to unexpected message, for now it's for logging
+            //NOTE could configure a channel_log_filter in addition to the type filter, or merge them
+            //NOTE msg can be json object, detect and parse it
+            //console.log(data.toString());
+            console.log(json_data.time + ' ' + json_data.func_name + ': ' + json_data.msg +' (' + json_data.level + ')');
         }
     });
 
@@ -142,7 +157,7 @@ function createClient (port, channel) {
     }
 }    
 
-if (argv.log) {
-    createClient(logger_uri, 'ZMQ Messaging');
-}
 createClient(broker_uri, 'dashboard');
+//if (argv.log) {
+    //createClient(broker_uri, 'ZMQ Messaging');
+//}

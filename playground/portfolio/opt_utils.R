@@ -1,52 +1,54 @@
 ## From http://statsadventure.blogspot.fr
 # TODO - transaction costs, turnover constraints
 
-require(polynom)
-require(fImport)
-require(PerformanceAnalytics)
-require(tseries)
-require(stats)
+suppressPackageStartupMessages(require(polynom))
+suppressPackageStartupMessages(require(fImport))
+suppressPackageStartupMessages(require(PerformanceAnalytics))
+suppressPackageStartupMessages(require(tseries))
+suppressPackageStartupMessages(require(stats))
+suppressPackageStartupMessages(require(RMySQL))
+suppressPackageStartupMessages(require(zoo))
 
 options(scipen=100)
 options(digits=4)
 
 reweight = function(returns, startWeight){
-      n = nrow(returns)
+      n          = nrow(returns)
       lastWeight = as.vector(startWeight)
-      outReturn = data.frame()
+      outReturn  = data.frame()
      
       for(i in seq(1,n)){
-            rts = as.vector(exp(returns[i,]))
-            w = lastWeight * rts
-            sumW = sum(w)
-            w = w/sumW
-           
-            r = as.matrix(returns[i,]) %*% w
-           
+            rts        = as.vector(exp(returns[i,]))
+            w          = lastWeight * rts
+            sumW       = sum(w)
+            w          = w/sumW
+
+            r          = as.matrix(returns[i,]) %*% w
+
             lastWeight = w
-           
-            outReturn = rbind(outReturn,r)
+
+            outReturn  = rbind(outReturn,r)
       }
       return (outReturn)
 }
 
-importOneSerie = function (symbol, from, to) {
+downloadOneSerie = function (symbol, from, to) {
     # Read data from Yahoo! Finance
-    input = yahooSeries(symbol, from=from, to=to)
-    
+    input       = yahooSeries(symbol, from        = from, to = to)
+
     # Character Strings for Column Names
-    adjClose = paste(symbol, ".Adj.Close", sep="")
-    inputReturn = paste(symbol, ".Return", sep="")
-    CReturn = paste(symbol, ".CReturn", sep="")
+    adjClose    = paste(symbol, ".Adj.Close", sep = "")
+    inputReturn = paste(symbol, ".Return", sep    = "")
+    CReturn     = paste(symbol, ".CReturn", sep   = "")
     
     # Calculate the Returns and put it on the time series
-    input.Return = returns(input[,adjClose])
+    input.Return = returns(input[, adjClose])
     colnames(input.Return)[1] = inputReturn
     input = merge(input,input.Return)
     
     #Calculate the cumulative return and put it on the time series
-    input.first = input[,adjClose][1]
-    input.CReturn = fapply(input[,adjClose],FUN=function(x) log(x) - log(input.first))
+    input.first   = input[, adjClose][1]
+    input.CReturn = fapply(input[,adjClose],FUN = function(x) log(x) - log(input.first))
     colnames(input.CReturn)[1] = CReturn
     input = merge(input,input.CReturn)
     
@@ -58,12 +60,54 @@ importOneSerie = function (symbol, from, to) {
     return(input)
 }
 
-importSeries <- function(symbols, from, to)
+serieFromDB <- function(symbol, from, to)
+{
+    stocksDB = dbConnect(MySQL(), user='xavier', password='quantrade', dbname='stock_data', host='localhost')
+    on.exit(dbDisconnect(stocksDB))
+    stmt <- paste("select Date, AdjClose from Quotes where Quotes.Ticker = ", symbol, " and Quotes.Date >= ", from, " and Quotes.Date <= ", to, "", sep="'") 
+    print(stmt)
+    rs = dbSendQuery(stocksDB, stmt)
+    inputTmp = fetch(rs, -1)
+    input <- xts(inputTmp['AdjClose'], order.by=as.Date(inputTmp$Date))
+
+    # Character Strings for Column Names
+    adjClose    = paste(symbol, ".Adj.Close", sep = "")
+    inputReturn = paste(symbol, ".Return", sep    = "")
+    CReturn     = paste(symbol, ".CReturn", sep   = "")
+
+    # Calculate the Returns and put it on the time series
+    input.Return    = xts(returns(input), order.by=as.Date(inputTmp$Date))
+    input           = merge(input, input.Return)
+    colnames(input) = c(adjClose, inputReturn)
+
+    #Calculate the cumulative return and put it on the time series
+    input.first                = input[, adjClose][1]
+    input.CReturn              = fapply(timeSeries(input[,adjClose]), FUN = function(x) log(x) - log(input.first[[1]]))
+    colnames(input.CReturn)[1] = CReturn
+    input                      = merge(input,input.CReturn)
+
+    rm(input.first, input.Return, input.CReturn, adjClose, inputReturn, CReturn, inputTmp)
+
+    if (dbHasCompleted(rs))
+    {
+        dbClearResult(rs)
+    }
+    return(input)
+}
+
+importSeries <- function(symbols, from, to, source='yahoo')
 {
     merged <- NULL
     for(sym in symbols)
     {
-        returns = importOneSerie(sym, from, to)
+        if (source == 'yahoo')
+        {
+            returns = downloadOneSerie(sym, from, to)
+        }
+        else if (source == 'mysql')
+        {
+            returns = serieFromDB(sym, from, to)
+        }
         if (!is.null(merged))
             merged = merge(merged, returns)
         else
@@ -72,6 +116,7 @@ importSeries <- function(symbols, from, to)
     return(merged)
 }
 
+#TODO Instead or 'error in this try', count errors and print a bilan
 getEfficientFrontier <- function(returns, returnNames, periods=255, points=500, maxWeight=.334, Debug=FALSE, graph=FALSE)
 {
     #create an empty data frame for the portfolio weights
@@ -137,17 +182,18 @@ getEfficientFrontier <- function(returns, returnNames, periods=255, points=500, 
             #update the OK variable
             ok = (ok | TRUE)
         } else {
-            print("ERROR IN THIS TRY")
+            #print("** Error in this try")
             #update the OK variable
             ok = (ok | FALSE)
         }
     }
     #if no feasible solutions were found for the frontier, return NULL
     if (!ok){
+        print('! No feasible solutions found for the frontier')
         return (NULL)
     }
-    solution = weights
-    solution$er = er
+    solution      = weights
+    solution$er   = er
     solution$eStd = eStd
     if (graph)
     {
@@ -157,6 +203,7 @@ getEfficientFrontier <- function(returns, returnNames, periods=255, points=500, 
     return(solution)
 }
 
+#TODO A correctif is needed, see posts and reweight
 marketPortfolio = function(solution,
                            rf,
                            graph=FALSE,
@@ -176,25 +223,25 @@ marketPortfolio = function(solution,
     #for each value in the subset, count the number of points
     #that lay below a line drawn through the point and the RF asset
     for (i in seq(1,maxIdx-minIdx+1)){
-        toFit = data.frame(er=rf,eStd=0)
-        toFit = rbind(toFit,subset[i,c("er","eStd")])
-        fit = lm(toFit$er ~ toFit$eStd)
-        poly = polynomial(coef = fit$coefficients)
-        toPred = subset
-        colnames(toPred) = c("actEr","eStd")
-        toPred$er = predict(poly,toPred[,"eStd"])
-        toPred$diff = toPred$er - toPred$actEr
+        toFit              = data.frame(er=rf, eStd=0)
+        toFit              = rbind(toFit,subset[i,c("er","eStd")])
+        fit                = lm(toFit$er ~ toFit$eStd)
+        poly               = polynomial(coef=fit$coefficients)
+        toPred             = subset
+        colnames(toPred)   = c("actEr","eStd")
+        toPred$er          = predict(poly,toPred[,"eStd"])
+        toPred$diff        = toPred$er - toPred$actEr
         subset[i,"nAbove"] = nrow(toPred[which(toPred$diff > 0),])
     }
 
     #get the point of tangency -- where the number of points
     #below the line is maximized
-    max = max(subset$nAbove)
-    er = subset[which(subset$nAbove == max),"er"]
+    max  = max(subset$nAbove)
+    er   = subset[which(subset$nAbove == max),"er"]
     eStd = subset[which(subset$nAbove == max),"eStd"]
     #if more than one portfolio is found, return the first
     if (length(er) > 1){
-        er = er[1]
+        er   = er[1]
         eStd = eStd[1]
     }
     #index of the market portfolio
@@ -234,10 +281,10 @@ marketPortfolio = function(solution,
 usage <- function(symbols)
 {
     from = "2005-01-01"
-    to = "2011-12-16"
+    to   = "2011-12-16"
     #returnNames = c("xom.Return","ibm.Return","ief.Return")
 
-    data = importSeries(symbols, from, to)
+    data = importSeries(symbols, from, to, source='mysql')
     for (i in seq(length(symbols))) 
     { 
         symbols[i] = paste(symbols[i], '.Return', sep='')

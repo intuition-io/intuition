@@ -1,2 +1,0 @@
-Python:
-like in Scipy, a __doc__() function can be used within classes for dev help

@@ -4,18 +4,15 @@
  *In addition it can run local program (with futur cluster module, one per core actually)
  */
 
-var zmq = require('zmq')
-    , nma = require('./android_notify')
-    , worker = require('./workerNode')
-    , frontPort = 'tcp://127.0.0.1:5555'
-    , backPort = 'tcp://127.0.0.1:5570'
+var zmq          = require('zmq')
+    , nma        = require('./android_notify')
+    , worker     = require('./workerNode')
+    , backPort   = 'tcp://127.0.0.1:5570'
+    , frontPort  = 'tcp://127.0.0.1:5555'
     , logger_uri = 'tcp://127.0.0.1:5540';
     
 
 function createQueueDevice(frontPort, backPort) {
-    // Logging level
-    var log_level = 0;
-
     // Type of data the forwarder will route to the client
     var filters = [];
 
@@ -28,7 +25,7 @@ function createQueueDevice(frontPort, backPort) {
     backSocket.identity = 'dealer' + process.pid;
     
     frontSocket.bind(frontPort, function (err) {
-        console.log('bound', frontPort);
+        console.log('Frontend connection bound to', frontPort);
     });
 
     // Route messages from "envelope" to everybody connected to backsocket
@@ -43,8 +40,13 @@ function createQueueDevice(frontPort, backPort) {
         }
         else if (json_data.type == 'configure') {
             console.log('Configuring forwarder...');
-            log_level = json_data.level;
             filters = json_data.filters
+            createZmQLogHandler(logger_uri, frontSocket, json_data.verbose, json_data.log_redirection);
+        }
+        else if (json_data.type == 'acknowledgment') {
+            if (json_data.statut != 0) {
+                console.log('** Error on client side')
+            }
         }
         else {
             console.log('Routing data to backend socket...')
@@ -53,7 +55,7 @@ function createQueueDevice(frontPort, backPort) {
     });
 
     backSocket.bind(backPort, function (err) {
-        console.log('bound', backPort);
+        console.log('Backend connection bound to', backPort);
     });
     
     // Route every message from clients, connected to backsocket, to clients connected to frontsocket
@@ -78,28 +80,30 @@ function createQueueDevice(frontPort, backPort) {
 
     // Route logbook zmq messages to clients with json_data.channel identity
     // see notes.rst for message json fields
-    function createZmQLogHandler (port, logSocket) {
+    function createZmQLogHandler (uri, logSocket, verbose, redirection) {
+        console.log('Setting up ZMQ distributed logger with level,  %d, redirected to %s', verbose, redirection)
+
         // Subscriber socker as logbook use publisher socket whith channel ''
         var socket = zmq.socket('sub');
-
         socket.identity = 'logbooksub' + process.pid;
-
         socket.subscribe('');
+
         socket.on('message', function(data) {
             json_data = JSON.parse(data)
-            console.log('App logged: ' + json_data.msg);
+            redirection = (typeof redirection == 'undefined') ? json_data.channel : redirection;
             // Sends to 'ZMQ Messaging' client if the level is relevant
-            if (json_data.level >= log_level) {
-                logSocket.send([json_data.channel, JSON.stringify(json_data)])
+            if (json_data.level >= verbose) {
+                console.log('App logged: ' + json_data.msg);
+                logSocket.send([redirection, JSON.stringify(json_data)])
             }
         });
 
-        socket.connect(port, function(err) {
+        socket.connect(uri, function(err) {
             if (err) throw err;
-            console.log('Client connected');
+            console.log('ZMQ distributed logger connected on ', uri);
         });
     };
-    createZmQLogHandler(logger_uri, frontSocket);
+    //createZmQLogHandler(logger_uri, frontSocket);
 }
 
 createQueueDevice(frontPort, backPort);

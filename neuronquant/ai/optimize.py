@@ -95,8 +95,37 @@ def annealingoptimize(domain, costf, T=10000.0, cool=0.95, step=1):
     return vec
 
 
-def genetic_optimize(domain, costf, popsize=50, step=1,
+def genetic_optimize(domain, cost_obj, popsize=50, step=1,
                      mutprob=0.2, elite=0.2, maxiter=100, stop=0, notify_android=False):
+    '''
+    Parameter optimization using genetic algorithm
+    ______________________________________________
+    Parameters
+        domain: vec(...) of tuple(2)
+            define range for each parameter
+        cost_obj: Metric(1)
+            compute the score of a solution
+        popsize: int(1)
+            number of solution set in one generation
+        step: float(1)
+            sensibility used while mutating a parameter
+        mutprob: float(1)
+            probability for a solution to mutate
+        elite: float(1)
+            % of best chromosomes selected
+        maxiter: int(1)
+            maximum number of population evolution
+        stop: float(1)
+            stop the algorithm when the fitness function reachs this value
+        notify_android: bool(1)
+            flag that let you send a notificatioin on android device when the algo is done
+    ______________________________________________
+    Return
+        scores[0][0]: float(1)
+            Best score the algorithm reached
+        scores[0][1]: vec(...) of float(1)
+           parameters that gave the best score
+    '''
     # Initialisation
     client = ZMQ_Dealer(id=genetic_optimize.__name__)
     client.run(host='127.0.0.1', port=5570)
@@ -136,7 +165,7 @@ def genetic_optimize(domain, costf, popsize=50, step=1,
     log.info('Run main loop')
     for i in range(maxiter):
         log.info('Rank population')
-        scores = [(costf(v), v) for v in pop]
+        scores = [(cost_obj.fitness(v), v) for v in pop]
         scores.sort()
         ranked = [v for (s, v) in scores]
 
