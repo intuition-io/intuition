@@ -8,6 +8,8 @@ sys.path.append(os.environ['ZIPLINE'])
 from zipline.algorithm import TradingAlgorithm
 from zipline.transforms import MovingAverage, MovingVWAP, batch_transform, MovingStandardDev
 
+import statsmodels.api as sm
+
 from logbook import Logger
 import ipdb as pdb
 
@@ -75,7 +77,9 @@ class DualMovingAverage(TradingAlgorithm):
         self.manager.update(self.portfolio, self.datetime.to_pydatetime())
         signals = dict()
         #FIXME 2 is the first frame...
-        if (self.frame_count == 2):
+        #if (self.frame_count == 3):
+        if self.init:
+            self.init = False
             for t in data:
                 self.invested[t] = False
 
@@ -323,118 +327,141 @@ class MovingAverageCrossover(TradingAlgorithm):
 
 
 class OLMAR(TradingAlgorithm):
-    def initialize(self, properties):
-        # http://money.usnews.com/funds/etfs/rankings/small-cap-funds
-        #tickers = [sid(27796),sid(33412),sid(38902),sid(21508),sid(39458),sid(25899),sid(40143),sid(21519),sid(39143),sid(26449)]
-        self.m = 1
+    """
+    On-Line Portfolio Moving Average Reversion
+
+    More info can be found in the corresponding paper:
+    http://icml.cc/2012/papers/168.pdf
+    """
+    def initialize(self, eps=1, window_length=5):
+        #self.stocks = STOCKS
+        #self.m = len(self.stocks)
         self.price = {}
         self.b_t = np.ones(self.m) / self.m
-        self.eps = 1.04   # Change epsilon here
-        self.init = False
+        self.last_desired_port = np.ones(self.m) / self.m
+        self.eps = eps
+        self.init = True
+        self.days = 0
+        self.window_length = window_length
+        self.add_transform(MovingAverage, 'mavg', ['price'],
+                           window_length=window_length)
 
-        #FIXME try self.slippage.simulate()
-        #self.set_slippage(self.slippage.VolumeShareSlippage(volume_limit=0.25, price_impact=0))
-        #self.set_commission(self.commission.PerShare(cost=0))
-
-        self.add_transform(MovingAverage, 'mavg', ['price'], window_length=5)
+        no_delay = datetime.timedelta(minutes=0)
+        slip = self.slippage.VolumeShareSlippage(volume_limit=0.25,
+                                            price_impact=0,
+                                            delay=no_delay)
+        self.set_slippage(slip)
+        self.set_commission(self.commission.PerShare(cost=0))
 
     def handle_data(self, data):
-        ''' ----------------------------------------------------------    Init   --'''
-        if not self.init:
+        self.days += 1
+        if self.days < self.window_length:
+            return
+
+        if self.init:
             self.rebalance_portfolio(data, self.b_t)
-            self.init = True
+            self.init = False
             return
 
         m = self.m
+
         x_tilde = np.zeros(m)
         b = np.zeros(m)
 
-        ''' ----------------------------------------------------------    Scan   --'''
         # find relative moving average price for each security
-        for i, stock in enumerate(data.keys()):
+        for i, stock in enumerate(self.stocks):
             price = data[stock].price
-            x_tilde[i] = float(data[stock].mavg.price) / price   # change moving average window here
+            # Relative mean deviation
+            x_tilde[i] = data[stock]['mavg']['price'] / price
 
         ###########################
         # Inside of OLMAR (algo 2)
-
         x_bar = x_tilde.mean()
 
-        # Calculate terms for lambda (lam)
-        dot_prod = np.dot(self.b_t, x_tilde)
-        num = self.eps - dot_prod
-        denom = (np.linalg.norm((x_tilde - x_bar))) ** 2
+        # market relative deviation
+        mark_rel_dev = x_tilde - x_bar
+
+        # Expected return with current portfolio
+        exp_return = np.dot(self.b_t, x_tilde)
+        weight = self.eps - exp_return
+        variability = (np.linalg.norm(mark_rel_dev)) ** 2
 
         # test for divide-by-zero case
-        if denom == 0.0:
-            lam = 0  # no portolio update
+        if variability == 0.0:
+            step_size = 0
         else:
-            lam = max(0, num / denom)
+            step_size = max(0, weight / variability)
 
-        b = self.b_t + lam * (x_tilde - x_bar)
-        b_norm = self.simplex_projection(b)
+        b = self.b_t + step_size * mark_rel_dev
+        b_norm = simplex_projection(b)
+        np.testing.assert_almost_equal(b_norm.sum(), 1)
+
         self.rebalance_portfolio(data, b_norm)
 
         # update portfolio
         self.b_t = b_norm
-        self.logger.debug(b_norm)
-        ''' ----------------------------------------------------------   Orders  --'''
 
     def rebalance_portfolio(self, data, desired_port):
         #rebalance portfolio
-        current_amount = np.zeros_like(desired_port)
         desired_amount = np.zeros_like(desired_port)
+        current_amount = np.zeros_like(desired_port)
+        prices = np.zeros_like(desired_port)
 
-        if not self.init:
+        if self.init:
             positions_value = self.portfolio.starting_cash
         else:
-            positions_value = self.portfolio.positions_value + self.portfolio.cash
+            positions_value = self.portfolio.positions_value + \
+                self.portfolio.cash
 
-        for i, stock in enumerate(data.keys()):
+        for i, stock in enumerate(self.stocks):
             current_amount[i] = self.portfolio.positions[stock].amount
-            desired_amount[i] = desired_port[i] * positions_value / data[stock].price
+            prices[i] = data[stock].price
 
+        desired_amount = np.round(desired_port * positions_value / prices)
+
+        self.last_desired_port = desired_port
         diff_amount = desired_amount - current_amount
 
-        for i, stock in enumerate(data.keys()):
-            self.order(stock, diff_amount[i])   # order_stock
+        for i, stock in enumerate(self.stocks):
+            self.order(stock, diff_amount[i])
 
-    def simplex_projection(self, v, b=1):
-        """Projection vectors to the simplex domain
 
-        Implemented according to the paper: Efficient projections onto the
-        l1-ball for learning in high dimensions, John Duchi, et al. ICML 2008.
-        Implementation Time: 2011 June 17 by Bin@libin AT pmail.ntu.edu.sg
-        Optimization Problem: min_{w}\| w - v \|_{2}^{2}
-        s.t. sum_{i=1}^{m}=z, w_{i}\geq 0
+def simplex_projection(v, b=1):
+    """Projection vectors to the simplex domain
 
-        Input: A vector v \in R^{m}, and a scalar z > 0 (default=1)
-        Output: Projection vector w
+    Implemented according to the paper: Efficient projections onto the
+    l1-ball for learning in high dimensions, John Duchi, et al. ICML 2008.
+    Implementation Time: 2011 June 17 by Bin@libin AT pmail.ntu.edu.sg
+    Optimization Problem: min_{w}\| w - v \|_{2}^{2}
+    s.t. sum_{i=1}^{m}=z, w_{i}\geq 0
 
-        :Example:
-            >>> proj = simplex_projection([.4 ,.3, -.4, .5])
-        >>> print proj
-        array([ 0.33333333, 0.23333333, 0. , 0.43333333])
-        >>> print proj.sum()
-        1.0
+    Input: A vector v \in R^{m}, and a scalar z > 0 (default=1)
+    Output: Projection vector w
 
-        Original matlab implementation: John Duchi (jduchi@cs.berkeley.edu)
-        Python-port: Copyright 2012 by Thomas Wiecki (thomas.wiecki@gmail.com).
-        """
+    :Example:
+    >>> proj = simplex_projection([.4 ,.3, -.4, .5])
+    >>> print proj
+    array([ 0.33333333, 0.23333333, 0. , 0.43333333])
+    >>> print proj.sum()
+    1.0
 
-        v = np.asarray(v)
-        p = len(v)
+    Original matlab implementation: John Duchi (jduchi@cs.berkeley.edu)
+    Python-port: Copyright 2012 by Thomas Wiecki (thomas.wiecki@gmail.com).
+    """
 
-        # Sort v into u in descending order
-        v = (v > 0) * v
-        u = np.sort(v)[::-1]
-        sv = np.cumsum(u)
+    v = np.asarray(v)
+    p = len(v)
 
-        rho = np.where(u > (sv - b) / np.arange(1, p + 1))[0][-1]
-        theta = np.max([0, (sv[rho] - b) / (rho + 1)])
-        w = (v - theta)
-        w[w < 0] = 0
-        return w
+    # Sort v into u in descending order
+    v = (v > 0) * v
+    u = np.sort(v)[::-1]
+    sv = np.cumsum(u)
+
+    rho = np.where(u > (sv - b) / np.arange(1, p + 1))[0][-1]
+    theta = np.max([0, (sv[rho] - b) / (rho + 1)])
+    w = (v - theta)
+    w[w < 0] = 0
+    return w
 
 
 class StddevBased(TradingAlgorithm):
@@ -539,6 +566,95 @@ class StddevBased(TradingAlgorithm):
                 self.long_open = False
                 self.long_stoploss = 0
         ''' ----------------------------------------------------------   Orders  --'''
+
+
+class Pairtrade(TradingAlgorithm):
+    """Pairtrading relies on cointegration of two stocks.
+
+    The expectation is that once the two stocks drifted apart
+    (i.e. there is spread), they will eventually revert again. Thus,
+    if we short the upward drifting stock and long the downward
+    drifting stock (in short, we buy the spread) once the spread
+    widened we can sell the spread with profit once they converged
+    again. A nice property of this algorithm is that we enter the
+    market in a neutral position.
+
+    This specific algorithm tries to exploit the cointegration of
+    Pepsi and Coca Cola by estimating the correlation between the
+    two. Divergence of the spread is evaluated by z-scoring.
+    """
+
+    def initialize(self, window_length=100):
+        self.spreads = []
+        self.zscores = []
+        self.invested = 0
+        self.window_length = window_length
+        self.ols_transform = ols_transform(refresh_period=self.window_length,
+                                           window_length=self.window_length)
+
+    def handle_data(self, data):
+        ######################################################
+        # 1. Compute regression coefficients between PEP and KO
+        params = self.ols_transform.handle_data(data, 'PEP', 'KO')
+        if params is None:
+            return
+        slope, intercept = params
+
+        ######################################################
+        # 2. Compute spread and zscore
+        zscore = self.compute_zscore(data, slope, intercept)
+        self.zscores.append(zscore)
+
+        ######################################################
+        # 3. Place orders
+        self.place_orders(data, zscore)
+
+    def compute_zscore(self, data, slope, intercept):
+        """1. Compute the spread given slope and intercept.
+           2. zscore the spread.
+        """
+        spread = (data['PEP'].price - (slope * data['KO'].price + intercept))
+        self.spreads.append(spread)
+        spread_wind = self.spreads[-self.window_length:]
+        zscore = (spread - np.mean(spread_wind)) / np.std(spread_wind)
+        return zscore
+
+    def place_orders(self, data, zscore):
+        """Buy spread if zscore is > 2, sell if zscore < .5.
+        """
+        if zscore >= 2.0 and not self.invested:
+            self.order('PEP', int(100 / data['PEP'].price))
+            self.order('KO', -int(100 / data['KO'].price))
+            self.invested = True
+        elif zscore <= -2.0 and not self.invested:
+            self.order('KO', -int(100 / data['KO'].price))
+            self.order('PEP', int(100 / data['PEP'].price))
+            self.invested = True
+        elif abs(zscore) < .5 and self.invested:
+            self.sell_spread()
+            self.invested = False
+
+    def sell_spread(self):
+        """
+        decrease exposure, regardless of position long/short.
+        buy for a short position, sell for a long.
+        """
+        ko_amount = self.portfolio.positions['KO'].amount
+        self.order('KO', -1 * ko_amount)
+        pep_amount = self.portfolio.positions['PEP'].amount
+        self.order('PEP', -1 * pep_amount)
+
+
+@batch_transform
+def ols_transform(data, sid1, sid2):
+    """Computes regression coefficient (slope and intercept)
+    via Ordinary Least Squares between two SIDs.
+    """
+    p0 = data.price[sid1]
+    p1 = sm.add_constant(data.price[sid2])
+    slope, intercept = sm.OLS(p0, p1).fit().params
+
+    return slope, intercept
 
 
 class MultiMA(TradingAlgorithm):

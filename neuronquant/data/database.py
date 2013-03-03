@@ -13,7 +13,9 @@ from sqlalchemy.sql import and_
 import config
 import yahoofinance as quotes
 
-#import ipdb as pdb
+import plac
+import logbook
+log = logbook.Logger('Database')
 
 
 class Database(object):
@@ -72,7 +74,7 @@ class Manager(object):
         session = self.db.Session()
 
         if self.check_stock_exists(ticker, session):
-            print "Stock %s already exists!" % (ticker.upper())
+            log.warn("Stock {} already exists!".format((ticker.upper())))
             return
 
         #TODO Add start and end date in it, and store after downloads
@@ -157,7 +159,7 @@ class Manager(object):
         """
         for symbol in self._stocks():
             self.update_quotes(symbol, check_all)
-            print 'Updated quotes for %s' % symbol
+            log.info('Updated quotes for {}'.format(symbol))
 
     def check_stock_exists(self, ticker, session=None):
         """
@@ -215,11 +217,11 @@ class Manager(object):
         with open(file_path, 'rb') as index_file:
             reader = csv.reader(index_file)
             for symbol in reader:
-                print('Add symbol {} to database'.format(symbol[0]))
+                log.info('Add symbol {} to database'.format(symbol[0]))
                 try:
                     self.add_stock(symbol[0])
                 except:
-                    print('** Error: Could not add {} symbol'.format(symbol[0]))
+                    log.error('** Error: Could not add {} symbol'.format(symbol[0]))
 
 
 class Client(object):
@@ -282,11 +284,11 @@ class Client(object):
         session = self.db.Session()
         if not self.manager.check_stock_exists(ticker, session):
             if dl:
-                print('Stock {} not available in database, downloading it.'.format(ticker))
+                log.notice('Stock {} not available in database, downloading it.'.format(ticker))
                 self.manager.add_stock(ticker)
                 session.commit()
             else:
-                print('Stock {} not available in database and download forbidden'.format(ticker))
+                log.warn('Stock {} not available in database and download forbidden'.format(ticker))
                 return None
 
         if date is not None:
@@ -319,16 +321,16 @@ class Client(object):
         elif symbol is not None:
             asset = session.query(Symbol).filter(Symbol.Ticker == symbol).first()
         else:
-            print('** Error: No suitable information provided.')
+            log.error('** Error: No suitable information provided.')
             session.close()
             return None
         if not asset:
-            print('** Error: Could not retrieve informations')
+            log.error('** Error: Could not retrieve informations')
             return None
         if asset not in session:
             asset = session.query(Symbol).get(asset.Ticker)
         #NOTE This prints ensure the assetQuotes persistence
-        print('Got infos: {}'.format(asset))
+        log.info('Got infos: {}'.format(asset))
         #print('Got associated quotes: {}'.format(asset.Quotes[0]))
         session.close()
         return asset
@@ -346,28 +348,31 @@ class Client(object):
         return stocks
 
 
-if __name__ == '__main__':
-    #TODO A much more efficient and elegant interface
-    from sys import argv
-    if len(argv) > 1:
-        db = Manager()
-        opt = str(argv[1])
+@plac.annotations(
+    symbols=plac.Annotation("Add provided stocks to db", 'option', 'a'),
+    sync=plac.Annotation("Update quotes stored in db", 'flag', 's'),
+    create=plac.Annotation("Create database from written models", 'flag', 'c'))
+def main(sync, create, symbols=None):
+    ''' MySQL Stocks database manager '''
+    db = Manager()
 
-        if opt == 'create':
-            db.create_database()
+    if create:
+        db.create_database()
 
-        elif opt == 'sync':
-            db.sync_quotes()
-
-        elif opt == 'add':
-            if argv[2].find('csv') > 0:
-                db.add_stock_from_file(argv[2])
-            elif argv[2].find(',') > 0:
-                stocks = str(argv[2]).split(',')
-                for ticker in stocks:
-                    db.add_stock(ticker)
-            else:
-                db.add_stock(str(argv[2]))
+    if sync:
+        db.sync_quotes()
 
     else:
-        exit('No command specified. Exiting.')
+        assert symbols
+        if symbols.find('csv') > 0:
+            db.add_stock_from_file(symbols)
+        elif symbols.find(',') > 0:
+            stocks = symbols.split(',')
+            for ticker in stocks:
+                db.add_stock(ticker)
+        else:
+            db.add_stock(symbols)
+
+
+if __name__ == '__main__':
+        plac.call(main)

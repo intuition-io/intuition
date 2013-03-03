@@ -13,28 +13,45 @@ from neuronquant.ai.portfolio import PortfolioManager
 
 class Constant(PortfolioManager):
     '''
-    Simple buy and sell a constant defined amount
+    Buy and sell a constant defined amount
     '''
     def optimize(self, date, to_buy, to_sell, parameters):
-        ''' This method has to be overwritten here
-        @the user can use :
+        '''
+        Specifies the portfolio's allocation strategy
+        The user can use :
         self.portfolio    : zipline portfolio object
         self.max_assets   : maximum assets the portfolio can have at a time
         self.max_weigths  : maximum weigth for an asset can have in the portfolio
-        @param to_buy     : symbols to buy according to the strategie signals
-        @param to_sell    : symbols in the portfolio to sell according to the strategie signals
-        @param date       : the date the signals were emitted
-        @return a dictionnary of symbols with their -> weigths -> for buy: according the whole portfolio value   (must be floats)
-                                                                  for sell: according total symbol position in portfolio
-                                                    -> amount: number of stocks to process (must be ints)
-                e_ret: expected return
-                e_risk: expected risk
+        _____________________________________________
+        Parameters
+            date: datetime.timestamp
+                Date signals were emitted
+            to_buy: list(...)
+                Symbols to buy triggered by the strategie signals
+            to_sell: list(...)
+                Symbols to sell triggered by the strategie signals
+            parameters: dict(...)
+                Custom user parameters
+        _____________________________________________
+        Return:
+            allocations: dict(...)
+                Symbols with their -> weigths -> for buy: according the whole portfolio value   (must be floats)
+                                              -> for sell: according total symbol position in portfolio
+                                   -> amount: number of stocks to process (must be ints)
+            e_ret: float(1)
+                Expected return
+            e_risk: float(1)
+                Expected risk
         '''
         allocations = dict()
+        # Process every stock the same way
         for s in to_buy:
+            # Allocate defined amount to buy
             allocations[s] = parameters.get('buy_amount', 100)
         for s in to_sell:
             allocations[s] = - parameters.get('sell_amount', self.portfolio.positions[s].amount)
+
+        # Defaults values
         e_ret = 0
         e_risk = 1
         return allocations, e_ret, e_risk
@@ -61,15 +78,19 @@ class OptimalFrontier(PortfolioManager):
     '''
     def __init__(self, parameters):
         PortfolioManager.__init__(self, parameters)
+        # Database access for symbols retrieving
         self.feeds = DataFeed()
-        portfolio_opt_file = '/'.join((os.environ['QTRADE'], 'pyTrade/ai/opt_utils.R'))
+
+        # R stuff: R functions file and rpy interface
         self.r = robjects.r
+        portfolio_opt_file = '/'.join((os.environ['QTRADE'], 'neuronquant/ai/opt_utils.R'))
         self.r('source("{}")'.format(portfolio_opt_file))
 
     def optimize(self, date, to_buy, to_sell, parameters):
         symbols     = []
         allocations = dict()
 
+        # Considere only portfolio positions + future positions - positions about to be sold
         positions = set(self.portfolio.positions.keys()).union(to_buy).difference(to_sell)
         if not positions and to_sell:
             for t in to_sell:

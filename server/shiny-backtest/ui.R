@@ -123,7 +123,7 @@ shinyUI(pageWithSidebar(
                 strong('Author'), p('Xavier Bruhiere, mecatronics and power systems engineer.'), 
                 br(),
                 strong('Code'), p('Original source code available among other at', 
-                                a('GitHub', href='https://github.com/Gusabi/QuanTrade'))
+                                a('GitHub', href='https://github.com/Gusabi/ppQuanTrade'))
         ))
     )
 ))

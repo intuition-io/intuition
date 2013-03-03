@@ -50,6 +50,9 @@ function run(parameters, backSocket, frontSocket, channel)
         backSocket.send(JSON.stringify(parameters.configuration))
         //backSocket.send(JSON.stringify({algorithm: parameters.algorithm, manager: parameters.manager, done:true}))
     }
+    else {
+        console.log('[Node:worker] No remote configuration to send');
+    }
 
     process.on("SIGTERM", function() {
         console.log("[Node:worker] Parent SIGTERM detected");

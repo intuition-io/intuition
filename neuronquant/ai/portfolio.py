@@ -10,8 +10,6 @@ import pandas as pd
 
 from logbook import Logger
 
-log = Logger('Manager')
-
 sys.path.append(os.environ['QTRADE'])
 
 
@@ -24,6 +22,7 @@ class PortfolioManager(object):
     #TODO Add in the constructor or setup parameters some general settings like maximum weights, positions, frequency,...
     def __init__(self, parameters):
         super(PortfolioManager, self).__init__()
+        self.log = Logger('Manager')
         self.portfolio       = None
         self.date            = None
         self._optimizer_parameters = parameters
@@ -41,7 +40,7 @@ class PortfolioManager(object):
 
         self.connected = parameters.get('connected', False)
         if self.server.port is None and self.connected:
-            log.info('Binding manager on default port...')
+            self.log.info('Binding manager on default port...')
             self.server.run(host='127.0.0.1', port=5570)
 
     def optimize(self):

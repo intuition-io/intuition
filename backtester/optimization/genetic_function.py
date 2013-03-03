@@ -27,7 +27,6 @@ class Metric(object):
                          'delta'       : 'D',
                          'manager'     : 'Constant',
                          'database'    : None,
-                         #'tickers'     : ['random', '2'],
                          'tickers'     : ['google', 'apple'],
                          'start'       : '2008-01-10',
                          'end'         : '2010-07-03',

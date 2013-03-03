@@ -13,7 +13,8 @@ from neuronquant.utils import color_setup, remote_setup, log
 
 if __name__ == '__main__':
     # use 'setup' configuration for logging
-    with color_setup.applicationbound():
+    #with color_setup.applicationbound():
+    with remote_setup.applicationbound():
         '''-------------------------------------------------------------------------------------------    Backtest    ----'''
         # Backtest or live engine used
         engine  = Simulation()
@@ -27,8 +28,8 @@ if __name__ == '__main__':
         '''---------------------------------------------------------------------------------------------    Results   ----'''
         log.info('Portfolio returns: {}'.format(results.portfolio_value[-1]))
 
-        if args['live']:
-            # Currently tests don't last more than 20min, analysis is not relevant
+        if args['live'] or results.portfolio_value[-1] == 100000:
+            # Currently tests don't last more than 20min, analysis is not relevant, neither backtest without orders
             sys.exit(0)
 
         #TODO Implement in datafeed a generic save method (which could call the correct database save method)
@@ -45,7 +46,7 @@ if __name__ == '__main__':
                  risk_metrics['Sharpe.Ratio'],
                  risk_metrics['Max.Drawdown']))
 
-        #FIXME Should be executed when ran from nodejs debugger, which is remote
+        # If we work in local, draw a quick summary plot
         if not args['remote']:
             data = returns_df.drop(['Returns', 'Benchmark.Returns'], axis=1)
             data.plot()
