@@ -1,12 +1,15 @@
+#!/usr/bin/env node
+
 /*
- *This module is a bridge between a remote server and the client
- *It uses 0MQ to dispatch bi-directionnal messages to clients according to the channel parameter
- *In addition it can run local program (with futur cluster module, one per core actually)
+ * This module is a bridge between a remote server and the client
+ * It uses 0MQ to dispatch bi-directionnal messages to clients according to the channel parameter
+ * In addition it can run local program (with futur cluster module, one per core actually)
  */
 
+//TODO Use optimist or other cli tools to configure those ugly harcoded uri
 var zmq          = require('zmq')
-    , nma        = require('./android_notify')
-    , worker     = require('./workerNode')
+    , nma        = require('android_notify')
+    , worker     = require('worker')
     , backPort   = 'tcp://127.0.0.1:5570'
     , frontPort  = 'tcp://127.0.0.1:5555'
     , logger_uri = 'tcp://127.0.0.1:5540';
@@ -28,26 +31,34 @@ function createQueueDevice(frontPort, backPort) {
         console.log('Frontend connection bound to', frontPort);
     });
 
-    // Route messages from "envelope" to everybody connected to backsocket
+    // Depending of type, route messages from "envelope" to everybody connected to backsocket
     // Or fork a new process with the configuration received
     // Or use it for its own configuration
     frontSocket.on('message', function(envelope, data) {
         console.log(frontSocket.identity + ': received from ' + envelope + ' - ' + data.toString());
         json_data = JSON.parse(data);
+
+        // Fork request, use worker node to spawn the process with its configuration, all specified in the message
         if (json_data.type == 'fork') {
             console.log('Processing fork request...');
             worker.run(json_data, backSocket, frontSocket, envelope);
         }
+
+        // Forwarder conofiguration message
+        //NOTE handle only log configuration, and not really sophisticated
         else if (json_data.type == 'configure') {
             console.log('Configuring forwarder...');
             filters = json_data.filters
             createZmQLogHandler(logger_uri, frontSocket, json_data.verbose, json_data.log_redirection);
         }
+
         else if (json_data.type == 'acknowledgment') {
             if (json_data.statut != 0) {
                 console.log('** Error on client side')
             }
         }
+
+        // All other types route to backend socket, not that sophisticated neither
         else {
             console.log('Routing data to backend socket...')
             backSocket.send(JSON.stringify(json_data))
@@ -66,6 +77,7 @@ function createQueueDevice(frontPort, backPort) {
 
         // For android channel use NotifyMyAndroid module
         if (json_data.channel == 'android') {
+            //NOTE could use below function to check if send a notification is possible
             //nma.check_key(nma.apikey)
             nma.notify(nma.apikey, json_data.appname, json_data.title, json_data.description, json_data.priority);
         }

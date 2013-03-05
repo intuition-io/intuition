@@ -1,25 +1,5 @@
 #!/usr/bin/env node
 
-//http://tjholowaychuk.com/post/9103188408/commander-js-nodejs-command-line-interfaces-made-easy    (http://www.slalompoint.com/node-command-line-interface-p2/)
-//https://github.com/mscdex/node-ncurses
-//https://github.com/jussi-kalliokoski/node-blessings
-
-//https://github.com/hij1nx/complete
-
-//https://cliff.readthedocs.org/en/latest/
-//http://cement.readthedocs.org/en/portland
-
-//http://twitter.github.com/bootstrap/
-//https://github.com/visionmedia/uikit
-
-//https://github.com/LearnBoost/cli-table
-//https://github.com/substack/node-multimeter   or   https://github.com/visionmedia/node-progress
-//https://github.com/baryon/tracer
-//https://github.com/LearnBoost/console-trace
-//https://github.com/LearnBoost/distribute
-//https://github.com/LearnBoost/knox
-//https://github.com/LearnBoost/engine.io-client
-
 var argv = require('optimist')
             .usage('Usage: $0 --verbose [int] --log')
             .demand(['verbose'])
@@ -117,8 +97,7 @@ var fd_config = {
 };
 
 var zmq = require('zmq')
-    , nc = require('ncurses')
-    , ui = require('./curses_ui')
+    , ui = require('client_ui')
     , broker_uri = 'tcp://127.0.0.1:5555'
     , logger_uri = 'tcp://127.0.0.1:5540';
     

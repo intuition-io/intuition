@@ -15,14 +15,22 @@ tools to mix languages like Python, node.js and R and a financial library.
 You will find some goodies like machine learning forecast, markowitz portfolio optimization, genetic optimization, sentiment analysis from twitter, ...
 
 
+Requirements
+------------
+
+#Considere following http://syskall.com/how-to-write-your-own-native-nodejs-extension/index.html/ tuto for nodejs diffusion
+
 Installation
 ------------
-    - Clone this repos
-    - Clone my zipline fork, or the original and apply changes in management/changelog
-    - Edit config.sh to suit your machine
-    - Run a mysql database and edit neuronquant/data/config.py 
-    - Create the tables with neuronquant/data/database.py create, then populate it with neuronquant/data/database.py add symbols.csv (see database/QSDATA for a huge list)
-    - You should be ready to use, see below 
+    - Debian based distribution: apt-get install git libzmq-dev, node, npm, R, python2.7, ... (to complete)
+    - git clone https://github.com/Gusabi/ppQuanTrade.git
+    - ./setup.py install (or run: "pip install -r scripts/requirements.txt")
+    - R packages, run: "R < ./scripts/install_r_rpackages.R --no-save"
+    - Node.js modules, run from [root]/server "npm install"
+    - Edit [root]/config/local.sh to suit your machine
+    - Run a mysql database and edit [root]/config/mysql.cfg 
+    - Create the tables with "./neuronquant/data/database.py -c", then populate it with neuronquant/data/database.py -a symbols.csv (see database/QSDATA for a huge list)
+    - Done !
 
 
 Getting started

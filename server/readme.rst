@@ -4,12 +4,9 @@ server
 Code for webapp frontend and distributed stuff
 
 
-Shiny-Server
-------------
-    - https://npmjs.org/package/shiny-server
-
 Run shiny server
 ----------------
+    - https://npmjs.org/package/shiny-server
     Notes: One version is in ~/ShinyApp, the other in /var/shiny-server/www
     1. Run 'sudo node_modules/.bin/shiny-server [shiny-server.config]'
     2. Go to http://127.0.0.1:3838/users/xavier/shiny-backtest/ or http://127.0.0.1:3838/shiny-backtest/
@@ -45,13 +42,36 @@ ZMQ logbook Messaging format
 
 TODO
 ----
-    1. Env variable access, for db connection (or an other way)
-    2. Update.sh to commit changes from ppQuanTrade to ~/ShinyApps/shiny-backtest
-    3. Got /var/shiny-server/www/shiny-backtest to work, probably related to R package installation (under user root dir instead of system)
+    * A real node package
+    * script to commit changes from ppQuanTrade to ~/ShinyApps/shiny-backtest (unused for now)
+    * Got /var/shiny-server/www/shiny-backtest to work, probably related to R package installation (under user root dir instead of system)
 
 
-tmp
----
+Ressources
+----------
 http://www.rinfinance.com/agenda/
 http://statsadventure.blogspot.fr/2012/08/minimum-expected-shortfall-portfolio.html
-see pdf
+
+http://tjholowaychuk.com/post/9103188408/commander-js-nodejs-command-line-interfaces-made-easy    (http://www.slalompoint.com/node-command-line-interface-p2/)
+https://github.com/mscdex/node-ncurses
+https://github.com/jussi-kalliokoski/node-blessings
+https://github.com/hij1nx/complete
+https://github.com/dylang/logging
+https://github.com/chriso/cli
+https://github.com/baryshev/look
+
+https://cliff.readthedocs.org/en/latest/
+http://cement.readthedocs.org/en/portland
+
+http://twitter.github.com/bootstrap/
+https://github.com/visionmedia/uikit
+
+https://github.com/LearnBoost/cli-table
+https://github.com/substack/node-multimeter   or   https://github.com/visionmedia/node-progress
+https://github.com/baryon/tracer
+https://github.com/LearnBoost/console-trace
+https://github.com/LearnBoost/distribute
+https://github.com/LearnBoost/knox
+https://github.com/LearnBoost/engine.io-client
+
+

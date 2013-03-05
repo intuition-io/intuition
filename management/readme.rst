@@ -15,13 +15,14 @@ Ideas
 TODO
 ----
     - Licences
-    - Documentation with sphinx, https://readthedocs.org/, tests with pytest, nose
+    - Documentation with sphinx, https://readthedocs.org/, tests with pytest, nose, doctest
     - A way to keep track of positions before yelling signals, see https://gist.github.com/fawce/1578485 for state machine, monitoring
     - 13/02 posts on r-bloggers !!
     - A load() function importing modules, with @check decorator that can handle exception
     - The save part of backtest results as a generic decorator using database functions ?
     - Decorator for caching data in optimization process ?
     - Replace OLMAR algo with https://github.com/quantopian/zipline/pull/98/files#diff-0 (+check logbook setup)
+    - googlegroups 
 
 
 Ressources

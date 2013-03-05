@@ -1,0 +1,108 @@
+<?xml version="1.0"?>
+<project name="" company="" manager="" phase="" project-start="20130304T000000Z" mrproject-version="2" calendar="1">
+  <properties/>
+  <phases/>
+  <calendars>
+    <day-types>
+      <day-type id="0" name="Travaill&#xE9;" description="Un jour de travail normal"/>
+      <day-type id="1" name="Ch&#xF4;m&#xE9;" description="Un jour ch&#xF4;m&#xE9; normal"/>
+      <day-type id="2" name="Utiliser la base" description="Utilise un jour du calendrier de base"/>
+    </day-types>
+    <calendar id="1" name="D&#xE9;faut">
+      <default-week mon="0" tue="0" wed="0" thu="0" fri="0" sat="1" sun="1"/>
+      <overridden-day-types>
+        <overridden-day-type id="0">
+          <interval start="0800" end="1200"/>
+          <interval start="1300" end="1700"/>
+        </overridden-day-type>
+      </overridden-day-types>
+      <days/>
+    </calendar>
+  </calendars>
+  <tasks>
+    <task id="1" name="Database" note="" work="201600" start="20130304T000000Z" end="20130308T170000Z" work-start="20130304T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
+      <task id="2" name="Refactorisation, better interface" note="get_returns to code&#10;" work="28800" start="20130304T000000Z" end="20130304T170000Z" work-start="20130304T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+      <task id="3" name="Extend" note="" work="86400" start="20130304T170000Z" end="20130305T170000Z" work-start="20130305T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
+        <predecessors>
+          <predecessor id="1" predecessor-id="2" type="FS"/>
+        </predecessors>
+        <task id="4" name="Stocks" note="" work="28800" start="20130304T170000Z" end="20130305T170000Z" work-start="20130305T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+        <task id="5" name="Markets" note="" work="28800" start="20130304T170000Z" end="20130305T170000Z" work-start="20130305T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+        <task id="6" name="Local configuration" note="" work="28800" start="20130304T170000Z" end="20130305T170000Z" work-start="20130305T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+      </task>
+      <task id="7" name="Handle databot" note="Deprecated, bugged, but sophisticated module to manage" work="28800" start="20130305T170000Z" end="20130306T170000Z" work-start="20130306T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
+        <predecessors>
+          <predecessor id="1" predecessor-id="3" type="FS"/>
+        </predecessors>
+      </task>
+      <task id="8" name="Historisation" note="Save Portfolio, relevant backtests, optimization, ... for further analysis" work="28800" start="20130306T170000Z" end="20130307T170000Z" work-start="20130307T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
+        <predecessors>
+          <predecessor id="1" predecessor-id="7" type="FS"/>
+        </predecessors>
+      </task>
+      <task id="9" name="Forex data" note="" work="28800" start="20130307T170000Z" end="20130308T170000Z" work-start="20130308T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
+        <predecessors>
+          <predecessor id="1" predecessor-id="8" type="FS"/>
+        </predecessors>
+      </task>
+    </task>
+    <task id="10" name="Quant strategie" note="" work="201600" start="20130308T170000Z" end="20130315T170000Z" work-start="20130311T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
+      <predecessors>
+        <predecessor id="1" predecessor-id="1" type="FS"/>
+      </predecessors>
+      <task id="11" name="Managers" note="" work="86400" start="20130308T170000Z" end="20130311T170000Z" work-start="20130311T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
+        <task id="12" name="Markowitz python integration" note="" work="28800" start="20130308T170000Z" end="20130311T170000Z" work-start="20130311T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+        <task id="13" name="Correction of the R one" note="" work="28800" start="20130308T170000Z" end="20130311T170000Z" work-start="20130311T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+        <task id="14" name="Add global constraints" note="" work="28800" start="20130308T170000Z" end="20130311T170000Z" work-start="20130311T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+      </task>
+      <task id="15" name="Add, repare and improve algos" note="" work="28800" start="20130311T170000Z" end="20130312T170000Z" work-start="20130312T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
+        <predecessors>
+          <predecessor id="1" predecessor-id="11" type="FS"/>
+        </predecessors>
+      </task>
+      <task id="16" name="Forecast integration" note="" work="28800" start="20130312T170000Z" end="20130313T170000Z" work-start="20130313T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
+        <predecessors>
+          <predecessor id="1" predecessor-id="15" type="FS"/>
+        </predecessors>
+      </task>
+      <task id="17" name="Cross-validation" note="Tools to ensure backtests efficiency" work="28800" start="20130313T170000Z" end="20130314T170000Z" work-start="20130314T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
+        <predecessors>
+          <predecessor id="1" predecessor-id="16" type="FS"/>
+        </predecessors>
+      </task>
+      <task id="18" name="Optimization" note="Improve existant&#10;Handle old genetic class &#10;add new functions with the same signature (transparent use)" work="28800" start="20130314T170000Z" end="20130315T170000Z" work-start="20130315T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
+        <predecessors>
+          <predecessor id="1" predecessor-id="17" type="FS"/>
+        </predecessors>
+      </task>
+    </task>
+    <task id="19" name="Live Backtest" note="Everything related to the use of zipline backtester" work="115200" start="20130315T170000Z" end="20130319T170000Z" work-start="20130318T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
+      <predecessors>
+        <predecessor id="1" predecessor-id="10" type="FS"/>
+      </predecessors>
+      <task id="20" name="Asynchronous command" note="Allow to order, stop, re-run, ... control and monitor manager and live-trade" work="28800" start="20130315T170000Z" end="20130318T170000Z" work-start="20130318T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+      <task id="21" name="Portfolio persistance" note="This way, can stop and re-run live-trading&#10;But need to know how to configure properly portfolio zipline object( set_portfolio ?)" work="28800" start="20130318T170000Z" end="20130319T170000Z" work-start="20130319T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
+        <predecessors>
+          <predecessor id="1" predecessor-id="20" type="FS"/>
+        </predecessors>
+      </task>
+      <task id="22" name="Fix benchmark calcul" note="" work="28800" start="20130315T170000Z" end="20130318T170000Z" work-start="20130318T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+      <task id="23" name="Permanent run" note="Not neccessary if next step is successful, but an important option to consider" work="28800" start="20130318T170000Z" end="20130319T170000Z" work-start="20130319T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
+        <predecessors>
+          <predecessor id="1" predecessor-id="22" type="FS"/>
+        </predecessors>
+      </task>
+    </task>
+    <task id="24" name="Frontend" note="Remote frontends" work="86400" start="20130319T170000Z" end="20130320T170000Z" work-start="20130320T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
+      <predecessors>
+        <predecessor id="1" predecessor-id="19" type="FS"/>
+      </predecessors>
+      <task id="25" name="Curses console" note="" work="28800" start="20130319T170000Z" end="20130320T170000Z" work-start="20130320T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+      <task id="26" name="Shiny" note="" work="28800" start="20130319T170000Z" end="20130320T170000Z" work-start="20130320T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+      <task id="27" name="" note="" work="28800" start="20130319T170000Z" end="20130320T170000Z" work-start="20130320T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+    </task>
+  </tasks>
+  <resource-groups/>
+  <resources/>
+  <allocations/>
+</project>

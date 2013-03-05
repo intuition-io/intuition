@@ -33,9 +33,9 @@ class Alias (object):
     VARIATION = 'c'
     VAR_PER_CENT = 'cp'
 
+
 #TODO 1. Every fetcher should take an index object, construct mostly with date_range
-
-
+#TODO Use requests module to fetch remote data, cleaner http://docs.python-requests.org/en/latest/
 class Fetcher(object):
     ''' Web access to data '''
     def __init__(self, timezone=pytz.utc, lvl='debug'):

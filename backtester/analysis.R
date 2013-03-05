@@ -5,7 +5,7 @@ source(paste(Sys.getenv('QTRADE'), 'server/shiny-backtest/global.R', sep='/'))
 
 ## ==========================    Args handle    =========================== ##
 if(!suppressPackageStartupMessages(require(optparse)))
-    stop('The optparse package is required to use the command line interface.')
+    stop('The optparse package is required to use the command line interface. run install.packages("optparse").\n')
 
 option_list <- list( 
     make_option(c("-v", "--version"), 

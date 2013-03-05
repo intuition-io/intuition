@@ -34,8 +34,9 @@ if __name__ == '__main__':
 
         #TODO Implement in datafeed a generic save method (which could call the correct database save method)
         #NOTE Could do a generic save client method (retrieve the correct model, with correct fields)
-        perf_series  = engine.rolling_performances(timestamp='one_month', save=True, db_id='test')
+        perf_series  = engine.rolling_performances(timestamp='one_month', save=False, db_id='test')
         #TODO save returns not ready yet, don't try to save
+        #TODO more benchmarks choice (zipline modification)
         returns_df   = engine.get_returns(benchmark='SP500', save=False)
         risk_metrics = engine.overall_metrics(save=True, db_id='test')
 

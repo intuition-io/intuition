@@ -10,7 +10,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import and_
 
 #import indicators
-import config
+import os
+import json
 import yahoofinance as quotes
 
 import plac
@@ -27,15 +28,16 @@ class Database(object):
         self.Base = Base
 
         # Handle edge case here
-        if config.SQL_PASSWORD == '':
-            engine_config = 'mysql://%s@%s/%s' % (config.SQL_USER,
-                                                  config.SQL_HOSTNAME,
-                                                  config.SQL_DATABASE)
+        sql = json.load(open('/'.join((os.environ['QTRADE'], 'config/mysql.cfg')), 'r'))
+        if sql['PASSWORD'] == '':
+            engine_config = 'mysql://%s@%s/%s' % (sql['USER'],
+                                                  sql['HOSTNAME'],
+                                                  sql['DATABASE'])
         else:
-            engine_config = 'mysql://%s:%s@%s/%s' % (config.SQL_USER,
-                                                     config.SQL_PASSWORD,
-                                                     config.SQL_HOSTNAME,
-                                                     config.SQL_DATABASE)
+            engine_config = 'mysql://%s:%s@%s/%s' % (sql['USER'],
+                                                     sql['PASSWORD'],
+                                                     sql['HOSTNAME'],
+                                                     sql['DATABASE'])
         self.Engine = create_engine(engine_config)
         self.Session = sessionmaker()
         self.Session.configure(bind=self.Engine)

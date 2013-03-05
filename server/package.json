@@ -1,0 +1,27 @@
+{
+    "author": "Xavier Bruhiere <xavier.bruhiere@gmail.com>",
+    "name": "neuronquant",
+    "description": "Network components of the quantitative trading palteform neuronquant",
+    "version": "0.0.3",
+    "homepage": "",
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/Gusabi/ppQuanTrade.git"
+    },
+    "main": "forwarder.js",
+    "scripts": {},
+    "dependencies": {
+        "zmq": "*",
+        "xml2js": "*",
+        "request": "*",
+        "optimist": "*",
+        "ncurses": "*",
+        "sleep": "*",
+        "shiny-server": "*"
+    },
+    "devDependencies": {},
+    "optionalDependencies": {},
+    "engines": {
+        "node": "*"
+    }
+}
