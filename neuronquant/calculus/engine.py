@@ -1,6 +1,5 @@
 from algorithms import *
 
-import ipdb as pdb
 import sys
 import os
 import argparse
@@ -118,21 +117,29 @@ class Simulation(object):
     def read_config(self, *args, **kwargs):
         self.manager_cfg = kwargs.get('manager', None)
         self.algo_cfg = kwargs.get('algorithm', None)
+
         if kwargs.get('remote', False):
-            log.info('Fetching backtest configuration from client')
             self.server.run(host='127.0.0.1', port=self.backtest_cfg['port'])
-            msg = self.server.receive(json=True)
-            log.info(msg)
+
+            # In remote mode, client sends missing configuration through zmq socket
+            if (not self.manager_cfg) or (not self.algo_cfg):
+                log.info('Fetching backtest configuration from client')
+                msg = self.server.receive(json=True)
+                log.debug('Got it !')
+
+            # Set simulation parameters with it
             assert isinstance(msg, dict)
             if self.manager_cfg is None:
                 self.manager_cfg = msg['manager']
             if self.algo_cfg is None:
                 self.algo_cfg    = msg['algorithm']
+
         else:
-            bt_root          = os.environ['QTRADE'] + '/backtester/'
-            self.manager_cfg = kwargs.get('manager', None)
-            self.algo_cfg    = kwargs.get('algorithm', None)
+            # Reading configuration from json files
+            bt_root          = '/'.join((os.environ['QTRADE'], 'backtester/'))
             try:
+                # Files store many algos and manager parameters,
+                # use backtest configuration to pick up the right one
                 if self.manager_cfg is None:
                     self.manager_cfg = json.load(open('{}/managers.cfg'.format(bt_root), 'r'))[self.backtest_cfg['manager']]
                 if self.algo_cfg is None:
@@ -140,6 +147,8 @@ class Simulation(object):
             except:
                 log.error('** loading json configuration.')
                 sys.exit(1)
+
+        # The manager can use the same socket during simulation to emit portfolio informations
         self.manager_cfg['server'] = self.server
         log.info('Done.')
 
@@ -222,7 +231,7 @@ class Simulation(object):
         try:
             data = pd.DataFrame(perfs, index=index)
         except:
-            pdb.set_trace()
+            import ipdb; ipdb.set_trace()
 
         if save:
             self.feeds.stock_db.save_metrics(data)
@@ -281,7 +290,7 @@ class Simulation(object):
         #NOTE No frequency infos or just period number ?
         start = pytz.utc.localize(pd.datetime.strptime(perfs[0]['period_label'] + '-01', '%Y-%m-%d'))
         end = pytz.utc.localize(pd.datetime.strptime(perfs[-1]['period_label'] + '-01', '%Y-%m-%d'))
-        return pd.date_range(start - pd.datetools.BDay(10), end, freq=pd.datetools.BMonthBegin())
+        return pd.date_range(start - pd.datetools.BDay(10), end, freq=pd.datetools.MonthBegin())
 
     def _extract_perf(self, perfs, field):
         index = self._get_index(perfs)

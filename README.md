@@ -15,17 +15,12 @@ tools to mix languages like Python, node.js and R and a financial library.
 You will find some goodies like machine learning forecast, markowitz portfolio optimization, genetic optimization, sentiment analysis from twitter, ...
 
 
-Requirements
-------------
-
-#Considere following http://syskall.com/how-to-write-your-own-native-nodejs-extension/index.html/ tuto for nodejs diffusion
-
 Installation
 ------------
-    - Debian based distribution: apt-get install git libzmq-dev, node, npm, R, python2.7, ... (to complete)
+    - Debian based distribution: apt-get install git libzmq-dev node npm R python2.7
     - git clone https://github.com/Gusabi/ppQuanTrade.git
     - ./setup.py install (or run: "pip install -r scripts/requirements.txt")
-    - R packages, run: "R < ./scripts/install_r_rpackages.R --no-save"
+    - R packages, run: "R < ./scripts/install_r_packages.R --no-save"
     - Node.js modules, run from [root]/server "npm install"
     - Edit [root]/config/local.sh to suit your machine
     - Run a mysql database and edit [root]/config/mysql.cfg 
@@ -44,7 +39,7 @@ Or in realtime mode:
 
 ```./backtest.py --tickers random,6 --algorithm StdBased --manager Equity --delta 2min --live```
 
-More examples available in bactester/runBacktest.sh
+More examples available [root]/scripts/run_backtest.sh
 
 As mentionned you can easily write your own algorithms. Here is the equity manager example, which allocates the same weight
 to all of your assets:
@@ -67,7 +62,7 @@ class Equity(PortfolioManager):
         return allocations, 0, 1
 ```
 
-Strategies triggering buy or sell signals are used with great zipline backtester engine and therefore use quite the same scheme,
+Strategies triggering buy or sell signals are used within the great zipline backtester engine and therefore use quite the same scheme,
 plus the manager, and some config parameters. Here a classic momentum strategie:
 
 ```python
@@ -114,7 +109,7 @@ class Momentum(TradingAlgorithm):
 Rememeber that managers and algorithms should be configured in their own \*.cfg files or through the webapp.
 
 You can setup your trading environment by running from the root directory::
-    ./run_labo.py
+    ./scripts/run_labo.py
 and access to the shiny frontend page. From there configure the backtest, run it and explore detailed results.
 
 

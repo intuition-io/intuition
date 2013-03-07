@@ -45,7 +45,9 @@ var bt_config = {
     configuration: {
         algorithm: {
             debug: 1,
-            window_length: 30
+            long_window: 200,
+            short_window: 100,
+            threshold: 0
         },
         manager: {
             max_weight: 0.5,
@@ -80,12 +82,11 @@ var opt_config = {
         mutation: {
             prefix: "--mutation",
             value: 0.5
+        },
+        notify: {
+            prefix: "flag",
+            value: "--notify"
         }
-        //},
-        //notify: {
-            //prefix: "flag",
-            //value: "--notify"
-        //}
     }
 }
 
@@ -112,7 +113,10 @@ function createClient (port, channel) {
     socket.on('message', function(data) {
         json_data = JSON.parse(data);
         if (json_data.type == 'portfolio') {
-            client_ui.write_msg(json_data.time + ' Portfolio:', json_data.msg['value']);
+            client_ui.write_msg(json_data.time + ' Portfolio:');
+            client_ui.write_msg(JSON.stringify(json_data.msg.value));
+            //client_ui.write_msg(json_data.time + ' Returns:', json_data.msg['returns']);
+            //client_ui.write_msg(json_data.time + ' PNL:', json_data.msg.pnl);
         }
         else if (json_data.type == 'acknowledgment') {
             client_ui.write_msg(json_data.time + 'Worker returned: ' + json_data.msg);
@@ -125,7 +129,7 @@ function createClient (port, channel) {
             //NOTE Should be dedicated to unexpected message, for now it's for logging
             //NOTE could configure a channel_log_filter in addition to the type filter, or merge them
             //NOTE msg can be json object, detect and parse it
-            client_ui.write_log(json_data.time + ' ' + json_data.func_name + ': ' + json_data.msg +' (' + json_data.level + ')');
+            client_ui.write_log(json_data.time + ' ' + json_data.func_name + ': ' + json_data.msg);
         }
     });
 
@@ -138,12 +142,10 @@ function createClient (port, channel) {
 }    
 
 
-var client_ui = new ui.UI_interface(test);  
-
-var client_be = new createClient(broker_uri, 'dashboard');
-//if (argv.log) {
-    //createClient(broker_uri, 'ZMQ Messaging');
-//}
+// Define client interfaces, ui for curses graphics, be for backend work
+// The test function is a callback called when hitting keyboard
+var client_ui = new ui.UI_interface(test),
+    client_be = new createClient(broker_uri, 'dashboard');
 
 function test(msg) {
     if (msg == 'configure') {

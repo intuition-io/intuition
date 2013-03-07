@@ -34,7 +34,7 @@ class ZMQ_Base(object):
         msg = None
         msg = self.socket.recv_json() if json else self.socket.recv()
         #msg = self.socket.recv()
-        log.debug('Server received {}'.format(msg))
+        log.debug('ZMQ Agent received {}'.format(msg))
         if acknowledgment:
             if json:
                 self.socket.send_json({'time': dt.datetime.strftime(dt.datetime.now(), format='%Y-%m-%dT%H:%M:%S'),

@@ -1,12 +1,8 @@
-import ipdb as pdb
-
 import os
-import sys
 
 import pandas as pd
 import rpy2.robjects as robjects
 
-sys.path.append(os.environ['QTRADE'])
 from neuronquant.data.datafeed import DataFeed
 from neuronquant.ai.portfolio import PortfolioManager
 
@@ -91,7 +87,7 @@ class OptimalFrontier(PortfolioManager):
         allocations = dict()
 
         # Considere only portfolio positions + future positions - positions about to be sold
-        positions = set(self.portfolio.positions.keys()).union(to_buy).difference(to_sell)
+        positions = set([t for t in self.portfolio.positions.keys() if self.portfolio.positions[t].amount]).union(to_buy).difference(to_sell)
         if not positions and to_sell:
             for t in to_sell:
                 allocations[t] = - parameters.get('perc_sell', 1.0)
@@ -99,7 +95,7 @@ class OptimalFrontier(PortfolioManager):
         try:
             assert(positions)
         except:
-            pdb.set_trace()
+            self.log.error('** No positions determined')
         if len(positions) == 1:
             return {positions.pop(): parameters.get('max_weigths', 0.2)}, 0, 1
         for p in positions:
@@ -120,7 +116,6 @@ class OptimalFrontier(PortfolioManager):
             mp       = self.r('marketPortfolio')(frontier, 0.02, Debug      = False, graph = False)
         except:
             self.log.error('** Error running R optimizer')
-            pdb.set_trace()
             return dict(), None, None
         self.log.debug('Allocation: {}'.format(mp))
         #FIXME Some key errors survive so far

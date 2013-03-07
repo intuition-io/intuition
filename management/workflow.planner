@@ -30,7 +30,7 @@
         <task id="5" name="Markets" note="" work="28800" start="20130304T170000Z" end="20130305T170000Z" work-start="20130305T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
         <task id="6" name="Local configuration" note="" work="28800" start="20130304T170000Z" end="20130305T170000Z" work-start="20130305T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
       </task>
-      <task id="7" name="Handle databot" note="Deprecated, bugged, but sophisticated module to manage" work="28800" start="20130305T170000Z" end="20130306T170000Z" work-start="20130306T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
+      <task id="7" name="Manage databot" note="Deprecated, bugged, but sophisticated module to manage" work="28800" start="20130305T170000Z" end="20130306T170000Z" work-start="20130306T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
         <predecessors>
           <predecessor id="1" predecessor-id="3" type="FS"/>
         </predecessors>

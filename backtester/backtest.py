@@ -13,7 +13,6 @@ from neuronquant.utils import color_setup, remote_setup, log
 
 if __name__ == '__main__':
     # use 'setup' configuration for logging
-    #with color_setup.applicationbound():
     with remote_setup.applicationbound():
         '''-------------------------------------------------------------------------------------------    Backtest    ----'''
         # Backtest or live engine used
@@ -55,7 +54,7 @@ if __name__ == '__main__':
 
             # R statistical analysis
             os.system('{}/backtester/analysis.R'.format(os.environ['QTRADE']))
-            os.system('evince {}/backtester/Rplots.pdf'.format(os.environ['QTRADE']))
+            os.system('evince ./Rplots.pdf')
 
 
 ''' Notes

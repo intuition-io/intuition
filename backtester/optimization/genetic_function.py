@@ -28,7 +28,7 @@ class Metric(object):
                          'manager'     : 'Constant',
                          'database'    : None,
                          'tickers'     : ['google', 'apple'],
-                         'start'       : '2008-01-10',
+                         'start'       : '2008-01-11',
                          'end'         : '2010-07-03',
                          'live'        : False,
                          'port'        : '5570',

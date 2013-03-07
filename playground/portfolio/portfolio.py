@@ -1,4 +1,3 @@
-from decorators import *
 import numpy as np
 from numpy import recfromcsv
 from itertools import combinations
@@ -6,7 +5,7 @@ import os
 import sys
 
 sys.path.append(os.environ['QTRADE'])
-from pyTrade.compute.quantSubsystem import *
+from neuronquant.calculus.finance import *
 
 import qstkutil.tsutil as tsu
 
@@ -26,6 +25,7 @@ class Portfolio(object):
         if holds is not None:
             self.symbols.append(holds)
 
+    #TODO Generic filter
     def selectOnSharpeRatio(self, ls_symbols, top_n_equities=10):
         ''' Choose the best portfolio over the stock universe,
         according to their sharpe ratio'''
