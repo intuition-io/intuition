@@ -14,10 +14,11 @@
         "zmq": "*",
         "xml2js": "*",
         "request": "*",
-        "optimist": "*",
+        "commander": "*",
+        "logging": "*",
+        "config": "*",
         "ncurses": "*",
-        "sleep": "*",
-        "shiny-server": "*"
+        "sleep": "*"
     },
     "devDependencies": {},
     "optionalDependencies": {},

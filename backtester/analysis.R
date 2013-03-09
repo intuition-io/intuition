@@ -1,4 +1,21 @@
 #!/usr/bin/env Rscript
+#
+# Copyright 2012 Xavier Bruhiere
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+# This script read mysql database
 
 # file of analysis functions
 source(paste(Sys.getenv('QTRADE'), 'server/shiny-backtest/global.R', sep='/'))
@@ -8,23 +25,26 @@ if(!suppressPackageStartupMessages(require(optparse)))
     stop('The optparse package is required to use the command line interface. run install.packages("optparse").\n')
 
 option_list <- list( 
-    make_option(c("-v", "--version"), 
+    make_option(c("-v", "--verbose"), 
         action = "store_true", default = FALSE,
-        help   = "Print version info and exit"),
+        help   = "Print extra output"),
     make_option(c("-m", "--mode"), 
         action = "store_true", default = "regular",
         type   = "character", help     = "Specified wether it musts run experimental or regular analysis"),
-    make_option(c("-d", "--db-location"), 
-        action = "store_true", default = "../../metricsbase/stocks.db",
-        type   = "character" ,help     = "SQLite metricsbase location")
+    make_option(c("-s", "--source"), 
+        action = "store_true", default = "mysql",
+        type   = "character" ,help     = "Type of source where there is data to process"),
+    make_option(c("-t", "--table"), 
+        action = "store_true", default = "test",
+        type   = "character" ,help     = "MySQL or SQLite database table to analyse")
     )
 
 opt <- parse_args(OptionParser(option_list=option_list, usage="./script [options] <args>"))
 
 ## =========================    Preparing metrics    ========================== ##
 
-metrics   <- getTradeData(dataId='test', source='mysql', debug=F)
-perfs     <- getTradeData(dataId='test', source='mysql', overall=T, debug=F)
+metrics   <- getTradeData(dataId=opt$table, source=opt$source, debug=opt$verbose)
+perfs     <- getTradeData(dataId=opt$table, source=opt$source, overall=T, debug=opt$verbose)
 riskfree  <- mean(metrics[,"TreasuryReturns"])
 portfolio <- metrics[, 'Returns']
 benchmark <- metrics[, 'BenchmarkReturns']

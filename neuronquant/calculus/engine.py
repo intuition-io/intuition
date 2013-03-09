@@ -1,3 +1,19 @@
+#
+# Copyright 2012 Xavier Bruhiere
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
 from algorithms import *
 
 import sys
@@ -73,7 +89,7 @@ class Simulation(object):
             parser.add_argument('-d', '--delta', type=str, action='store', default='D', required=False, help='Delta in days betweend two quotes fetch')
             parser.add_argument('-a', '--algorithm', action='store', required=True, help='Trading algorithm to be used')
             parser.add_argument('-m', '--manager', action='store', required=True, help='Portfolio strategie to be used')
-            parser.add_argument('-b', '--database', action='store', default='stocks.db', required=False, help='Database location')
+            parser.add_argument('-b', '--database', action='store', default='test', required=False, help='Table to considere in database')
             parser.add_argument('-t', '--tickers', action='store', required=True, help='target names to process')
             parser.add_argument('-s', '--start', action='store', default='1/1/2006', required=False, help='Start date of the backtester')
             parser.add_argument('-e', '--end', action='store', default='1/12/2010', required=False, help='Stop date of the backtester')
@@ -136,28 +152,29 @@ class Simulation(object):
 
         else:
             # Reading configuration from json files
-            bt_root          = '/'.join((os.environ['QTRADE'], 'backtester/'))
+            config_dir = '/'.join((os.environ['QTRADE'], 'config/'))
             try:
                 # Files store many algos and manager parameters,
                 # use backtest configuration to pick up the right one
                 if self.manager_cfg is None:
-                    self.manager_cfg = json.load(open('{}/managers.cfg'.format(bt_root), 'r'))[self.backtest_cfg['manager']]
+                    self.manager_cfg = json.load(open('{}/managers.cfg'.format(config_dir), 'r'))[self.backtest_cfg['manager']]
                 if self.algo_cfg is None:
-                    self.algo_cfg    = json.load(open('{}/algos.cfg'.format(bt_root), 'r'))[self.backtest_cfg['algorithm']]
+                    self.algo_cfg    = json.load(open('{}/algos.cfg'.format(config_dir), 'r'))[self.backtest_cfg['algorithm']]
             except:
                 log.error('** loading json configuration.')
                 sys.exit(1)
 
         # The manager can use the same socket during simulation to emit portfolio informations
         self.manager_cfg['server'] = self.server
-        log.info('Done.')
+        log.info('Configuration is Done.')
 
     def run_backtest(self):
+        # No configuration, no backtest man
         if self.backtest_cfg is None or self.algo_cfg is None or self.manager_cfg is None:
             log.error('** Backtester not configured properly')
             return 1
 
-        '''--------------------------------------------    Parameters    -----'''
+        #'''_____________________________________________________________________    Parameters    ________
         if self.backtest_cfg['tickers'][0] == 'random':
             assert(len(self.backtest_cfg['tickers']) == 2)
             assert(int(self.backtest_cfg['tickers'][1]))
@@ -185,7 +202,7 @@ class Simulation(object):
             assert isinstance(data, pd.DataFrame)
             assert data.index.tzinfo
 
-        '''-----------------------------------------------    Running    -----'''
+        #___________________________________________________________________________    Running    ________
         log.info('\n-- Running backetester...\nUsing algorithm: {}\n'.format(self.backtest_cfg['algorithm']))
         log.info('\n-- Using portfolio manager: {}\n'.format(self.backtest_cfg['manager']))
 
@@ -193,10 +210,9 @@ class Simulation(object):
                                       self.backtest_cfg['manager'],
                                       self.algo_cfg,
                                       self.manager_cfg)
-        self.results, self.monthly_perfs = backtester.run(data,
-                                                          self.backtest_cfg['start'],
-                                                          self.backtest_cfg['end'])
-
+        self.results, self.monthly_perfs = backtester.run(data)
+                                                          #self.backtest_cfg['start'],
+                                                          #self.backtest_cfg['end'])
         return self.results
 
     def rolling_performances(self, timestamp='one_month', save=False, db_id=None):
@@ -204,6 +220,7 @@ class Simulation(object):
         #TODO Study the impact of month choice
         #TODO Check timestamp in an enumeration
 
+        #NOTE Script args define default database table name (test), make it consistent
         if db_id is None:
             db_id = self.backtest_cfg['algorithm'] + pd.datetime.strftime(pd.datetime.now(), format='%Y%m%d')
 
@@ -243,12 +260,13 @@ class Simulation(object):
         metrics = self.rolling_performances(timestamp=timestamp, save=False, db_id=db_id)
         riskfree = np.mean(metrics['Treasury.Returns'])
 
+        #NOTE Script args define default database table name (test), make it consistent
         if db_id is None:
             db_id = self.backtest_cfg['algorithm'] + pd.datetime.strftime(pd.datetime.now(), format='%Y%m%d')
         perfs['Name']              = db_id
         perfs['Sharpe.Ratio']      = tsu.get_sharpe_ratio(metrics['Returns'].values, risk_free = riskfree)
         perfs['Returns']           = (((metrics['Returns'] + 1).cumprod()) - 1)[-1]
-        perfs['Max.Drawdown']      = min(metrics['Max.Drawdown'])
+        perfs['Max.Drawdown']      = max(metrics['Max.Drawdown'])
         perfs['Volatility']        = np.mean(metrics['Volatility'])
         perfs['Beta']              = np.mean(metrics['Beta'])
         perfs['Alpha']             = np.mean(metrics['Alpha'])
@@ -258,17 +276,17 @@ class Simulation(object):
             self.feeds.stock_db.save_performances(perfs)
         return perfs
 
-    #TODO Benchmark is S&P500, implement others (for now the flag is unused)
     #TODO Save returns
-    #TODO A table for benchmarks
-    def get_returns(self, benchmark=False, timestamp='one_month', save=False, db_id=None):
+    def get_returns(self, benchmark=None, timestamp='one_month', save=False, db_id=None):
         returns = dict()
 
-        if benchmark == 'SP500' or benchmark is None:
-            benchmark_data  = get_benchmark_returns()
+        if benchmark:
+            #TODO Benchmark fields in database for guessing name like for stocks
+            benchmark_symbol = '^GSPC'
+            benchmark_data  = get_benchmark_returns(benchmark_symbol, self.backtest_cfg['start'], self.backtest_cfg['end'])
         else:
             raise NotImplementedError()
-        benchmark_data = [d for d in benchmark_data if (d.date >= self.backtest_cfg['start']) and (d.date <= self.backtest_cfg['end'])]
+        #benchmark_data = [d for d in benchmark_data if (d.date >= self.backtest_cfg['start']) and (d.date <= self.backtest_cfg['end'])]
         dates = pd.DatetimeIndex([d.date for d in benchmark_data])
 
         returns['Benchmark.Returns']  = pd.Series([d.returns for d in benchmark_data], index=dates)

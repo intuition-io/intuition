@@ -13,5 +13,7 @@ export QTRADE_SQLITE=stocks.db
 export QTRADE_LOG=$QTRADE/quantrade.log
 export QTRADE_CONFIGURATION=local
 export QTRADE_MODE=dev
-export QTRADE_NMA_KEY=95ea3f34f891fc3963047c70bdcdc01627cc120a46f06960
 export PYTHONPATH=$PYTHONPATH:$QTRADE:$ZIPLINE
+
+#NotifyMyAndroid key, check http://www.notifymyandroid.com/index.jsp
+export QTRADE_NMA_KEY=95ea3f34f891fc3963047c70bdcdc01627cc120a46f06960

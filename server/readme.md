@@ -4,12 +4,30 @@ server
 Code for webapp frontend and distributed stuff
 
 
-Run shiny server
-----------------
-    https://npmjs.org/package/shiny-server
+Shiny server
+------------ 
+
+    As this package needs a greater version of node than debian provide, it is not included by default in package.json.
+    However it is pretty simple to install it, following instructions at https://npmjs.org/package/shiny-server for installation details (more precisions here to come)
+
     Notes: One version is in ~/ShinyApp, the other in /var/shiny-server/www
     Run 'sudo node_modules/.bin/shiny-server [shiny-server.config]'
     Go to http://127.0.0.1:3838/users/xavier/shiny-backtest/ or http://127.0.0.1:3838/shiny-backtest/
+
+
+TODO
+----
+    * A real node package
+    * script to commit changes from ppQuanTrade to ~/ShinyApps/shiny-backtest (unused for now)
+    * Got /var/shiny-server/www/shiny-backtest to work, probably related to R package installation (under user root dir instead of system)
+
+Notes
+-----
+node.js cool logging: logging
+                      logule
+                      tracer
+                      log4js
+
 
 ZMQ logbook Messaging format
 ----------------------------
@@ -41,20 +59,6 @@ ZMQ logbook Messaging format
 ```
 
 
-TODO
-----
-    * A real node package
-    * script to commit changes from ppQuanTrade to ~/ShinyApps/shiny-backtest (unused for now)
-    * Got /var/shiny-server/www/shiny-backtest to work, probably related to R package installation (under user root dir instead of system)
-
-Notes
------
-node.js cool logging: logging
-                      logule
-                      tracer
-                      log4js
-
-
 Ressources
 ----------
     * http://www.rinfinance.com/agenda/
@@ -80,3 +84,7 @@ Ressources
 
     * https://cliff.readthedocs.org/en/latest/
     * http://cement.readthedocs.org/en/portland
+
+https://github.com/jondot/graphene
+http://libsaas.net/
+http://jslate.com/

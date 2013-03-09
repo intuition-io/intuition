@@ -1,5 +1,19 @@
 #!/usr/bin/python
 # encoding: utf-8
+#
+# Copyright 2012 Xavier Bruhiere
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import sys
 import os
@@ -13,7 +27,7 @@ from neuronquant.utils import color_setup, remote_setup, log
 
 if __name__ == '__main__':
     # use 'setup' configuration for logging
-    with remote_setup.applicationbound():
+    with color_setup.applicationbound():
         '''-------------------------------------------------------------------------------------------    Backtest    ----'''
         # Backtest or live engine used
         engine  = Simulation()
@@ -33,12 +47,13 @@ if __name__ == '__main__':
 
         #TODO Implement in datafeed a generic save method (which could call the correct database save method)
         #NOTE Could do a generic save client method (retrieve the correct model, with correct fields)
-        perf_series  = engine.rolling_performances(timestamp='one_month', save=False, db_id='test')
+        perf_series  = engine.rolling_performances(timestamp='one_month', save=True, db_id=args['database'])
         #TODO save returns not ready yet, don't try to save
         #TODO more benchmarks choice (zipline modification)
-        returns_df   = engine.get_returns(benchmark='SP500', save=False)
-        risk_metrics = engine.overall_metrics(save=True, db_id='test')
+        returns_df   = engine.get_returns(benchmark='^GSPC', save=False)
+        risk_metrics = engine.overall_metrics(save=True, db_id=args['database'])
 
+        #FIXME irrelevant results if no transactions were made
         log.info('\n\nReturns: {}% / {}%\nVolatility:\t{}\nSharpe:\t\t{}\nMax drawdown:\t{}\n\n'.format(
                  risk_metrics['Returns'] * 100.0,
                  risk_metrics['Benchmark.Returns'] * 100.0,
@@ -53,7 +68,7 @@ if __name__ == '__main__':
             plt.show()
 
             # R statistical analysis
-            os.system('{}/backtester/analysis.R'.format(os.environ['QTRADE']))
+            os.system('{}/backtester/analysis.R --source mysql --table {} --verbose'.format(os.environ['QTRADE'], args['database']))
             os.system('evince ./Rplots.pdf')
 
 

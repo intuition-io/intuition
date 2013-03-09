@@ -15,17 +15,71 @@ tools to mix languages like Python, node.js and R and a financial library.
 You will find some goodies like machine learning forecast, markowitz portfolio optimization, genetic optimization, sentiment analysis from twitter, ...
 
 
+Features
+--------
+
+    * High configurable trading backtest environment
+    * Made to let you write easily algorithms, portfolio manager, parameters optimization and add data sources
+    * Already include many
+    * Let you integrate R (and soon other languages) in your algorithms
+    * Complete results analyser
+    * Web front end for efficient results visualization
+    * Android notifications (for now with the help of freely available NotifyMyAndroid)
+    * Message architecture for interprocess communication and distributed computing, with a central remote console controling everything
+    * Ressources to learn about quantitative finance (cleaning it, soon to come)
+    * Neuronquant is also a financial library, with common used trading functions, graphics, ... used for example to solve Coursera econometrics assignments
+    * MySQL and SQLite data management for optimized financial storage and access
+    * Advanced computations available: neural networks, natural language processing, genetic optimization, checkout playground directorie !
+
+
+
 Installation
 ------------
-    - Debian based distribution: apt-get install git libzmq-dev node npm R python2.7
-    - git clone https://github.com/Gusabi/ppQuanTrade.git
-    - ./setup.py install (or run: "pip install -r scripts/requirements.txt")
-    - R packages, run: "R < ./scripts/install_r_packages.R --no-save"
-    - Node.js modules, run from [root]/server "npm install"
-    - Edit [root]/config/local.sh to suit your machine
-    - Run a mysql database and edit [root]/config/mysql.cfg 
-    - Create the tables with "./neuronquant/data/database.py -c", then populate it with neuronquant/data/database.py -a symbols.csv (see database/QSDATA for a huge list)
-    - Done !
+
+    - Debian based distribution: sudo apt-get install git libzmq-dev r-base python2.7 mysql-server libmysqlclient-dev npm
+    
+    - Zipline backtster engine: 
+        - Clone (outside QuanTrade project) or fork (then clone your own copy) the original project at https://github.com/quantopian/zipline
+        - Follow zipline normal installation
+        - To stay up-to-date: add streams to the original project and to my fork:
+            - git remote add quantopian https://github.com/quantopian/zipline.git
+            - git remote add neuronquant https://github.com/Gusabi/zipline.git
+            - git fetch quantopian && git merge quantopian/master
+            - git fetch neuronquant && git merge neuronquant/master
+            - note: I keep my version updated with the original, so you usually won't need to fetch both
+
+    - Python dependancies, you can run:
+        - python setup.py install
+        - sudo ./scripts/ordered_pip.sh scripts/qt_requirements.txt && sudo ./scripts/ordered_pip.sh scripts/qt_requirements_extra.txt
+        - Note: You can run as well the script on z_* files if you want to complete the installation now with zipline dependancies
+
+    - R packages, run: ./scripts/install_r_packages.R
+    If you have an error and you just installed R for the first time, install a first package manually and answer interactive questions (default answers are good enough)
+        - type 'R' from command line
+        - > install.packages('quantmod')
+        - choose a repos
+        - go on manually or try again the script
+
+    - Node v0.8.22: 
+        - Download it from node nodejs.org
+        - tar xvzf node-v0.8.22.tar.gz && cd node-v0.8.22
+        - ./configure && make && sudo make install
+    - Node.js modules, run from [root]/server "npm install" or "sudo npm install -g" for a global system installation
+
+    - Edit [root]/config/local.sh to suit your machine and execute 'echo "source path/to/ppQuanTrade/config/local.sh" >> ~/.bashrc'
+
+    - Database:
+        - Make sure you have a well configured mysql database running (check data/readme.rst or http://dev.mysql.com/tech-resources/articles/mysql_intro.html)
+        - mysql -u root -p 'password'
+        - mysql> create database stock_data;  
+        - Edit [root]/config/mysql.cfg 
+        - Create tables with "./neuronquant/data/database.py -c"
+        - Fill it with neuronquant/data/database.py -a symbols.csv (see database/QSDATA for a huge list)
+
+    - NeuronQuant is able to send to your android device(s) notifications, using NotifyMyAndroid. However you will need an API key,
+    available for free with the trial version of the application. Super simple to setup, check their websiteand then edit config/local.sh
+
+    - Congrats you're Done !
 
 
 Getting started
@@ -52,18 +106,27 @@ class Equity(PortfolioManager):
     dispatch equal weigths
     """
     def optimize(self, date, to_buy, to_sell, parameters):
+        # allocations will store stocks weigths, used to process orders later
+        # negative amounts will be sold, positive will be bought
         allocations = dict()
+
+        # Split stocks to buy in equal weigths
         if to_buy:
             fraction = round(1.0 / float(len(to_buy)), 2)
             for s in to_buy:
                 allocations[s] = fraction
+
+        # Simply sell current hold amount per stock
         for s in to_sell:
             allocations[s] = - self.portfolio.positions[s].amount
-        return allocations, 0, 1
+
+        expected_return = 0
+        expected_risk = 1
+        return allocations, expected_return, expected_risk
 ```
 
 Strategies triggering buy or sell signals are used within the great zipline backtester engine and therefore use quite the same scheme,
-plus the manager, and some config parameters. Here a classic momentum strategie:
+plus the manager, and some config parameters. Here is a classic momentum strategie:
 
 ```python
 class Momentum(TradingAlgorithm):
@@ -77,12 +140,14 @@ class Momentum(TradingAlgorithm):
         self.add_transform(MovingAverage, 'mavg', ['price'], window_length=properties.get('window_length', 3))
 
     def handle_data(self, data):
-        ''' ----------------------------------------------------------    Init   --'''
+        ''' __________________________________________________________    Init   __'''
+        # Update the portfolio manager with current simulation universe
         self.manager.update(self.portfolio, self.datetime.to_pydatetime())
         signals = dict()
         notional = 0
 
-        ''' ----------------------------------------------------------    Scan   --'''
+        ''' __________________________________________________________    Scan   __'''
+        # Check every stock in the specified universe and apply the algorithm on it
         for ticker in data:
             sma          = data[ticker].mavg.price
             price        = data[ticker].price
@@ -90,15 +155,19 @@ class Momentum(TradingAlgorithm):
             notional     = self.portfolio.positions[ticker].amount * price
             capital_used = self.portfolio.capital_used
 
-            # notional stuff are portfolio strategies, implement a new one, combinaison => parameters !
+            # Check for sell signal
             if sma > price and notional > -0.2 * (capital_used + cash):
                 signals[ticker] = - price
+
+            # Check for buy signal
             elif sma < price and notional < 0.2 * (capital_used + cash):
                 signals[ticker] = price
 
-        ''' ----------------------------------------------------------   Orders  --'''
+        ''' __________________________________________________________   Orders  __'''
+        # If signals detected, re-compute portfolio allocation and process orders
         if signals:
             order_book = self.manager.trade_signals_handler(signals)
+
             for ticker in order_book:
                 self.order(ticker, order_book[ticker])
                 if self.debug:
@@ -112,24 +181,27 @@ You can setup your trading environment by running from the root directory::
     ./scripts/run_labo.py
 and access to the shiny frontend page. From there configure the backtest, run it and explore detailed results.
 
+Checkout the wiki for more details about web labo front end, remote console use, algorithm optimization,
+neural network forecasting, ...
+
+
+Resources for Newcomers
+-----------------------
+    - [The Wiki](https://github.com/Gusabi/ppQuanTrade/wiki)
+    - [Contributing](https://github.com/Gusabi/ppQuanTrade/wiki/Contribution)
+    - [Tutorial](https://github.com/Gusabi/ppQuanTrade/wiki/How-to-become-a-ninja-trader)
+
 
 Credits
 -------
 
 Projects and websites below are awesome works that i heavily use, learn from and want to gratefully thank:
 
-* pandas http://github.com/pydata/pandas
-
-* r-bloggers http://www.r-bloggers.com/
-
-* zipline http://github.com/quantopian/zipline and quantopian http://wwww.quantopian.com
-
-* QSTK https://github.com/tucker777/QSTK
-
-* coursera http://www.coursera.org/
-
-* udeacity http://www.udacity.com/
-
-* Babypips http://www.babypips.com/
-
-* GLMF http://www.unixgarden.com/
+    - [pandas http://github.com/pydata/pandas
+    - [r-bloggers http://www.r-bloggers.com/
+    - [zipline http://github.com/quantopian/zipline and quantopian http://wwww.quantopian.com
+    - [QSTK https://github.com/tucker777/QSTK
+    - [coursera http://www.coursera.org/
+    - [udeacity http://www.udacity.com/
+    - [Babypips](http://www.babypips.com/)
+    - [GLMF](http://www.unixgarden.com/)
