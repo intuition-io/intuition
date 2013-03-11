@@ -85,6 +85,6 @@ Ressources
     * https://cliff.readthedocs.org/en/latest/
     * http://cement.readthedocs.org/en/portland
 
-https://github.com/jondot/graphene
-http://libsaas.net/
-http://jslate.com/
+    * https://github.com/jondot/graphene
+    * http://libsaas.net/
+    * http://jslate.com/

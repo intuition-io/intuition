@@ -30,6 +30,7 @@ from xml.dom import minidom, Node
 import json
 
 from logbook import Logger
+log = Logger('Remote')
 
 sys.path.append(os.environ['QTRADE'])
 from neuronquant.data.QuantDB import yahooCode, Fields
@@ -52,9 +53,8 @@ class Alias (object):
 #TODO Use requests module to fetch remote data, cleaner http://docs.python-requests.org/en/latest/
 class Fetcher(object):
     ''' Web access to data '''
-    def __init__(self, timezone=pytz.utc, lvl='debug'):
+    def __init__(self, timezone=pytz.utc):
         self.tz = timezone
-        self.log = Logger(self.__class__.__name__)
 
     def getMinutelyQuotes(self, symbol, market, index):
         days = abs((index[index.shape[0] - 1] - index[0]).days)
@@ -66,18 +66,18 @@ class Fetcher(object):
         elif index.freqstr[1] == 'H':
             freq *= 3601
         else:
-            self.log.error('** No suitable time frequency: {}'.format(index.freqstr))
+            log.error('** No suitable time frequency: {}'.format(index.freqstr))
             return None
         url = 'http://www.google.com/finance/getprices?q=%s&x=%s&p=%sd&i=%s' \
                 % (symbol, market, str(days), str(freq + 1))
-        self.log.info('On %d days with a precision of %d secs' % (days, freq))
+        log.info('On %d days with a precision of %d secs' % (days, freq))
         try:
             page = urllib2.urlopen(url)
         except urllib2.HTTPError:
-            self.log.error('** Unable to fetch data for stock: %s'.format(symbol))
+            log.error('** Unable to fetch data for stock: %s'.format(symbol))
             return None
         except urllib2.URLError:
-            self.log.error('** URL error for stock: %s'.format(symbol))
+            log.error('** URL error for stock: %s'.format(symbol))
             return None
         feed = ''
         data = []
@@ -107,7 +107,7 @@ class Fetcher(object):
         try:
             quotes = DataReader(symbol, source, index[0], index[-1])
         except:
-            self.log.error('** Could not get {} quotes'.format(symbol))
+            log.error('** Could not get {} quotes'.format(symbol))
             return pd.DataFrame()
         if index.freq != pd.datetools.BDay() or index.freq != pd.datetools.Day():
             #NOTE reIndexDF has a column arg but here not provided
@@ -117,19 +117,22 @@ class Fetcher(object):
         quotes.columns = Fields.QUOTES
         return quotes
 
-    def get_stock_snapshot(self, symbols, markets, light=True):
-        snapshot = {q: dict() for q in symbols}
+    def get_stock_snapshot(self, symbols, markets=None, light=True):
+        if isinstance(symbols, str):
+            snapshot = {symbols: dict()}
+            symbols = [symbols]
+        elif isinstance(symbols, list):
+            snapshot = {q: dict() for q in symbols}
         if light:
+            assert markets
             data = self._lightSummary(symbols, markets)
         else:
             data = self._heavySummary(symbols)
-        i = 0
         if not data:
-            self.log.error('** No stock informations')
+            log.error('** No stock informations')
             return None
-        for item in symbols:
+        for i, item in enumerate(symbols):
             snapshot[item] = data[i]
-            i += 1
         return snapshot
 
     def _lightSummary(self, symbols, markets):
@@ -138,24 +141,24 @@ class Fetcher(object):
                 % (symbols[0], markets[0])
         for i in range(1, len(symbols)):
             url = url + ',%s:%s' % (symbols[i], markets[i])
-        self.log.info('Retrieving light Snapshot from %s' % url)
+        log.info('Retrieving light Snapshot from %s' % url)
         return json.loads(urllib2.urlopen(url).read()[3:], encoding='latin-1')
 
     def _heavySummary(self, symbols):
         url = 'http://www.google.com/ig/api?stock=' + symbols[0]
         for s in symbols[1:]:
             url = url + '&stock=' + s
-        self.log.info('Retrieving heavy Snapshot from %s' % url)
+        log.info('Retrieving heavy Snapshot from %s' % url)
         try:
             url_fd = urllib2.urlopen(url)
         except IOError:
-            self.log.error('** Bad url: %s' % url)
+            log.error('** Bad url: %s' % url)
             return None
         try:
             xml_doc = minidom.parse(url_fd)
             root_node = xml_doc.documentElement
         except:
-            self.log.error('** Parsing xml google response')
+            log.error('** Parsing xml google response')
             return None
         i = 0
         #snapshot = {q : dict() for q in symbols}
@@ -179,7 +182,7 @@ class Fetcher(object):
         for f in fields:
             #NOTE could just remove field and continue
             if f not in yahooCode:
-                self.log.error('** Invalid stock information request.')
+                log.error('** Invalid stock information request.')
                 return None
         #TODO: remove " from results
         #TODO A wrapper interface to have this document through ticker names

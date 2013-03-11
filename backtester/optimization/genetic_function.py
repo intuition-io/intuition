@@ -57,7 +57,7 @@ class Metric(object):
                 ordered parameters to optimize
         _________________________________________
         Return
-            score: float(1)
+            score: float
                 Error of the cost function ran with this solution
         '''
 

@@ -18,68 +18,68 @@ You will find some goodies like machine learning forecast, markowitz portfolio o
 Features
 --------
 
-    * High configurable trading backtest environment
-    * Made to let you write easily algorithms, portfolio manager, parameters optimization and add data sources
-    * Already include many
-    * Let you integrate R (and soon other languages) in your algorithms
-    * Complete results analyser
-    * Web front end for efficient results visualization
-    * Android notifications (for now with the help of freely available NotifyMyAndroid)
-    * Message architecture for interprocess communication and distributed computing, with a central remote console controling everything
-    * Ressources to learn about quantitative finance (cleaning it, soon to come)
-    * Neuronquant is also a financial library, with common used trading functions, graphics, ... used for example to solve Coursera econometrics assignments
-    * MySQL and SQLite data management for optimized financial storage and access
-    * Advanced computations available: neural networks, natural language processing, genetic optimization, checkout playground directorie !
+* High configurable trading backtest environment
+* Made to let you write easily algorithms, portfolio manager, parameters optimization and add data sources
+* Already include many
+* Let you integrate R (and soon other languages) in your algorithms
+* Complete results analyser
+* Web front end for efficient results visualization
+* Android notifications (for now with the help of freely available NotifyMyAndroid)
+* Message architecture for interprocess communication and distributed computing, with a central remote console controling everything
+* Ressources to learn about quantitative finance (cleaning it, soon to come)
+* Neuronquant is also a financial library, with common used trading functions, graphics, ... used for example to solve Coursera econometrics assignments
+* MySQL and SQLite data management for optimized financial storage and access
+* Advanced computations available: neural networks, natural language processing, genetic optimization, checkout playground directorie !
 
 
 
 Installation
 ------------
 
-    - Debian based distribution: sudo apt-get install git libzmq-dev r-base python2.7 mysql-server libmysqlclient-dev npm
+- Debian based distribution: sudo apt-get install git libzmq-dev r-base python2.7 mysql-server libmysqlclient-dev npm
     
-    - Zipline backtster engine: 
-        - Clone (outside QuanTrade project) or fork (then clone your own copy) the original project at https://github.com/quantopian/zipline
-        - Follow zipline normal installation
-        - To stay up-to-date: add streams to the original project and to my fork:
-            - git remote add quantopian https://github.com/quantopian/zipline.git
-            - git remote add neuronquant https://github.com/Gusabi/zipline.git
-            - git fetch quantopian && git merge quantopian/master
-            - git fetch neuronquant && git merge neuronquant/master
-            - note: I keep my version updated with the original, so you usually won't need to fetch both
+- Zipline backtster engine: 
+   - Clone (outside QuanTrade project) or fork (then clone your own copy) the original project at https://github.com/quantopian/zipline
+   - Follow zipline normal installation
+   - To stay up-to-date: add streams to the original project and to my fork:
+      - git remote add quantopian https://github.com/quantopian/zipline.git
+      - git remote add neuronquant https://github.com/Gusabi/zipline.git
+      - git fetch quantopian && git merge quantopian/master
+      - git fetch neuronquant && git merge neuronquant/master
+      - note: I keep my version updated with the original, so you usually won't need to fetch both
 
-    - Python dependancies, you can run:
-        - python setup.py install
-        - sudo ./scripts/ordered_pip.sh scripts/qt_requirements.txt && sudo ./scripts/ordered_pip.sh scripts/qt_requirements_extra.txt
-        - Note: You can run as well the script on z_* files if you want to complete the installation now with zipline dependancies
+- Python dependancies, you can run:
+   - python setup.py install
+      - sudo ./scripts/ordered_pip.sh scripts/qt_requirements.txt && sudo ./scripts/ordered_pip.sh scripts/qt_requirements_extra.txt
+      - Note: You can run as well the script on z_* files if you want to complete the installation now with zipline dependancies
 
-    - R packages, run: ./scripts/install_r_packages.R
-    If you have an error and you just installed R for the first time, install a first package manually and answer interactive questions (default answers are good enough)
-        - type 'R' from command line
-        - > install.packages('quantmod')
-        - choose a repos
-        - go on manually or try again the script
+- R packages, run: ./scripts/install_r_packages.R. 
+If you have an error and you just installed R for the first time, install a first package manually and answer interactive questions (default answers are good enough)
+   - type 'R' from command line
+   - > install.packages('quantmod')
+   - choose a repos
+   - go on manually or try again the script
 
-    - Node v0.8.22: 
-        - Download it from node nodejs.org
-        - tar xvzf node-v0.8.22.tar.gz && cd node-v0.8.22
-        - ./configure && make && sudo make install
-    - Node.js modules, run from [root]/server "npm install" or "sudo npm install -g" for a global system installation
+- Node v0.8.22: 
+   - Download it from node nodejs.org
+   - tar xvzf node-v0.8.22.tar.gz && cd node-v0.8.22
+   - ./configure && make && sudo make install
+- Node.js modules, run from [root]/server "npm install" or "sudo npm install -g" for a global system installation
 
-    - Edit [root]/config/local.sh to suit your machine and execute 'echo "source path/to/ppQuanTrade/config/local.sh" >> ~/.bashrc'
+- Edit [root]/config/local.sh to suit your machine and execute 'echo "source path/to/ppQuanTrade/config/local.sh" >> ~/.bashrc'
 
-    - Database:
-        - Make sure you have a well configured mysql database running (check data/readme.rst or http://dev.mysql.com/tech-resources/articles/mysql_intro.html)
-        - mysql -u root -p 'password'
-        - mysql> create database stock_data;  
-        - Edit [root]/config/mysql.cfg 
-        - Create tables with "./neuronquant/data/database.py -c"
-        - Fill it with neuronquant/data/database.py -a symbols.csv (see database/QSDATA for a huge list)
+- Database:
+   - Make sure you have a well configured mysql database running (check data/readme.rst or http://dev.mysql.com/tech-resources/articles/mysql_intro.html)
+   - mysql -u root -p 'password'
+   - mysql> create database stock_data;  
+   - Edit [root]/config/mysql.cfg 
+   - Create tables with "./neuronquant/data/database.py -c"
+   - Fill it with neuronquant/data/database.py -a symbols.csv (see database/QSDATA for a huge list)
 
-    - NeuronQuant is able to send to your android device(s) notifications, using NotifyMyAndroid. However you will need an API key,
-    available for free with the trial version of the application. Super simple to setup, check their websiteand then edit config/local.sh
+- NeuronQuant is able to send to your android device(s) notifications, using NotifyMyAndroid. However you will need an API key,
+available for free with the trial version of the application. Super simple to setup, check their websiteand then edit config/local.sh
 
-    - Congrats you're Done !
+- Congrats you're Done !
 
 
 Getting started
@@ -156,11 +156,11 @@ class Momentum(TradingAlgorithm):
             capital_used = self.portfolio.capital_used
 
             # Check for sell signal
-            if sma > price and notional > -0.2 * (capital_used + cash):
+            if sma > price and notional > -0.2 * (capital_used * cash):
                 signals[ticker] = - price
 
             # Check for buy signal
-            elif sma < price and notional < 0.2 * (capital_used + cash):
+            elif sma < price and notional < 0.2 * (capital_used * cash):
                 signals[ticker] = price
 
         ''' __________________________________________________________   Orders  __'''
@@ -187,9 +187,10 @@ neural network forecasting, ...
 
 Resources for Newcomers
 -----------------------
-    - [The Wiki](https://github.com/Gusabi/ppQuanTrade/wiki)
-    - [Contributing](https://github.com/Gusabi/ppQuanTrade/wiki/Contribution)
-    - [Tutorial](https://github.com/Gusabi/ppQuanTrade/wiki/How-to-become-a-ninja-trader)
+
+* [The Wiki](https://github.com/Gusabi/ppQuanTrade/wiki)
+* [Contributing](https://github.com/Gusabi/ppQuanTrade/wiki/Contribution)
+* [Tutorial](https://github.com/Gusabi/ppQuanTrade/wiki/How-to-become-a-ninja-trader)
 
 
 Credits
@@ -197,11 +198,11 @@ Credits
 
 Projects and websites below are awesome works that i heavily use, learn from and want to gratefully thank:
 
-    - [pandas http://github.com/pydata/pandas
-    - [r-bloggers http://www.r-bloggers.com/
-    - [zipline http://github.com/quantopian/zipline and quantopian http://wwww.quantopian.com
-    - [QSTK https://github.com/tucker777/QSTK
-    - [coursera http://www.coursera.org/
-    - [udeacity http://www.udacity.com/
-    - [Babypips](http://www.babypips.com/)
-    - [GLMF](http://www.unixgarden.com/)
+* [Pandas](http://github.com/pydata/pandas)
+* [r-bloggers](http://www.r-bloggers.com/)
+* [Zipline](http://github.com/quantopian/zipline and quantopian http://wwww.quantopian.com)
+* [QSTK](https://github.com/tucker777/QSTK)
+* [Coursera](http://www.coursera.org/)
+* [Udacity](http://www.udacity.com/)
+* [Babypips](http://www.babypips.com/)
+* [GLMF](http://www.unixgarden.com/)

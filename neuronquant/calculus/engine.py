@@ -36,6 +36,7 @@ import logbook
 log = logbook.Logger('Engine')
 
 from zipline.data.benchmarks import get_benchmark_returns
+from zipline.finance.trading import SimulationParameters
 
 
 class BacktesterEngine(object):
@@ -85,17 +86,45 @@ class Simulation(object):
 
         if not bt_cfg:
             parser = argparse.ArgumentParser(description='Backtester module, the terrific financial simukation')
-            parser.add_argument('-v', '--version', action='version', version='%(prog)s v0.8.1 Licence rien du tout', help='Print program version')
-            parser.add_argument('-d', '--delta', type=str, action='store', default='D', required=False, help='Delta in days betweend two quotes fetch')
-            parser.add_argument('-a', '--algorithm', action='store', required=True, help='Trading algorithm to be used')
-            parser.add_argument('-m', '--manager', action='store', required=True, help='Portfolio strategie to be used')
-            parser.add_argument('-b', '--database', action='store', default='test', required=False, help='Table to considere in database')
-            parser.add_argument('-t', '--tickers', action='store', required=True, help='target names to process')
-            parser.add_argument('-s', '--start', action='store', default='1/1/2006', required=False, help='Start date of the backtester')
-            parser.add_argument('-e', '--end', action='store', default='1/12/2010', required=False, help='Stop date of the backtester')
-            parser.add_argument('-r', '--remote', action='store_true', help='Indicates if the program was ran manually or not')
-            parser.add_argument('-l', '--live', action='store_true', help='makes the engine work in real-time !')
-            parser.add_argument('-p', '--port', action='store', default=5570, required=False, help='Activates the diffusion of the universe on the network, on the port provided')
+            parser.add_argument('-v', '--version',
+                                action='version',
+                                version='%(prog)s v0.8.1 Licence rien du tout', help='Print program version')
+            parser.add_argument('-d', '--delta',
+                                type=str, action='store', default='D',
+                                required=False, help='Delta in days betweend two quotes fetch')
+            parser.add_argument('-a', '--algorithm',
+                                action='store',
+                                required=True, help='Trading algorithm to be used')
+            parser.add_argument('-m', '--manager',
+                                action='store',
+                                required=True, help='Portfolio strategie to be used')
+            parser.add_argument('-b', '--database',
+                                action='store', default='test',
+                                required=False, help='Table to considere in database')
+            parser.add_argument('-i', '--initialcash',
+                                type=float, action='store', default=100000.0,
+                                required=False, help='Initial cash portfolio value')
+            parser.add_argument('-t', '--tickers',
+                                action='store', default='random',
+                                required=False, help='target names to process')
+            parser.add_argument('-s', '--start',
+                                action='store', default='1/1/2006',
+                                required=False, help='Start date of the backtester')
+            parser.add_argument('-e', '--end',
+                                action='store', default='1/12/2010',
+                                required=False, help='Stop date of the backtester')
+            parser.add_argument('-ex', '--exchange',
+                                action='store', default='s&p500',
+                                required=False, help='list of markets where trade, separated with a coma')
+            parser.add_argument('-r', '--remote',
+                                action='store_true',
+                                help='Indicates if the program was ran manually or not')
+            parser.add_argument('-l', '--live',
+                                action='store_true',
+                                help='makes the engine work in real-time !')
+            parser.add_argument('-p', '--port',
+                                action='store', default=5570,
+                                required=False, help='Activates the diffusion of the universe on the network, on the port provided')
             args = parser.parse_args()
 
             self.backtest_cfg = {'algorithm'   : args.algorithm,
@@ -107,6 +136,8 @@ class Simulation(object):
                                  'end'         : args.end,
                                  'live'        : args.live,
                                  'port'        : args.port,
+                                 'exchange'    : args.exchange,
+                                 'cash'        : args.initialcash,
                                  'remote'      : args.remote}
         else:
             self.backtest_cfg = bt_cfg
@@ -123,10 +154,7 @@ class Simulation(object):
         else:
             raise NotImplementedError()
 
-        #if self.backtest_cfg['interactive']:
         self.read_config(remote=self.backtest_cfg['remote'], manager=m_cfg, algorithm=a_cfg)
-        #else:
-            #self.server.run_forever(port=self.backtest_cfg['port'], on_recv=self.read_config)
 
         return self.backtest_cfg
 
@@ -178,7 +206,7 @@ class Simulation(object):
         if self.backtest_cfg['tickers'][0] == 'random':
             assert(len(self.backtest_cfg['tickers']) == 2)
             assert(int(self.backtest_cfg['tickers'][1]))
-            self.backtest_cfg['tickers'] = self.feeds.random_stocks(int(self.backtest_cfg['tickers'][1]))
+            self.backtest_cfg['tickers'] = self.feeds.random_stocks(int(self.backtest_cfg['tickers'][1]), exchange=self.backtest_cfg['exchange'].split(','))
 
         if self.backtest_cfg['live']:
             #dates = pd.date_range(self.backtest_cfg['start'], self.backtest_cfg['end'], freq=self.backtest_cfg['delta'])
@@ -210,21 +238,25 @@ class Simulation(object):
                                       self.backtest_cfg['manager'],
                                       self.algo_cfg,
                                       self.manager_cfg)
-        self.results, self.monthly_perfs = backtester.run(data)
-                                                          #self.backtest_cfg['start'],
-                                                          #self.backtest_cfg['end'])
+        self.results, self.monthly_perfs = backtester.run(data,
+                                                          SimulationParameters(capital_base=self.backtest_cfg['cash'],
+                                                                               period_start=self.backtest_cfg['start'],
+                                                                               period_end=self.backtest_cfg['end']))
+
         return self.results
 
     def rolling_performances(self, timestamp='one_month', save=False, db_id=None):
         ''' Filters self.perfs and, if asked, save it to database '''
         #TODO Study the impact of month choice
         #TODO Check timestamp in an enumeration
+        #TODO Implement other benchmarks for perf computation (zipline issue, maybe expected)
 
         #NOTE Script args define default database table name (test), make it consistent
         if db_id is None:
             db_id = self.backtest_cfg['algorithm'] + pd.datetime.strftime(pd.datetime.now(), format='%Y%m%d')
 
         if self.monthly_perfs:
+            #TODO New fields from zipline: information, sortino
             perfs  = dict()
             length = range(len(self.monthly_perfs[timestamp]))
             index  = self._get_index(self.monthly_perfs[timestamp])
@@ -232,6 +264,8 @@ class Simulation(object):
             #perfs['Period']               = np.array([self.monthly_perfs[timestamp][i]['period_label'] for i in length])
             perfs['Period']               = np.array([pd.datetime.date(date)                                      for date in index])
             perfs['Sharpe.Ratio']         = np.array([self.monthly_perfs[timestamp][i]['sharpe']                  for i in length])
+            perfs['Sortino.Ratio']        = np.array([self.monthly_perfs[timestamp][i]['sortino']                 for i in length])
+            perfs['Information']          = np.array([self.monthly_perfs[timestamp][i]['information']             for i in length])
             perfs['Returns']              = np.array([self.monthly_perfs[timestamp][i]['algorithm_period_return'] for i in length])
             perfs['Max.Drawdown']         = np.array([self.monthly_perfs[timestamp][i]['max_drawdown']            for i in length])
             perfs['Volatility']           = np.array([self.monthly_perfs[timestamp][i]['algo_volatility']         for i in length])
@@ -254,10 +288,15 @@ class Simulation(object):
             self.feeds.stock_db.save_metrics(data)
         return data
 
-    def overall_metrics(self, timestamp='one_month', save=False, db_id=None):
-        ''' Use zipline results to compute some performance indicators and store it in database '''
+    def overall_metrics(self, timestamp='one_month', metrics=None, save=False, db_id=None):
+        '''
+        Use zipline results to compute some performance indicators and store it in database
+        '''
         perfs = dict()
-        metrics = self.rolling_performances(timestamp=timestamp, save=False, db_id=db_id)
+
+        # If no rolling perfs provided, computes it
+        if metrics is None:
+            metrics = self.rolling_performances(timestamp=timestamp, save=False, db_id=db_id)
         riskfree = np.mean(metrics['Treasury.Returns'])
 
         #NOTE Script args define default database table name (test), make it consistent
@@ -281,12 +320,16 @@ class Simulation(object):
         returns = dict()
 
         if benchmark:
-            #TODO Benchmark fields in database for guessing name like for stocks
-            benchmark_symbol = '^GSPC'
-            benchmark_data  = get_benchmark_returns(benchmark_symbol, self.backtest_cfg['start'], self.backtest_cfg['end'])
+            benchmark_symbol = self.feeds.guess_name(benchmark)
+            if benchmark_symbol:
+                benchmark_data  = get_benchmark_returns(benchmark_symbol, self.backtest_cfg['start'], self.backtest_cfg['end'])
+            else:
+                raise KeyError()
         else:
+            #TODO Automatic detection given exchange market (on command line) ? Or s&p500 as only implemented in zipline currently (but not for long !)
             raise NotImplementedError()
-        #benchmark_data = [d for d in benchmark_data if (d.date >= self.backtest_cfg['start']) and (d.date <= self.backtest_cfg['end'])]
+
+        #NOTE Could be more efficient. But len(benchmark_data.date) != len(self.results.returns.index). Maybe because of different markets
         dates = pd.DatetimeIndex([d.date for d in benchmark_data])
 
         returns['Benchmark.Returns']  = pd.Series([d.returns for d in benchmark_data], index=dates)

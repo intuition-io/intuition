@@ -102,7 +102,7 @@ class DataLiveSource(DataSource):
             for sid in self.data['tickers']:
                 if sid in self.sids:
                     symbol = self.feed.guess_name(sid).lower()
-                    snapshot = self.remote.get_stock_snapshot([symbol], ['nasdaq'], light=False)
+                    snapshot = self.remote.get_stock_snapshot(symbol, light=False)
                     log.debug('Data available:\n{}'.format(json.dumps(snapshot,
                                                            sort_keys=True, indent=4, separators=(',', ': '))))
                     if not snapshot:

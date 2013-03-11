@@ -14,24 +14,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Inspired from https://github.com/hamiltonkibbe/stocks.git
 
 import csv
 from datetime import date, timedelta
-from models import Base, Symbol, Quote, Metrics, Performances
-#, Indicator
+from models import Base, Symbol, Quote, Metrics, Performances, Portfolio
 from numpy import array
-#, asarray
 from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
-#, joinedload
 from sqlalchemy.sql import and_
 
-#import indicators
 import os
 import json
 import yahoofinance as quotes
 
-import plac
 import logbook
 log = logbook.Logger('Database')
 
@@ -110,9 +106,7 @@ class Manager(object):
         stock = Symbol(ticker, name, exchange, sector, industry)
         session.add(stock)
 
-        q = self._download_quotes(ticker, date(1960, 01, 01), date.today())
-        #for quote in q:
-            #quote.Features = Indicator(quote.Id)
+        q = self._download_quotes(ticker, date(2000, 01, 01), date.today())
         session.add_all(q)
         session.commit()
         session.close()
@@ -134,21 +128,6 @@ class Manager(object):
                     for val in data if len(val) > 6]
         else:
             return
-
-    #def _calculate_indicators(self, ticker):
-        #""" Calculate indicators and add to indicators table
-        #"""
-        #ticker = ticker.lower()
-        #session = self.db.Session()
-        #data = asarray(zip(*[(int(quote.Id), quote.AdjClose)
-                             #for quote in session.query(Quote)
-                             #.filter_by(Ticker=ticker)
-                             #.order_by(Quote.Date).all()]))
-        #for ind in indicators.calculate_all(data):
-            #if not self.check_indicator_exists(ind.Id, session):
-                #session.add(ind)
-        #session.commit()
-        #session.close()
 
     def update_quotes(self, ticker, check_all=True):
         """
@@ -254,13 +233,12 @@ class Client(object):
         self.manager = Manager()
 
     def save_metrics(self, dataframe):
-        """
-        """
         session = self.db.Session()
         #TODO Id and other politics to define
         session.execute("delete from Metrics where Name = '{}'".format(dataframe['Name'][0]))
         #NOTE This function is not generic AT ALL
         metrics_object = [Metrics(dataframe['Name'][i], dataframe['Period'][i], dataframe['Sharpe.Ratio'][i],
+                                  dataframe['Sortino.Ratio'], dataframe['Information'],
                                   dataframe['Returns'][i], dataframe['Max.Drawdown'][i], dataframe['Volatility'][i],
                                   dataframe['Beta'][i], dataframe['Alpha'][i], dataframe['Excess.Returns'][i],
                                   dataframe['Benchmark.Returns'][i], dataframe['Benchmark.Volatility'][i],
@@ -271,16 +249,22 @@ class Client(object):
         session.close()
 
     def save_performances(self, dataframe):
-        """
-        """
+        #TODO Same as above function and future save_returns
         session = self.db.Session()
-        #TODO Id and other politics to define
         session.execute("delete from Performances where Name = '{}'".format(dataframe['Name']))
-        #NOTE This function is not generic AT ALL
         perfs_object = Performances(dataframe['Name'], dataframe['Sharpe.Ratio'], dataframe['Returns'],
                                   dataframe['Max.Drawdown'], dataframe['Volatility'], dataframe['Beta'],
                                   dataframe['Alpha'], dataframe['Benchmark.Returns'])
         session.add(perfs_object)
+        session.commit()
+        session.close()
+
+    def save_portfolio(self, dataframe):
+        #TODO save and pop positions field
+        session = self.db.Session()
+        session.execute("delete from Performances where Name = '{}'".format(dataframe['Name']))
+        portfolio_object = Portfolio(**dataframe)
+        session.add(portfolio_object)
         session.commit()
         session.close()
 
@@ -354,44 +338,20 @@ class Client(object):
         session.close()
         return asset
 
-    def available_stocks(self, key='name'):
+    def available_stocks(self, key='name', exchange=None):
         ''' Return a list of the stocks available in the database '''
         session = self.db.Session()
         if key == 'symbol':
-            stocks = array([stock.Ticker for stock in session.query(Symbol).all()])
+            if exchange:
+                stocks = array([stock.Ticker for stock in session.query(Symbol).filter(Symbol.Exchange == exchange).all()])
+            else:
+                stocks = array([stock.Ticker for stock in session.query(Symbol).all()])
         elif key == 'name':
-            stocks = [stock.Name for stock in session.query(Symbol).all()]
+            if exchange:
+                stocks = [stock.Name for stock in session.query(Symbol).filter(Symbol.Exchange == exchange).all()]
+            else:
+                stocks = [stock.Name for stock in session.query(Symbol).all()]
         else:
             raise NotImplementedError()
         session.close()
         return stocks
-
-
-@plac.annotations(
-    symbols=plac.Annotation("Add provided stocks to db", 'option', 'a'),
-    sync=plac.Annotation("Update quotes stored in db", 'flag', 's'),
-    create=plac.Annotation("Create database from written models", 'flag', 'c'))
-def main(sync, create, symbols=None):
-    ''' MySQL Stocks database manager '''
-    db = Manager()
-
-    if create:
-        db.create_database()
-
-    if sync:
-        db.sync_quotes()
-
-    else:
-        assert symbols
-        if symbols.find('csv') > 0:
-            db.add_stock_from_file(symbols)
-        elif symbols.find(',') > 0:
-            stocks = symbols.split(',')
-            for ticker in stocks:
-                db.add_stock(ticker)
-        else:
-            db.add_stock(symbols)
-
-
-if __name__ == '__main__':
-        plac.call(main)

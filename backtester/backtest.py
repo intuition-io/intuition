@@ -41,7 +41,7 @@ if __name__ == '__main__':
         '''---------------------------------------------------------------------------------------------    Results   ----'''
         log.info('Portfolio returns: {}'.format(results.portfolio_value[-1]))
 
-        if args['live'] or results.portfolio_value[-1] == 100000:
+        if args['live'] or results.portfolio_value[-1] == args['cash']:
             # Currently tests don't last more than 20min, analysis is not relevant, neither backtest without orders
             sys.exit(0)
 
@@ -50,8 +50,8 @@ if __name__ == '__main__':
         perf_series  = engine.rolling_performances(timestamp='one_month', save=True, db_id=args['database'])
         #TODO save returns not ready yet, don't try to save
         #TODO more benchmarks choice (zipline modification)
-        returns_df   = engine.get_returns(benchmark='^GSPC', save=False)
-        risk_metrics = engine.overall_metrics(save=True, db_id=args['database'])
+        returns_df   = engine.get_returns(benchmark='cac', save=False)
+        risk_metrics = engine.overall_metrics(metrics=perf_series, save=True, db_id=args['database'])
 
         #FIXME irrelevant results if no transactions were made
         log.info('\n\nReturns: {}% / {}%\nVolatility:\t{}\nSharpe:\t\t{}\nMax drawdown:\t{}\n\n'.format(
@@ -66,6 +66,7 @@ if __name__ == '__main__':
             data = returns_df.drop(['Returns', 'Benchmark.Returns'], axis=1)
             data.plot()
             plt.show()
+            import ipdb; ipdb.set_trace()
 
             # R statistical analysis
             os.system('{}/backtester/analysis.R --source mysql --table {} --verbose'.format(os.environ['QTRADE'], args['database']))

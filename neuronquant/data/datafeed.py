@@ -71,18 +71,38 @@ class DataFeed(object):
         symbol = self.guess_name(ticker)
         return self.stock_db.get_infos(symbol=symbol)
 
-    def random_stocks(self, n=5):
+    def random_stocks(self, n=5, exchange=None):
         ''' Return n random stock names from database '''
         log.info('Generating {} random stocks'.format(n))
-        stocks = self.stock_db.available_stocks()
+        stocks = []
+        if isinstance(exchange, str):
+            exchange = [exchange]
+        for ex in exchange:
+            stocks.extend(self.stock_db.available_stocks(exchange=ex))
         random.shuffle(stocks)
         if n > len(stocks):
             log.warning('{} asked symbols but only {} availables'.format(n, len(stocks)))
             n = len(stocks)
         return stocks[:n]
 
+    def get_universe(self, exchange=None, limit=10):
+        '''
+        Get a set of stocks, as the universe on which we will trade
+        ___________________________________________________________
+        Parameters
+            exhange: str or list(...)
+                Market(s) to search for stocks
+            limit: int
+                Limit of stocks to provide (big amount can make the simulation a mess)
+        ___________________________________________________________
+        Return
+            stocks: list(limit | max found)
+                Provide stock list according to specified criteria
+        '''
+        log.info('Generating stock universe')
+        return self.random_stocks(n=limit, exhange=exchange)
+
     def guess_name(self, partial_input):
-        #NOTE Everything could work with symbols, under this interface
         ''' Find the closest math of partial_input in stocks database, and return its symbol '''
         match = [name for name in self.stock_db.available_stocks(key='name') if re.match(partial_input, name, re.IGNORECASE) is not None]
         if not match:
@@ -91,7 +111,7 @@ class DataFeed(object):
             if match:
                 infos = self.stock_db.get_infos(symbol=match[0])
             else:
-                return partial_input
+                return None
         else:
             infos = self.stock_db.get_infos(name=match[0])
         return infos.Ticker

@@ -11,13 +11,17 @@ program
   .usage('[command] <args>')
   .description('RSS feeds checker')
   .option('-u, --url <url>', 'specify the rss feed url', String, 'example')
-  .option('-h, --host <adress>', 'mysql database adress', String, 'localhost')
-  .option('-p, --password <chut>', 'mysql password')
+  .option('-s, --server <adress>', 'mysql database adress', String, 'localhost')
+  .option('-p, --password <chut>', 'mysql password', String, '')
   .parse(process.argv);
 
+if (program.password == '') {
+    log('** Error: You must provide MySQL password');
+    process.exit(1);
+}
 
 var connection = mysql.createConnection({
-    host     : program.host,
+    host     : program.server,
     user     : config.db.user,
     password : program.password,
     database : config.db.name
@@ -50,8 +54,9 @@ feedparser.parseUrl(config.sources[program.url])
     })
     .on('article', function callback (article) {
         //TODO Store some stuff here in mysql
-        log(article.date, ' - ', article.title, ' (', article.link, ')');
-        log(article.description)
+        log(article.date, ' - ', article.title);
+        //log(article.date, ' - ', article.title, ' (', article.link, ')');
+        //log(article.description)
     })
     .on('end', function() {
         log('Parsing completed');

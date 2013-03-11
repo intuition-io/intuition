@@ -1,5 +1,12 @@
-suppressPackageStartupMessages(require(RMySQL))
-if (!suppressPackageStartupMessages(require("RSQLite"))) {
+if (!suppressPackageStartupMessages(require(RMySQL))) {
+    stop('This app needs sqlite database access. To install it, run "install.packages("RMySQL")".)')
+}
+
+if (!suppressPackageStartupMessages(require(RJSONIO))) {
+    stop('This app needs to read json config file. To install it, run "install.packages("RJSONIO")".)')
+}
+
+if (!suppressPackageStartupMessages(require(RSQLite))) {
     stop('This app needs sqlite database access. To install it, run "install.packages("RSQLite")".)')
 }
 
@@ -82,16 +89,31 @@ getFromSQLite <- function(name='test', database='stocks.db', debug=FALSE)
     return(strategie)
 }
 
-getMetricsFromMySQL <- function(dataId, dbname='stock_data', password='', user='xavier', host='localhost', overall=FALSE, debug=FALSE)
+# Access to backtest perfs stored in MySQL database
+getMetricsFromMySQL <- function(dataId,                # Table the backtest saved metrics
+                                dbfile  = 'mysql.cfg', # Json mysql configuration file
+                                overall = FALSE,       # When True, get final perfs, monthly otherwise
+                                debug   = FALSE)
 {
-    db = dbConnect(MySQL(), user=user, password=password, dbname=dbname, host=host) 
+    # Getting database user settings
+    config <- fromJSON(file(paste(Sys.getenv('QTRADE'), 'config', dbfile, sep='/'), 'r'))
+
+    db = dbConnect(MySQL(),
+                   user     = config['USER'][[1]],
+                   password = config['PASSWORD'][[1]],
+                   dbname   = config['DATABASE'][[1]],
+                   host     = config['HOSTNAME'][[1]])
     on.exit(dbDisconnect(db))
+
+    # Choosing between final backtest analysis, or monthly perfs
 	if ( overall ) 
 	{
 		table <- 'Performances'
 	} else {
 		table <- 'Metrics'
 	}
+
+    # Getting data
     stmt <- paste("SELECT * FROM ", table, " WHERE Name='", dataId, "'", sep="")
     rs = dbSendQuery(db, stmt)
     input <- fetch(rs, -1)
@@ -101,28 +123,39 @@ getMetricsFromMySQL <- function(dataId, dbname='stock_data', password='', user='
         head(input)
         summary(input)
     }
+    # monthly perfs are time series, casting it in suitable type data: xts
 	if ( !overall )
     	input =  xts(subset(input, select=-c(Name, Period, Id)), order.by=as.Date(input$Period))
+
 	return(input)
 }
 
 #TODO Add dates selection
-getTradeData <- function(dataId='test', database='stocks.db', source='sqlite', overall=FALSE, debug=FALSE)
+# Common interface to access data
+getTradeData <- function(dataId   = 'test',       # Table to access
+                         source   = 'sqlite',     # Type of data store
+                         config   = 'mysql.cfg',  # MySQL configuraiotn file
+                         database = 'stocks.db',  # SQLite database name
+                         overall  = FALSE,        # Final or monthly perfs
+                         debug    = FALSE)
 {
     if (source == 'sqlite')
     {
         perfs <- getFromSQLite(dataId, database, debug)
     }
+
     else if (source == 'mysql')
     {
-        perfs <- getMetricsFromMySQL(dataId, password='quantrade', overall=overall, debug=debug)
+        perfs <- getMetricsFromMySQL(dataId, dbfile=config, overall=overall, debug=debug)
     }
+
     if (debug)
     {
         head(perfs)
         print('...')
         tail(perfs)
     }
+
     return(perfs)
 }
 

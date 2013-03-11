@@ -2,10 +2,6 @@
 
 ## Quick run of usual backtests
 
-#$QTRADE/backtest.py -t google,apple -a BuyAndHold -m Constant -s 2012-02-06 -e 2012-02-10 -d 2min --live
+#$QTRADE/backtester/backtest.py -t google,apple -a BuyAndHold -m Constant -s 2012-02-06 -e 2012-02-10 -d 2min --exchange paris --live
 
-$QTRADE/backtester/backtest.py -t random,4 -a DualMA -m OptimalFrontier -s 2005-01-10 -e 2010-07-03 --database test
-#$QTRADE/backtest.py -t apple,starbucks -a DualMA -m OptimalFrontier -s 2005-01-10 -e 2010-07-03 
-#$QTRADE/backtest.py -t random,6 -a DualMA -m OptimalFrontier -s 2005-01-10 -e 2010-07-03 
-
-#$QTRADE/backtest.py -t random,3 -a BuyAndHold -m Constant -s 2005-01-10 -e 2010-07-03 --remote
+$QTRADE/backtester/backtest.py -i 50000 -t random,40 -a DualMA -m Constant -s 2005-01-10 -e 2010-07-03 --database test --exchange nasdaq

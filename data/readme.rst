@@ -1,11 +1,13 @@
 Description
 -----------
+
     * feeds.db stores news (from twitter for now) for further natural language processing
     * stocks.db is the sqlite database
     * QSDATA, inspired by qstk project, stores csv files
 
 nota Mysql
 ----------
+
     mysqladmin -u root
     mysql> set password for 'root'@'localhost' = password('password');
     mysql> create user 'user'@'host' identified by 'password'

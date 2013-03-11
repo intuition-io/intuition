@@ -3,47 +3,57 @@
 #FIXME Each change make the server to re-read the database (or data)
 shinyServer(function(input, output) 
 {
-    #NOTE parameters hard coded !
+    #TODO parameters hard coded ! Re-think this part
     compute <- reactive(function() 
     {
         arguments <- list(ticker   = list(prefix = '--ticker'    , value = input$ticker),
                          algorithm = list(prefix = '--algorithm' , value = input$strategie),
                          delta     = list(prefix = '--delta'     , value = 1),
                          manager   = list(prefix = '--manager'   , value = input$manager),
+                         mode      = list(prefix = 'flag'        , value = '--remote'),
                          start     = list(prefix = '--start'     , value = paste(min(input$dateSlider), '-10-01', sep='')),
                          end       = list(prefix = '--end'       , value = paste(max(input$dateSlider), '-10-07', sep='')))
                          
         if (input$strategie == 'DualMA')
         {
-            algorithm <- list(short_window  = round(input$shortW * input$longW),
-                              long_window   = input$longW,
-                              threshold = input$threshold)
+            algo <- list(short_window     = round(input$shortW * input$longW),
+                              long_window = input$longW,
+                              threshold   = input$threshold,
+                              debug       = input$debug)
         }
         else if (input$strategie == 'Momentum') 
         {
-            algorithm <- list(debug = input$debug,
+            algo <- list(debug = input$debug,
                               window_length = input$window)
         }
         else (input$strategie == 'BuyAndHold') 
         {
-            algorithm <- list(debug = input$debug)
+            algo <- list(debug = input$debug)
         }
 
-        manager <- list(loopback = input$loopback,
-                        source   = input$source)
+        portfolio <- list(loopback    = input$loopback,
+                        source      = input$source,
+                        max_weight  = 0.5,
+                        connected   = 0,
+                        buy_amount  = 200,
+                        sell_amount = 100)
 
-        request <- list(command   = 'run',
-                       script     = 'backtester/backtest.py',
-                       monitoring = 0,
-                       args       = arguments,
-                       algo       = algorithm,
-                       manager    = manager)
+        config <- list(algorithm = algo,
+                       manager   = portfolio)
+
+        request <- list(type          = 'fork',
+                        script        = 'backtester/backtest.py',
+                        port          = 5555,
+                        monitoring    = 0,
+                        args          = arguments,
+                        configuration = config)
         
         if ( input$done )
         {
-            remoteNodeWorker(request, port=8124, debug=F)
+            remoteNodeWorker(request, port=5555, debug=F)
+            #zmqSend(request, config='default.json', debug=TRUE)
         } 
-        getTradeData(dataId=input$dataTable, source='mysql')
+        getTradeData(dataId=input$dataTable, config='mysql.cfg', source='mysql')
     })
 
     output$performance <- reactivePlot(function() 
