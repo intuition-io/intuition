@@ -1,0 +1,11 @@
+/* Distributed parameters
+ *
+ * Control networl layer
+ */
+{
+    "network": {
+        "frontport": "tcp://127.0.0.1:5555",
+        "backport": "tcp://127.0.0.1:5570",
+        "logger": "tcp://127.0.0.1:5540"
+    }
+}
