@@ -21,11 +21,10 @@ import sqlite3 as sql
 from decorators import *
 from logger import LogSubsystem
 
+
 '''---------------------------------------------------------------------------------------
 SQLite Wrapper
 ---------------------------------------------------------------------------------------'''
-
-
 class SQLiteWrapper(object):
     def __init__(self, filename="stocks.db", logger=None):
         super(SQLiteWrapper, self).__init__()

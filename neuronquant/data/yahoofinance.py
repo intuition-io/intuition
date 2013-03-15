@@ -161,6 +161,22 @@ def get_industry(symbol):
         pass
     return industry
 
+def get_type(symbol):
+    '''
+    Uses BeautifulSoup to scrape the symbol category from the Yahoo! Finance website
+    '''
+    url = 'http://finance.yahoo.com/q/pr?s=%s+Profile' % symbol
+    soup = BeautifulSoup(urllib.urlopen(url).read())
+    if soup.find('span', text='Business Summary'):
+        return 'Action'
+    elif soup.find('span', text='Fund Summary'):
+        asset_type = 'Fund'
+    elif symbol.find('^') == 0:
+        asset_type = 'Index'
+    else:
+        pass
+    return asset_type
+
 
 def get_historical_prices(symbol, start_date, end_date):
     """

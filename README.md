@@ -36,45 +36,46 @@ Features
 Installation
 ------------
 
-- Debian based distribution: sudo apt-get install git libzmq-dev r-base python2.7 mysql-server libmysqlclient-dev npm
+- Debian based distribution: sudo apt-get install git libzmq-dev r-base python2.7 mysql-server libmysqlclient-dev npm pip planner
     
 - Zipline backtster engine: 
    - Clone (outside QuanTrade project) or fork (then clone your own copy) the original project at https://github.com/quantopian/zipline
    - Follow zipline normal installation
    - To stay up-to-date: add streams to the original project and to my fork:
-      - git remote add quantopian https://github.com/quantopian/zipline.git
-      - git remote add neuronquant https://github.com/Gusabi/zipline.git
-      - git fetch quantopian && git merge quantopian/master
-      - git fetch neuronquant && git merge neuronquant/master
+      - ```./zipline $> git remote add quantopian https://github.com/quantopian/zipline.git ```
+      - ```./zipline $> git remote add neuronquant https://github.com/Gusabi/zipline.git ```
+      - ```./zipline $> git fetch quantopian && git merge quantopian/master ```
+      - ```./zipline $> git fetch neuronquant && git merge neuronquant/master ```
       - note: I keep my version updated with the original, so you usually won't need to fetch both
 
 - Python dependancies, you can run:
-   - python setup.py install
-      - sudo ./scripts/ordered_pip.sh scripts/qt_requirements.txt && sudo ./scripts/ordered_pip.sh scripts/qt_requirements_extra.txt
-      - Note: You can run as well the script on z_* files if you want to complete the installation now with zipline dependancies
+    - ``` BROKEN ./ppQuanTrade #> python setup.py install```
+    - ``` ./ppQuanTrade $> sudo ./scripts/ordered_pip.sh scripts/qt_requirements.txt && sudo ./scripts/ordered_pip.sh scripts/qt_requirements_extra.txt ```
+    - Note: You can run as well the script on z_* files if you want to complete the installation now with zipline dependancies
 
-- R packages, run: ./scripts/install_r_packages.R. 
+- R packages, run:  ```ppQuanTrade $> ./scripts/install_r_packages.R. ```
 If you have an error and you just installed R for the first time, install a first package manually and answer interactive questions (default answers are good enough)
-   - type 'R' from command line
-   - > install.packages('quantmod')
-   - choose a repos
-   - go on manually or try again the script
+   - ``` $> R ```
+   - ``` > install.packages('quantmod') ```
+   - Choose a repos
+   - Go on manually or try again the script
 
 - Node v0.8.22: 
    - Download it from node nodejs.org
-   - tar xvzf node-v0.8.22.tar.gz && cd node-v0.8.22
-   - ./configure && make && sudo make install
-- Node.js modules, run from [root]/server "npm install" or "sudo npm install -g" for a global system installation
+   - ``` $> tar xvzf node-v0.8.22.tar.gz && cd node-v0.8.22 ```
+   - ``` node-v0.8.22/ $> ./configure && make && sudo make install ```
+- Node.js modules:  ``` ./ppQuanTrade/server $> npm install ```
 
-- Edit [root]/config/local.sh to suit your machine and execute 'echo "source path/to/ppQuanTrade/config/local.sh" >> ~/.bashrc'
+- Edit ppQuanTrade/config/local.sh to suit your machine and execute ``` $> echo "source path/to/ppQuanTrade/config/local.sh" >> ~/.bashrc' ```
 
 - Database:
    - Make sure you have a well configured mysql database running (check data/readme.rst or http://dev.mysql.com/tech-resources/articles/mysql_intro.html)
-   - mysql -u root -p 'password'
-   - mysql> create database stock_data;  
-   - Edit [root]/config/mysql.cfg 
-   - Create tables with "./neuronquant/data/database.py -c"
-   - Fill it with neuronquant/data/database.py -a symbols.csv (see database/QSDATA for a huge list)
+   - ``` $> mysql -u root -p ```
+   - ```mysql> create database stock_data;```
+   - ```mysql> grant all privileges on *.* to 'user'@'host'```
+   - Edit ./ppQuanTrade/config/mysql.cfg 
+   - Create tables with ```./ppQuanTrade $>`./scripts/database.py -c```
+   - Fill it with ``` ./ppQuanTrade $> ./scripts/database.py -a data/dump_sql.csv ```
 
 - NeuronQuant is able to send to your android device(s) notifications, using NotifyMyAndroid. However you will need an API key,
 available for free with the trial version of the application. Super simple to setup, check their websiteand then edit config/local.sh

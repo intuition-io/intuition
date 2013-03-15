@@ -15,8 +15,12 @@
 
 
 import abc
-import json
 from logbook import Logger
+
+from neuronquant.data.datafeed import DataFeed
+from neuronquant.utils import to_dict
+
+import zipline.protocol as zp
 
 
 class PortfolioManager:
@@ -37,21 +41,15 @@ class PortfolioManager:
                 (server and constraints), and for user optimizer function
         '''
         super(PortfolioManager, self).__init__()
-        self.log = Logger('Manager')
-        self.portfolio       = None
-        self.date            = None
+        self.log       = Logger('Manager')
+        self.feed      = DataFeed()
+        self.portfolio = None
+        self.date      = None
+        self.name      = parameters.get('name', 'Chuck Norris')
         self._optimizer_parameters = parameters
         self.connected = False
         self.server = parameters.get('server', None)
-        #TODO Message emission only if a client exists ? Could try to bind and give up if no connections
-        #NOTE Non blocking recv(): https://github.com/zeromq/pyzmq/issues/132   /  zmq.NOBLOCK ?
-        #NOTE good example: http://zguide2.zeromq.org/py:peering3
-        #if self.server.ports is not None:
-            #startup_msg = self.server.receive()
-            #self.connected = True
-            #log.info(json.dumps(startup_msg, indent=4, separators=(',', ': ')))
         #TODO Should send stuff anyway, and accept new connections while running
-        #else:
 
         self.connected = parameters.get('connected', False)
 
@@ -80,19 +78,13 @@ class PortfolioManager:
         '''
         self.portfolio = portfolio
         self.date      = date
-        #TODO A generic method: f(ndict) = dict()
-        #portfolio.start_date = portfolio.start_date.strftime(format='%Y-%m-%d %H:%M')
-        #FIXME remote console receives nothing
+
         if self.connected:
-            self.server.send({'positions': json.loads(str(portfolio.positions).replace('Position(', '').replace(')', '').replace("'", '"')),
-                              'value': portfolio.portfolio_value,
-                              'cash': portfolio.cash,
-                              'returns': portfolio.returns,
-                              'pnl': portfolio.pnl,
-                              'capital_used': portfolio.capital_used,
-                              'actif': portfolio.positions_value},
-                              type='portfolio',
-                              channel='dashboard')
+            self.server.send(to_dict(portfolio),
+                              type    = 'portfolio',
+                              channel = 'dashboard')
+
+            return self.catch_messages()
 
     def trade_signals_handler(self, signals):
         '''
@@ -116,20 +108,21 @@ class PortfolioManager:
         #TODO Check about selling in available money and handle 250 stocks limit
         #TODO Handle max_* as well, ! already actif stocks
 
-        # Building orders for zipline
+        ## Building orders for zipline
+        #NOTE The follonwing in a separate function that could be used when catching message from user
         for t in alloc:
-            # Handle allocation returned as number of stocks to order
+            ## Handle allocation returned as number of stocks to order
             if isinstance(alloc[t], int):
                 orderBook[t] = alloc[t]
 
-            # Handle allocation returned as stock weights to order
+            ## Handle allocation returned as stock weights to order
             elif isinstance(alloc[t], float):
                 # Sell orders
                 if alloc[t] <= 0:
                     orderBook[t] = int(alloc[t] * self.portfolio.positions[t].amount)
-                # Buy orders
+                ## Buy orders
                 else:
-                    # If we already trade this ticker, substract owned amount before computing number of stock to buy
+                    ## If we already trade this ticker, substract owned amount before computing number of stock to buy
                     if self.portfolio.positions[t].amount:
                         price = self.portfolio.positions[t].last_sale_price
                     else:
@@ -151,3 +144,79 @@ class PortfolioManager:
         '''
         for name, value in parameters.iteritems():
             self._optimizer_parameters[name] = value
+
+    #TODO Still need here this dict = f(ndict)
+    def save_portfolio(self, portfolio):
+        '''
+        Store in database given portfolio,
+        for reuse later or further analysis puropose
+        ____________________________________________
+        Parameters
+            portfolio: zipline.protocol.Portfolio(1)
+                ndict portfolio object to store
+        ___________________________________________
+        '''
+        self.log.info('Saving portfolio in database')
+        self.feed.stock_db.save_portfolio(portfolio, self.name, self.date)
+
+    def load_portfolio(self, name):
+        '''
+        Load a complete portfolio object from database
+        ______________________________________________
+        Parameters
+            name: str(...)
+                name used as primary key in db for the portfolio
+        ______________________________________________
+        Return
+            The portfolio with the given name if found,
+            None otherwize
+        '''
+        self.log.info('Loading portfolio from database')
+        ## Get the portfolio as a pandas Serie
+        db_pf = self.feed.saved_portfolios(name)
+        ## The function returns None if it didn't find a portfolio with id 'name' in db
+        if db_pf is None:
+            return None
+
+        # Creating portfolio object
+        portfolio = zp.Portfolio()
+
+        portfolio.capital_used = db_pf['Capital']
+        portfolio.starting_cash = db_pf['StartingCash']
+        portfolio.portfolio_value = db_pf['PortfolioValue']
+        portfolio.pnl = db_pf['PNL']
+        portfolio.returns = db_pf['Returns']
+        portfolio.cash = db_pf['Cash']
+        portfolio.start_date = db_pf['StartDate']
+        portfolio.positions = self._get_positions(db_pf['Positions'])
+        portfolio.positions_value = db_pf['PositionsValue']
+
+        return portfolio
+
+    def _get_positions(self, db_pos):
+        '''
+        From array of sql Positions data model
+        To Zipline Positions object
+        '''
+        positions = zp.Positions()
+
+        for pos in db_pos:
+            if pos.Ticker not in positions:
+                positions[pos.Ticker] = zp.Position(pos.Ticker)
+            position = positions[pos.Ticker]
+            position.amount = pos.Amount
+            position.cost_basis = pos.CostBasis
+            position.last_sale_price = pos.LastSalePrice
+
+        return positions
+
+    def catch_messages(self, timeout=1):
+        '''
+        Listen for user messages,
+        process usual orders
+        '''
+        msg = self.server.noblock_recv(timeout=timeout, json=True)
+        #TODO msg is a command or an information, process it
+        if msg:
+            self.log.info('Got message from user: {}'.format(msg))
+        return msg

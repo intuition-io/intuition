@@ -14,8 +14,6 @@
 # limitations under the License.
 
 
-import ipdb as pdb
-
 import datetime as dt
 import pytz
 
@@ -30,6 +28,14 @@ import numpy as np
 import re
 import socket
 from urllib2 import urlopen
+
+
+def to_dict(obj):
+    dict_obj = obj.__dict__
+    for key, value in dict_obj.iteritems():
+        if key.find('date') >= 0:
+            dict_obj[key] = value.strftime(format='%Y-%m-%d %H:%M')
+    return dict_obj
 
 
 def get_ip(public=False):

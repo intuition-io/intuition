@@ -11,14 +11,15 @@
     "main": "forwarder.js",
     "scripts": {},
     "dependencies": {
-        "zmq": "*",
-        "xml2js": "*",
-        "request": "*",
-        "commander": "*",
-        "logging": "*",
-        "config": "*",
-        "ncurses": "*",
-        "sleep": "*"
+        "zmq"       : "*",
+        "xml2js"    : "*",
+        "request"   : "*",
+        "sax"       : "*",
+        "commander" : "*",
+        "logging"   : "*",
+        "config"    : "*",
+        "ncurses"   : "*",
+        "sleep"     : "*"
     },
     "devDependencies": {},
     "optionalDependencies": {},

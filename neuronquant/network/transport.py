@@ -17,16 +17,12 @@
 import threading
 import signal
 import logbook
-import ipdb as pdb
 
 import zmq
 import time
 import json
-import sys
-import os
 import datetime as dt
 
-sys.path.append(os.environ['QTRADE'])
 from neuronquant.utils.signals import SignalManager
 from neuronquant.utils import remote_setup, color_setup, setup
 
@@ -35,6 +31,7 @@ log = logbook.Logger('ZMQ Messaging')
 #https://github.com/zeromq/pyzmq/blob/master/examples/device/server.py
 #TODO http://pythonhosted.org/Logbook/setups.html
 #     http://pythonhosted.org/Logbook/api/queues.html
+#TODO 'dashboard' destination hardcoded
 
 
 class ZMQ_Base(object):
@@ -86,17 +83,18 @@ class ZMQ_Dealer(ZMQ_Base):
                 msg = self.socket.recv_json() if json else self.socket.recv()
                 log.debug('Client received {}'.format(msg))
                 if acknowledgment:
-                    if json:
-                        self.socket.send_json({'time': dt.datetime.strftime(dt.datetime.now(), format='%Y-%m-%dT%H:%M:%S'),
-                                               'id': self.identity, 'channel': 'dashboard', 'msg': 0})
+                    if json and msg:
+                        self.send('ok', type='acknowledgment')
+                    elif json and not msg:
+                        self.send('ko', type='acknowledgment')
                     else:
-                        self.socket.send('{}:{}'.format(self.identity, 0))
+                        self.socket.send('{}:{}'.format(self.identity, acknowledgment))
         return msg
 
     def send_to_android(self, msg):
         assert isinstance(msg, dict)
-        msg['time'] = dt.datetime.strftime(dt.datetime.now(), format='%Y-%m-%dT%H:%M:%S')
-        msg['type'] = 'notification'
+        msg['time']    = dt.datetime.strftime(dt.datetime.now(), format = '%Y-%m-%dT%H:%M:%S')
+        msg['type']    = 'notification'
         msg['channel'] = 'android'
         msg['appname'] = 'NeuronQuant'
         log.debug('Client sends android notification: {}'.format(msg))
@@ -106,7 +104,7 @@ class ZMQ_Dealer(ZMQ_Base):
         #log.debug('Client sends: %s' % msg)
         if format:
             self.socket.send_json({'time': dt.datetime.strftime(dt.datetime.now(), format='%Y-%m-%dT%H:%M:%S'), 'msg': msg,
-                                   'id': self.identity, 'channel': kwargs.get('channel', ''), 'type': kwargs.get('type', '')})
+                                   'id': self.identity, 'channel': kwargs.get('channel', 'dashboard'), 'type': kwargs.get('type', '')})
         else:
             self.socket.send_json(msg) if isinstance(msg, dict) else self.socket.send(msg)
 

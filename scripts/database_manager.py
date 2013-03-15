@@ -33,12 +33,15 @@ def main(sync, create, symbols=None):
     db = Manager()
 
     if create:
+        log.info('Creating database...')
         db.create_database()
 
     elif sync:
+        log.info('Synchronizing quotes database...')
         db.sync_quotes()
 
     else:
+        log.info('Adding new stocks in database...')
         assert symbols
         if symbols.find('csv') > 0:
             db.add_stock_from_file(symbols)
@@ -48,6 +51,7 @@ def main(sync, create, symbols=None):
                 db.add_stock(ticker)
         else:
             db.add_stock(symbols)
+    log.info('Done')
 
 
 if __name__ == '__main__':

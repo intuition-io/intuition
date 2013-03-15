@@ -59,12 +59,15 @@ getFromSQLite <- function(name='test', database='stocks.db', debug=FALSE)
     dbPath <- paste(dbRoot, database, sep="/")
 
     drv <- dbDriver("SQLite")
+    flog.info('Connecting to database')
     connection <- dbConnect(drv, dbPath)
     ##TODO Checking the connection
+    flog.debug('Check connection :')
     dbListTables(connection)
     if ( dbExistsTable(connection, name) ) {
         dbListFields(connection, name)
 
+        flog.info('Table found, reading data...')
         ## Storing it in a dataframe and converting to xts object
         data <- dbReadTable(connection, name)
         ## Assuming dates are stored in last column, see python db
@@ -78,7 +81,7 @@ getFromSQLite <- function(name='test', database='stocks.db', debug=FALSE)
 
     if (debug)
     {
-        print('Some informations to check')
+        flog.info('Some informations to check')
         head(strategie)
         colnames(strategie)
         periodicity(strategie)
@@ -119,7 +122,7 @@ getMetricsFromMySQL <- function(dataId,                # Table the backtest save
     input <- fetch(rs, -1)
     if (debug)
     {
-        print(stmt)
+        flog.info(stmt)
         head(input)
         summary(input)
     }
@@ -152,7 +155,8 @@ getTradeData <- function(dataId   = 'test',       # Table to access
     if (debug)
     {
         head(perfs)
-        print('...')
+        #TODO Now with a logger library use debug flag for flog.threshold function
+        flog.info('...')
         tail(perfs)
     }
 

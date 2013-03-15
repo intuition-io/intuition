@@ -40,12 +40,14 @@ class Metric(object):
         self.bt_cfg = {'algorithm'   : 'DualMA',
                          'delta'       : 'D',
                          'manager'     : 'Constant',
-                         'database'    : None,
+                         'database'    : 'test',
                          'tickers'     : ['google', 'apple'],
                          'start'       : '2008-01-11',
                          'end'         : '2010-07-03',
                          'live'        : False,
                          'port'        : '5570',
+                         'cash'        : 100000,
+                         'exchange'    : 'nasdaq',
                          'remote'      : False}
 
     def fitness(self, genes):

@@ -50,9 +50,9 @@ class Constant(PortfolioManager):
                 Symbols with their -> weigths -> for buy: according the whole portfolio value   (must be floats)
                                               -> for sell: according total symbol position in portfolio
                                    -> amount: number of stocks to process (must be ints)
-            e_ret: float(1)
+            e_ret: float
                 Expected return
-            e_risk: float(1)
+            e_risk: float
                 Expected risk
         '''
         allocations = dict()

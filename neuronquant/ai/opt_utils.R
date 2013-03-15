@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+#TODO move later utils function like mysql access in a didicated module (or somewhat common in R package design)
 
 ## From http://statsadventure.blogspot.fr
 # TODO - transaction costs, turnover constraints
@@ -24,32 +25,40 @@ suppressPackageStartupMessages(require(tseries))
 suppressPackageStartupMessages(require(stats))
 suppressPackageStartupMessages(require(RMySQL))
 suppressPackageStartupMessages(require(zoo))
+suppressPackageStartupMessages(require(futils.logger))
 
+# Initial setup
 options(scipen=100)
 options(digits=4)
+flog.threshold(INFO)
 
+
+## Intermediate function used in portfolio rebalancing
 reweight = function(returns, startWeight){
-      n          = nrow(returns)
-      lastWeight = as.vector(startWeight)
-      outReturn  = data.frame()
+    flog.info('Re-computating weights')
+    n          = nrow(returns)
+    lastWeight = as.vector(startWeight)
+    outReturn  = data.frame()
      
-      for(i in seq(1,n)){
-            rts        = as.vector(exp(returns[i,]))
-            w          = lastWeight * rts
-            sumW       = sum(w)
-            w          = w/sumW
+    for(i in seq(1,n)){
+        rts        = as.vector(exp(returns[i,]))
+        w          = lastWeight * rts
+        sumW       = sum(w)
+        w          = w / sumW
 
-            r          = as.matrix(returns[i,]) %*% w
+        r          = as.matrix(returns[i,]) %*% w
 
-            lastWeight = w
+        lastWeight = w
 
-            outReturn  = rbind(outReturn,r)
-      }
-      return (outReturn)
+        outReturn  = rbind(outReturn, r)
+    }
+    return (outReturn)
 }
 
+# Fetch from the net and return a shaped cumulative returns from it
 downloadOneSerie = function (symbol, from, to) {
     # Read data from Yahoo! Finance
+    flog.info('Downloading quotes %s fron yahoo! finance, from %s to %s.', symbol, from, to)
     input       = yahooSeries(symbol, from        = from, to = to)
 
     # Character Strings for Column Names
@@ -63,6 +72,7 @@ downloadOneSerie = function (symbol, from, to) {
     input = merge(input,input.Return)
     
     #Calculate the cumulative return and put it on the time series
+    flog.info('Computing cumulative returns')
     input.first   = input[, adjClose][1]
     input.CReturn = fapply(input[,adjClose],FUN = function(x) log(x) - log(input.first))
     colnames(input.CReturn)[1] = CReturn
@@ -70,18 +80,34 @@ downloadOneSerie = function (symbol, from, to) {
     
     #Deleting things (not sure I need to do this, but I can't not delete things if
     # given a way to...
+    flog.debug('Cleaning temporary columns')
     rm(input.first,input.Return,input.CReturn,adjClose,inputReturn,CReturn)
     
     #Return the timeseries
     return(input)
 }
 
-serieFromDB <- function(symbol, from, to)
+## Do the same as above, but from sql database
+serieFromDB <- function(symbol,
+                        from,
+                        to,                     #TODO default to today
+                        dbfile='mysql.cfg')
 {
-    stocksDB = dbConnect(MySQL(), user='xavier', password='quantrade', dbname='stock_data', host='localhost')
+
+    flog.info('Fetching serie from database')
+    flog.info('Reading MySQL configuration')
+    config <- fromJSON(file(paste(Sys.getenv('QTRADE'), 'config', dbfile, sep='/'), 'r'))
+
+    flog.debug('Connecting to MySQL')
+    stocksDB = dbConnect(MySQL(),
+                         user=config['USER'][[1]], 
+                         password=config['PASSWORD'][[1]], 
+                         dbname=config['DATABASE'][[1]], 
+                         host=config['HOSTNAME'][[1]])
     on.exit(dbDisconnect(stocksDB))
+
     stmt <- paste("select Date, AdjClose from Quotes where Quotes.Ticker = ", symbol, " and Quotes.Date >= ", from, " and Quotes.Date <= ", to, "", sep="'") 
-    print(stmt)
+    flog.info('Execute: %s', stmt)
     rs = dbSendQuery(stocksDB, stmt)
     inputTmp = fetch(rs, -1)
     input <- xts(inputTmp['AdjClose'], order.by=as.Date(inputTmp$Date))
@@ -97,6 +123,7 @@ serieFromDB <- function(symbol, from, to)
     colnames(input) = c(adjClose, inputReturn)
 
     #Calculate the cumulative return and put it on the time series
+    flog.info('Computing cumulative return')
     input.first                = input[, adjClose][1]
     input.CReturn              = fapply(timeSeries(input[,adjClose]), FUN = function(x) log(x) - log(input.first[[1]]))
     colnames(input.CReturn)[1] = CReturn
@@ -111,24 +138,32 @@ serieFromDB <- function(symbol, from, to)
     return(input)
 }
 
-importSeries <- function(symbols, from, to, source='yahoo')
+# Main entry for data access
+importSeries <- function(symbols,
+                         from, 
+                         to, 
+                         source='yahoo')
 {
     merged <- NULL
     for(sym in symbols)
     {
+        flog.info('Fetching %s from %s', sym, source)
         if (source == 'yahoo')
         {
+            # Remote access to quotes, provided by yahoo! finance
             returns = downloadOneSerie(sym, from, to)
         }
         else if (source == 'mysql')
         {
             returns = serieFromDB(sym, from, to)
         }
+        # Merging with previous downloads
         if (!is.null(merged))
             merged = merge(merged, returns)
         else
             merged = returns
     }
+    flog.info('Got data')
     return(merged)
 }
 

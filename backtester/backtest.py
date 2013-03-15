@@ -27,7 +27,7 @@ from neuronquant.utils import color_setup, remote_setup, log
 
 if __name__ == '__main__':
     # use 'setup' configuration for logging
-    with color_setup.applicationbound():
+    with remote_setup.applicationbound():
         '''-------------------------------------------------------------------------------------------    Backtest    ----'''
         # Backtest or live engine used
         engine  = Simulation()
@@ -37,6 +37,9 @@ if __name__ == '__main__':
 
         # See neuronquant/calculus/engine.py or zipline for details on results dataframe
         results = engine.run_backtest()
+        if results is None:
+            log.warning('Backtest failed, exiting')
+            sys.exit(1)
 
         '''---------------------------------------------------------------------------------------------    Results   ----'''
         log.info('Portfolio returns: {}'.format(results.portfolio_value[-1]))
@@ -66,7 +69,6 @@ if __name__ == '__main__':
             data = returns_df.drop(['Returns', 'Benchmark.Returns'], axis=1)
             data.plot()
             plt.show()
-            import ipdb; ipdb.set_trace()
 
             # R statistical analysis
             os.system('{}/backtester/analysis.R --source mysql --table {} --verbose'.format(os.environ['QTRADE'], args['database']))

@@ -19,17 +19,29 @@ var bt_config = {
     script: "backtester/backtest.py",
     port: 5555,
     args: {
+        cash: {
+            prefix: "-i",
+            value: 100000 
+        } ,
         ticker: {
             prefix: "--ticker",
             value: "google,apple" 
         },
+        exchange: {
+            prefix: "--exchange",
+            value: 'nasdaq'
+        } ,
+        db: {
+            prefix: "--database",
+            value: 'test'
+        } ,
         algorithm: {
             prefix: "--algorithm",
-            value: "DualMA" 
+            value: "BuyAndHold" 
         },
         delta: {
             prefix: "--delta",
-            value:      '1min'
+            value: '1min'
         },
         manager: {
             prefix: "--manager",
@@ -56,6 +68,7 @@ var bt_config = {
             threshold: 0
         },
         manager: {
+            load_backup: 0,
             max_weight: 0.5,
             connected: 1,
             buy_amount: 200, 
@@ -101,7 +114,8 @@ var zmq = require('zmq')
     , ui = require('client_ui')
     , program = require('commander')
     , config = require('config')
-    , broker_uri = config.network.frontport;
+    , broker_uri = config.network.frontport
+    , voice = require('vocal');
 
 program
     .version('0.0.1')
@@ -113,7 +127,7 @@ program
 
 var fd_config = {
     type: "configure",
-    filters: ["portfolio", "acknowledgment", "optimization"],
+    filters: ["portfolio", "acknowledgment", "optimization", "vocal"],
     log_redirection: program.channel,
     verbose: program.verbose
 };
@@ -123,6 +137,7 @@ var fd_config = {
  * TODO on-the-fly parameters visualisation and edition
  */
 function create_client (port, channel) {
+    //NOTE Could set a flag to make it talk
     client_ui.write_log('Log window setup done.');
     client_ui.write_msg('Message window setup done.');
 
@@ -137,7 +152,8 @@ function create_client (port, channel) {
 
         if (json_data.type == 'portfolio') {
             client_ui.write_msg(json_data.time + ' Portfolio:');
-            client_ui.write_msg(JSON.stringify(json_data.msg.value));
+            client_ui.write_msg(JSON.stringify(json_data.msg.portfolio_value));
+            
             //FIXME Work only in above line configuration
             //client_ui.write_msg(json_data.time + ' Returns:', json_data.msg['returns']);
             //client_ui.write_msg(json_data.time + ' PNL:', json_data.msg.pnl);
@@ -148,8 +164,14 @@ function create_client (port, channel) {
         }
 
         else if (json_data.type == 'acknowledgment') {
-            client_ui.write_msg(json_data.time + 'Worker returned: ' + json_data.msg);
+            client_ui.write_msg(json_data.time + ' - Worker returned: ' + json_data.msg);
             socket.send(JSON.stringify({type: 'acknowledgment', statut: 0}));
+        }
+
+        //TODO Could be a vocal optimization message -> flag in the message or multiple type possible
+        else if (json_data.type == 'vocal') {
+            client_ui.write_log(json_data.time + ' ' + json_data.func_name + ': ' + json_data.msg);
+            voice.synthetize(json_data.msg, config.vocal.lang);
         }
 
         else {
@@ -172,6 +194,9 @@ function create_client (port, channel) {
 }    
 
 
+// Because I can
+//voice.synthetize('Yo, remote client ready.', config.vocal.lang);
+
 // Define client interfaces, ui for curses graphics, be for backend work
 // The test function is a callback called when hitting keyboard
 var client_ui = new ui.UI_interface(test),
@@ -186,5 +211,8 @@ function test(msg) {
     }
     else if (msg == 'optimize') {
         client_be.send_json(opt_config);
+    }
+    else if (msg == 'order') {
+        client_be.send_json({type: 'test', msg: msg});
     }
 }

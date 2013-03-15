@@ -14,13 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This script search for the given pattern in files recursively
+
 set -u
 clear
-cd $QTRADE
 
-if [ $# != 1 ]; then
+if [ $# <= 1 ]; then
     echo "Usage: ./todo_check 'pattern to match'"
     exit
+elif [ $# == 2 ]; then
+    echo "Location provided, going there..."
+    cd $2
 fi
 
 echo "QuanTrade $1 list..."

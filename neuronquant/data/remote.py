@@ -33,7 +33,7 @@ from logbook import Logger
 log = Logger('Remote')
 
 sys.path.append(os.environ['QTRADE'])
-from neuronquant.data.QuantDB import yahooCode, Fields
+from neuronquant.utils.db_utils import yahooCode, Fields
 from neuronquant.utils.dates import epochToDate
 from neuronquant.utils.utils import reIndexDF
 

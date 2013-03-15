@@ -18,7 +18,7 @@
 
 import csv
 from datetime import date, timedelta
-from models import Base, Symbol, Quote, Metrics, Performances, Portfolio
+from models import Base, Symbol, Quote, Metrics, Performances, Portfolio, Position
 from numpy import array
 from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
@@ -41,8 +41,10 @@ class Database(object):
         self.Base = Base
 
         # Handle edge case here
+        log.info('Reading NeuronQuant MySQL configuration...')
         sql = json.load(open('/'.join((os.environ['QTRADE'], 'config/mysql.cfg')), 'r'))
         if sql['PASSWORD'] == '':
+            log.warn('No password provided')
             engine_config = 'mysql://%s@%s/%s' % (sql['USER'],
                                                   sql['HOSTNAME'],
                                                   sql['DATABASE'])
@@ -53,6 +55,7 @@ class Database(object):
                                                      sql['DATABASE'])
         self.Engine = create_engine(engine_config)
         self.Session = sessionmaker()
+        log.info('Configure database {}'.format(sql['DATABASE']))
         self.Session.configure(bind=self.Engine)
 
 
@@ -69,11 +72,16 @@ class Manager(object):
         '''
         Create stock database tables if they do not exist already
         '''
+        log.info('Reading database schema (neuronquant/data/models.py)')
         self.db.Base.metadata.create_all(self.db.Engine)
 
     #TODO Error handler if the symbol does not exist
-    def add_stock(self, ticker, name=None, exchange=None,
-                  sector=None, industry=None):
+    def add_stock(self,
+                  ticker,
+                  name     = None,
+                  exchange = None,
+                  sector   = None,
+                  industry = None):
         """ Add a stock to the stock database
         Add the stock to the symbols table and populate quotes table with all
         available historical quotes. If any of the optional parameters are left
@@ -106,6 +114,7 @@ class Manager(object):
         stock = Symbol(ticker, name, exchange, sector, industry)
         session.add(stock)
 
+        #TODO Make it a configurable
         q = self._download_quotes(ticker, date(2000, 01, 01), date.today())
         session.add_all(q)
         session.commit()
@@ -169,6 +178,20 @@ class Manager(object):
             session = self.db.Session()
         exists = bool(
             session.query(Symbol).filter_by(Ticker=ticker.lower()).count())
+        if newsession:
+            session.close()
+        return exists
+
+    def check_portfolio_exists(self, name, session=None):
+        """
+        Return true if stock is already in database
+        """
+        newsession = False
+        if session is None:
+            newsession = True
+            session = self.db.Session()
+        exists = bool(
+            session.query(Portfolio).filter_by(Name=name.lower()).count())
         if newsession:
             session.close()
         return exists
@@ -259,14 +282,56 @@ class Client(object):
         session.commit()
         session.close()
 
-    def save_portfolio(self, dataframe):
-        #TODO save and pop positions field
+    def save_portfolio(self, portfolio, name, date):
+        #NOTE ndict annoying stuff
         session = self.db.Session()
-        session.execute("delete from Performances where Name = '{}'".format(dataframe['Name']))
-        portfolio_object = Portfolio(**dataframe)
-        session.add(portfolio_object)
+
+        # Cleaning
+        session.execute("delete from Positions where Positions.PortfolioName = '{}'".format(name))
+        session.execute("delete from Portfolios where Portfolios.Name = '{}'".format(name))
+
+        pf_object = Portfolio(name=name,
+                              date         = date.strftime(format='%Y-%m-%d %H:%M'),
+                              startdate    = portfolio.start_date,
+                              cash         = portfolio.cash,
+                              startingcash = portfolio.starting_cash,
+                              returns      = portfolio.returns,
+                              capital      = portfolio.capital_used,
+                              pnl          = portfolio.pnl,
+                              portvalue    = portfolio.portfolio_value,
+                              posvalue     = portfolio.positions_value)
+
+        positions = json.loads(str(portfolio.positions).replace('Position(', '').replace(')', '').replace("'", '"'))
+        assert isinstance(positions, dict)
+        for ticker in positions:
+            positions[ticker]['name'] = name
+            session.add(Position(**positions[ticker]))
+            #FIXME bug: 'not list-like object', but not an issue ?
+            #pf_object.Positions = Position(**positions[ticker])
+                                           #name=name,
+                                           #ticker='pouet',
+                                           #amount=0,
+                                           #last_sale_price=0,
+                                           #cost_basis=0)
+        session.add(pf_object)
         session.commit()
         session.close()
+
+    def get_portfolio(self, name):
+        name = name.lower()
+        session = self.db.Session()
+        if not self.manager.check_portfolio_exists(name):
+            log.warning('No portfolio named {} found in database'.format(name))
+            return None
+
+        #query = session.query(Portfolio).filter(Portfolio.Name == name).all()
+        query = session.query(Portfolio).first()
+        if query.Positions is not None:
+            for pos in query.Positions:
+                session.expunge(pos)
+        session.close()
+        ## name is th primary key, only one result possible
+        return query
 
     def get_quotes(self, ticker, date=None, start_date=None, end_date=None, dl=False):
         """

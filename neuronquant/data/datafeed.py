@@ -38,6 +38,38 @@ class DataFeed(object):
     def __init__(self, level='debug'):
         self.stock_db = Client()
 
+    def saved_portfolios(self, names):
+        '''
+        Fetch from database a previously stored portfolio
+        _________________________________________________
+        Parameter
+            name: str
+                Portfolios are stored with a name as unique ID,
+                get this one
+        _________________________________________________
+        Return
+            A Portfolio database model if name was found,
+            None otherwize
+        '''
+        lonely = False
+        if isinstance(names, str):
+            names = [names]
+            lonely = True
+        df_tmp = dict()
+
+        for name in names:
+            log.info('Retrieving {} portfolio from database'.format(name))
+            data = self.stock_db.get_portfolio(name)
+            if data is None:
+                continue
+            if lonely:
+                return pd.Series(data.__dict__)
+            df_tmp[name] = pd.Series(data.__dict__)
+
+        if df_tmp:
+            return pd.DataFrame(df_tmp)
+        return None
+
     def quotes(self, tickers, start_date=None, end_date=None, download=False):
         """ Get a series of quotes
         Return a list of quotes for the given security from start_date to
@@ -63,7 +95,6 @@ class DataFeed(object):
                 continue
             index = pd.DatetimeIndex([data[i].Date for i in range(len(data))])
             index = index.tz_localize(pytz.utc)
-            #NOTE Symbol or name as columns ?
             df_tmp[ticker] = pd.Series([data[i].AdjClose for i in range(len(data))], index=index)
         return pd.DataFrame(df_tmp)
 

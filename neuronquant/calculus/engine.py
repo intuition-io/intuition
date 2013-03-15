@@ -21,7 +21,6 @@ import os
 import argparse
 import json
 
-sys.path.append(os.environ['QTRADE'])
 from neuronquant.data.datafeed import DataFeed
 from neuronquant.ai.managers import Constant, Equity, OptimalFrontier
 from neuronquant.network.transport import ZMQ_Dealer
@@ -36,7 +35,7 @@ import logbook
 log = logbook.Logger('Engine')
 
 from zipline.data.benchmarks import get_benchmark_returns
-from zipline.finance.trading import SimulationParameters
+from zipline.finance.trading import SimulationParameters, TradingEnvironment
 
 
 class BacktesterEngine(object):
@@ -57,11 +56,22 @@ class BacktesterEngine(object):
             raise NotImplementedError('Manager {} not available or implemented'.format(manager))
         log.info('[Debug] Manager {} available, getting a reference and initializing it.'.format(manager))
 
-        #return BacktesterEngine.algos[algo](algo_params, BacktesterEngine.portfolio_strategie[manager](pf_params))
-        #trading_algorithm = BacktesterEngine.algos[algo](algo_params, capital_base=100000)
         trading_algorithm = BacktesterEngine.algos[algo](algo_params)
-        trading_algorithm.set_logger(Logger(algo))
+        trading_algorithm.set_logger(logbook.Logger(algo))
+
         trading_algorithm.manager = BacktesterEngine.portfolio_strategie[manager](pf_params)
+
+        #FIXME Works, but every new event reset the portfolio
+        portfolio_name = pf_params.get('name')
+        if pf_params.get('load_backup', False) and portfolio_name:
+            log.info('Re-loading last {} portfolio from database'.format(portfolio_name))
+            ## Retrieving a zipline portfolio object. str() is needed as the parameter is of type unicode
+            backup_portfolio = trading_algorithm.manager.load_portfolio(str(portfolio_name))
+            if backup_portfolio is None:
+                log.warning('! Unable to set {} portfolio: not found'.format(portfolio_name))
+            else:
+                trading_algorithm.set_portfolio(backup_portfolio)
+                log.info('Portfolio setup successfull')
 
         return trading_algorithm
 
@@ -114,7 +124,7 @@ class Simulation(object):
                                 action='store', default='1/12/2010',
                                 required=False, help='Stop date of the backtester')
             parser.add_argument('-ex', '--exchange',
-                                action='store', default='s&p500',
+                                action='store', default='nasdaq',
                                 required=False, help='list of markets where trade, separated with a coma')
             parser.add_argument('-r', '--remote',
                                 action='store_true',
@@ -227,6 +237,9 @@ class Simulation(object):
             data = self.feeds.quotes(self.backtest_cfg['tickers'],
                                      start_date = self.backtest_cfg['start'],
                                      end_date   = self.backtest_cfg['end'])
+            if len(data) == 0:
+                log.warning('Got nothing from database, returning')
+                return None
             assert isinstance(data, pd.DataFrame)
             assert data.index.tzinfo
 
@@ -234,14 +247,28 @@ class Simulation(object):
         log.info('\n-- Running backetester...\nUsing algorithm: {}\n'.format(self.backtest_cfg['algorithm']))
         log.info('\n-- Using portfolio manager: {}\n'.format(self.backtest_cfg['manager']))
 
+        #NOTE First two parameters redundants
         backtester = BacktesterEngine(self.backtest_cfg['algorithm'],
                                       self.backtest_cfg['manager'],
                                       self.algo_cfg,
                                       self.manager_cfg)
-        self.results, self.monthly_perfs = backtester.run(data,
-                                                          SimulationParameters(capital_base=self.backtest_cfg['cash'],
-                                                                               period_start=self.backtest_cfg['start'],
-                                                                               period_end=self.backtest_cfg['end']))
+
+        #NOTE Can provide a third parameter load: a function like bm_rets, treasury_rets = load(bm_symbol)
+        #     See zipline.data.loader load_market_data()
+        ## Environment configuration
+        if self.backtest_cfg['exchange'] == 'paris':
+            lse = TradingEnvironment(bm_symbol='^FTSE', exchange_tz='Europe/London')
+        elif (self.backtest_cfg['exchange'] == 'nasdaq') or (self.backtest_cfg['exchange'] == 'nyse'):
+            lse = TradingEnvironment(bm_symbol='^GSPC', exchange_tz='US/Eastern')
+        else:
+            raise NotImplementedError()
+
+        ## Running simulation with it
+        with lse:
+            self.results, self.monthly_perfs = backtester.run(data,
+                                                              SimulationParameters(capital_base=self.backtest_cfg['cash'],
+                                                                                   period_start=self.backtest_cfg['start'],
+                                                                                   period_end=self.backtest_cfg['end']))
 
         return self.results
 

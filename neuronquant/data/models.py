@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -55,7 +55,7 @@ class Quote(Base):
 
     Id       = Column(Integer, primary_key                      = True)
     Ticker   = Column(String(10), ForeignKey('Symbols.Ticker'))
-    Date     = Column(Date)
+    Date     = Column(DateTime)
     Open     = Column(Float)
     High     = Column(Float)
     Low      = Column(Float)
@@ -88,7 +88,7 @@ class Metrics(Base):
 
     Id                  = Column(Integer, primary_key=True)
     Name                = Column(String(50))
-    Period              = Column(Date)
+    Period              = Column(DateTime)
     SharpeRatio         = Column(Float)
     SortinoRatio        = Column(Float)
     Information         = Column(Float)
@@ -160,43 +160,15 @@ class Performances(Base):
                 self.Beta, self.Alpha, self.BenchmarkReturns)
 
 
-'''
-class Positions(Base):
-    """
-    Portfolio positions table model
-    """
-    __tablename__ = 'Positions'
-
-    Id        = Column(Integer, primary_key = True)
-    PortfolioName = Column(String(50), ForeignKey('Portfolio.Name'))
-    Date      = Column(Date, ForeignKey('Portfolio.Date'))
-    # Could be an other relationship to Symbol table
-    Ticker = Column(String(10))
-    Amount = Column(Integer)
-
-    def __init__(self, name, date, ticker, amount):
-        self.PortfolioName = name
-        self.Date = date
-        self.Ticker = ticker
-        self.Amount = amount
-
-    def __repr__(self):
-        return "<Positions(Portfolio: %s, Date: %s, ticker: %s, amount: %d)>" % (
-                self.PortfolioName, self.Date, self.Ticker, self.Amount)
-'''
-
-
-#TODO Positions table
-#NOTE Giving a dico would solve order problem, and make generic save possible
 class Portfolio(Base):
     """
     Portfolio tracker table Model
     """
-    __tablename__ = 'Portfolio'
+    __tablename__ = 'Portfolios'
 
-    Id             = Column(Integer, primary_key = True)
-    Name           = Column(String(50))
-    Date           = Column(Date)
+    Name           = Column(String(50), primary_key=True)
+    Date           = Column(DateTime)
+    #NOTE use date ?
     StartDate      = Column(String(50))
     Cash           = Column(Float)
     StartingCash   = Column(Float)
@@ -205,17 +177,10 @@ class Portfolio(Base):
     PNL            = Column(Float)
     PortfolioValue = Column(Float)
     PositionsValue = Column(Float)
-    #Positions      = relationship('Positions',
-                                   #foreign_keys=[Positions.PortfolioName, Positions.Date],
-                                   #uselist=False,
-                                   #backref='Portfolio', lazy='lazy',
-                                   #cascade='all, delete, delete-orphan',
-                                   #order_by=Date)
+    Positions      = relationship('Position', backref='Portfolios')
 
     def __init__(self, **kwargs):
-    #def __init__(self, name, date, startdate, cash, startingcash, returns, capital, pnl,
-                 #portvalue, posvalue):
-        self.Name = kwargs.get('name')
+        self.Name           = kwargs.get('name')
         self.Date           = kwargs.get('date')
         self.StartDate      = kwargs.get('startdate')
         self.Cash           = kwargs.get('cash')
@@ -227,7 +192,33 @@ class Portfolio(Base):
         self.PositionsValue = kwargs.get('posvalue')
 
     def __repr__(self):
-        return "<Portfolio(Id: %s, Date: %s, start date: %f, cash: %f, starting cash: %f, Returns: %f, capital: %f, \
-                pnl: %f, portfolio value: %d, positions value: %f, Excess return: %f, : %f)>" % (
+        return "<Portfolio(Id: %s, Date: %s, start date: %s, cash: %f, starting cash: %f, Returns: %f, capital: %f, \
+                pnl: %f, portfolio value: %f, positions value: %f)>" % (
                 self.Name, self.Date, self.StartDate, self.Cash, self.StartingCash, self.Returns, self.Capital, self.PNL,
                 self.PortfolioValue, self.PositionsValue)
+
+
+class Position(Base):
+    """
+    Portfolio positions table model
+    """
+    __tablename__ = 'Positions'
+
+    Id        = Column(Integer, primary_key = True)
+    PortfolioName = Column(String(50), ForeignKey('Portfolios.Name'))
+    #NOTE Could be an other relationship to Symbol table
+    Ticker = Column(String(10))
+    Amount = Column(Integer)
+    LastSalePrice = Column(Float)
+    CostBasis = Column(Float)
+
+    def __init__(self, **kwargs):
+        self.PortfolioName = kwargs.get('name')
+        self.Ticker = kwargs.get('sid')
+        self.Amount = kwargs.get('amount')
+        self.LastSalePrice = kwargs.get('last_sale_price')
+        self.CostBasis = kwargs.get('cost_basis')
+
+    def __repr__(self):
+        return "<Positions(Portfolio: %s, ticker: %s, amount: %d, price: %f, cost basis: %f)>" % (
+                self.PortfolioName, self.Ticker, self.Amount, self.LastSalePrice, self.CostBasis)

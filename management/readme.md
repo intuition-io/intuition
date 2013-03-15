@@ -28,10 +28,19 @@ TODO
 [ ] googlegroups 
 [ ] Android app with C2DM push notification (and node.js module)
 [ ] node tests with nodeunit, jscoverage, http://visionmedia.github.com/mocha/
+[ ] Study msgpack for more efficient messages passing with zmq
 
 
 Ressources
 ==========
+
+financial area
+--------------
+
+* google api https://gist.github.com/border/1321781
+* https://openexchangerates.org/about
+* http://josscrowcroft.github.com/money.js/
+
 
 d3.js tutos
 -----------

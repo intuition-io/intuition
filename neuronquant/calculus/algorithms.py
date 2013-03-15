@@ -20,13 +20,10 @@ import numpy as np
 import sys
 import os
 
-sys.path.append(os.environ['ZIPLINE'])
 from zipline.algorithm import TradingAlgorithm
 from zipline.transforms import MovingAverage, MovingVWAP, batch_transform, MovingStandardDev
 
 import statsmodels.api as sm
-
-from logbook import Logger
 
 
 #TODO Override initialiez function with portfolio, logger and parameters initialization
@@ -70,9 +67,7 @@ class DualMovingAverage(TradingAlgorithm):
         short_window       = properties.get('short_window', None)
         if short_window is None:
             short_window = int(round(properties.get('ma_rate', 0.5) * float(long_window), 2))
-        self.amount        = properties.get('amount', 10000)
         self.threshold     = properties.get('threshold', 0)
-        #self.capital_base = properties.get('capital_base', 1000)
         self.debug         = properties.get('debug', 0)
 
         self.add_transform(MovingAverage, 'short_mavg', ['price'],
