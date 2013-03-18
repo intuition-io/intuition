@@ -21,30 +21,87 @@ Base = declarative_base()
 
 
 #TODO Add type column, which will be action, index, obligation, ...?
-class Symbol(Base):
+class Equity(Base):
     """
-    Stock Symbols Table Model
+    Equity informations Table Model
     """
-    __tablename__ = 'Symbols'
+    __tablename__ = 'Equities'
 
-    Ticker = Column(String(10), primary_key=True)
-    Name = Column(String(128))
+    Ticker   = Column(String(10), primary_key = True)
+    Name     = Column(String(128))
     Exchange = Column(String(50))
-    Sector = Column(String(50))
+    Index    = Column(String(128))
+    Sector   = Column(String(50))
     Industry = Column(String(50))
-    Quotes = relationship('Quote', cascade='all, delete, delete-orphan')
+    Quotes   = relationship('Quote', cascade  = 'all, delete, delete-orphan')
 
-    def __init__(self, Ticker, Name, Exchange=None,
+    def __init__(self, Ticker, Name, Exchange=None, Index=None,
                  Sector=None, Industry=None):
-        self.Ticker = Ticker
-        self.Name = Name
+        self.Ticker   = Ticker
+        self.Name     = Name
         self.Exchange = Exchange
-        self.Sector = Sector
+        self.Index    = Index
+        self.Sector   = Sector
         self.Industry = Industry
 
     def __repr__(self):
-        return "<Symbol('%s','%s','%s','%s','%s')>" % (
-            self.Ticker, self.Name, self.Exchange, self.Sector, self.Industry)
+        return "<Equity('%s','%s','%s', '%s','%s','%s')>" % (
+            self.Ticker, self.Name, self.Exchange, self.Index, self.Sector, self.Industry)
+
+
+#TODO Relastionship with Quotes
+class Index(Base):
+    '''
+    Index information table
+    '''
+    __tablename__ = 'Indices'
+
+    Ticker   = Column(String(10), primary_key = True)
+    Name     = Column(String(128))
+    Exchange = Column(String(50))
+    Timezone = Column(String(50))
+    Quotes   = relationship('IdxQuote', cascade='all, delete, delete-orphan')
+    #Quotes   = relationship('Quote', 
+                    #primaryjoin=
+                    #'Indices.Ticker==Quotes.Ticker', foreign_keys=['Quotes.Ticker'])
+
+    #NOTE Test of necessary values along with kwargs joker flexibility
+    def __init__(self, ticker, **kwargs):
+        self.Ticker   = ticker
+        self.Name     = kwargs.get('name')
+        self.Exchange = kwargs.get('exchange')
+        self.Timezone = kwargs.get('timezone')
+
+    def __repr__(self):
+        return '<Index(Ticker: %s, name: %s, exchange: %s, timezone: %s)>' % (
+                self.Ticker, self.Name, self.Exchange, self.Timezone)
+
+
+class CurrencyPair(Base):
+    '''
+    Forex assets table model
+    '''
+    __tablename__ = 'Forex'
+
+    Id   = Column(Integer, primary_key = True)
+    Date = Column(DateTime)
+    Pair = Column(String(12))
+    Bid  = Column(Float)
+    Ask  = Column(Float)
+    High = Column(Float)
+    Low  = Column(Float)
+
+    def __init__(self, pair, **kwargs):
+        self.Date = kwargs.get('date')
+        self.Pair = pair
+        self.Bid = kwargs.get('bid')
+        self.Ask = kwargs.get('ask')
+        self.High = kwargs.get('high')
+        self.Low = kwargs.get('low')
+
+    def __repr__(self):
+        return '<CurrencyPair(date: %s, pair: %s, bid: %f, ask: %f, high: %f, low: %f)' % (
+                self.Date, self.Pair, self.Bid, self.Ask, self.High, self.Low)
 
 
 class Quote(Base):
@@ -53,8 +110,8 @@ class Quote(Base):
     """
     __tablename__ = 'Quotes'
 
-    Id       = Column(Integer, primary_key                      = True)
-    Ticker   = Column(String(10), ForeignKey('Symbols.Ticker'))
+    Id       = Column(Integer, primary_key=True)
+    Ticker   = Column(String(10), ForeignKey('Equities.Ticker'))
     Date     = Column(DateTime)
     Open     = Column(Float)
     High     = Column(Float)
@@ -80,6 +137,41 @@ class Quote(Base):
                 self.Volume, self.AdjClose)
 
 
+#TODO Shared child table
+class IdxQuote(Base):
+    """
+    Stock IdxQuotes Table Model
+    """
+    __tablename__ = 'IdxQuotes'
+
+    Id       = Column(Integer, primary_key=True)
+    Ticker   = Column(String(10), ForeignKey('Indices.Ticker'))
+    Date     = Column(DateTime)
+    Open     = Column(Float)
+    High     = Column(Float)
+    Low      = Column(Float)
+    Close    = Column(Float)
+    Volume   = Column(Float)
+    AdjClose = Column(Float)
+
+    def __init__(self, Ticker, Date, Open, High, Low, Close, Volume, AdjClose):
+        self.Ticker   = Ticker
+        self.Date     = Date
+        self.Open     = Open
+        self.High     = High
+        self.Low      = Low
+        self.Close    = Close
+        self.Volume   = Volume
+        self.AdjClose = AdjClose
+
+    def __repr__(self):
+        return "<Quote(Date: %s,Symbol: %s, Open: %f, High: %f, Low: %f, \
+                Close: %f, Volume: %d, Adjusted Close: %f)>" % (self.Date,
+                self.Ticker, self.Open, self.High, self.Low, self.Close,
+                self.Volume, self.AdjClose)
+
+
+#NOTE Performacnes should be linked to Metrics ?
 class Metrics(Base):
     """
     Backtester monthly metrics

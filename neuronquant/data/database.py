@@ -17,8 +17,8 @@
 # Inspired from https://github.com/hamiltonkibbe/stocks.git
 
 import csv
-from datetime import date, timedelta
-from models import Base, Symbol, Quote, Metrics, Performances, Portfolio, Position
+from datetime import date, timedelta, datetime
+from models import Base, Equity, Index, Quote, IdxQuote, Metrics, Performances, Portfolio, Position
 from numpy import array
 from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
@@ -42,20 +42,20 @@ class Database(object):
 
         # Handle edge case here
         log.info('Reading NeuronQuant MySQL configuration...')
-        sql = json.load(open('/'.join((os.environ['QTRADE'], 'config/mysql.cfg')), 'r'))
-        if sql['PASSWORD'] == '':
+        sql = json.load(open('/'.join((os.path.expanduser('~/.quantrade'), 'default.json')), 'r'))['mysql']
+        if sql['password'] == '':
             log.warn('No password provided')
-            engine_config = 'mysql://%s@%s/%s' % (sql['USER'],
-                                                  sql['HOSTNAME'],
-                                                  sql['DATABASE'])
+            engine_config = 'mysql://%s@%s/%s' % (sql['user'],
+                                                  sql['hostname'],
+                                                  sql['database'])
         else:
-            engine_config = 'mysql://%s:%s@%s/%s' % (sql['USER'],
-                                                     sql['PASSWORD'],
-                                                     sql['HOSTNAME'],
-                                                     sql['DATABASE'])
+            engine_config = 'mysql://%s:%s@%s/%s' % (sql['user'],
+                                                     sql['password'],
+                                                     sql['hostname'],
+                                                     sql['database'])
         self.Engine = create_engine(engine_config)
         self.Session = sessionmaker()
-        log.info('Configure database {}'.format(sql['DATABASE']))
+        log.info('Configure database {}'.format(sql['database']))
         self.Session.configure(bind=self.Engine)
 
 
@@ -76,14 +76,18 @@ class Manager(object):
         self.db.Base.metadata.create_all(self.db.Engine)
 
     #TODO Error handler if the symbol does not exist
-    def add_stock(self,
+    def add_ticker(self,
                   ticker,
                   name     = None,
                   exchange = None,
+                  timezone = None,
+                  index    = None,
                   sector   = None,
-                  industry = None):
-        """ Add a stock to the stock database
-        Add the stock to the symbols table and populate quotes table with all
+                  industry = None,
+                  start    = None,
+                  end      = None):
+        '''
+        Add the symbol to either Index or Equity table and populate quotes table with all
         available historical quotes. If any of the optional parameters are left
         out, the corresponding information will be obtained from Yahoo!
         Finance.
@@ -92,50 +96,72 @@ class Manager(object):
         :param exchange: (optional) Exchange on which the security is traded
         :param sector: (optional) Company/security sector
         :param Industry (optional) Company/security industry
-        """
+        '''
         ticker = ticker.lower()
         session = self.db.Session()
 
-        if self.check_stock_exists(ticker, session):
+        if self.check_ticker_exists(ticker, session):
             log.warn("Stock {} already exists!".format((ticker.upper())))
             return
 
-        #TODO Add start and end date in it, and store after downloads
-        #TODO Plenty of checks
+        #TODO Add start and end date in it
+        ## Shared informations
         if name is None:
             name = quotes.get_name(ticker)
         if exchange is None:
             exchange = quotes.get_stock_exchange(ticker)
-        if sector is None:
-            sector = quotes.get_sector(ticker)
-        if industry is None:
-            industry = quotes.get_industry(ticker)
 
-        stock = Symbol(ticker, name, exchange, sector, industry)
+        # Check if we have an index symbol
+        if ticker.find('^') == 0:
+            timezone = 'US/Eastern'
+            stock = Index(ticker, name=name, exchange=exchange, timezone=timezone)
+        else:
+            if index is None:
+                index = quotes.get_indices(ticker)
+            if sector is None:
+                sector = quotes.get_sector(ticker)
+            if industry is None:
+                industry = quotes.get_industry(ticker)
+            stock = Equity(ticker, name, exchange, index, sector, industry)
+
         session.add(stock)
 
-        #TODO Make it a configurable
-        q = self._download_quotes(ticker, date(2000, 01, 01), date.today())
+        if start is None:
+            log.info('Reading NeuronQuant MySQL configuration...')
+            sql = json.load(open('/'.join((os.environ['QTRADE'], 'config/mysql.cfg')), 'r'))
+            start = datetime.strptime(sql['DATA_START'], '%Y-%m-%d').date()
+        if end is None:
+            end = date.today()
+
+        q = self._download_quotes(ticker, start, end)
         session.add_all(q)
         session.commit()
         session.close()
-        self.update_quotes(ticker)
+        #self.update_quotes(ticker)
 
-    def _download_quotes(self, ticker, start_date, end_date):
-        """ Get quotes from Yahoo Finance
+    def _download_quotes(self, ticker, start_date, end_date=date.today()):
+        """
+        Get quotes from Yahoo Finance
         """
         ticker = ticker.lower()
-        if start_date == end_date:
+        if start_date >= end_date:
             return
-        start = start_date
-        end = end_date
-        data = quotes.get_historical_prices(ticker, start, end)
+
+        data = quotes.get_historical_prices(ticker, start_date, end_date)
         data = data[len(data) - 1:0:-1]
+
         if len(data):
-            return [Quote(ticker, val[0], val[1], val[2],
-                          val[3], val[4], val[5], val[6])
-                    for val in data if len(val) > 6]
+            log.info('Got data, storing it')
+            if ticker.find('^') == 0:
+                return [IdxQuote(ticker, val[0], val[1], val[2],
+                              val[3], val[4], val[5], val[6])
+                        for val in data if len(val) > 6]
+            else:
+                return [Quote(ticker, val[0], val[1], val[2],
+                              val[3], val[4], val[5], val[6])
+                        for val in data if len(val) > 6]
         else:
+            log.warning('! Quotes download failed, no data.')
             return
 
     def update_quotes(self, ticker, check_all=True):
@@ -143,20 +169,23 @@ class Manager(object):
         Get all missing quotes through current day for the given stock
         """
         #TODO Update end (start ?) date in Symbol
-        ticker = ticker.lower()
+        ticker      = ticker.lower()
         stockquotes = None
-        session = self.db.Session()
-        last = session.query(Quote).filter_by(
-            Ticker=ticker).order_by(desc(Quote.Date)).first().Date
+        session     = self.db.Session()
+
+        if ticker.find('^') == 0:
+            last = session.query(IdxQuote).filter_by(
+                    Ticker=ticker).order_by(desc(IdxQuote.Date)).first().Date
+        else:
+            last = session.query(Quote).filter_by(
+                Ticker=ticker).order_by(desc(Quote.Date)).first().Date
         start_date = last + timedelta(days=1)
-        end_date = date.today()
+        end_date = datetime.today()
         if end_date > start_date:
             stockquotes = self._download_quotes(ticker, start_date, end_date)
             if stockquotes is not None:
-                #for quote in stockquotes:
-                    #quote.Features = Indicator(quote.Id)
                 session.add_all(stockquotes)
-        #indicators.update_all(ticker, session, False, check_all)
+
         session.commit()
         session.close()
 
@@ -168,7 +197,7 @@ class Manager(object):
             self.update_quotes(symbol, check_all)
             log.info('Updated quotes for {}'.format(symbol))
 
-    def check_stock_exists(self, ticker, session=None):
+    def check_ticker_exists(self, ticker, session=None):
         """
         Return true if stock is already in database
         """
@@ -176,8 +205,25 @@ class Manager(object):
         if session is None:
             newsession = True
             session = self.db.Session()
-        exists = bool(
-            session.query(Symbol).filter_by(Ticker=ticker.lower()).count())
+        exists = bool(session.query(Equity).filter_by(Ticker=ticker.lower()).count())
+        if not exists:
+            ## Not in equity table, try index
+            exists = bool(session.query(Index).filter_by(Ticker=ticker.lower()).count())
+        if newsession:
+            session.close()
+        return exists
+
+    def check_quote_exists(self, ticker, q_date, session=None):
+        """
+        Return true if a quote for the given symbol and date exists in the
+        database
+        """
+        newsession = False
+        if session is None:
+            newsession = True
+            session = self.db.Session()
+        exists = bool(session.query(Quote).filter_by(Ticker=ticker.lower(),
+                                                      Date=q_date).count())
         if newsession:
             session.close()
         return exists
@@ -196,51 +242,25 @@ class Manager(object):
             session.close()
         return exists
 
-    def check_quote_exists(self, ticker, q_date, session=None):
-        """
-        Return true if a quote for the given symbol and date exists in the
-        database
-        """
-        newsession = False
-        if session is None:
-            newsession = True
-            session = self.db.Session()
-        exists = bool(session.query(Symbol).filter_by(Ticker=ticker.lower(),
-                                                      Date=q_date).count())
-        if newsession:
-            session.close()
-        return exists
-
-    #def check_indicator_exists(self, qid, session=None):
-        #""" Return True if indicator is already in database
-        #"""
-        #newsession = False
-        #if session is None:
-            #newsession = True
-            #session = self.db.Session()
-        #exists = bool(session.query(Indicator).filter_by(Id=qid).count())
-        #if newsession:
-            #session.close()
-        #return exists
-
     #NOTE Redundant with available_stocks ?
     def _stocks(self, session=None):
         newsession = False
         if session is None:
             newsession = True
             session = self.db.Session()
-        stocks = array([stock.Ticker for stock in session.query(Symbol).all()])
+        stocks = array([stock.Ticker for stock in session.query(Equity).all()])
+        stocks.extend(array([stock.Ticker for stock in session.query(Index).all()]))
         if newsession:
             session.close()
         return stocks
 
-    def add_stock_from_file(self, file_path):
+    def add_ticker_from_file(self, file_path, start=date(2000, 01, 01), end=date.today()):
         with open(file_path, 'rb') as index_file:
             reader = csv.reader(index_file)
             for symbol in reader:
                 log.info('Add symbol {} to database'.format(symbol[0]))
                 try:
-                    self.add_stock(symbol[0])
+                    self.add_ticker(symbol[0], start=start, end=end)
                 except:
                     log.error('** Error: Could not add {} symbol'.format(symbol[0]))
 
@@ -350,13 +370,13 @@ class Client(object):
         #TODO Multiple tickers, make a panel, in an upper function
         ticker = ticker.lower()
         session = self.db.Session()
-        if not self.manager.check_stock_exists(ticker, session):
+        if not self.manager.check_ticker_exists(ticker, session):
             if dl:
-                log.notice('Stock {} not available in database, downloading it.'.format(ticker))
-                self.manager.add_stock(ticker)
+                log.notice('Ticker {} not available in database, downloading it.'.format(ticker))
+                self.manager.add_ticker(ticker)
                 session.commit()
             else:
-                log.warn('Stock {} not available in database and download forbidden'.format(ticker))
+                log.warn('Ticker {} not available in database and download forbidden'.format(ticker))
                 return None
 
         if date is not None:
@@ -379,15 +399,21 @@ class Client(object):
         return query
 
     def get_infos(self, **kwargs):
-        #TODO Here too a dataframe
-        name = kwargs.get('name', None)
-        symbol = kwargs.get('symbol', None)
+        name    = kwargs.get('name', None)
+        symbol  = kwargs.get('symbol', None)
         session = self.db.Session()
+
         if name is not None:
-            #asset = session.query(Symbol).get(asset.Ticker)
-            asset = session.query(Symbol).filter(Symbol.Name == name).first()
+            asset = session.query(Equity).filter(Equity.Name == name).first()
+            if not asset:
+                ## Trying in index table
+                asset = session.query(Index).filter(Index.Name == name).first()
+
         elif symbol is not None:
-            asset = session.query(Symbol).filter(Symbol.Ticker == symbol).first()
+            asset = session.query(Equity).filter(Equity.Ticker == symbol).first()
+            if not asset:
+                asset = session.query(Index).filter(Index.Ticker == symbol).first()
+
         else:
             log.error('** Error: No suitable information provided.')
             session.close()
@@ -395,27 +421,29 @@ class Client(object):
         if not asset:
             log.error('** Error: Could not retrieve informations')
             return None
-        if asset not in session:
-            asset = session.query(Symbol).get(asset.Ticker)
+
+        #NOTE Check the use of following two lines
+        #if asset not in session:
+            #asset = session.query(Equity).get(asset.Ticker)
         #NOTE This prints ensure the assetQuotes persistence
         log.info('Got infos: {}'.format(asset))
-        #print('Got associated quotes: {}'.format(asset.Quotes[0]))
         session.close()
         return asset
 
-    def available_stocks(self, key='name', exchange=None):
+    #NOTE Make a similar function for benchmarks ?
+    def available_equities(self, key='name', exchange=None):
         ''' Return a list of the stocks available in the database '''
         session = self.db.Session()
         if key == 'symbol':
             if exchange:
-                stocks = array([stock.Ticker for stock in session.query(Symbol).filter(Symbol.Exchange == exchange).all()])
+                stocks = array([stock.Ticker for stock in session.query(Equity).filter(Equity.Exchange == exchange).all()])
             else:
-                stocks = array([stock.Ticker for stock in session.query(Symbol).all()])
+                stocks = array([stock.Ticker for stock in session.query(Equity).all()])
         elif key == 'name':
             if exchange:
-                stocks = [stock.Name for stock in session.query(Symbol).filter(Symbol.Exchange == exchange).all()]
+                stocks = [stock.Name for stock in session.query(Equity).filter(Equity.Exchange == exchange).all()]
             else:
-                stocks = [stock.Name for stock in session.query(Symbol).all()]
+                stocks = [stock.Name for stock in session.query(Equity).all()]
         else:
             raise NotImplementedError()
         session.close()

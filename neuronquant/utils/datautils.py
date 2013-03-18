@@ -13,11 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pandas as pd
 
 #TODO: Same for google json and xml retrievig
 googleCode = dict()
 
-#TODO: codes for non-us markets are different. Like JXR.PA for archos
 #TODO: Tester, comprendre, et reformater ces valeurs
 yahooCode = {'ask': 'a'                          , 'average daily volume': 'a2'            , 'ask size': 'a5'                  ,
         'bid': 'b'                               , 'ask rt': 'b2'                          , 'bid rt': 'b3'                    , 'dividend yield': 'y' ,
@@ -46,6 +46,33 @@ yahooCode = {'ask': 'a'                          , 'average daily volume': 'a2' 
         'ticker trend': 't7'                     , '1 year target price': 't8'             , 'volume': 'v'                     ,
         'holdings value': 'v1'                   , 'holdings value rt': 'v7'               , '52-week range': 'w'              ,
         'day value change': 'w1'                 , 'day value change rt': 'w4'             , 'stock exchange': 'x'}
+
+
+FX_PAIRS = ['EUR/USD', 'USD/JPY', 'GBP/USD',
+            'EUR/GBP', 'USD/CHF', 'EUR/JPY',
+            'EUR/CHF', 'USD/CAD', 'AUD/USD',
+            'GBP/JPY', 'AUD/JPY', 'AUD/NZD',
+            'CAD/JPY', 'CHF/JPY', 'NZD/USD']
+
+
+#NOTE keys will be exchange and timezone (third parameter)command line parameters
+#TODO Implement them all
+#TODO Here are hours from Paris point of view, make it adapatable from everywhere
+def filter_market_hours(dates, exchange):
+    ''' Only return market open hours '''
+    if dates.freq > pd.datetools.Day():
+        # Daily or lower frequency, no hours filter required
+        return dates
+    if exchange == 'paris':
+        selector = ((dates.hour > 8) & (dates.hour < 17)) | ((dates.hour == 17) & (dates.minute < 31))
+    elif exchange == 'nasdaq' or exchange == 'nyse':
+        selector = ((dates.hour > 15) & (dates.hour < 22)) | ((dates.hour == 15) & (dates.minute > 31))
+    else:
+        # Forex or Unknown market, return as is
+        return dates
+
+    # Pandas dataframe filtering mechanism
+    return dates[selector]
 
 
 class Fields:

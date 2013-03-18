@@ -1,6 +1,22 @@
 Changelog
 =========
 
+15-03-2013
+----------
+- Forex realtime free access with R (through TrueFX)
+- New database schema (Forex, IdxQuote, Equities + Indices = ex-Symbols)
+- Python port of R TFX package
+- Added stream_source field in data sent to live source to choose it
+- Market hours filter in datautils
+- New load_market_data function (class actually) for benchmark live update + integration in engine.py
+- Renamed calculus in gears
+- Database module fixes
+- More robust yahoofinance, with an extra get_indice function
+- Merged default.json and mysql.cfg configuration file and move it (with local.sh and shiny-server.config) to ~/.quantrade to fix password issue
+- Installation script
+- Many new ressources on project board
+
+
 13-03-2013
 ----------
 - Some installation details added

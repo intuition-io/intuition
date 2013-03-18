@@ -1,5 +1,4 @@
 import urllib
-from datetime import date
 from bs4 import BeautifulSoup
 
 """ yahoofinance
@@ -82,58 +81,59 @@ def get_book_value(symbol):
 
 def get_ebitda(symbol):
     return __request(symbol, 'j4')
-    
-    
+
+
 def get_dividend_per_share(symbol):
     return __request(symbol, 'd')
 
 
-def get_dividend_yield(symbol): 
+def get_dividend_yield(symbol):
     return __request(symbol, 'y')
-    
-    
-def get_earnings_per_share(symbol): 
+
+
+def get_earnings_per_share(symbol):
     return __request(symbol, 'e')
 
 
-def get_52_week_high(symbol): 
+def get_52_week_high(symbol):
     return __request(symbol, 'k')
-    
-    
-def get_52_week_low(symbol): 
+
+
+def get_52_week_low(symbol):
     return __request(symbol, 'j')
 
 
-def get_50day_moving_avg(symbol): 
+def get_50day_moving_avg(symbol):
     return __request(symbol, 'm3')
-    
-    
-def get_200day_moving_avg(symbol): 
+
+
+def get_200day_moving_avg(symbol):
     return __request(symbol, 'm4')
-    
-    
-def get_price_earnings_ratio(symbol): 
+
+
+def get_price_earnings_ratio(symbol):
     return __request(symbol, 'r')
 
 
-def get_price_earnings_growth_ratio(symbol): 
+def get_price_earnings_growth_ratio(symbol):
     return __request(symbol, 'r5')
 
 
-def get_price_sales_ratio(symbol): 
+def get_price_sales_ratio(symbol):
     return __request(symbol, 'p5')
-    
-    
-def get_price_book_ratio(symbol): 
+
+
+def get_price_book_ratio(symbol):
     return __request(symbol, 'p6')
-       
-       
-def get_short_ratio(symbol): 
+
+
+def get_short_ratio(symbol):
     return __request(symbol, 's7')
-    
+
 
 def get_name(symbol):
-    return __request(symbol,'n')
+    return __request(symbol, 'n')
+
 
 def get_sector(symbol):
     '''
@@ -148,6 +148,7 @@ def get_sector(symbol):
         pass
     return sector
 
+
 def get_industry(symbol):
     '''
     Uses BeautifulSoup to scrape the stock industry from the Yahoo! Finance website
@@ -161,6 +162,7 @@ def get_industry(symbol):
         pass
     return industry
 
+
 def get_type(symbol):
     '''
     Uses BeautifulSoup to scrape the symbol category from the Yahoo! Finance website
@@ -168,7 +170,7 @@ def get_type(symbol):
     url = 'http://finance.yahoo.com/q/pr?s=%s+Profile' % symbol
     soup = BeautifulSoup(urllib.urlopen(url).read())
     if soup.find('span', text='Business Summary'):
-        return 'Action'
+        return 'Stock'
     elif soup.find('span', text='Fund Summary'):
         asset_type = 'Fund'
     elif symbol.find('^') == 0:
@@ -178,36 +180,50 @@ def get_type(symbol):
     return asset_type
 
 
+def get_indices(symbol):
+    url = 'http://finance.yahoo.com/q/pr?s=%s+Profile' % symbol
+    soup = BeautifulSoup(urllib.urlopen(url).read())
+    indices = []
+    try:
+        tmp_idx = soup.find('td', text='Index Membership:').find_next_sibling().findAll('a')
+        for idx in tmp_idx:
+            indices.append(idx.text)
+    except:
+        pass
+    return ','.join(indices)
+
+
 def get_historical_prices(symbol, start_date, end_date):
     """
     Get historical prices for the given ticker symbol.
     Dates may either be a date object or a string with the following format:
     'YYYYMMDD'
-    
+
     Returns a nested list.
     """
-    if type(start_date) is date:
+    if isinstance(start_date, str):
+        # Months are zero-based
+        import ipdb; ipdb.set_trace()
+        start_m = str(int(start_date[4:6]) - 1)
+        start_d = str(int(start_date[6:8]))
+        start_y = str(int(start_date[0:4]))
+    else:
         # Months are zero-based
         start_m = str(start_date.month - 1)
         start_d = str(start_date.day)
         start_y = str(start_date.year)
-    else:
-        # Months are zero-based
-        start_m = str(int(start_date[4:6]) - 1)
-        start_d = str(int(start_date[6:8]))
-        start_y = str(int(start_date[0:4]))
-        
-    if type(end_date) is date:
-        # Months are zero-based
-        end_m = str(end_date.month - 1)
-        end_d = str(end_date.day)
-        end_y = str(end_date.year)
-    else:
+
+    if isinstance(end_date, str):
         # Months are zero-based
         end_m = str(int(end_date[4:6]) - 1)
         end_d = str(int(end_date[6:8]))
         end_y = str(int(end_date[0:4]))
-        
+    else:
+        # Months are zero-based
+        end_m = str(end_date.month - 1)
+        end_d = str(end_date.day)
+        end_y = str(end_date.year)
+
     url = 'http://ichart.yahoo.com/table.csv?s=%s&' % symbol + \
           'd=%s&' % end_m + \
           'e=%s&' % end_d + \
@@ -220,4 +236,3 @@ def get_historical_prices(symbol, start_date, end_date):
     days = urllib.urlopen(url).readlines()
     data = [day[:-2].split(',') for day in days]
     return data
-

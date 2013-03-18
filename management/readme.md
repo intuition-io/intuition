@@ -40,6 +40,7 @@ financial area
 * google api https://gist.github.com/border/1321781
 * https://openexchangerates.org/about
 * http://josscrowcroft.github.com/money.js/
+* datasets http://www.infochimps.com/documentation
 
 
 d3.js tutos

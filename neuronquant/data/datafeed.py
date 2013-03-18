@@ -109,13 +109,14 @@ class DataFeed(object):
         if isinstance(exchange, str):
             exchange = [exchange]
         for ex in exchange:
-            stocks.extend(self.stock_db.available_stocks(exchange=ex))
+            stocks.extend(self.stock_db.available_equities(exchange=ex))
         random.shuffle(stocks)
         if n > len(stocks):
             log.warning('{} asked symbols but only {} availables'.format(n, len(stocks)))
             n = len(stocks)
         return stocks[:n]
 
+    #TODO Implement sophisticated criteria choice, here only random (imagine sharpe ration rank)
     def get_universe(self, exchange=None, limit=10):
         '''
         Get a set of stocks, as the universe on which we will trade
@@ -135,10 +136,10 @@ class DataFeed(object):
 
     def guess_name(self, partial_input):
         ''' Find the closest math of partial_input in stocks database, and return its symbol '''
-        match = [name for name in self.stock_db.available_stocks(key='name') if re.match(partial_input, name, re.IGNORECASE) is not None]
+        match = [name for name in self.stock_db.available_equities(key='name') if re.match(partial_input, name, re.IGNORECASE) is not None]
         if not match:
             log.debug('No matching name, trying symbol list...')
-            match = [name for name in self.stock_db.available_stocks(key='symbol') if re.match(partial_input, name, re.IGNORECASE) is not None]
+            match = [name for name in self.stock_db.available_equities(key='symbol') if re.match(partial_input, name, re.IGNORECASE) is not None]
             if match:
                 infos = self.stock_db.get_infos(symbol=match[0])
             else:

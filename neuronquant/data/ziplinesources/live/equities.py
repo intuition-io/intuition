@@ -17,8 +17,6 @@
 """
 Tools to generate data sources.
 """
-import ipdb as pdb
-
 import sys
 import os
 import time
@@ -26,7 +24,6 @@ import json
 import datetime
 import pandas as pd
 
-sys.path.append(os.environ['ZIPLINE'])
 from zipline.gens.utils import hash_args
 from zipline.sources.data_source import DataSource
 
@@ -92,12 +89,12 @@ class DataLiveSource(DataSource):
         selector = (index.day > current_dt.day) \
                 | ((index.day == current_dt.day) & (index.hour > current_dt.hour)) \
                 | ((index.day == current_dt.day) & (index.hour == current_dt.hour) & (index.minute >= current_dt.minute))
+        #NOTE Not an equal size issue ?
         for fake_dt, dt in zip(self.fake_index, index[selector]):
             while (current_dt.minute != dt.minute) or (current_dt.hour != dt.hour) :
                 time.sleep(15)
                 current_dt = datetime.datetime.now()
                 print('Waiting {} / {}'.format(current_dt, dt))
-            #time.sleep(70)
             #for fake_dt, dt in zip(self.fake_index, self.data['index']):
             for sid in self.data['tickers']:
                 if sid in self.sids:

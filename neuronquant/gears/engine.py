@@ -24,6 +24,9 @@ import json
 from neuronquant.data.datafeed import DataFeed
 from neuronquant.ai.managers import Constant, Equity, OptimalFrontier
 from neuronquant.network.transport import ZMQ_Dealer
+import neuronquant.utils.datautils as datautils
+from neuronquant.data.ziplinesources.loader import LiveBenchmark
+#from neuronquant.data.ziplinesources.live.equities import DataLiveSource
 
 import pytz
 import pandas as pd
@@ -56,6 +59,9 @@ class BacktesterEngine(object):
             raise NotImplementedError('Manager {} not available or implemented'.format(manager))
         log.info('[Debug] Manager {} available, getting a reference and initializing it.'.format(manager))
 
+        #NOTE data_frequency as controlled parameter
+        #NOTE Other params: annualizer (default is cool), capital_base, sim_params
+        #trading_algorithm = BacktesterEngine.algos[algo](algo_params, data_frequency='minute')
         trading_algorithm = BacktesterEngine.algos[algo](algo_params)
         trading_algorithm.set_logger(logbook.Logger(algo))
 
@@ -76,7 +82,7 @@ class BacktesterEngine(object):
         return trading_algorithm
 
 
-#NOTE engine.feed_data(tickers, start, end, freq) ?
+#NOTE engine.feed_data(tickers, start, end, freq) ? using set_source()
 class Simulation(object):
     ''' Take a trading strategie and evalute its results '''
     def __init__(self, data=None, flavor='mysql', lvl='debug'):
@@ -99,9 +105,9 @@ class Simulation(object):
             parser.add_argument('-v', '--version',
                                 action='version',
                                 version='%(prog)s v0.8.1 Licence rien du tout', help='Print program version')
-            parser.add_argument('-d', '--delta',
-                                type=str, action='store', default='D',
-                                required=False, help='Delta in days betweend two quotes fetch')
+            parser.add_argument('-f', '--frequency',
+                                type=str, action='store', default='daily',
+                                required=False, help='(pandas) frequency in days betweend two quotes fetch')
             parser.add_argument('-a', '--algorithm',
                                 action='store',
                                 required=True, help='Trading algorithm to be used')
@@ -138,7 +144,7 @@ class Simulation(object):
             args = parser.parse_args()
 
             self.backtest_cfg = {'algorithm'   : args.algorithm,
-                                 'delta'       : args.delta,
+                                 'frequency'   : args.frequency,
                                  'manager'     : args.manager,
                                  'database'    : args.database,
                                  'tickers'     : args.tickers.split(','),
@@ -216,23 +222,25 @@ class Simulation(object):
         if self.backtest_cfg['tickers'][0] == 'random':
             assert(len(self.backtest_cfg['tickers']) == 2)
             assert(int(self.backtest_cfg['tickers'][1]))
-            self.backtest_cfg['tickers'] = self.feeds.random_stocks(int(self.backtest_cfg['tickers'][1]), exchange=self.backtest_cfg['exchange'].split(','))
+            self.backtest_cfg['tickers'] = self.feeds.random_stocks(int(self.backtest_cfg['tickers'][1]),
+                                                                    exchange=self.backtest_cfg['exchange'].split(','))
 
         if self.backtest_cfg['live']:
-            #dates = pd.date_range(self.backtest_cfg['start'], self.backtest_cfg['end'], freq=self.backtest_cfg['delta'])
+            #dates = pd.date_range(self.backtest_cfg['start'], self.backtest_cfg['end'], freq=self.backtest_cfg['frequency'])
             #NOTE A temporary hack to avoid zipline dirty modification
             periods = self.backtest_cfg['end'] - self.backtest_cfg['start']
-            dates = pd.date_range(pd.datetime.now(), periods=periods.days + 1, freq=self.backtest_cfg['delta'])
-            '''
-            if dates.freq > pd.datetools.Day():
-                #fr_selector = ((dates.hour > 8) & (dates.hour < 17)) | ((dates.hour == 17) & (dates.minute < 31))
-                us_selector = ((dates.hour > 15) & (dates.hour < 22)) | ((dates.hour == 15) & (dates.minute > 31))
-                dates = dates[us_selector]
-            if not dates:
+            dates = datautils.filter_market_hours(pd.date_range(pd.datetime.now(), periods=periods.days + 1,
+                                                                freq='1min'),  # ...hard coded
+                                                  self.backtest_cfg['exchange'])
+            #dates = datautils.filter_market_hours(dates, self.backtest_cfg['exchange'])
+            if len(dates) == 0:
                 log.warning('! Market closed.')
                 sys.exit(0)
-            '''
-            data = {'tickers': self.backtest_cfg['tickers'], 'index': dates.tz_localize(pytz.utc)}
+            data = {'stream_source' : self.backtest_cfg['exchange'],
+                    'tickers'       : self.backtest_cfg['tickers'],
+                    'index'         : dates.tz_localize(pytz.utc)}
+
+            load = LiveBenchmark(self.backtest_cfg['end'], frequency=self.backtest_cfg['frequency']).load_market_data
         else:
             data = self.feeds.quotes(self.backtest_cfg['tickers'],
                                      start_date = self.backtest_cfg['start'],
@@ -242,28 +250,42 @@ class Simulation(object):
                 return None
             assert isinstance(data, pd.DataFrame)
             assert data.index.tzinfo
+            load = None
 
         #___________________________________________________________________________    Running    ________
         log.info('\n-- Running backetester...\nUsing algorithm: {}\n'.format(self.backtest_cfg['algorithm']))
         log.info('\n-- Using portfolio manager: {}\n'.format(self.backtest_cfg['manager']))
 
-        #NOTE First two parameters redundants
         backtester = BacktesterEngine(self.backtest_cfg['algorithm'],
                                       self.backtest_cfg['manager'],
                                       self.algo_cfg,
                                       self.manager_cfg)
 
+        #NOTE This method does not change anything
+        #backtester.set_sources([DataLiveSource(data_tmp)])
+        #TODO A new command line parameter ? only minutely and daily (and hourly normally) Use filter parameter of datasource ?
+        backtester.set_data_frequency(self.backtest_cfg['frequency'])
+
         #NOTE Can provide a third parameter load: a function like bm_rets, treasury_rets = load(bm_symbol)
         #     See zipline.data.loader load_market_data()
-        ## Environment configuration
+        # Environment configuration
         if self.backtest_cfg['exchange'] == 'paris':
-            lse = TradingEnvironment(bm_symbol='^FTSE', exchange_tz='Europe/London')
+            lse = TradingEnvironment(bm_symbol='^FTSE',
+                                     exchange_tz='Europe/London',
+                                     load=load)
+        elif (self.backtest_cfg['exchange'] == 'forex'):
+            #TODO Check for currencies traded and choose market accordingly ? Is there a forex benchmark ?
+            lse = TradingEnvironment(bm_symbol='^FCHI',
+                                     exchange_tz='Europe/London',
+                                     load=load)
         elif (self.backtest_cfg['exchange'] == 'nasdaq') or (self.backtest_cfg['exchange'] == 'nyse'):
-            lse = TradingEnvironment(bm_symbol='^GSPC', exchange_tz='US/Eastern')
+            lse = TradingEnvironment(bm_symbol='^GSPC',
+                                     exchange_tz='US/Eastern',
+                                     load=load)
         else:
             raise NotImplementedError()
 
-        ## Running simulation with it
+        # Running simulation with it
         with lse:
             self.results, self.monthly_perfs = backtester.run(data,
                                                               SimulationParameters(capital_base=self.backtest_cfg['cash'],
@@ -306,10 +328,7 @@ class Simulation(object):
             #TODO Get it from DB if it exists
             raise NotImplementedError()
 
-        try:
-            data = pd.DataFrame(perfs, index=index)
-        except:
-            import ipdb; ipdb.set_trace()
+        data = pd.DataFrame(perfs, index=index)
 
         if save:
             self.feeds.stock_db.save_metrics(data)
@@ -347,13 +366,15 @@ class Simulation(object):
         returns = dict()
 
         if benchmark:
-            benchmark_symbol = self.feeds.guess_name(benchmark)
-            if benchmark_symbol:
-                benchmark_data  = get_benchmark_returns(benchmark_symbol, self.backtest_cfg['start'], self.backtest_cfg['end'])
-            else:
+            #benchmark_symbol = self.feeds.guess_name(benchmark)
+            #if benchmark_symbol:
+            try:
+                benchmark_data  = get_benchmark_returns(benchmark, self.backtest_cfg['start'], self.backtest_cfg['end'])
+            #else:
+            except:
                 raise KeyError()
         else:
-            #TODO Automatic detection given exchange market (on command line) ? Or s&p500 as only implemented in zipline currently (but not for long !)
+            #TODO Automatic detection given exchange market (on command line) ?
             raise NotImplementedError()
 
         #NOTE Could be more efficient. But len(benchmark_data.date) != len(self.results.returns.index). Maybe because of different markets

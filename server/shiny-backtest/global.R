@@ -18,6 +18,10 @@ if (!suppressPackageStartupMessages(require(quantmod))) {
     stop("This app requires the quantmod package. To install it, run 'install.packages(\"quantmod\")'.\n")
 }
 
+if (!suppressPackageStartupMessages(require(futile.logger))) {
+    stop("This app requires the futile.logger package. To install it, run 'install.packages(\"futile.logger\")'.\n")
+}
+
 # This file defined json network bridge with R
 source(paste(Sys.getenv('QTRADE'), 'server/shiny-backtest/RClientInterface.R', sep='/'))
 
@@ -94,18 +98,18 @@ getFromSQLite <- function(name='test', database='stocks.db', debug=FALSE)
 
 # Access to backtest perfs stored in MySQL database
 getMetricsFromMySQL <- function(dataId,                # Table the backtest saved metrics
-                                dbfile  = 'mysql.cfg', # Json mysql configuration file
+                                dbfile  = 'default.json', # Json mysql configuration file
                                 overall = FALSE,       # When True, get final perfs, monthly otherwise
                                 debug   = FALSE)
 {
     # Getting database user settings
-    config <- fromJSON(file(paste(Sys.getenv('QTRADE'), 'config', dbfile, sep='/'), 'r'))
+    config <- fromJSON(file(paste(Sys.getenv('HOME'), '.quantrade', dbfile, sep='/'), 'r'))['mysql'][[1]]
 
     db = dbConnect(MySQL(),
-                   user     = config['USER'][[1]],
-                   password = config['PASSWORD'][[1]],
-                   dbname   = config['DATABASE'][[1]],
-                   host     = config['HOSTNAME'][[1]])
+                   user     = config['user'][[1]],
+                   password = config['password'][[1]],
+                   dbname   = config['database'][[1]],
+                   host     = config['hostname'][[1]])
     on.exit(dbDisconnect(db))
 
     # Choosing between final backtest analysis, or monthly perfs
@@ -137,7 +141,7 @@ getMetricsFromMySQL <- function(dataId,                # Table the backtest save
 # Common interface to access data
 getTradeData <- function(dataId   = 'test',       # Table to access
                          source   = 'sqlite',     # Type of data store
-                         config   = 'mysql.cfg',  # MySQL configuraiotn file
+                         config   = 'default.json',  # MySQL configuraiotn file
                          database = 'stocks.db',  # SQLite database name
                          overall  = FALSE,        # Final or monthly perfs
                          debug    = FALSE)

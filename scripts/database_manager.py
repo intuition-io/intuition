@@ -44,13 +44,13 @@ def main(sync, create, symbols=None):
         log.info('Adding new stocks in database...')
         assert symbols
         if symbols.find('csv') > 0:
-            db.add_stock_from_file(symbols)
+            db.add_ticker_from_file(symbols)
         elif symbols.find(',') > 0:
             stocks = symbols.split(',')
             for ticker in stocks:
-                db.add_stock(ticker)
+                db.add_ticker(ticker)
         else:
-            db.add_stock(symbols)
+            db.add_ticker(symbols)
     log.info('Done')
 
 

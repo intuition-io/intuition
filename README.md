@@ -49,8 +49,8 @@ Installation
       - note: I keep my version updated with the original, so you usually won't need to fetch both
 
 - Python dependancies, you can run:
-    - ``` BROKEN ./ppQuanTrade #> python setup.py install```
-    - ``` ./ppQuanTrade $> sudo ./scripts/ordered_pip.sh scripts/qt_requirements.txt && sudo ./scripts/ordered_pip.sh scripts/qt_requirements_extra.txt ```
+    - ``` ./ppQuanTrade #> python setup.py install``` BROKEN
+    - ``` ./ppQuanTrade #> ./scripts/ordered_pip.sh scripts/qt_requirements.txt && ./scripts/ordered_pip.sh scripts/qt_requirements_extra.txt ```
     - Note: You can run as well the script on z_* files if you want to complete the installation now with zipline dependancies
 
 - R packages, run:  ```ppQuanTrade $> ./scripts/install_r_packages.R. ```
@@ -72,7 +72,7 @@ If you have an error and you just installed R for the first time, install a firs
    - Make sure you have a well configured mysql database running (check data/readme.rst or http://dev.mysql.com/tech-resources/articles/mysql_intro.html)
    - ``` $> mysql -u root -p ```
    - ```mysql> create database stock_data;```
-   - ```mysql> grant all privileges on *.* to 'user'@'host'```
+   - ```mysql> grant all privileges on *.* to 'user'@'host'``` (replace user and host as you want)
    - Edit ./ppQuanTrade/config/mysql.cfg 
    - Create tables with ```./ppQuanTrade $>`./scripts/database.py -c```
    - Fill it with ``` ./ppQuanTrade $> ./scripts/database.py -a data/dump_sql.csv ```
@@ -92,7 +92,7 @@ To run a backtest manually, configure algos.cfg and manager.cfg file, and then r
 
 Or in realtime mode:
 
-```./backtest.py --tickers random,6 --algorithm StdBased --manager Equity --delta 2min --live```
+```./backtest.py --initialcash 100000 --tickers random,6 --algorithm StdBased --manager Equity --delta 2min --exchange paris --live```
 
 More examples available [root]/scripts/run_backtest.sh
 

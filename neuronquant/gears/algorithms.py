@@ -17,8 +17,6 @@
 import datetime
 import pytz
 import numpy as np
-import sys
-import os
 
 from zipline.algorithm import TradingAlgorithm
 from zipline.transforms import MovingAverage, MovingVWAP, batch_transform, MovingStandardDev
@@ -43,7 +41,8 @@ class BuyAndHold(TradingAlgorithm):
         signals = dict()
 
         ''' ----------------------------------------------------------    Scan   --'''
-        if self.frame_count == 3:
+        #import ipdb; ipdb.set_trace()
+        if self.frame_count == 4:
             for ticker in data:
                 signals[ticker] = data[ticker].price
 

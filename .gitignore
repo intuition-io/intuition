@@ -10,6 +10,7 @@ res
 deprecated
 dist
 QSData
+CSV
 node_modules/*
 
 # R

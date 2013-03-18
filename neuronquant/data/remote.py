@@ -15,9 +15,7 @@
 
 
 import urllib2
-import sys
 import re
-import os
 import pytz
 
 from pandas import Index, Series, DataFrame
@@ -32,10 +30,9 @@ import json
 from logbook import Logger
 log = Logger('Remote')
 
-sys.path.append(os.environ['QTRADE'])
-from neuronquant.utils.db_utils import yahooCode, Fields
+import neuronquant.utils.datautils as datautils
 from neuronquant.utils.dates import epochToDate
-from neuronquant.utils.utils import reIndexDF
+import neuronquant.utils.utils as utils
 
 
 class Alias (object):
@@ -111,10 +108,10 @@ class Fetcher(object):
             return pd.DataFrame()
         if index.freq != pd.datetools.BDay() or index.freq != pd.datetools.Day():
             #NOTE reIndexDF has a column arg but here not provided
-            quotes = reIndexDF(quotes, delta=index.freq, reset_hour=False)
+            quotes = utils.reIndexDF(quotes, delta=index.freq, reset_hour=False)
         if not quotes.index.tzinfo:
             quotes.index = quotes.index.tz_localize(self.tz)
-        quotes.columns = Fields.QUOTES
+        quotes.columns = utils.Fields.QUOTES
         return quotes
 
     def get_stock_snapshot(self, symbols, markets=None, light=True):
@@ -181,7 +178,7 @@ class Fetcher(object):
     def getStockInfo(self, symbols, fields):
         for f in fields:
             #NOTE could just remove field and continue
-            if f not in yahooCode:
+            if f not in datautils.yahooCode:
                 log.error('** Invalid stock information request.')
                 return None
         #TODO: remove " from results
@@ -190,7 +187,7 @@ class Fetcher(object):
         fields.append('error')
         url = 'http://finance.yahoo.com/d/quotes.csv?s='
         url = url + '+'.join(symbols) + '&f='
-        url += ''.join([yahooCode[item.lower()] for item in fields])
+        url += ''.join([datautils.yahooCode[item.lower()] for item in fields])
         data = urllib2.urlopen(url)
         df = dict()
         for item in symbols:

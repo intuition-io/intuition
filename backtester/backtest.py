@@ -20,14 +20,13 @@ import os
 
 import pylab as plt
 
-sys.path.append(os.environ['QTRADE'])
-from neuronquant.calculus.engine import Simulation
+from neuronquant.gears.engine import Simulation
 from neuronquant.utils import color_setup, remote_setup, log
 
 
 if __name__ == '__main__':
     # use 'setup' configuration for logging
-    with remote_setup.applicationbound():
+    with color_setup.applicationbound():
         '''-------------------------------------------------------------------------------------------    Backtest    ----'''
         # Backtest or live engine used
         engine  = Simulation()
@@ -52,8 +51,7 @@ if __name__ == '__main__':
         #NOTE Could do a generic save client method (retrieve the correct model, with correct fields)
         perf_series  = engine.rolling_performances(timestamp='one_month', save=True, db_id=args['database'])
         #TODO save returns not ready yet, don't try to save
-        #TODO more benchmarks choice (zipline modification)
-        returns_df   = engine.get_returns(benchmark='cac', save=False)
+        returns_df   = engine.get_returns(benchmark='^fchi', save=False)
         risk_metrics = engine.overall_metrics(metrics=perf_series, save=True, db_id=args['database'])
 
         #FIXME irrelevant results if no transactions were made
