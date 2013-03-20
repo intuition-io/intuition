@@ -21,55 +21,77 @@ import os
 import pylab as plt
 
 from neuronquant.gears.engine import Simulation
-from neuronquant.utils import color_setup, remote_setup, log
+import neuronquant.utils as utils
+import neuronquant.utils.datautils as datautils
+from neuronquant.gears.configuration import Setup
 
 
 if __name__ == '__main__':
-    # use 'setup' configuration for logging
-    with color_setup.applicationbound():
-        '''-------------------------------------------------------------------------------------------    Backtest    ----'''
-        # Backtest or live engine used
-        engine  = Simulation()
+    '''___________________________________________________________________________________________    Setup    ____'''
+    # Dedicated object for configuration setup
+    setup = Setup()
 
-        # Read local (.cfg files and command line args) or remote (ZMQ Messages) backtest, algorithm and manager configuration
-        args    = engine.configure()
+    # General simulation behavior is defined using command line args
+    configuration = setup.parse_cmdline()
 
-        # See neuronquant/calculus/engine.py or zipline for details on results dataframe
-        results = engine.run_backtest()
-        if results is None:
-            log.warning('Backtest failed, exiting')
+    # Color_setup : Pretty print of errors, warning, and so on
+    # Remote_setup: ZMQ based messaging, route logs on the network (catched by server's broker)
+    log_setup = utils.remote_setup if configuration['remote'] else utils.color_setup
+    with log_setup.applicationbound():
+
+        # Fill algorithm and manager parameters
+        # Localy, reading configuration file
+        # Remotely, listening gor messages through zmq socket
+        strategie = setup.get_strategie_configuration(remote=configuration['remote'])
+
+        '''____________________________________________________________________________________    Backtest    ____'''
+        # Backtest or live engine
+        engine = Simulation()
+
+        # Setup quotes data and financial context (location, market, ...) simulation from user parameters
+        # Wrap _configure_data() and _configure_context() you can use directly for better understanding
+        data, context = engine.configure(configuration)
+
+        # See neuronquant/calculus/engine.py for details of results which is an analyzes object
+        analyzes = engine.run(data, configuration, strategie, context)
+
+        if analyzes is None:
+            utils.log.error('** Backtest failed, exiting')
             sys.exit(1)
 
-        '''---------------------------------------------------------------------------------------------    Results   ----'''
-        log.info('Portfolio returns: {}'.format(results.portfolio_value[-1]))
+        '''_______________________________________________________________________________________    Results   ____'''
+        utils.log.info('Portfolio returns: {}'.format(analyzes.results.portfolio_value[-1]))
 
-        if args['live'] or results.portfolio_value[-1] == args['cash']:
-            # Currently tests don't last more than 20min, analysis is not relevant, neither backtest without orders
+        if configuration['live'] or analyzes.results.portfolio_value[-1] == configuration['cash']:
+            # Currently, live tests don't last more than 20min; analyzes is not relevant, neither backtest without orders
             sys.exit(0)
 
         #TODO Implement in datafeed a generic save method (which could call the correct database save method)
-        #NOTE Could do a generic save client method (retrieve the correct model, with correct fields)
-        perf_series  = engine.rolling_performances(timestamp='one_month', save=True, db_id=args['database'])
+        # Get a portfolio monthly risk analyzis
+        perf_series  = analyzes.rolling_performances(timestamp='one_month', save=True, db_id=configuration['database'])
+
         #TODO save returns not ready yet, don't try to save
-        returns_df   = engine.get_returns(benchmark='^fchi', save=False)
-        risk_metrics = engine.overall_metrics(metrics=perf_series, save=True, db_id=args['database'])
+        #TODO Becnhmark was automatically set from exchange parameter, use it here (dict available in datautils)
+        # Get daily, cumulative and not, returns of portfolio and benchmark
+        returns_df   = analyzes.get_returns(benchmark=datautils.Exchange[configuration['exchange']]['index'], save=False)
+        risk_metrics = analyzes.overall_metrics(metrics=perf_series, save=True, db_id=configuration['database'])
 
         #FIXME irrelevant results if no transactions were made
-        log.info('\n\nReturns: {}% / {}%\nVolatility:\t{}\nSharpe:\t\t{}\nMax drawdown:\t{}\n\n'.format(
-                 risk_metrics['Returns'] * 100.0,
-                 risk_metrics['Benchmark.Returns'] * 100.0,
-                 risk_metrics['Volatility'],
-                 risk_metrics['Sharpe.Ratio'],
-                 risk_metrics['Max.Drawdown']))
+        utils.log.info('\n\nReturns: {}% / {}%\nVolatility:\t{}\nSharpe:\t\t{}\nMax drawdown:\t{}\n\n'.format(
+                risk_metrics['Returns'] * 100.0,
+                risk_metrics['Benchmark.Returns'] * 100.0,
+                risk_metrics['Volatility'],
+                risk_metrics['Sharpe.Ratio'],
+                risk_metrics['Max.Drawdown']))
 
         # If we work in local, draw a quick summary plot
-        if not args['remote']:
+        if not configuration['remote']:
             data = returns_df.drop(['Returns', 'Benchmark.Returns'], axis=1)
             data.plot()
             plt.show()
 
-            # R statistical analysis
-            os.system('{}/backtester/analysis.R --source mysql --table {} --verbose'.format(os.environ['QTRADE'], args['database']))
+            # R statistical analyzes
+            os.system('{}/backtester/analysis.R --source mysql --table {} --verbose'.format(os.environ['QTRADE'], configuration['database']))
             os.system('evince ./Rplots.pdf')
 
 

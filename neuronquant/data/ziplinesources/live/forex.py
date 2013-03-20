@@ -88,28 +88,27 @@ class DataLiveSource(DataSource):
                 log.debug('Waiting for Forex update')
                 currencies = self.forex.QueryTrueFX()
                 #if not currencies.empty:
-                if len(currencies) > 0:
+                if len(currencies.keys()) >= len(self.sids):
                     log.debug('New income data, fire an event !')
                     break
-                time.sleep(120)
+                time.sleep(60)
 
             try:
-                for sid in self.data['tickers']:
+                for sid in self.sids:
                     assert sid in currencies.columns
-                    if sid in self.sids:
-                        log.debug('Data available:\n{}'.format(currencies[sid]))
-                        event = {
-                            'dt': fake_dt,
-                            'trade_time': currencies[sid]['TimeStamp'],
-                            'sid': sid,
-                            'bid': currencies[sid]['Bid.Price'],
-                            'ask': currencies[sid]['Ask.Price'],
-                            'high': currencies[sid]['High'],
-                            'low': currencies[sid]['Low'],
-                            #'price': currencies[sid]['Bid.Price'],
-                            'volume': 0
-                        }
-                        yield event
+                    log.debug('Data available:\n{}'.format(currencies[sid]))
+                    event = {
+                        'dt': fake_dt,
+                        'trade_time': currencies[sid]['TimeStamp'],
+                        'sid': sid,
+                        'bid': currencies[sid]['Bid.Price'],
+                        'ask': currencies[sid]['Ask.Price'],
+                        'high': currencies[sid]['High'],
+                        'low': currencies[sid]['Low'],
+                        #'price': currencies[sid]['Bid.Price'],
+                        'volume': 0
+                    }
+                    yield event
             except:
                 import ipdb; ipdb.set_trace()
 

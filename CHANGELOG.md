@@ -1,6 +1,17 @@
 Changelog
 =========
 
+19-03-2013
+----------
+- Creating refactoring branch
+- config.cfg file in *.json
+- New configuration object
+- New simulation configuration, with above object
+- New Analyses class to handle backtests results
+- Zipline: if live running, risk analysis get benchmark value running new function that downloads it 
+- Some improvements and fixes 
+
+
 15-03-2013
 ----------
 - Forex realtime free access with R (through TrueFX)

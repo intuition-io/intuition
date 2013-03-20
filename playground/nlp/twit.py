@@ -10,8 +10,9 @@ import time
 #TODO Changing from sqlite3 to sqlalchemy mysql
 #TODO Sentiment analysis: Bayesian naive classifier with nltk
 
+#TODO read it in configuration file
 twitterUsername = 'XavierBruhiere'
-twitterPassword = 'quantrade'
+twitterPassword = raw_input('Twitter password: ')
 
 twitterWordFilter = []
 wordListCsv = csv.reader(open('wordstofilter.csv', 'rb'))

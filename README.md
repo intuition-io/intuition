@@ -36,7 +36,7 @@ Features
 Installation
 ------------
 
-- Debian based distribution: sudo apt-get install git libzmq-dev r-base python2.7 mysql-server libmysqlclient-dev npm pip planner
+- Debian based distribution: sudo apt-get install git libzmq-dev r-base python2.7 mysql-server libmysqlclient-dev npm python-pip planner python-dev
     
 - Zipline backtster engine: 
    - Clone (outside QuanTrade project) or fork (then clone your own copy) the original project at https://github.com/quantopian/zipline
@@ -72,6 +72,7 @@ If you have an error and you just installed R for the first time, install a firs
    - Make sure you have a well configured mysql database running (check data/readme.rst or http://dev.mysql.com/tech-resources/articles/mysql_intro.html)
    - ``` $> mysql -u root -p ```
    - ```mysql> create database stock_data;```
+   - ```mysql> set password for 'user'@'host' = password('chut');
    - ```mysql> grant all privileges on *.* to 'user'@'host'``` (replace user and host as you want)
    - Edit ./ppQuanTrade/config/mysql.cfg 
    - Create tables with ```./ppQuanTrade $>`./scripts/database.py -c```

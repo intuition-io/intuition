@@ -42,6 +42,7 @@ class Database(object):
 
         # Handle edge case here
         log.info('Reading NeuronQuant MySQL configuration...')
+        #NOTE Make it global
         sql = json.load(open('/'.join((os.path.expanduser('~/.quantrade'), 'default.json')), 'r'))['mysql']
         if sql['password'] == '':
             log.warn('No password provided')
@@ -128,7 +129,7 @@ class Manager(object):
 
         if start is None:
             log.info('Reading NeuronQuant MySQL configuration...')
-            sql = json.load(open('/'.join((os.environ['QTRADE'], 'config/mysql.cfg')), 'r'))
+            sql = json.load(open('/'.join((os.path.expanduser('~/.quantrade'), 'default.json')), 'r'))['mysql']
             start = datetime.strptime(sql['DATA_START'], '%Y-%m-%d').date()
         if end is None:
             end = date.today()

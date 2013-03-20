@@ -21,7 +21,6 @@ import sys
 import os
 import argparse
 
-sys.path.append(os.environ['QTRADE'])
 from neuronquant.calculus.engine import Simulation
 from neuronquant.ai.optimize import genetic_optimize
 from neuronquant.utils import log, color_setup, remote_setup

@@ -102,10 +102,11 @@ class DataFeed(object):
         symbol = self.guess_name(ticker)
         return self.stock_db.get_infos(symbol=symbol)
 
-    def random_stocks(self, n=5, exchange=None):
+    def random_stocks(self, n=5, exchange=''):
         ''' Return n random stock names from database '''
         log.info('Generating {} random stocks'.format(n))
         stocks = []
+        #NOTE Can't consider the whole universe of stocks, will bug with exchange=None
         if isinstance(exchange, str):
             exchange = [exchange]
         for ex in exchange:

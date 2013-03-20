@@ -75,5 +75,44 @@ def filter_market_hours(dates, exchange):
     return dates[selector]
 
 
+# World exchanges caracteristics
+Exchange = {
+    'paris': {'index': '^FTSE',
+         'timezone': 'Europe/London',
+         'code': 1001},
+    'forex': {'index': '^FCHI',
+         'timezone': 'Europe/London',
+         'code': 1002},
+    'nasdaq': {'index': '^GSPC',
+         'timezone': 'US/Eastern',
+         'code': 1003},
+    'nyse': {'index': '^GSPC',
+         'timezone': 'US/Eastern',
+         'code': 1004},
+
+    # Access by code: Backtester transform to live trading astuce
+    '1001': {'index': '^FTSE',
+             'google_symbol': 'UKX',
+             'google_market': 'INDEXFTSE',
+             'timezone': 'Europe/London',
+             'name': 'paris'},
+    '1002': {'index': '^FCHI',
+             'google_symbol': 'PX1',
+             'google_market': 'INDEXEURO',
+         'timezone': 'Europe/London',
+         'name': 'forex'},
+    '1003': {'index': '^GSPC',
+             'google_symbol': '.INX',
+             'google_market': 'INDEXSP',
+         'timezone': 'US/Eastern',
+         'name': 'nasdaq'},
+    '1004': {'index': '^GSPC',
+             'google_symbol': '.INX',
+             'google_market': 'INDEXSP',
+         'timezone': 'US/Eastern',
+         'name': 'nyse'},
+}
+
+
 class Fields:
     QUOTES = ['open', 'low', 'high', 'close', 'volume', 'adj_close']

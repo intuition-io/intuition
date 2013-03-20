@@ -17,62 +17,65 @@
 from algorithms import *
 
 import sys
-import os
-import argparse
-import json
 
 from neuronquant.data.datafeed import DataFeed
 from neuronquant.ai.managers import Constant, Equity, OptimalFrontier
-from neuronquant.network.transport import ZMQ_Dealer
+#from neuronquant.network.transport import ZMQ_Dealer
 import neuronquant.utils.datautils as datautils
 from neuronquant.data.ziplinesources.loader import LiveBenchmark
 #from neuronquant.data.ziplinesources.live.equities import DataLiveSource
+from neuronquant.gears.analyzes import Analyzes
 
 import pytz
 import pandas as pd
-import numpy as np
 
-from qstkutil import tsutil as tsu
+#from qstkutil import tsutil as tsu
 
 import logbook
 log = logbook.Logger('Engine')
 
-from zipline.data.benchmarks import get_benchmark_returns
 from zipline.finance.trading import SimulationParameters, TradingEnvironment
 
 
 class BacktesterEngine(object):
-    ''' Factory class wrapping zipline Backtester, returns the requested algo '''
-    algos = {'DualMA'      : DualMovingAverage       , 'Momentum'   : Momentum,
-             'VWAP'        : VolumeWeightAveragePrice, 'BuyAndHold' : BuyAndHold,
-             'StdBased'    : StddevBased             , 'OLMAR'      : OLMAR,
-             'MultiMA'     : MultiMA                 , 'MACrossover': MovingAverageCrossover}
+    ''' Factory class wrapping zipline Backtester, returns the requested algo ready for use '''
+    algorithms = {'DualMA'      : DualMovingAverage       , 'Momentum'   : Momentum,
+                  'VWAP'        : VolumeWeightAveragePrice, 'BuyAndHold' : BuyAndHold,
+                  'StdBased'    : StddevBased             , 'OLMAR'      : OLMAR,
+                  'MultiMA'     : MultiMA                 , 'MACrossover': MovingAverageCrossover}
 
-    portfolio_strategie = {'Equity': Equity, 'Constant': Constant, 'OptimalFrontier': OptimalFrontier}
+    portfolio_managers = {'Equity': Equity, 'Constant': Constant, 'OptimalFrontier': OptimalFrontier}
 
-    def __new__(self, algo, manager, algo_params, pf_params):
-        if algo not in BacktesterEngine.algos:
+    def __new__(self, algo, manager, strategie_configuration):
+        '''
+        Reads the user configuration and returns
+        '''
+        # CHecking if algorithm and manager the user asks for are available
+        if algo not in BacktesterEngine.algorithms:
             raise NotImplementedError('Algorithm {} not available or implemented'.format(algo))
-        log.info('[Debug] Algorithm {} available, getting a reference to it.'.format(algo))
+        log.info('Algorithm {} available, getting a reference to it.'.format(algo))
 
-        if manager not in BacktesterEngine.portfolio_strategie:
+        if manager not in BacktesterEngine.portfolio_managers:
             raise NotImplementedError('Manager {} not available or implemented'.format(manager))
-        log.info('[Debug] Manager {} available, getting a reference and initializing it.'.format(manager))
+        log.info('Manager {} available, getting a reference and initializing it.'.format(manager))
 
-        #NOTE data_frequency as controlled parameter
-        #NOTE Other params: annualizer (default is cool), capital_base, sim_params
-        #trading_algorithm = BacktesterEngine.algos[algo](algo_params, data_frequency='minute')
-        trading_algorithm = BacktesterEngine.algos[algo](algo_params)
+        #NOTE Other params: annualizer (default is cool), capital_base, sim_params (both are set in run function)
+        trading_algorithm = BacktesterEngine.algorithms[algo](strategie_configuration['algorithm'])
+
         trading_algorithm.set_logger(logbook.Logger(algo))
 
-        trading_algorithm.manager = BacktesterEngine.portfolio_strategie[manager](pf_params)
+        # Linking to the algorithm the configured portfolio manager
+        trading_algorithm.manager = BacktesterEngine.portfolio_managers[manager](strategie_configuration['manager'])
 
-        #FIXME Works, but every new event reset the portfolio
-        portfolio_name = pf_params.get('name')
-        if pf_params.get('load_backup', False) and portfolio_name:
+        # If requested and possible, load the named portfolio to start trading with it
+        #FIXME Works, but every new event resets the portfolio
+        portfolio_name = strategie_configuration['manager'].get('name')
+
+        if strategie_configuration['manager'].get('load_backup', False) and portfolio_name:
             log.info('Re-loading last {} portfolio from database'.format(portfolio_name))
             ## Retrieving a zipline portfolio object. str() is needed as the parameter is of type unicode
             backup_portfolio = trading_algorithm.manager.load_portfolio(str(portfolio_name))
+
             if backup_portfolio is None:
                 log.warning('! Unable to set {} portfolio: not found'.format(portfolio_name))
             else:
@@ -85,328 +88,115 @@ class BacktesterEngine(object):
 #NOTE engine.feed_data(tickers, start, end, freq) ? using set_source()
 class Simulation(object):
     ''' Take a trading strategie and evalute its results '''
-    def __init__(self, data=None, flavor='mysql', lvl='debug'):
+    def __init__(self, data=None):
         #NOTE Allowing different data access ?
-        self.data          = data
-        if not data:
-            self.feeds         = DataFeed()
-        self.backtest_cfg  = None
-        self.algo_cfg      = None
-        self.manager_cfg   = None
-        self.monthly_perfs = None
+        #self.metrics = None
+        #self.server        = ZMQ_Dealer(id=self.__class__.__name__)
+        self.datafeed = DataFeed()
 
-        self.server        = ZMQ_Dealer(id=self.__class__.__name__)
+    #TODO For both, timezone configuration
+    def configure(self, configuration):
+        '''
+        Prepare dates, data, trading environment for simulation
+        _______________________________________________________
+        Parameters
+            configuration: dict()
+                Structure with previously defined backtest behavior
+        '''
+        data = self._configure_data(tickers    = configuration['tickers'],
+                                  start_time = configuration['start'],
+                                  end_time   = configuration['end'],
+                                  freq       = configuration['frequency'],
+                                  exchange   = configuration['exchange'],
+                                  live       = configuration['live'])
 
-    def configure(self, bt_cfg=None, a_cfg=None, m_cfg=None):
-        ''' Reads and provides a clean configuration for the simulation '''
+        context = self._configure_context(configuration['exchange'])
 
-        if not bt_cfg:
-            parser = argparse.ArgumentParser(description='Backtester module, the terrific financial simukation')
-            parser.add_argument('-v', '--version',
-                                action='version',
-                                version='%(prog)s v0.8.1 Licence rien du tout', help='Print program version')
-            parser.add_argument('-f', '--frequency',
-                                type=str, action='store', default='daily',
-                                required=False, help='(pandas) frequency in days betweend two quotes fetch')
-            parser.add_argument('-a', '--algorithm',
-                                action='store',
-                                required=True, help='Trading algorithm to be used')
-            parser.add_argument('-m', '--manager',
-                                action='store',
-                                required=True, help='Portfolio strategie to be used')
-            parser.add_argument('-b', '--database',
-                                action='store', default='test',
-                                required=False, help='Table to considere in database')
-            parser.add_argument('-i', '--initialcash',
-                                type=float, action='store', default=100000.0,
-                                required=False, help='Initial cash portfolio value')
-            parser.add_argument('-t', '--tickers',
-                                action='store', default='random',
-                                required=False, help='target names to process')
-            parser.add_argument('-s', '--start',
-                                action='store', default='1/1/2006',
-                                required=False, help='Start date of the backtester')
-            parser.add_argument('-e', '--end',
-                                action='store', default='1/12/2010',
-                                required=False, help='Stop date of the backtester')
-            parser.add_argument('-ex', '--exchange',
-                                action='store', default='nasdaq',
-                                required=False, help='list of markets where trade, separated with a coma')
-            parser.add_argument('-r', '--remote',
-                                action='store_true',
-                                help='Indicates if the program was ran manually or not')
-            parser.add_argument('-l', '--live',
-                                action='store_true',
-                                help='makes the engine work in real-time !')
-            parser.add_argument('-p', '--port',
-                                action='store', default=5570,
-                                required=False, help='Activates the diffusion of the universe on the network, on the port provided')
-            args = parser.parse_args()
+        return data, context
 
-            self.backtest_cfg = {'algorithm'   : args.algorithm,
-                                 'frequency'   : args.frequency,
-                                 'manager'     : args.manager,
-                                 'database'    : args.database,
-                                 'tickers'     : args.tickers.split(','),
-                                 'start'       : args.start,
-                                 'end'         : args.end,
-                                 'live'        : args.live,
-                                 'port'        : args.port,
-                                 'exchange'    : args.exchange,
-                                 'cash'        : args.initialcash,
-                                 'remote'      : args.remote}
-        else:
-            self.backtest_cfg = bt_cfg
+    #NOTE Should the data be loaded in zipline sourcedata class ?
+    def _configure_data(self, tickers, start_time=None, end_time=pd.datetime.now(pytz.utc), freq='daily', exchange='', live=False):
+        if live:
+            # Default end_date is now, suitable for live trading
+            self.load_market_data = LiveBenchmark(end_time, frequency=freq).load_market_data
 
-        if isinstance(self.backtest_cfg['start'], str) and isinstance(self.backtest_cfg['end'], str):
-            ###############test = pd.datetime.strptime('2012-02-01:14:00', '%Y-%m-%d:%H:%M')
-            self.backtest_cfg['start'] = pytz.utc.localize(pd.datetime.strptime(self.backtest_cfg['start'], '%Y-%m-%d'))
-            self.backtest_cfg['end']   = pytz.utc.localize(pd.datetime.strptime(self.backtest_cfg['end'], '%Y-%m-%d'))
-        elif isinstance(self.backtest_cfg['start'], pd.datetime) and isinstance(self.backtest_cfg['end'], pd.datetime):
-            if not self.backtest_cfg['start'].tzinfo:
-                self.backtest_cfg['start'] = pytz.utc.localize(self.backtest_cfg['start'])
-            if not self.backtest_cfg['end'].tzinfo:
-                self.backtest_cfg['end'] = pytz.utc.localize(self.backtest_cfg['end'])
-        else:
-            raise NotImplementedError()
-
-        self.read_config(remote=self.backtest_cfg['remote'], manager=m_cfg, algorithm=a_cfg)
-
-        return self.backtest_cfg
-
-    def read_config(self, *args, **kwargs):
-        self.manager_cfg = kwargs.get('manager', None)
-        self.algo_cfg = kwargs.get('algorithm', None)
-
-        if kwargs.get('remote', False):
-            self.server.run(host='127.0.0.1', port=self.backtest_cfg['port'])
-
-            # In remote mode, client sends missing configuration through zmq socket
-            if (not self.manager_cfg) or (not self.algo_cfg):
-                log.info('Fetching backtest configuration from client')
-                msg = self.server.receive(json=True)
-                log.debug('Got it !')
-
-            # Set simulation parameters with it
-            assert isinstance(msg, dict)
-            if self.manager_cfg is None:
-                self.manager_cfg = msg['manager']
-            if self.algo_cfg is None:
-                self.algo_cfg    = msg['algorithm']
-
-        else:
-            # Reading configuration from json files
-            config_dir = '/'.join((os.environ['QTRADE'], 'config/'))
-            try:
-                # Files store many algos and manager parameters,
-                # use backtest configuration to pick up the right one
-                if self.manager_cfg is None:
-                    self.manager_cfg = json.load(open('{}/managers.cfg'.format(config_dir), 'r'))[self.backtest_cfg['manager']]
-                if self.algo_cfg is None:
-                    self.algo_cfg    = json.load(open('{}/algos.cfg'.format(config_dir), 'r'))[self.backtest_cfg['algorithm']]
-            except:
-                log.error('** loading json configuration.')
-                sys.exit(1)
-
-        # The manager can use the same socket during simulation to emit portfolio informations
-        self.manager_cfg['server'] = self.server
-        log.info('Configuration is Done.')
-
-    def run_backtest(self):
-        # No configuration, no backtest man
-        if self.backtest_cfg is None or self.algo_cfg is None or self.manager_cfg is None:
-            log.error('** Backtester not configured properly')
-            return 1
-
-        #'''_____________________________________________________________________    Parameters    ________
-        if self.backtest_cfg['tickers'][0] == 'random':
-            assert(len(self.backtest_cfg['tickers']) == 2)
-            assert(int(self.backtest_cfg['tickers'][1]))
-            self.backtest_cfg['tickers'] = self.feeds.random_stocks(int(self.backtest_cfg['tickers'][1]),
-                                                                    exchange=self.backtest_cfg['exchange'].split(','))
-
-        if self.backtest_cfg['live']:
-            #dates = pd.date_range(self.backtest_cfg['start'], self.backtest_cfg['end'], freq=self.backtest_cfg['frequency'])
+            #dates = pd.date_range(start_time, end_time, freq=freq)
             #NOTE A temporary hack to avoid zipline dirty modification
-            periods = self.backtest_cfg['end'] - self.backtest_cfg['start']
+            periods = end_time - start_time
             dates = datautils.filter_market_hours(pd.date_range(pd.datetime.now(), periods=periods.days + 1,
-                                                                freq='1min'),  # ...hard coded
-                                                  self.backtest_cfg['exchange'])
-            #dates = datautils.filter_market_hours(dates, self.backtest_cfg['exchange'])
+                                                                freq='1min'),
+                                                                #TODO ...hard coded, later: --frequency daily,3
+                                                  exchange)
+            #dates = datautils.filter_market_hours(dates, exchange)
             if len(dates) == 0:
                 log.warning('! Market closed.')
                 sys.exit(0)
-            data = {'stream_source' : self.backtest_cfg['exchange'],
-                    'tickers'       : self.backtest_cfg['tickers'],
+            data = {'stream_source' : exchange,
+                    'tickers'       : tickers,
                     'index'         : dates.tz_localize(pytz.utc)}
-
-            load = LiveBenchmark(self.backtest_cfg['end'], frequency=self.backtest_cfg['frequency']).load_market_data
         else:
-            data = self.feeds.quotes(self.backtest_cfg['tickers'],
-                                     start_date = self.backtest_cfg['start'],
-                                     end_date   = self.backtest_cfg['end'])
+            # Use default zipline load_market_data, i.e. data from msgpack files in ~/.zipline/data/
+            self.load_market_data = None
+
+            #TODO if start_time is None get default start_time in ~/.quantrade/default.json
+            assert start_time
+            # Fetch data from mysql database
+            data = self.datafeed.quotes(tickers,
+                                     start_date = start_time,
+                                     end_date   = end_time)
             if len(data) == 0:
-                log.warning('Got nothing from database, returning')
-                return None
-            assert isinstance(data, pd.DataFrame)
-            assert data.index.tzinfo
-            load = None
+                log.warning('Got nothing from database')
+                data = pd.DataFrame()
+            else:
+                assert isinstance(data, pd.DataFrame)
+                assert data.index.tzinfo
 
+        return data
+
+    def set_becnhmark_loader(self, load_function):
+        self.load_market_data = load_function
+
+    #TODO Use of futur localisation database criteria
+    #TODO A list of markets to check if this one is in
+    def _configure_context(self, exchange=''):
+        '''
+        Setup from exchange traded on benchmarks used, location
+        and method to load data market while simulating
+        _______________________________________________
+        Parameters
+            exchange: str
+                Trading exchange market
+        '''
+        # Environment configuration
+        if exchange in datautils.Exchange:
+            finance_context = TradingEnvironment(bm_symbol   = datautils.Exchange[exchange]['index'],
+                                                 exchange_tz = datautils.Exchange[exchange]['timezone'],
+                                                 load        = self.load_market_data)
+        else:
+            raise NotImplementedError('Because of computation limitation, trading worldwide not permitted currently')
+
+        return finance_context
+
+    def run(self, data, configuration, strategie, context):
         #___________________________________________________________________________    Running    ________
-        log.info('\n-- Running backetester...\nUsing algorithm: {}\n'.format(self.backtest_cfg['algorithm']))
-        log.info('\n-- Using portfolio manager: {}\n'.format(self.backtest_cfg['manager']))
+        log.info('\n-- Running backetester...\nUsing algorithm: {}\n'.format(configuration['algorithm']))
+        log.info('\n-- Using portfolio manager: {}\n'.format(configuration['manager']))
 
-        backtester = BacktesterEngine(self.backtest_cfg['algorithm'],
-                                      self.backtest_cfg['manager'],
-                                      self.algo_cfg,
-                                      self.manager_cfg)
+        backtester = BacktesterEngine(configuration['algorithm'],
+                                      configuration['manager'],
+                                      strategie)
 
         #NOTE This method does not change anything
         #backtester.set_sources([DataLiveSource(data_tmp)])
         #TODO A new command line parameter ? only minutely and daily (and hourly normally) Use filter parameter of datasource ?
-        backtester.set_data_frequency(self.backtest_cfg['frequency'])
-
-        #NOTE Can provide a third parameter load: a function like bm_rets, treasury_rets = load(bm_symbol)
-        #     See zipline.data.loader load_market_data()
-        # Environment configuration
-        if self.backtest_cfg['exchange'] == 'paris':
-            lse = TradingEnvironment(bm_symbol='^FTSE',
-                                     exchange_tz='Europe/London',
-                                     load=load)
-        elif (self.backtest_cfg['exchange'] == 'forex'):
-            #TODO Check for currencies traded and choose market accordingly ? Is there a forex benchmark ?
-            lse = TradingEnvironment(bm_symbol='^FCHI',
-                                     exchange_tz='Europe/London',
-                                     load=load)
-        elif (self.backtest_cfg['exchange'] == 'nasdaq') or (self.backtest_cfg['exchange'] == 'nyse'):
-            lse = TradingEnvironment(bm_symbol='^GSPC',
-                                     exchange_tz='US/Eastern',
-                                     load=load)
-        else:
-            raise NotImplementedError()
+        backtester.set_data_frequency(configuration['frequency'])
 
         # Running simulation with it
-        with lse:
-            self.results, self.monthly_perfs = backtester.run(data,
-                                                              SimulationParameters(capital_base=self.backtest_cfg['cash'],
-                                                                                   period_start=self.backtest_cfg['start'],
-                                                                                   period_end=self.backtest_cfg['end']))
+        with context:
+            results, monthly_perfs = backtester.run(data,
+                                                    SimulationParameters(capital_base = configuration['cash'],
+                                                                         period_start = configuration['start'],
+                                                                         period_end   = configuration['end']))
 
-        return self.results
-
-    def rolling_performances(self, timestamp='one_month', save=False, db_id=None):
-        ''' Filters self.perfs and, if asked, save it to database '''
-        #TODO Study the impact of month choice
-        #TODO Check timestamp in an enumeration
-        #TODO Implement other benchmarks for perf computation (zipline issue, maybe expected)
-
-        #NOTE Script args define default database table name (test), make it consistent
-        if db_id is None:
-            db_id = self.backtest_cfg['algorithm'] + pd.datetime.strftime(pd.datetime.now(), format='%Y%m%d')
-
-        if self.monthly_perfs:
-            #TODO New fields from zipline: information, sortino
-            perfs  = dict()
-            length = range(len(self.monthly_perfs[timestamp]))
-            index  = self._get_index(self.monthly_perfs[timestamp])
-            perfs['Name']                 = np.array([db_id] * len(self.monthly_perfs[timestamp]))
-            #perfs['Period']               = np.array([self.monthly_perfs[timestamp][i]['period_label'] for i in length])
-            perfs['Period']               = np.array([pd.datetime.date(date)                                      for date in index])
-            perfs['Sharpe.Ratio']         = np.array([self.monthly_perfs[timestamp][i]['sharpe']                  for i in length])
-            perfs['Sortino.Ratio']        = np.array([self.monthly_perfs[timestamp][i]['sortino']                 for i in length])
-            perfs['Information']          = np.array([self.monthly_perfs[timestamp][i]['information']             for i in length])
-            perfs['Returns']              = np.array([self.monthly_perfs[timestamp][i]['algorithm_period_return'] for i in length])
-            perfs['Max.Drawdown']         = np.array([self.monthly_perfs[timestamp][i]['max_drawdown']            for i in length])
-            perfs['Volatility']           = np.array([self.monthly_perfs[timestamp][i]['algo_volatility']         for i in length])
-            perfs['Beta']                 = np.array([self.monthly_perfs[timestamp][i]['beta']                    for i in length])
-            perfs['Alpha']                = np.array([self.monthly_perfs[timestamp][i]['alpha']                   for i in length])
-            perfs['Excess.Returns']       = np.array([self.monthly_perfs[timestamp][i]['excess_return']           for i in length])
-            perfs['Benchmark.Returns']    = np.array([self.monthly_perfs[timestamp][i]['benchmark_period_return'] for i in length])
-            perfs['Benchmark.Volatility'] = np.array([self.monthly_perfs[timestamp][i]['benchmark_volatility']    for i in length])
-            perfs['Treasury.Returns']     = np.array([self.monthly_perfs[timestamp][i]['treasury_period_return']  for i in length])
-        else:
-            #TODO Get it from DB if it exists
-            raise NotImplementedError()
-
-        data = pd.DataFrame(perfs, index=index)
-
-        if save:
-            self.feeds.stock_db.save_metrics(data)
-        return data
-
-    def overall_metrics(self, timestamp='one_month', metrics=None, save=False, db_id=None):
-        '''
-        Use zipline results to compute some performance indicators and store it in database
-        '''
-        perfs = dict()
-
-        # If no rolling perfs provided, computes it
-        if metrics is None:
-            metrics = self.rolling_performances(timestamp=timestamp, save=False, db_id=db_id)
-        riskfree = np.mean(metrics['Treasury.Returns'])
-
-        #NOTE Script args define default database table name (test), make it consistent
-        if db_id is None:
-            db_id = self.backtest_cfg['algorithm'] + pd.datetime.strftime(pd.datetime.now(), format='%Y%m%d')
-        perfs['Name']              = db_id
-        perfs['Sharpe.Ratio']      = tsu.get_sharpe_ratio(metrics['Returns'].values, risk_free = riskfree)
-        perfs['Returns']           = (((metrics['Returns'] + 1).cumprod()) - 1)[-1]
-        perfs['Max.Drawdown']      = max(metrics['Max.Drawdown'])
-        perfs['Volatility']        = np.mean(metrics['Volatility'])
-        perfs['Beta']              = np.mean(metrics['Beta'])
-        perfs['Alpha']             = np.mean(metrics['Alpha'])
-        perfs['Benchmark.Returns'] = (((metrics['Benchmark.Returns'] + 1).cumprod()) - 1)[-1]
-
-        if save:
-            self.feeds.stock_db.save_performances(perfs)
-        return perfs
-
-    #TODO Save returns
-    def get_returns(self, benchmark=None, timestamp='one_month', save=False, db_id=None):
-        returns = dict()
-
-        if benchmark:
-            #benchmark_symbol = self.feeds.guess_name(benchmark)
-            #if benchmark_symbol:
-            try:
-                benchmark_data  = get_benchmark_returns(benchmark, self.backtest_cfg['start'], self.backtest_cfg['end'])
-            #else:
-            except:
-                raise KeyError()
-        else:
-            #TODO Automatic detection given exchange market (on command line) ?
-            raise NotImplementedError()
-
-        #NOTE Could be more efficient. But len(benchmark_data.date) != len(self.results.returns.index). Maybe because of different markets
-        dates = pd.DatetimeIndex([d.date for d in benchmark_data])
-
-        returns['Benchmark.Returns']  = pd.Series([d.returns for d in benchmark_data], index=dates)
-        returns['Benchmark.CReturns'] = ((returns['Benchmark.Returns'] + 1).cumprod()) - 1
-        returns['Returns']            = pd.Series(self.results.returns, index=dates)
-        returns['CReturns']           = pd.Series(((self.results.returns + 1).cumprod()) - 1, index=dates)
-
-        df = pd.DataFrame(returns, index=dates)
-
-        if save:
-            raise NotImplementedError()
-            self.feeds.stock_db.saveDFToDB(df, table=db_id)
-
-        if benchmark is None:
-            df = df.drop(['Benchmark.Returns', 'Benchmark.CReturns'], axis=1)
-        return df
-
-    def _get_index(self, perfs):
-        #NOTE No frequency infos or just period number ?
-        start = pytz.utc.localize(pd.datetime.strptime(perfs[0]['period_label'] + '-01', '%Y-%m-%d'))
-        end = pytz.utc.localize(pd.datetime.strptime(perfs[-1]['period_label'] + '-01', '%Y-%m-%d'))
-        return pd.date_range(start - pd.datetools.BDay(10), end, freq=pd.datetools.MonthBegin())
-
-    def _extract_perf(self, perfs, field):
-        index = self._get_index(perfs)
-        values = [perfs[i][field] for i in range(len(perfs))]
-        return pd.Series(values, index=index)
-
-    def __del__(self):
-        del self.server
-        #self.server.socket.close()
-        #self.server.context.term()
+        #return self.results
+        return Analyzes(results=results, metrics=monthly_perfs, datafeed=self.datafeed, configuration=configuration)
