@@ -20,11 +20,10 @@ import sys
 
 from neuronquant.data.datafeed import DataFeed
 from neuronquant.ai.managers import Constant, Equity, OptimalFrontier
-#from neuronquant.network.transport import ZMQ_Dealer
 import neuronquant.utils.datautils as datautils
 from neuronquant.data.ziplinesources.loader import LiveBenchmark
 #from neuronquant.data.ziplinesources.live.equities import DataLiveSource
-from neuronquant.gears.analyzes import Analyzes
+from neuronquant.gears.analyzes import Analyze
 
 import pytz
 import pandas as pd
@@ -34,7 +33,8 @@ import pandas as pd
 import logbook
 log = logbook.Logger('Engine')
 
-from zipline.finance.trading import SimulationParameters, TradingEnvironment
+from zipline.finance.trading import TradingEnvironment
+from zipline.utils.factory import create_simulation_parameters
 
 
 class BacktesterEngine(object):
@@ -131,6 +131,7 @@ class Simulation(object):
             if len(dates) == 0:
                 log.warning('! Market closed.')
                 sys.exit(0)
+            #TODO Wrap it in a dataframe (always same return type)
             data = {'stream_source' : exchange,
                     'tickers'       : tickers,
                     'index'         : dates.tz_localize(pytz.utc)}
@@ -193,10 +194,12 @@ class Simulation(object):
 
         # Running simulation with it
         with context:
+            sim_params = create_simulation_parameters(capital_base = configuration['cash'],
+                                                      start = configuration['start'],
+                                                      end   = configuration['end'])
+
             results, monthly_perfs = backtester.run(data,
-                                                    SimulationParameters(capital_base = configuration['cash'],
-                                                                         period_start = configuration['start'],
-                                                                         period_end   = configuration['end']))
+                                                    sim_params=sim_params)
 
         #return self.results
-        return Analyzes(results=results, metrics=monthly_perfs, datafeed=self.datafeed, configuration=configuration)
+        return Analyze(results=results, metrics=monthly_perfs, datafeed=self.datafeed, configuration=configuration)

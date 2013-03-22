@@ -15,6 +15,7 @@ program
   .option('-p, --password <chut>', 'mysql password', String, '')
   .parse(process.argv);
 
+  /*
 if (program.password == '') {
     log('** Error: You must provide MySQL password');
     process.exit(1);
@@ -44,7 +45,7 @@ connection.query('select * from Symbols limit 3', function(err, rows, fields) {
 });
 
 connection.end();
-
+*/
 
 log('Parsing required page: ', config.sources[program.url]);
 

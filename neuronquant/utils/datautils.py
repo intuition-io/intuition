@@ -77,18 +77,23 @@ def filter_market_hours(dates, exchange):
 
 # World exchanges caracteristics
 Exchange = {
+    # Market code, from yahoo stock code (store in database) to google market code (needed for reliable download)
+    #Later Londres = LON
     'paris': {'index': '^FTSE',
          'timezone': 'Europe/London',
-         'code': 1001},
+         'code': 1001,
+         'google_market': 'EPA'},
     'forex': {'index': '^FCHI',
          'timezone': 'Europe/London',
          'code': 1002},
     'nasdaq': {'index': '^GSPC',
          'timezone': 'US/Eastern',
-         'code': 1003},
+         'code': 1003,
+         'google_market': 'NASDAQ'},
     'nyse': {'index': '^GSPC',
          'timezone': 'US/Eastern',
-         'code': 1004},
+         'code': 1004,
+         'google_market': 'NYSE'},
 
     # Access by code: Backtester transform to live trading astuce
     '1001': {'index': '^FTSE',
@@ -110,7 +115,8 @@ Exchange = {
              'google_symbol': '.INX',
              'google_market': 'INDEXSP',
          'timezone': 'US/Eastern',
-         'name': 'nyse'},
+         'name': 'nyse'}
+
 }
 
 

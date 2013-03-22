@@ -99,7 +99,10 @@ class DataLiveSource(DataSource):
             for sid in self.data['tickers']:
                 if sid in self.sids:
                     symbol = self.feed.guess_name(sid).lower()
-                    snapshot = self.remote.get_stock_snapshot(symbol, light=False)
+                    #FIXME Erros because no markets specifie, use light=True and add market
+                    #snapshot = self.remote.get_stock_snapshot(symbol, light=False)
+                    snapshot = self.remote.get_stock_snapshot(symbol, light=True)
+                    import ipdb; ipdb.set_trace()
                     log.debug('Data available:\n{}'.format(json.dumps(snapshot,
                                                            sort_keys=True, indent=4, separators=(',', ': '))))
                     if not snapshot:

@@ -115,11 +115,18 @@ class Fetcher(object):
         return quotes
 
     def get_stock_snapshot(self, symbols, markets=None, light=True):
+        # Removing yahoo code for exchange market at th end of the symbol, google doesn't need it
+        #FIXME As no market is specified, there are mistakes, like with Schneider
+        backup_symbols = list(symbols)
+        snapshot = dict()
+        for i, s in enumerate(symbols):
+            if s.find('.pa') > 0:
+                symbols[i] = s[:-3]
         if isinstance(symbols, str):
-            snapshot = {symbols: dict()}
+            #snapshot = {symbols: dict()}
             symbols = [symbols]
-        elif isinstance(symbols, list):
-            snapshot = {q: dict() for q in symbols}
+        #elif isinstance(symbols, list):
+            #snapshot = {q: dict() for q in symbols}
         if light:
             assert markets
             data = self._lightSummary(symbols, markets)
@@ -128,12 +135,12 @@ class Fetcher(object):
         if not data:
             log.error('** No stock informations')
             return None
-        for i, item in enumerate(symbols):
+        for i, item in enumerate(backup_symbols):
             snapshot[item] = data[i]
         return snapshot
 
     def _lightSummary(self, symbols, markets):
-        #TODO Finir de changer les index et comprendre tous les champs
+        #TODO map dict keys and understand every field
         url = 'http://finance.google.com/finance/info?client=ig&q=%s:%s' \
                 % (symbols[0], markets[0])
         for i in range(1, len(symbols)):
@@ -142,9 +149,7 @@ class Fetcher(object):
         return json.loads(urllib2.urlopen(url).read()[3:], encoding='latin-1')
 
     def _heavySummary(self, symbols):
-        url = 'http://www.google.com/ig/api?stock=' + symbols[0]
-        for s in symbols[1:]:
-            url = url + '&stock=' + s
+        url = 'http://www.google.com/ig/api?stock=' + '&stock='.join(symbols)
         log.info('Retrieving heavy Snapshot from %s' % url)
         try:
             url_fd = urllib2.urlopen(url)

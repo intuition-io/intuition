@@ -25,15 +25,15 @@ import numpy as np
 from qstkutil import tsutil as tsu
 
 import logbook
-log = logbook.Logger('Analyzes')
+log = logbook.Logger('Analyze')
 
 from zipline.data.benchmarks import get_benchmark_returns
 
 
-class Analyzes(object):
+class Analyze(object):
     ''' Handle backtest results and performances measurments '''
     def __init__(self, *args, **kwargs):
-        super(Analyzes, self).__init__()
+        super(Analyze, self).__init__()
 
         # MySQL Database client
         self.datafeed = kwargs.pop('datafeed') if 'datafeed' in kwargs else DataFeed()

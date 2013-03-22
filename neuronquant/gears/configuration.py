@@ -24,12 +24,12 @@ class Setup(object):
         #NOTE timezone as parameter
         super(Setup, self).__init__()
 
+        self.configuration_folder = config_dir if config_dir else '/'.join((os.environ['QTRADE'], 'config'))
+
         # Config data structures
         self.config_backtest    = dict()
         self.config_strategie   = dict()
         self.config_environment = self._inspect_environment()
-
-        self.configuration_folder = config_dir if config_dir else '/'.join((os.environ['QTRADE'], 'config'))
 
         # Client for easy mysql database access
         self.datafeed = DataFeed()
@@ -45,14 +45,15 @@ class Setup(object):
         Read common user and project configuration files
         for usual environment parameters
         '''
+        context = dict()
         if os.path.exists(os.path.expanduser(local_file)):
             log.info('Found local configuration file, loading {}'.format(local_file))
-            return self._read_structured_file(os.path.expanduser(local_file))
-        return dict()
+            context = self._read_structured_file(os.path.expanduser(local_file))
+        return context
 
     def _read_structured_file(self, formatfile, config_folder=False, select_field=None, format='json'):
         '''
-        Map well structured file content into a dictionnary
+        Map well structured, i.e. common file format like key-value storage, csv, ...,  file content into a dictionnary
         '''
         if format == 'json':
             try:
@@ -72,7 +73,7 @@ class Setup(object):
         # If specified, return only 'select_field' one
         return content[select_field] if select_field else content
 
-    def parse_cmdline(self):
+    def parse_commandline(self):
         '''
         Read command lines arguments and map them
         to a more usuable dictionnary

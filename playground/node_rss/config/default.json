@@ -9,6 +9,12 @@
         "unix": "http://www.unixgarden.com/index.php/feed",
         "reuters": "http://feeds.reuters.com/reuters/financialsNews",
         "news": "http://economie.trader-finance.fr/rss.php",
+        "secret": "http://www.tukif.com/action.php?action=rss&channel=805",
+        "2": "http://www.tukif.com/action.php?action=rss&pornstar=2366",
+        "3": "http://www.tukif.com/action.php?action=rsspornstars",
+        "4": "http://www.tukif.com/action.php?action=rss&channel=34",
+        "5": "http://www.tukif.com/action.php?action=rss&channel=79",
+        "6": "http://www.tukif.com/action.php?action=rss",
         "example": "http://cyber.law.harvard.edu/rss/examples/rss2sample.xml"
     },
     "db": {

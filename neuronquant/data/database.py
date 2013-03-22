@@ -130,7 +130,7 @@ class Manager(object):
         if start is None:
             log.info('Reading NeuronQuant MySQL configuration...')
             sql = json.load(open('/'.join((os.path.expanduser('~/.quantrade'), 'default.json')), 'r'))['mysql']
-            start = datetime.strptime(sql['DATA_START'], '%Y-%m-%d').date()
+            start = datetime.strptime(sql['data_start'], '%Y-%m-%d').date()
         if end is None:
             end = date.today()
 
@@ -273,11 +273,11 @@ class Client(object):
 
     #NOTE Each time open and close session ?
     def __init__(self):
-        self.db = Database()
+        #self.db = Database()
         self.manager = Manager()
 
     def save_metrics(self, dataframe):
-        session = self.db.Session()
+        session = self.manager.db.Session()
         #TODO Id and other politics to define
         session.execute("delete from Metrics where Name = '{}'".format(dataframe['Name'][0]))
         #NOTE This function is not generic AT ALL
@@ -294,7 +294,7 @@ class Client(object):
 
     def save_performances(self, dataframe):
         #TODO Same as above function and future save_returns
-        session = self.db.Session()
+        session = self.manager.db.Session()
         session.execute("delete from Performances where Name = '{}'".format(dataframe['Name']))
         perfs_object = Performances(dataframe['Name'], dataframe['Sharpe.Ratio'], dataframe['Returns'],
                                   dataframe['Max.Drawdown'], dataframe['Volatility'], dataframe['Beta'],
@@ -305,7 +305,7 @@ class Client(object):
 
     def save_portfolio(self, portfolio, name, date):
         #NOTE ndict annoying stuff
-        session = self.db.Session()
+        session = self.manager.db.Session()
 
         # Cleaning
         session.execute("delete from Positions where Positions.PortfolioName = '{}'".format(name))
@@ -340,7 +340,7 @@ class Client(object):
 
     def get_portfolio(self, name):
         name = name.lower()
-        session = self.db.Session()
+        session = self.manager.db.Session()
         if not self.manager.check_portfolio_exists(name):
             log.warning('No portfolio named {} found in database'.format(name))
             return None
@@ -370,7 +370,7 @@ class Client(object):
         #TODO get ticker symbol from ticker
         #TODO Multiple tickers, make a panel, in an upper function
         ticker = ticker.lower()
-        session = self.db.Session()
+        session = self.manager.db.Session()
         if not self.manager.check_ticker_exists(ticker, session):
             if dl:
                 log.notice('Ticker {} not available in database, downloading it.'.format(ticker))
@@ -402,7 +402,7 @@ class Client(object):
     def get_infos(self, **kwargs):
         name    = kwargs.get('name', None)
         symbol  = kwargs.get('symbol', None)
-        session = self.db.Session()
+        session = self.manager.db.Session()
 
         if name is not None:
             asset = session.query(Equity).filter(Equity.Name == name).first()
@@ -434,7 +434,7 @@ class Client(object):
     #NOTE Make a similar function for benchmarks ?
     def available_equities(self, key='name', exchange=None):
         ''' Return a list of the stocks available in the database '''
-        session = self.db.Session()
+        session = self.manager.db.Session()
         if key == 'symbol':
             if exchange:
                 stocks = array([stock.Ticker for stock in session.query(Equity).filter(Equity.Exchange == exchange).all()])

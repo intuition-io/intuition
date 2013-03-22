@@ -21,21 +21,18 @@ import pandas as pd
 import pytz
 import random
 import re
-import sys
-import os
 
-sys.path.append(os.environ['QTRADE'])
-from logbook import Logger
+import logbook
 from neuronquant.data.database import Client
 
-log = Logger('DataFeed')
+log = logbook.Logger('DataFeed')
 
 
 class DataFeed(object):
     """
     API for using database quotes into application
     """
-    def __init__(self, level='debug'):
+    def __init__(self):
         self.stock_db = Client()
 
     def saved_portfolios(self, names):
@@ -43,9 +40,9 @@ class DataFeed(object):
         Fetch from database a previously stored portfolio
         _________________________________________________
         Parameter
-            name: str
+            names: str
                 Portfolios are stored with a name as unique ID,
-                get this one
+                get those
         _________________________________________________
         Return
             A Portfolio database model if name was found,
@@ -68,7 +65,7 @@ class DataFeed(object):
 
         if df_tmp:
             return pd.DataFrame(df_tmp)
-        return None
+        return pd.DataFrame()
 
     def quotes(self, tickers, start_date=None, end_date=None, download=False):
         """ Get a series of quotes

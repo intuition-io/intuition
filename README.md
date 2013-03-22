@@ -36,7 +36,8 @@ Features
 Installation
 ------------
 
-- Debian based distribution: sudo apt-get install git libzmq-dev r-base python2.7 mysql-server libmysqlclient-dev npm python-pip planner python-dev
+- ```# > apt-get install git libzmq-dev r-base python2.7 mysql-server libmysqlclient-dev npm python-pip planner python-dev```
+- ``` # > pip install pip-tools
     
 - Zipline backtster engine: 
    - Clone (outside QuanTrade project) or fork (then clone your own copy) the original project at https://github.com/quantopian/zipline

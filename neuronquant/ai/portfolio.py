@@ -42,7 +42,7 @@ class PortfolioManager:
         '''
         super(PortfolioManager, self).__init__()
         self.log       = Logger('Manager')
-        self.feed      = DataFeed()
+        self.datafeed      = DataFeed()
         self.portfolio = None
         self.date      = None
         self.name      = parameters.get('name', 'Chuck Norris')
@@ -85,6 +85,7 @@ class PortfolioManager:
                               channel = 'dashboard')
 
             return self.catch_messages()
+        return dict()
 
     def trade_signals_handler(self, signals):
         '''
@@ -157,7 +158,7 @@ class PortfolioManager:
         ___________________________________________
         '''
         self.log.info('Saving portfolio in database')
-        self.feed.stock_db.save_portfolio(portfolio, self.name, self.date)
+        self.datafeed.stock_db.save_portfolio(portfolio, self.name, self.date)
 
     def load_portfolio(self, name):
         '''
@@ -173,7 +174,7 @@ class PortfolioManager:
         '''
         self.log.info('Loading portfolio from database')
         ## Get the portfolio as a pandas Serie
-        db_pf = self.feed.saved_portfolios(name)
+        db_pf = self.datafeed.saved_portfolios(name)
         ## The function returns None if it didn't find a portfolio with id 'name' in db
         if db_pf is None:
             return None
@@ -188,12 +189,12 @@ class PortfolioManager:
         portfolio.returns = db_pf['Returns']
         portfolio.cash = db_pf['Cash']
         portfolio.start_date = db_pf['StartDate']
-        portfolio.positions = self._get_positions(db_pf['Positions'])
+        portfolio.positions = self._adapt_positions_format(db_pf['Positions'])
         portfolio.positions_value = db_pf['PositionsValue']
 
         return portfolio
 
-    def _get_positions(self, db_pos):
+    def _adapt_positions_type(self, db_pos):
         '''
         From array of sql Positions data model
         To Zipline Positions object

@@ -32,11 +32,13 @@ if __name__ == '__main__':
     setup = Setup()
 
     # General simulation behavior is defined using command line args
-    configuration = setup.parse_cmdline()
+    configuration = setup.parse_commandline()
 
-    # Color_setup : Pretty print of errors, warning, and so on
-    # Remote_setup: ZMQ based messaging, route logs on the network (catched by server's broker)
-    log_setup = utils.remote_setup if configuration['remote'] else utils.color_setup
+    # Color_setup : Pretty print of errors, warning, and so on Remote_setup:
+    # ZMQ based messaging, route logs on the network (catched by server's
+    # broker)
+    log_setup = (utils.remote_setup if configuration['remote'] else
+                 utils.color_setup)
     with log_setup.applicationbound():
 
         # Fill algorithm and manager parameters
@@ -48,11 +50,13 @@ if __name__ == '__main__':
         # Backtest or live engine
         engine = Simulation()
 
-        # Setup quotes data and financial context (location, market, ...) simulation from user parameters
-        # Wrap _configure_data() and _configure_context() you can use directly for better understanding
+        # Setup quotes data and financial context (location, market, ...)
+        # simulation from user parameters Wrap _configure_data() and
+        # _configure_context() you can use directly for better understanding
         data, context = engine.configure(configuration)
 
-        # See neuronquant/calculus/engine.py for details of results which is an analyzes object
+        # See neuronquant/calculus/engine.py for details of results which is an
+        # analyzes object
         analyzes = engine.run(data, configuration, strategie, context)
 
         if analyzes is None:
@@ -60,24 +64,34 @@ if __name__ == '__main__':
             sys.exit(1)
 
         '''_______________________________________________________________________________________    Results   ____'''
-        utils.log.info('Portfolio returns: {}'.format(analyzes.results.portfolio_value[-1]))
+        utils.log.info('Portfolio returns: \
+                {}'.format(analyzes.results.portfolio_value[-1]))
 
         if configuration['live'] or analyzes.results.portfolio_value[-1] == configuration['cash']:
-            # Currently, live tests don't last more than 20min; analyzes is not relevant, neither backtest without orders
+            # Currently, live tests don't last more than 20min; analyzes is not
+            # relevant, neither backtest without orders
             sys.exit(0)
 
-        #TODO Implement in datafeed a generic save method (which could call the correct database save method)
+        #TODO Implement in datafeed a generic save method
+        # (which could call the correct database save method)
         # Get a portfolio monthly risk analyzis
-        perf_series  = analyzes.rolling_performances(timestamp='one_month', save=True, db_id=configuration['database'])
+        perf_series  = analyzes.rolling_performances(timestamp='one_month',
+                                                     save=True,
+                                                     db_id=configuration['database'])
 
-        #TODO save returns not ready yet, don't try to save
-        #TODO Becnhmark was automatically set from exchange parameter, use it here (dict available in datautils)
+        #TODO save returns not ready yet, don't try to save #TODO Becnhmark was
         # Get daily, cumulative and not, returns of portfolio and benchmark
-        returns_df   = analyzes.get_returns(benchmark=datautils.Exchange[configuration['exchange']]['index'], save=False)
-        risk_metrics = analyzes.overall_metrics(metrics=perf_series, save=True, db_id=configuration['database'])
+        returns_df = analyzes.get_returns(
+                benchmark=datautils.Exchange[configuration['exchange']]['index'],
+                save=False)
+
+        risk_metrics = analyzes.overall_metrics(metrics=perf_series,
+                                                save=True,
+                                                db_id=configuration['database'])
 
         #FIXME irrelevant results if no transactions were made
-        utils.log.info('\n\nReturns: {}% / {}%\nVolatility:\t{}\nSharpe:\t\t{}\nMax drawdown:\t{}\n\n'.format(
+        utils.log.info('\n\nReturns: {} {}\nVolatility: t{} \
+                \nSharpe:\t\t{}\nMax drawdown:\t{}\n\n'.format(
                 risk_metrics['Returns'] * 100.0,
                 risk_metrics['Benchmark.Returns'] * 100.0,
                 risk_metrics['Volatility'],
@@ -91,7 +105,8 @@ if __name__ == '__main__':
             plt.show()
 
             # R statistical analyzes
-            os.system('{}/backtester/analysis.R --source mysql --table {} --verbose'.format(os.environ['QTRADE'], configuration['database']))
+            os.system('{}/backtester/analysis.R --source mysql --table {} --verbose'
+                    .format(os.environ['QTRADE'], configuration['database']))
             os.system('evince ./Rplots.pdf')
 
 

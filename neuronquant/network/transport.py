@@ -34,14 +34,19 @@ log = logbook.Logger('ZMQ Messaging')
 #TODO 'dashboard' destination hardcoded
 
 
+#TODO This class is abstract
 class ZMQ_Base(object):
+    '''
+    Abstract class common for every type of ZMQ device
+    '''
     def __init__(self, id=None, signal_manager=True):
         self.identity = id
         signals = [signal.SIGINT]
-        self.s_manager = SignalManager(signal_codes=signals)
-        log.info(self.s_manager)
+        self.signal_manager = SignalManager(signal_codes=signals)
+        log.info(self.signal_manager)
         self.context = zmq.Context()
         self.port = None
+        self.socket = None
 
     def receive(self, json=True, acknowledgment=None):
         msg = None

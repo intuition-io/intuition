@@ -14,10 +14,6 @@
 # limitations under the License.
 
 
-import sys
-import os
-
-sys.path.append(os.environ['QTRADE'])
 import logbook
 from neuronquant.utils.utils import reIndexDF
 

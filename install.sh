@@ -32,17 +32,17 @@ echo "installation of debian packages..."
 apt-get install git libzmq-dev r-base python2.7 mysql-server libmysqlclient-dev npm pip planner python-dev
 
 echo "Writing python quantrade dependances"
-cat ./scripts/qt_*.txt > qt_deps.txt
+cat ./scripts/installation/qt_*.txt > qt_deps.txt
 echo "Installing dependances with pip..."
-./scripts/ordered_pip.sh qt_deps.txt
+./scripts/installation/ordered_pip.sh qt_deps.txt
 
 echo "Writing python quantrade dependances"
-cat ./scripts/z_*.txt > z_deps.txt
+cat ./scripts/installation/z_*.txt > z_deps.txt
 echo "Installing dependances with pip..."
-./scripts/ordered_pip.sh z_deps.txt
+./scripts/installation/ordered_pip.sh z_deps.txt
 
 echo "R installation, assuming you already use it at least once"
-./scripts/install_r_packages.R
+./scripts/installation/install_r_packages.R
 
 echo "Node.js installation"
 echo "Downloading last release..."

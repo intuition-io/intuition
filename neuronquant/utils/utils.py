@@ -21,6 +21,8 @@ import pandas as pd
 from pandas import DataFrame
 from pandas.core.datetools import BMonthEnd
 import numpy as np
+import json
+import os
 
 #import babel.numbers
 #import decimal
@@ -30,8 +32,23 @@ import socket
 from urllib2 import urlopen
 
 
+def emphasis(obj, align=True):
+    if isinstance(obj, dict):
+        if align:
+            pretty_msg = os.linesep.join(["%25s: %s" % (k, obj[k]) for k in sorted(obj.keys())])
+        else:
+            pretty_msg = json.dumps(obj, indent=4, sort_keys=True)
+    else:
+        return obj
+    return pretty_msg
+
+
 def to_dict(obj):
-    dict_obj = obj.__dict__
+    try:
+        dict_obj = obj.__dict__
+    except:
+        print '** Error: Cannot casting to dictionnary'
+        return obj
     for key, value in dict_obj.iteritems():
         if key.find('date') >= 0:
             dict_obj[key] = value.strftime(format='%Y-%m-%d %H:%M')

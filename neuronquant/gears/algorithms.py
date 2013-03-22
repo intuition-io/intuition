@@ -41,10 +41,12 @@ class BuyAndHold(TradingAlgorithm):
         signals = dict()
 
         ''' ----------------------------------------------------------    Scan   --'''
-        #import ipdb; ipdb.set_trace()
         if self.frame_count == 4:
             for ticker in data:
                 signals[ticker] = data[ticker].price
+        import ipdb; ipdb.set_trace()
+        if self.frame_count == 5:
+            self.stop_trading()
 
         ''' ----------------------------------------------------------   Orders  --'''
         if signals:
@@ -52,6 +54,20 @@ class BuyAndHold(TradingAlgorithm):
             for stock in orderBook:
                 self.logger.info('{}: Ordering {} {} stocks'.format(self.datetime, stock, orderBook[stock]))
                 self.order(stock, orderBook[stock])
+
+    #NOTE self.done flag could be used to avoid in zipline waist of computation
+    #TODO Anyway should find a more elegant way
+    def stop_trading(self):
+        ''' Convenient method to stop calling user algorithm and just finish the simulation'''
+        self.logger('Trader out of the market')
+        #NOTE Selling every open positions ?
+        # Saving the portfolio in database, eventually for reuse
+        self.manager.save_portfolio(self.portfolio)
+
+        # Closing generator
+        self.date_sorted.close()
+        self.set_datetime(self.sim_params.last_close)
+        self.done = True
 
 
 class DualMovingAverage(TradingAlgorithm):

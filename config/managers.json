@@ -6,10 +6,10 @@
     },
     "Constant":
     {
-        "name": "test",
+        "name": "Xavier Bruhiere",
         "load_backup": 0,
         "max_weight": 0.5,
-        "buy_amount": 2000,
+        "buy_amount": 100,
         "connected": 0,
         "sell_amount": 100
     },

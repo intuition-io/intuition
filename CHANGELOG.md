@@ -3,13 +3,18 @@ Changelog
 
 19-03-2013
 ----------
-- Creating refactoring branch
+- Creating refactoring branch, much cleaner and up-to-date
 - config.cfg file in *.json
 - New configuration object
 - New simulation configuration, with above object
 - New Analyses class to handle backtests results
-- Zipline: if live running, risk analysis get benchmark value running new function that downloads it 
-- Some improvements and fixes 
+- Zipline: if live running, risk analysis get benchmark value running new function that downloads it
+- Some improvements and fixes
+- Converter bash script
+- Use of pip-tools (https://github.com/nvie/pip-tools)
+- Working sentiment analysis based on txt file with ranked words (multi-language !)
+- Added UML file in neuronquant/management
+- Instead of direct call in Simulation to SimulationParamaters, use zipline.utils.factory.create_simulation_parameters
 
 
 15-03-2013

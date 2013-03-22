@@ -1,0 +1,674 @@
+<?xml version="1.0" encoding="UTF-8"?><diagram program="umlet" version="11.3">
+  <zoom_level>4</zoom_level>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>56</x>
+      <y>320</y>
+      <w>136</w>
+      <h>116</h>
+    </coordinates>
+    <panel_attributes>Setup
+--
+configuration_folder : str
+config_backtest : dict
+config_strategie : dict
+config_environment : dict
+datafeed : DataFeed
+offline : boolean
+server : ZMQ_Dealer
+--
+__init__(str, boolean) : None
+_inspect_environment(str) : dict
+_read_structured_file(str, str, str, str) : dict
+parse_commandline() : dict
+get_strategie_configuration(list, dict) : dict
+_get_remote_data(int, str) : dict
+_smart_tickers_select(str, str) : list
+_normalize_date_format(str) : datetime</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>480</x>
+      <y>380</y>
+      <w>220</w>
+      <h>64</h>
+    </coordinates>
+    <panel_attributes>Simulation
+--
+datafeed : DataFeed
+analyse : Analyse
+--
+__init__() : None
+configure(dict) : pandas.DataFrame, TradingEnvironment
+_configure_context(str) : TradingEnvironment
+_configure_data(list, datetime, datetime, str, str, boolean) : pandas.DataFrame
+run(pandas.DataFrame, dict, dict, TradingEnvironment) : Analyzes
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>248</x>
+      <y>404</y>
+      <w>204</w>
+      <h>88</h>
+    </coordinates>
+    <panel_attributes>Analyzes
+--
+datafeed : DataFeed
+returns : pandas.DataFrame
+results : pandas.DataFrame
+metrics : pandas.DataFrame
+configuration : dict
+--
+__init__(list, dict) : None
+rolling_performance(str, boolean, str) : pandas.DataFrame
+overall_metrics(str, pandas.DataFrame, boolean, str) : pandas.DataFrame
+get_returns(str, str, boolean, str) : pandas.DataFrame
+_get_index(pandas.DataFrame) : pandas.DatetimeIndex
+_extract_perf(pandas.DataFrame, str) : pandas.Series
+
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>480</x>
+      <y>332</y>
+      <w>148</w>
+      <h>36</h>
+    </coordinates>
+    <panel_attributes>BacktesterEngine
+--
+algorithms:dict
+portfolio_managers:dict
+--
+__new__(str, str, dict) : TradingAlgorithm
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>564</x>
+      <y>32</y>
+      <w>188</w>
+      <h>272</h>
+    </coordinates>
+    <panel_attributes>/TradingAlgorithm/
+--
+logger : logbook.Logger
+portfolio : zipline.protocol.Portfolio
+frame_count : int
+datetime : datetime
+registered_transforms : dict
+recoreded_vars : dict
+data_frequency : str
+capital_base : int
+commission : zipline.finance.comission
+grouped_by_dt : itertools.groupby
+initialized : boolean
+sim_params : ?
+slippage : zipline.finance.slippage
+sources : list
+trading_client : zipline.gens.tradesimulation.TradeSimulationClient
+transforms : list
+with_alias_dt : generator&lt;Event&gt;
+with_tnfms : generator&lt;Event&gt;
+annualizer : int
+gen : simulate_generator
+--
+__init__(list, dict) : None
+_create_generator(??) : generator
+get_generator() : generator
+run(pandas.DataFrame, ??) : ??, ??
+_create_daily_stats(??) : ??, ??
+add_transforms(zipline.transforms, str, list, dict) : None
+record(dict) : None
+set_portfolio(zipline.protocol.Portfolio)
+set_order(function) : None
+set_logger(logbook.Logger) : None
+set_datetime(datetime) : None
+get_datetime() : datetime
+set_transact(function) : None
+set_slippage(zipline.finance.slippage) : None
+set_commission(zipline.finance.commission) : None
+set_sources(list) : None
+set_transforms(function) : None
+set_data_frequency(str) : None</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>768</x>
+      <y>332</y>
+      <w>172</w>
+      <h>32</h>
+    </coordinates>
+    <panel_attributes>CustomManager
+--
+
+--
+optimize(datetime.datetime, dict, dict, dict) : dict, float, float
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>656</x>
+      <y>324</y>
+      <w>92</w>
+      <h>44</h>
+    </coordinates>
+    <panel_attributes>CustomAlgo
+--
+manager : CustomManager
+customWhateverYouWant : coin
+--
+initialize():None
+handle_data():None</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Relation</type>
+    <coordinates>
+      <x>660</x>
+      <y>292</y>
+      <w>20</w>
+      <h>40</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>12;12;12;32</additional_attributes>
+  </element>
+  <element>
+    <type>com.umlet.element.Relation</type>
+    <coordinates>
+      <x>840</x>
+      <y>312</y>
+      <w>20</w>
+      <h>28</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>12;12;12;20</additional_attributes>
+  </element>
+  <element>
+    <type>com.umlet.element.Relation</type>
+    <coordinates>
+      <x>180</x>
+      <y>396</y>
+      <w>76</w>
+      <h>20</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>68;12;12;12</additional_attributes>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>768</x>
+      <y>188</y>
+      <w>172</w>
+      <h>136</h>
+    </coordinates>
+    <panel_attributes>/PortfolioManager/
+--
+__metaclass__ : abc.Meta
+name : str
+connected : boolean
+log : logbook.Logger
+datafeed : DataFeed
+portfolio : ndict
+date : datetime.datetime
+server : ZMQ_Dealer
+_optimizer_parameters : dict
+--
+__init__(dict) : None
+/optimize() : None/
+update(Portfolio, datetime.datetime) : dict
+trade_signals_handler(dict) : dict
+setup_strategie(dict) : None
+save_portfolio(Portfolio) : None
+load_portfolio(str) : Portfolio
+_adapt_positions_format(Positions) : zipline.protocol.Positions
+catch_messages(int) : dict
+
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Relation</type>
+    <coordinates>
+      <x>736</x>
+      <y>324</y>
+      <w>40</w>
+      <h>20</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>32;12;12;12</additional_attributes>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>748</x>
+      <y>388</y>
+      <w>88</w>
+      <h>72</h>
+    </coordinates>
+    <panel_attributes>DataFeed
+--
+stock_db : Client
+--
+__init__() : None
+saved_portfolio(list) : pandas.DataFrame
+quotes(list, datetime, datetime, boolean) : pandas.DataFrame
+infos(str) : Equity
+random_stocks(int, str): list
+get_universe(str, int) : list
+guess_name(str) : str
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>372</x>
+      <y>196</y>
+      <w>72</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>ndict
+--</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>220</x>
+      <y>332</y>
+      <w>120</w>
+      <h>48</h>
+    </coordinates>
+    <panel_attributes>ZMQ_Dealer
+--
+poll : zmq.Poller
+--
+run(str, str, int) : None
+noblock_recv(int, boolean, boolean) : dict
+send_to_android(dict) : None
+send(dict, boolean, dict) : None</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Relation</type>
+    <coordinates>
+      <x>688</x>
+      <y>412</y>
+      <w>68</w>
+      <h>20</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;</panel_attributes>
+    <additional_attributes>12;12;60;12</additional_attributes>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>372</x>
+      <y>152</y>
+      <w>76</w>
+      <h>28</h>
+    </coordinates>
+    <panel_attributes>TradingEnvironment
+--</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>864</x>
+      <y>388</y>
+      <w>180</w>
+      <h>72</h>
+    </coordinates>
+    <panel_attributes>Client
+--
+manager : Manager
+--
+save_metrics(pandas.DataFrame) : None
+save_performances(dict) : None
+save_portfolio(Portfolio, str, datetime) : None
+get_portfolio(str) : Portfolio
+get_quotes(self, str, datetime, datetime, datetime, boolean) : list
+get_infos(dict) : Equity
+available_equities(str, str) : list</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>1088</x>
+      <y>504</y>
+      <w>96</w>
+      <h>40</h>
+    </coordinates>
+    <panel_attributes>Database
+--
+Base : Base
+Engine : sqlalchemy.engine
+Session : sqlalchemy.session
+--
+__init__() : None</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Relation</type>
+    <coordinates>
+      <x>824</x>
+      <y>404</y>
+      <w>48</w>
+      <h>20</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>40;12;12;12</additional_attributes>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>260</x>
+      <y>236</y>
+      <w>164</w>
+      <h>68</h>
+    </coordinates>
+    <panel_attributes>/ZMQ_Agent/
+--
+identity : str
+signal_manager : SignalManager
+context : zmq.Context
+port : int
+socket : zmq.Socket
+--
+__init__(str, SignalManager) : None
+receive(boolean, boolean) : dict
+__del__() : None
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Relation</type>
+    <coordinates>
+      <x>272</x>
+      <y>292</y>
+      <w>20</w>
+      <h>48</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>12;12;12;40</additional_attributes>
+  </element>
+  <element>
+    <type>com.umlet.element.Relation</type>
+    <coordinates>
+      <x>440</x>
+      <y>400</y>
+      <w>48</w>
+      <h>20</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>12;12;40;12</additional_attributes>
+  </element>
+  <element>
+    <type>com.umlet.element.Relation</type>
+    <coordinates>
+      <x>180</x>
+      <y>328</y>
+      <w>48</w>
+      <h>20</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>40;12;12;12</additional_attributes>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>108</x>
+      <y>200</y>
+      <w>84</w>
+      <h>76</h>
+    </coordinates>
+    <panel_attributes>SignalManager
+--
+signals : list
+handlers : list
+alarmed : boolean
+--
+__init__(list, list) : None
+catcher(int, frame) : None
+shutdown(str, int) : None
+__repr__() : str
+__str__() : str
+__del__() : None</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Relation</type>
+    <coordinates>
+      <x>180</x>
+      <y>236</y>
+      <w>88</w>
+      <h>20</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>12;12;80;12</additional_attributes>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>348</x>
+      <y>332</y>
+      <w>112</w>
+      <h>48</h>
+    </coordinates>
+    <panel_attributes>ZMQ_Server
+--
+--
+run(int, callback, boolean) : None
+run_forever(int, callback) : None
+default_on_recv(dict, int) : None</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Relation</type>
+    <coordinates>
+      <x>384</x>
+      <y>292</y>
+      <w>20</w>
+      <h>48</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>12;12;12;40</additional_attributes>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>0</x>
+      <y>288</y>
+      <w>84</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>ZMQ_Broker
+--
+--
+__init__() : None
+run() : None
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>108</x>
+      <y>288</y>
+      <w>84</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>ZMQ_Client (deprecated)
+--
+ports : list
+--
+connect(str, list) : None</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Relation</type>
+    <coordinates>
+      <x>180</x>
+      <y>284</y>
+      <w>88</w>
+      <h>20</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>80;12;12;12</additional_attributes>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>0</x>
+      <y>260</y>
+      <w>84</w>
+      <h>16</h>
+    </coordinates>
+    <panel_attributes>Threading
+--
+--
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Relation</type>
+    <coordinates>
+      <x>24</x>
+      <y>264</y>
+      <w>20</w>
+      <h>32</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>12;12;12;24</additional_attributes>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>776</x>
+      <y>480</y>
+      <w>52</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>Equity
+--
+--</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>1088</x>
+      <y>388</y>
+      <w>188</w>
+      <h>100</h>
+    </coordinates>
+    <panel_attributes>Manager
+--
+db : Database
+--
+__init__() : None
+create_database() : None
+add_ticker(str, str, str, str, str, str, str, datetime, datetime) : None
+_download_quotes(str, datetime, datetime) : list
+update_quotes(str, boolean) : None
+sync_quotes(boolean) : None
+check_ticker_exists(str, sqlalchemy.session) : boolean
+check_quote_exists(str, datetime, sqlalchemy.session) : boolean
+check_portfolio_exists(str, sqlalchemy.session) : boolean
+_stocks(sqlalchemy.session) : list
+add_ticker_from_file(str, datetime, datetime) : None</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>920</x>
+      <y>488</y>
+      <w>60</w>
+      <h>16</h>
+    </coordinates>
+    <panel_attributes>Base
+--
+--</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Relation</type>
+    <coordinates>
+      <x>1032</x>
+      <y>392</y>
+      <w>64</w>
+      <h>20</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>56;12;12;12</additional_attributes>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>848</x>
+      <y>484</y>
+      <w>56</w>
+      <h>20</h>
+    </coordinates>
+    <panel_attributes>Portfolio
+--
+--</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Relation</type>
+    <coordinates>
+      <x>1108</x>
+      <y>476</y>
+      <w>20</w>
+      <h>36</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>12;28;12;12</additional_attributes>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>332</x>
+      <y>108</y>
+      <w>128</w>
+      <h>32</h>
+    </coordinates>
+    <panel_attributes>zipline.finance.commission.PerShare
+--
+--</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>260</x>
+      <y>164</y>
+      <w>108</w>
+      <h>28</h>
+    </coordinates>
+    <panel_attributes>zipline.protocol.Portfolio
+--
+--</panel_attributes>
+    <additional_attributes/>
+  </element>
+</diagram>
