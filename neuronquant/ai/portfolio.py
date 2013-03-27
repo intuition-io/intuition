@@ -48,15 +48,16 @@ class PortfolioManager:
         self.name      = parameters.get('name', 'Chuck Norris')
         self._optimizer_parameters = parameters
         self.connected = False
-        self.server = parameters.get('server', None)
         #TODO Should send stuff anyway, and accept new connections while running
 
         self.connected = parameters.get('connected', False)
 
         # Run the server if the engine didn't while it is asked
-        if self.server.port is None and self.connected:
-            self.log.info('Binding manager on default port...')
-            self.server.run(host='127.0.0.1', port=5570)
+        if 'server' in parameters:
+            self.server = parameters.pop('server')
+            if self.server.port is None and self.connected:
+                self.log.info('Binding manager on default port...')
+                self.server.run(host='127.0.0.1', port=5570)
 
     @abc.abstractmethod
     def optimize(self):

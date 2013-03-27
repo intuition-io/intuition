@@ -15,6 +15,8 @@
 
 
 import time as t
+import pandas
+
 
 def controlTypes(*a_args, **a_kwargs):
     ''' Example:
@@ -29,15 +31,16 @@ def controlTypes(*a_args, **a_kwargs):
             for i, arg in enumerate(args):
                 if a_args[i] is not type(args[i]):
                     raise TypeError("Bad type, Arg {0} not {1}".format(i, a_args[i]))
-            
+
             for cle in kwargs:
                 if cle not in a_kwargs:
                     raise TypeError("Type of arg {0} not in control list".format(repr(cle)))
                 if a_kwargs[cle] is not type(kwargs[cle]):
                     raise TypeError("Bad type, Arg {0} not {1}".format(repr(cle), a_kwargs[cle]))
             return fct(*args, **kwargs)
-        return control
+        return controler
     return decorator
+
 
 #def singleton(defClass):
     #instances = {}
@@ -113,8 +116,42 @@ def perf(fct):
         return result, elapse
     return metric
 
+
 def deprecated(fct):
     ''' raise an exception on decorated finctions '''
     def prevent(*args, **kwargs):
         raise RuntimeError('Function {0} deprecated, stopping.'.format(fct))
     return prevent
+
+
+#NOTE with_market symbol, build jxr.pa => JXR:EPA
+def use_google_symbol(fct):
+    '''
+    Removes ".PA" or other market indicator from yahoo symbol
+    convention to suit google convention
+    '''
+    def decorator(symbols):
+        google_symbols = []
+
+        # If one symbol string
+        if isinstance(symbols, str):
+            symbols = [symbols]
+
+        for symbol in symbols:
+            dot_pos = symbol.find('.')
+            google_symbols.append(symbol[:dot_pos] if (dot_pos > 0) else symbol)
+
+        return fct(google_symbols)
+    return decorator
+
+
+def invert_dataframe_axis(fct):
+    '''
+    Make dataframe index column names,
+    and vice et versa
+    '''
+    def decorator(*args, **kwargs):
+        df_to_invert = fct(*args, **kwargs)
+        assert isinstance(df_to_invert, pandas.DataFrame)
+        return pandas.DataFrame(df_to_invert.to_dict().values(), index=df_to_invert.to_dict().keys())
+    return decorator

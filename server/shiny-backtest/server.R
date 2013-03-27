@@ -53,7 +53,7 @@ shinyServer(function(input, output)
             remoteNodeWorker(request, port=5555, debug=F)
             #zmqSend(request, config='default.json', debug=TRUE)
         } 
-        getTradeData(dataId=input$dataTable, config='mysql.cfg', source='mysql')
+        getTradeData(dataId=input$dataTable, config='default.json', source='mysql')
     })
 
     output$performance <- reactivePlot(function() 

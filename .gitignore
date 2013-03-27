@@ -56,3 +56,10 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
+
+# LaTex
+*.aux
+*.lof
+*.out
+*.log
+*.toc

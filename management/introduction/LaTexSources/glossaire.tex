@@ -1,0 +1,120 @@
+\section*{Glossaire}
+\addcontentsline{toc}{section}{Glossaire}
+\begin{itemize}
+  \item Drone\newline
+Un drone est un aéronef, moyen de transport capable d'évoluer au sein de
+l'atmosphère terrestre. Il ne possède pas de pilote à bord, d’où l’acronyme
+anglais UAV (Unmanned Aerial Vehicle) ou plus récemment UAS (Unmanned
+Aerial System). Les premiers drones étaient pilotés depuis le sol, mais
+aujourd’hui l’on rencontre des drones de plus en plus autonomes, ne
+nécessitant un pilote que pour les phases de décollage et d’atterrissage,
+ou l'envoi d'ordres en vol. Il peut également être doté d'un pilotage
+entièrement automatique. Par ailleurs, il peut être doté d'une prise de
+décision opérationnelle autonome pour réagir en temps réel avec son
+environnement. Il peut emporter une charge utile, et être destiné pour des
+missions militaires ou civiles.\newline
+
+  \item Système de drone\newline
+On parle de plus ne plus de systèmes de drone. En effet, le drone (aéronef)
+n'est qu'un élément du système qui comprend :
+\begin{itemize}
+  \item un ou plusieurs vecteurs aériens équipés de capteurs,
+  \item une ou plusieurs bases au sol, de commande ou de recueil des
+    informations,
+  \item des liaisons de données (communications) entre le vecteur aérien et les
+bases au sol.
+\end{itemize}
+De ce fait le terme drone désigne le plus souvent le vecteur aérien
+uniquement.\newline
+
+  \item Vecteur aérien\newline
+Dans un système de drone, le vecteur aérien est le drone.\newline
+
+  \item Réseau de drones\newline
+On parle de réseaux de drones lorsque l’opérateur peut agir sur une entité
+constituée d’un ensemble de drones. Des ordres individuels peuvent
+cependant être envoyés.\newline
+
+  \item Voilure plate\newline
+Un drone à voilure plate est un drone dont le vol est assuré par une aile,
+tel un avion.\newline
+
+  \item Voilure tournante\newline
+Un drone à voilure tournante est un drone dont le vol est assuré par des
+hélices.\newline
+
+  \item Système de secours\newline
+Un ou plusieurs drones dont la fonction est le largage de la charge utile
+parachutable.\newline
+
+  \item Système de repérage\newline
+Un ou plusieurs drones dont la fonction est le repérage de victimes dans la
+zone sinistrée.\newline
+
+  \item Victime\newline
+Personne en difficulté dans la zone sinistrée.\newline
+
+  \item Zone sinistrée\newline
+Zone dans laquelle est susceptible de se trouver une ou plusieurs
+victime(s).\newline
+
+  \item Charge utile parachutable\newline
+Charge larguée par le drone destinée à apporter des premiers secours aux
+victimes. On parle aussi de kit de secours.\newline
+
+  \item Tag\newline
+Lors de la définition des sous-programmes, nous avons introduit la notion
+de tag. Il s'agit du moyen utilisé par le drone ou le système de drone pour
+repérer la zone d'intérêt. En fonction de la mission, de la technologie, le
+tag peut aussi bien être un modèle physique que virtuel.\newline
+S'il est physique, le tag peut être représenté par une forme géométrique
+décidée au préalable par l'opérateur et connue des personnes à secourir. Il
+pourra s'agir par exemple d'une croix au sol réalisée à l'aide de
+vêtements. Le système de vision du drone repérera alors le tag, et ce
+d'autant plus facilement que le contraste entre le tag et son support (le
+sol, un toit) sera grand.\newline
+S'il est virtuel, le tag peut être représenté par une forme plus complexe
+connue du drone au départ de la mission : un oasis dans le désert, une
+maison isolée, tout objet ou ensemble d'objet suffisamment unique dans son
+environnement pour être détectable. Il peut également s'agir d'une
+photographie de la zone d'intérêt. Le drone analysera alors les zones
+visionnées par comparaison avec la photographie chargée en mémoire jusqu'à
+obtenir un taux de similitude suffisamment important pour valider la
+sélection de la zone d'intérêt.\newline
+Une fois le tag repéré et validé, le drone de tagage transmet les
+informations à l'opérateur afin qu'il les charge dans le drone de largage.
+Il peut également envoyer les informations directement au drone de largage
+si ce dernier fait parti du réseau de drone et qu'il est déjà en vol, en
+attente de mission.\newline
+
+\item Navigation autonome\newline
+Déplacement d’un point A à un point B, définis par l’opérateur ou la
+stratégie de navigation, selon un plan de vol calculé au lancement ou en
+temps réel.\newline
+
+\item Maillage\newline
+Quadrillage spécifique, défini par l’opérateur, de la zone sinistrée que
+doit suivre le drone de repérage, garantissant la couverture complète de la
+zone sinistrée.\newline
+
+\item Repérage\newline
+Balayage de la zone sinistrée, éventuellement par maillage, afin de
+localiser les victimes.\newline
+
+\item Marquage\newline
+Le marquage consiste à apposer un tag sur la victime identifiée, afin de la
+rendre identifiable par le drone de largage.\newline
+
+\item Ciblage\newline
+Le ciblage constitue l’ensemble des actions à mettre en œuvre pour
+localiser un tag défini lors du repérage. Cela désigne donc la stratégie de
+navigation, l’identification de la cible et la sécurisation.\newline
+
+\item Largage\newline
+Action qui consiste à parachuter une charge utile aux coordonnées du
+tag.\newline
+
+  \item Drop zone\newline
+Zone de largage définie grâce aux informations données par l’opérateur.
+Dans les documents produits, l’abréviation DZ est parfois utilisée.
+\end{itemize}

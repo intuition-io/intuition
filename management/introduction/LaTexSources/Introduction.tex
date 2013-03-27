@@ -1,0 +1,33 @@
+% Introduction au projet quantrade à l'intention des chefs sioux
+% version 0.1
+% 2013-03-22
+% par Xavier Bruhiere (xavier.bruhiere@gmail.com)
+% Ce document est mis  disposition selon le Contrat "Creative Commons Paternité-Partage des Conditions Initiales  l'Identique 3.0 Unported"
+% http://creativecommons.org/licenses/by/3.0/
+
+
+\documentclass[12pt,a4paper]{article}
+\input{style/packages.tex}
+
+\newcommand{\TitreRapport}{Projet QuanTrade - Quantitative and collective trading intelligence}
+\newcommand{\DateRapport}{2013}
+\newcommand{\AuteurRapport}{Xavier Bruhiere}
+\newcommand{\NomEntreprise}{QuanTrade}
+
+\input{style/style.tex}
+\input{title/centraleTitle.tex}
+
+\begin{document}
+\pagestyle{fancy}
+
+\maketitle
+		\newpage
+\input{body/abstract-fr.tex}
+		\newpage
+\tableofcontents
+        \newpage
+\input{body/core/core.tex}
+		\newpage
+\input{body/conclusion.tex}
+    \newpage
+\end{document}

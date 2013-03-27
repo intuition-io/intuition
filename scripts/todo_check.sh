@@ -19,7 +19,7 @@
 set -u
 clear
 
-if [ $# <= 1 ]; then
+if [ $# -lt 1 ]; then
     echo "Usage: ./todo_check 'pattern to match'"
     exit
 elif [ $# == 2 ]; then
@@ -31,7 +31,7 @@ echo "QuanTrade $1 list..."
 
 count=0
 #FIXME how ugly...
-for file in $(find . -type f | grep -v "res" | grep -v "git" | grep -v "doc" | grep -v "management" | grep -v "^data"); do 
+for file in $(find . -type f | grep -v "res" | grep -v "git" | grep -v "doc" | grep -v "management" | grep -v "^./data" | grep -v "deprecated"); do 
     #echo $file
     TODOS=$(cat $file | grep -i $1)
     if [ ! -z "${TODOS}" ]; then

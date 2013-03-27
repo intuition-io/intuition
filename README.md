@@ -4,13 +4,13 @@ NeuronQuant: Automated quantitative trading system
 Overview
 --------
 
-**NeuronQuant** is a set of tools and an engine meant to let you easily and intuitively build your own **automated quantitative trading system**.
+**QuanTrade** is a set of tools and an engine meant to let you easily and intuitively build your own **automated quantitative trading system**.
 It is designed to let financial, developer and scientist dudes (together sounds great) explore, test and deploy market technical hacks.
 
-While the project is still at an early age, you can already write, or use, **buy/sell signal algorithms, and portfolio allocation strategies**.
-Then just plug it in the system and watch it from your dev-console or the web app run on **backtest** or **live-trading** mode.
+While the project is still at an early age, you can already write, or use, **signal detection algorithms, and portfolio allocation strategies**.
+Then just plug it in the system and watch it from your dev-console or the web app run on **backtest** or **live** mode.
 
-In addition the project propose facilities to build a distributed system and 21st century application (big data, fat computations, d3.js and other html5 stuff),
+In addition the project proposes facilities to build a distributed system and 21st century application (big data, fat computations, d3.js and other html5 stuff),
 tools to mix languages like Python, node.js and R and a financial library.
 You will find some goodies like machine learning forecast, markowitz portfolio optimization, genetic optimization, sentiment analysis from twitter, ...
 
@@ -18,30 +18,29 @@ You will find some goodies like machine learning forecast, markowitz portfolio o
 Features
 --------
 
-* High configurable trading backtest environment
+* Highly configurable trading backtest environment, powered by zipline project
 * Made to let you write easily algorithms, portfolio manager, parameters optimization and add data sources
-* Already include many
-* Let you integrate R (and soon other languages) in your algorithms
+* Already includes many
+* R integration (and soon other languages) in your algorithms
 * Complete results analyser
 * Web front end for efficient results visualization
 * Android notifications (for now with the help of freely available NotifyMyAndroid)
 * Message architecture for interprocess communication and distributed computing, with a central remote console controling everything
-* Ressources to learn about quantitative finance (cleaning it, soon to come)
+* Ressources to learn about quantitative finance (cleaning it, coming soon)
 * Neuronquant is also a financial library, with common used trading functions, graphics, ... used for example to solve Coursera econometrics assignments
-* MySQL and SQLite data management for optimized financial storage and access
+* MySQL and SQLite data management for optimized financial storage and access 
 * Advanced computations available: neural networks, natural language processing, genetic optimization, checkout playground directorie !
-
+* Random fancy stuff as well in this directory
 
 
 Installation
 ------------
 
 - ```# > apt-get install git libzmq-dev r-base python2.7 mysql-server libmysqlclient-dev npm python-pip planner python-dev```
-- ``` # > pip install pip-tools
+- ``` # > pip install pip-tools```
     
 - Zipline backtster engine: 
    - Clone (outside QuanTrade project) or fork (then clone your own copy) the original project at https://github.com/quantopian/zipline
-   - Follow zipline normal installation
    - To stay up-to-date: add streams to the original project and to my fork:
       - ```./zipline $> git remote add quantopian https://github.com/quantopian/zipline.git ```
       - ```./zipline $> git remote add neuronquant https://github.com/Gusabi/zipline.git ```
@@ -49,25 +48,10 @@ Installation
       - ```./zipline $> git fetch neuronquant && git merge neuronquant/master ```
       - note: I keep my version updated with the original, so you usually won't need to fetch both
 
-- Python dependancies, you can run:
-    - ``` ./ppQuanTrade #> python setup.py install``` BROKEN
-    - ``` ./ppQuanTrade #> ./scripts/ordered_pip.sh scripts/qt_requirements.txt && ./scripts/ordered_pip.sh scripts/qt_requirements_extra.txt ```
-    - Note: You can run as well the script on z_* files if you want to complete the installation now with zipline dependancies
+- Run now the installation script (or check in the wiki how to do it manually):
+    - ``` ./ppQuanTrade #> ./scripts/installation/install.sh```
 
-- R packages, run:  ```ppQuanTrade $> ./scripts/install_r_packages.R. ```
-If you have an error and you just installed R for the first time, install a first package manually and answer interactive questions (default answers are good enough)
-   - ``` $> R ```
-   - ``` > install.packages('quantmod') ```
-   - Choose a repos
-   - Go on manually or try again the script
-
-- Node v0.8.22: 
-   - Download it from node nodejs.org
-   - ``` $> tar xvzf node-v0.8.22.tar.gz && cd node-v0.8.22 ```
-   - ``` node-v0.8.22/ $> ./configure && make && sudo make install ```
-- Node.js modules:  ``` ./ppQuanTrade/server $> npm install ```
-
-- Edit ppQuanTrade/config/local.sh to suit your machine and execute ``` $> echo "source path/to/ppQuanTrade/config/local.sh" >> ~/.bashrc' ```
+- Edit ~/.quantrade/local.sh to suit your environment
 
 - Database:
    - Make sure you have a well configured mysql database running (check data/readme.rst or http://dev.mysql.com/tech-resources/articles/mysql_intro.html)
@@ -80,7 +64,7 @@ If you have an error and you just installed R for the first time, install a firs
    - Fill it with ``` ./ppQuanTrade $> ./scripts/database.py -a data/dump_sql.csv ```
 
 - NeuronQuant is able to send to your android device(s) notifications, using NotifyMyAndroid. However you will need an API key,
-available for free with the trial version of the application. Super simple to setup, check their websiteand then edit config/local.sh
+available for free with the trial version of the application. Super simple to setup, check their website and then edit ~/.quantrade/local.sh
 
 - Congrats you're Done !
 
@@ -88,13 +72,15 @@ available for free with the trial version of the application. Super simple to se
 Getting started
 ---------------
 
-To run a backtest manually, configure algos.cfg and manager.cfg file, and then run
+To run a backtest manually, configure ppQuanTrade/config/algorithms.json and ppQuanTrade/config/managers.json file, and then run
 
-```./backtest.py --tickers google,apple --algorithm DualMA --manager OptimalFrontier --start 2005-01-10 --end 2010-07-03```
+```./backtest.py --initial cash --tickers random,6 --algorithm DualMA \
+	 	--manager OptimalFrontier --exchange paris --start 2005-01-10 --end 2010-07-03```
 
 Or in realtime mode:
 
-```./backtest.py --initialcash 100000 --tickers random,6 --algorithm StdBased --manager Equity --delta 2min --exchange paris --live```
+```./backtest.py --initialcash 100000 --tickers EUR/USD,EUR/GBP --algorithm StdBased \
+		--manager Equity --frequency minute --exchange forex --live```
 
 More examples available [root]/scripts/run_backtest.sh
 
@@ -178,7 +164,7 @@ class Momentum(TradingAlgorithm):
                     self.logger.info('{}:  {} / {}'.format(self.datetime, sma, price))
 ```
 
-Rememeber that managers and algorithms should be configured in their own \*.cfg files or through the webapp.
+Rememeber that managers and algorithms should be configured in their own \*.json files or through the webapp.
 
 You can setup your trading environment by running from the root directory::
     ./scripts/run_labo.py
@@ -201,9 +187,10 @@ Credits
 
 Projects and websites below are awesome works that i heavily use, learn from and want to gratefully thank:
 
-* [Pandas](http://github.com/pydata/pandas)
-* [r-bloggers](http://www.r-bloggers.com/)
 * [Zipline](http://github.com/quantopian/zipline and quantopian http://wwww.quantopian.com)
+* [Quantopian](http://www.quantopian.com/)
+* [Pandas](http://github.com/pydata/pandas)
+* [R-bloggers](http://www.r-bloggers.com/)
 * [QSTK](https://github.com/tucker777/QSTK)
 * [Coursera](http://www.coursera.org/)
 * [Udacity](http://www.udacity.com/)

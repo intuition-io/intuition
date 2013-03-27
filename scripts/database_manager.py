@@ -14,13 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import sys
+#NOTE plac is cool but is an other dependency, should replace by optparse
 import plac
 import logbook
 log = logbook.Logger('Database')
 
-sys.path.append(os.environ['QTRADE'])
 from neuronquant.data.database import Manager
 
 

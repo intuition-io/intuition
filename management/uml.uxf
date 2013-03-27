@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?><diagram program="umlet" version="11.3">
-  <zoom_level>4</zoom_level>
+  <zoom_level>7</zoom_level>
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>56</x>
-      <y>320</y>
-      <w>136</w>
-      <h>116</h>
+      <x>98</x>
+      <y>504</y>
+      <w>238</w>
+      <h>203</h>
     </coordinates>
     <panel_attributes>Setup
 --
@@ -31,10 +31,10 @@ _normalize_date_format(str) : datetime</panel_attributes>
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>480</x>
-      <y>380</y>
-      <w>220</w>
-      <h>64</h>
+      <x>840</x>
+      <y>609</y>
+      <w>385</w>
+      <h>112</h>
     </coordinates>
     <panel_attributes>Simulation
 --
@@ -52,10 +52,10 @@ run(pandas.DataFrame, dict, dict, TradingEnvironment) : Analyzes
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>248</x>
-      <y>404</y>
-      <w>204</w>
-      <h>88</h>
+      <x>434</x>
+      <y>651</y>
+      <w>357</w>
+      <h>154</h>
     </coordinates>
     <panel_attributes>Analyzes
 --
@@ -78,10 +78,10 @@ _extract_perf(pandas.DataFrame, str) : pandas.Series
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>480</x>
-      <y>332</y>
-      <w>148</w>
-      <h>36</h>
+      <x>917</x>
+      <y>742</y>
+      <w>259</w>
+      <h>63</h>
     </coordinates>
     <panel_attributes>BacktesterEngine
 --
@@ -95,10 +95,10 @@ __new__(str, str, dict) : TradingAlgorithm
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>564</x>
-      <y>32</y>
-      <w>188</w>
-      <h>272</h>
+      <x>987</x>
+      <y>0</y>
+      <w>329</w>
+      <h>476</h>
     </coordinates>
     <panel_attributes>/TradingAlgorithm/
 --
@@ -146,10 +146,10 @@ set_data_frequency(str) : None</panel_attributes>
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>768</x>
-      <y>332</y>
-      <w>172</w>
-      <h>32</h>
+      <x>1344</x>
+      <y>525</y>
+      <w>301</w>
+      <h>56</h>
     </coordinates>
     <panel_attributes>CustomManager
 --
@@ -162,10 +162,10 @@ optimize(datetime.datetime, dict, dict, dict) : dict, float, float
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>656</x>
-      <y>324</y>
-      <w>92</w>
-      <h>44</h>
+      <x>1148</x>
+      <y>511</y>
+      <w>161</w>
+      <h>77</h>
     </coordinates>
     <panel_attributes>CustomAlgo
 --
@@ -179,43 +179,43 @@ handle_data():None</panel_attributes>
   <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
-      <x>660</x>
-      <y>292</y>
-      <w>20</w>
-      <h>40</h>
+      <x>1155</x>
+      <y>455</y>
+      <w>34</w>
+      <h>69</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;-</panel_attributes>
-    <additional_attributes>12;12;12;32</additional_attributes>
+    <additional_attributes>21;21;21;56</additional_attributes>
   </element>
   <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
-      <x>840</x>
-      <y>312</y>
-      <w>20</w>
-      <h>28</h>
+      <x>1470</x>
+      <y>490</y>
+      <w>34</w>
+      <h>48</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;-</panel_attributes>
-    <additional_attributes>12;12;12;20</additional_attributes>
+    <additional_attributes>21;21;21;35</additional_attributes>
   </element>
   <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
-      <x>180</x>
-      <y>396</y>
-      <w>76</w>
-      <h>20</h>
+      <x>315</x>
+      <y>637</y>
+      <w>132</w>
+      <h>34</h>
     </coordinates>
     <panel_attributes>lt=&lt;-</panel_attributes>
-    <additional_attributes>68;12;12;12</additional_attributes>
+    <additional_attributes>119;21;21;21</additional_attributes>
   </element>
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>768</x>
-      <y>188</y>
-      <w>172</w>
-      <h>136</h>
+      <x>1344</x>
+      <y>273</y>
+      <w>301</w>
+      <h>238</h>
     </coordinates>
     <panel_attributes>/PortfolioManager/
 --
@@ -245,21 +245,21 @@ catch_messages(int) : dict
   <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
-      <x>736</x>
-      <y>324</y>
-      <w>40</w>
-      <h>20</h>
+      <x>1288</x>
+      <y>511</y>
+      <w>69</w>
+      <h>34</h>
     </coordinates>
     <panel_attributes>lt=&lt;-</panel_attributes>
-    <additional_attributes>32;12;12;12</additional_attributes>
+    <additional_attributes>56;21;21;21</additional_attributes>
   </element>
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>748</x>
-      <y>388</y>
-      <w>88</w>
-      <h>72</h>
+      <x>1309</x>
+      <y>623</y>
+      <w>154</w>
+      <h>126</h>
     </coordinates>
     <panel_attributes>DataFeed
 --
@@ -278,10 +278,10 @@ guess_name(str) : str
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>372</x>
-      <y>196</y>
-      <w>72</w>
-      <h>24</h>
+      <x>651</x>
+      <y>287</y>
+      <w>126</w>
+      <h>42</h>
     </coordinates>
     <panel_attributes>ndict
 --</panel_attributes>
@@ -290,10 +290,10 @@ guess_name(str) : str
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>220</x>
-      <y>332</y>
-      <w>120</w>
-      <h>48</h>
+      <x>385</x>
+      <y>525</y>
+      <w>210</w>
+      <h>84</h>
     </coordinates>
     <panel_attributes>ZMQ_Dealer
 --
@@ -308,21 +308,21 @@ send(dict, boolean, dict) : None</panel_attributes>
   <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
-      <x>688</x>
-      <y>412</y>
-      <w>68</w>
-      <h>20</h>
+      <x>1204</x>
+      <y>665</y>
+      <w>118</w>
+      <h>34</h>
     </coordinates>
     <panel_attributes>lt=-&gt;</panel_attributes>
-    <additional_attributes>12;12;60;12</additional_attributes>
+    <additional_attributes>21;21;105;21</additional_attributes>
   </element>
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>372</x>
-      <y>152</y>
-      <w>76</w>
-      <h>28</h>
+      <x>833</x>
+      <y>525</y>
+      <w>133</w>
+      <h>49</h>
     </coordinates>
     <panel_attributes>TradingEnvironment
 --</panel_attributes>
@@ -331,10 +331,10 @@ send(dict, boolean, dict) : None</panel_attributes>
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>864</x>
-      <y>388</y>
-      <w>180</w>
-      <h>72</h>
+      <x>1512</x>
+      <y>623</y>
+      <w>315</w>
+      <h>126</h>
     </coordinates>
     <panel_attributes>Client
 --
@@ -352,10 +352,10 @@ available_equities(str, str) : list</panel_attributes>
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>1088</x>
-      <y>504</y>
-      <w>96</w>
-      <h>40</h>
+      <x>1904</x>
+      <y>826</y>
+      <w>168</w>
+      <h>70</h>
     </coordinates>
     <panel_attributes>Database
 --
@@ -369,21 +369,21 @@ __init__() : None</panel_attributes>
   <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
-      <x>824</x>
-      <y>404</y>
-      <w>48</w>
-      <h>20</h>
+      <x>1442</x>
+      <y>651</y>
+      <w>83</w>
+      <h>34</h>
     </coordinates>
     <panel_attributes>lt=&lt;-</panel_attributes>
-    <additional_attributes>40;12;12;12</additional_attributes>
+    <additional_attributes>70;21;21;21</additional_attributes>
   </element>
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>260</x>
-      <y>236</y>
-      <w>164</w>
-      <h>68</h>
+      <x>455</x>
+      <y>357</y>
+      <w>287</w>
+      <h>119</h>
     </coordinates>
     <panel_attributes>/ZMQ_Agent/
 --
@@ -402,43 +402,43 @@ __del__() : None
   <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
-      <x>272</x>
-      <y>292</y>
-      <w>20</w>
-      <h>48</h>
+      <x>476</x>
+      <y>455</y>
+      <w>34</w>
+      <h>83</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;-</panel_attributes>
-    <additional_attributes>12;12;12;40</additional_attributes>
+    <additional_attributes>21;21;21;70</additional_attributes>
   </element>
   <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
-      <x>440</x>
-      <y>400</y>
-      <w>48</w>
-      <h>20</h>
+      <x>770</x>
+      <y>644</y>
+      <w>83</w>
+      <h>34</h>
     </coordinates>
     <panel_attributes>lt=&lt;-</panel_attributes>
-    <additional_attributes>12;12;40;12</additional_attributes>
+    <additional_attributes>21;21;70;21</additional_attributes>
   </element>
   <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
-      <x>180</x>
-      <y>328</y>
-      <w>48</w>
-      <h>20</h>
+      <x>315</x>
+      <y>518</y>
+      <w>84</w>
+      <h>35</h>
     </coordinates>
     <panel_attributes>lt=&lt;-</panel_attributes>
-    <additional_attributes>40;12;12;12</additional_attributes>
+    <additional_attributes>70;21;21;21</additional_attributes>
   </element>
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>108</x>
-      <y>200</y>
-      <w>84</w>
-      <h>76</h>
+      <x>189</x>
+      <y>294</y>
+      <w>147</w>
+      <h>133</h>
     </coordinates>
     <panel_attributes>SignalManager
 --
@@ -457,21 +457,21 @@ __del__() : None</panel_attributes>
   <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
-      <x>180</x>
-      <y>236</y>
-      <w>88</w>
-      <h>20</h>
+      <x>315</x>
+      <y>357</y>
+      <w>153</w>
+      <h>34</h>
     </coordinates>
     <panel_attributes>lt=&lt;-</panel_attributes>
-    <additional_attributes>12;12;80;12</additional_attributes>
+    <additional_attributes>21;21;140;21</additional_attributes>
   </element>
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>348</x>
-      <y>332</y>
-      <w>112</w>
-      <h>48</h>
+      <x>609</x>
+      <y>525</y>
+      <w>196</w>
+      <h>84</h>
     </coordinates>
     <panel_attributes>ZMQ_Server
 --
@@ -484,21 +484,21 @@ default_on_recv(dict, int) : None</panel_attributes>
   <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
-      <x>384</x>
-      <y>292</y>
-      <w>20</w>
-      <h>48</h>
+      <x>672</x>
+      <y>455</y>
+      <w>34</w>
+      <h>83</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;-</panel_attributes>
-    <additional_attributes>12;12;12;40</additional_attributes>
+    <additional_attributes>21;21;21;70</additional_attributes>
   </element>
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
       <x>0</x>
-      <y>288</y>
-      <w>84</w>
-      <h>24</h>
+      <y>448</y>
+      <w>147</w>
+      <h>42</h>
     </coordinates>
     <panel_attributes>ZMQ_Broker
 --
@@ -511,10 +511,10 @@ run() : None
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>108</x>
-      <y>288</y>
-      <w>84</w>
-      <h>24</h>
+      <x>189</x>
+      <y>448</y>
+      <w>147</w>
+      <h>42</h>
     </coordinates>
     <panel_attributes>ZMQ_Client (deprecated)
 --
@@ -526,21 +526,21 @@ connect(str, list) : None</panel_attributes>
   <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
-      <x>180</x>
-      <y>284</y>
-      <w>88</w>
-      <h>20</h>
+      <x>315</x>
+      <y>441</y>
+      <w>153</w>
+      <h>34</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;-</panel_attributes>
-    <additional_attributes>80;12;12;12</additional_attributes>
+    <additional_attributes>140;21;21;21</additional_attributes>
   </element>
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
       <x>0</x>
-      <y>260</y>
-      <w>84</w>
-      <h>16</h>
+      <y>399</y>
+      <w>147</w>
+      <h>28</h>
     </coordinates>
     <panel_attributes>Threading
 --
@@ -551,21 +551,21 @@ connect(str, list) : None</panel_attributes>
   <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
-      <x>24</x>
-      <y>264</y>
-      <w>20</w>
-      <h>32</h>
+      <x>42</x>
+      <y>406</y>
+      <w>35</w>
+      <h>56</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;-</panel_attributes>
-    <additional_attributes>12;12;12;24</additional_attributes>
+    <additional_attributes>21;21;21;42</additional_attributes>
   </element>
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>776</x>
-      <y>480</y>
-      <w>52</w>
-      <h>24</h>
+      <x>1358</x>
+      <y>784</y>
+      <w>91</w>
+      <h>42</h>
     </coordinates>
     <panel_attributes>Equity
 --
@@ -575,10 +575,10 @@ connect(str, list) : None</panel_attributes>
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>1088</x>
-      <y>388</y>
-      <w>188</w>
-      <h>100</h>
+      <x>1904</x>
+      <y>623</y>
+      <w>329</w>
+      <h>175</h>
     </coordinates>
     <panel_attributes>Manager
 --
@@ -600,10 +600,10 @@ add_ticker_from_file(str, datetime, datetime) : None</panel_attributes>
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>920</x>
-      <y>488</y>
-      <w>60</w>
-      <h>16</h>
+      <x>1610</x>
+      <y>798</y>
+      <w>105</w>
+      <h>28</h>
     </coordinates>
     <panel_attributes>Base
 --
@@ -613,21 +613,21 @@ add_ticker_from_file(str, datetime, datetime) : None</panel_attributes>
   <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
-      <x>1032</x>
-      <y>392</y>
-      <w>64</w>
-      <h>20</h>
+      <x>1806</x>
+      <y>630</y>
+      <w>105</w>
+      <h>28</h>
     </coordinates>
     <panel_attributes>lt=&lt;-</panel_attributes>
-    <additional_attributes>56;12;12;12</additional_attributes>
+    <additional_attributes>98;21;21;21</additional_attributes>
   </element>
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>848</x>
-      <y>484</y>
-      <w>56</w>
-      <h>20</h>
+      <x>1484</x>
+      <y>791</y>
+      <w>98</w>
+      <h>35</h>
     </coordinates>
     <panel_attributes>Portfolio
 --
@@ -637,21 +637,21 @@ add_ticker_from_file(str, datetime, datetime) : None</panel_attributes>
   <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
-      <x>1108</x>
-      <y>476</y>
-      <w>20</w>
-      <h>36</h>
+      <x>1939</x>
+      <y>777</y>
+      <w>35</w>
+      <h>63</h>
     </coordinates>
     <panel_attributes>lt=&lt;-</panel_attributes>
-    <additional_attributes>12;28;12;12</additional_attributes>
+    <additional_attributes>21;49;21;21</additional_attributes>
   </element>
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>332</x>
-      <y>108</y>
-      <w>128</w>
-      <h>32</h>
+      <x>581</x>
+      <y>133</y>
+      <w>224</w>
+      <h>56</h>
     </coordinates>
     <panel_attributes>zipline.finance.commission.PerShare
 --
@@ -661,13 +661,25 @@ add_ticker_from_file(str, datetime, datetime) : None</panel_attributes>
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>260</x>
-      <y>164</y>
-      <w>108</w>
-      <h>28</h>
+      <x>455</x>
+      <y>231</y>
+      <w>189</w>
+      <h>49</h>
     </coordinates>
     <panel_attributes>zipline.protocol.Portfolio
 --
+--</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>987</x>
+      <y>525</y>
+      <w>140</w>
+      <h>49</h>
+    </coordinates>
+    <panel_attributes>SimulationParamaters
 --</panel_attributes>
     <additional_attributes/>
   </element>

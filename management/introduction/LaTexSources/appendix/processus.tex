@@ -1,0 +1,95 @@
+\section{Processus des missions}
+
+Cette annexe reprend et approfondit les éléments de réflexion sur la mission
+des drones détaillés dans la partie deux. Après une brève introduction,
+plusieurs schémas résumant les différentes configurations de réseau de
+drones envisageables seront exposées avec le détail des missions.
+
+\subsection{Présentation}
+
+On peut imaginer réaliser la mission de secours donc selon plusieurs
+scénarios.:\newline
+
+\begin{itemize}
+\item  Un seul drone dédié à larguer une charge utile parachutable. Cette situation suppose que la
+  victime ait été préalablement mise au courant de quel tag il faut réaliser si on veut que le
+     drone la repère.
+\item  Un seul drone de secours qui fait le repérage et le largage. Cela
+  implique qu’il recherche les victimes directement et non un tag. Les
+  victimes peuvent être mobiles.
+\item  Un drone de secours (pour le largage) et un drone de repérage. Le drone de repérage cherche
+ et tague la victime et le drone de secours largue la charge utile parachutable sur le tag.
+\item Un drone de secours (largage) et « j » drones de repérage.
+\item  « i » drones de secours (largage) et 1 drone de repérage.
+\item  « i » drones de secours (largage) et « j » drones de
+    repérage.\newline
+
+\end{itemize}
+
+\subsection{Processus des missions}
+
+\subsubsection{Drone de largage}
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[scale=0.8]{body/images/1Drone.png}
+    \end{center}
+    \caption{1 unique drone de secours}
+    \label{fig:1Largage}
+\end{figure}
+
+
+\subsubsection{Drone de largage et de repérage}
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[scale=0.8]{body/images/1DroneAvecReperage.png}
+    \end{center}
+    \caption{1 unique drone de secours et de repérage}
+    \label{fig:1DroneEtReperage}
+\end{figure}
+
+
+\subsubsection{Un drone de largage et un drone de repérage}
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[scale=0.6]{body/images/1Drone1Reperage.png}
+    \end{center}
+    \caption{1 drone de secours et 1 drone de repérage}
+    \label{fig:1Largage1Reperage}
+\end{figure}
+
+
+\subsubsection{Un drone de largage et un réseau de repérage}
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[scale=0.6]{body/images/1DroneXReperage.png}
+    \end{center}
+    \caption{1 drone de secours et un réseau de repérage}
+    \label{fig:1DroneXDrone}
+\end{figure}
+
+
+\subsubsection{Un réseau de largage et un drone de repérage}
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[scale=0.6]{body/images/XDrone1Reperage.png}
+    \end{center}
+    \caption{1 réseau de largage et un drone de recherche}
+    \label{fig:XDrone1Repererage}
+\end{figure}
+
+
+\subsubsection{Un réseau de largage et un réseau de repérage}
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[scale=0.8]{body/images/XDroneXReperage.png}
+    \end{center}
+    \caption{Un réseau de largage et un réseau de repérage}
+    \label{fig:XDroneXReperage}
+\end{figure}
+

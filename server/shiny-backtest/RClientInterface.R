@@ -43,7 +43,8 @@ zmqSend <- function(request,                  # Json request to remote or local 
 
     # Connects to broker (frontport) and sends request
     context = init.context()
-    socket = init.socket(context,'ZMQ_DEALER')
+    #socket  = init.socket(context,'ZMQ_DEALER')
+    socket  = init.socket(context,'ZMQ_REQ')
     print('Connecting to socket: ')
     print(config$network['frontport'])
     connect.socket(socket, config$network['frontport'][[1]])

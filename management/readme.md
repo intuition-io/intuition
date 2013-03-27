@@ -110,6 +110,11 @@ Github
 * Automated trading in r, recommended with socketstream or std: https://github.com/yiransheng/rTrader (under res/rTrader)
 * std, for shaky trading desk. Real time: https://github.com/yiransheng/std (under res/fetcehr/std)
 * SQL Database environment for stocks: https://github.com/hamiltonkibbe/stocks (under res/stocks, tested once, problem with indicators, otherwise work !)
+* https://github.com/albertosantini/node-finance
+* https://github.com/albertosantini/node-conpa (http://conpa.jit.su/) 
+* https://github.com/fearofcode/bateman
+* https://github.com/usablica/intro.js
+* https://github.com/cantino/huginn
 
 Portfolio optimization on r-bloggers
 ------------------------------------
@@ -133,8 +138,3 @@ Quantopian
 * http://www.investopedia.com/terms/s/sortinoratio.asp#axzz2KUJ6ZYyV
 * http://www.investopedia.com/terms/i/informationratio.asp#axzz2KUJ6ZYyV
 
-Others
-------
-
-* https://github.com/albertosantini/node-finance
-* https://github.com/albertosantini/node-conpa (http://conpa.jit.su/) 

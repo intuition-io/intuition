@@ -52,6 +52,7 @@ class PyStockQuotes(object):
         instruments = ",".join(instrument for instrument in instruments)
         url = '%s?infotype=infoquoteall&q=%s' % (GOOGLE_FINANCE_JSON_URL,
                                                  instruments)
+        print url
         instrument_data = self.get_instrument_data(url)
         #Google Finance API returns invalid JSON string, prepended with "// ".
         #Here we slice it off.

@@ -28,8 +28,6 @@ from neuronquant.gears.analyzes import Analyze
 import pytz
 import pandas as pd
 
-#from qstkutil import tsutil as tsu
-
 import logbook
 log = logbook.Logger('Engine')
 
@@ -115,6 +113,7 @@ class Simulation(object):
         return data, context
 
     #NOTE Should the data be loaded in zipline sourcedata class ?
+    #FIXME data default not suitable for live mode
     def _configure_data(self, tickers, start_time=None, end_time=pd.datetime.now(pytz.utc), freq='daily', exchange='', live=False):
         if live:
             # Default end_date is now, suitable for live trading
@@ -122,11 +121,13 @@ class Simulation(object):
 
             #dates = pd.date_range(start_time, end_time, freq=freq)
             #NOTE A temporary hack to avoid zipline dirty modification
-            periods = end_time - start_time
-            dates = datautils.filter_market_hours(pd.date_range(pd.datetime.now(), periods=periods.days + 1,
+            #periods = end_time - start_time
+            #dates = datautils.filter_market_hours(pd.date_range(pd.datetime.now(), periods=periods.days + 1,
+            dates = datautils.filter_market_hours(pd.date_range(pytz.utc.localize(pd.datetime.now()), end_time,
                                                                 freq='1min'),
                                                                 #TODO ...hard coded, later: --frequency daily,3
                                                   exchange)
+            import ipdb; ipdb.set_trace()
             #dates = datautils.filter_market_hours(dates, exchange)
             if len(dates) == 0:
                 log.warning('! Market closed.')
@@ -134,7 +135,7 @@ class Simulation(object):
             #TODO Wrap it in a dataframe (always same return type)
             data = {'stream_source' : exchange,
                     'tickers'       : tickers,
-                    'index'         : dates.tz_localize(pytz.utc)}
+                    'index'         : dates}
         else:
             # Use default zipline load_market_data, i.e. data from msgpack files in ~/.zipline/data/
             self.load_market_data = None

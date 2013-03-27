@@ -22,7 +22,7 @@ import pytz
 import pandas as pd
 import numpy as np
 
-from qstkutil import tsutil as tsu
+#from qstkutil import tsutil as tsu
 
 import logbook
 log = logbook.Logger('Analyze')
@@ -30,6 +30,7 @@ log = logbook.Logger('Analyze')
 from zipline.data.benchmarks import get_benchmark_returns
 
 
+#NOTE Methods names to review
 class Analyze(object):
     ''' Handle backtest results and performances measurments '''
     def __init__(self, *args, **kwargs):
@@ -105,7 +106,8 @@ class Analyze(object):
         if db_id is None:
             db_id = self.configuration['algorithm'] + pd.datetime.strftime(pd.datetime.now(), format='%Y%m%d')
         perfs['Name']              = db_id
-        perfs['Sharpe.Ratio']      = tsu.get_sharpe_ratio(metrics['Returns'].values, risk_free = riskfree)
+        perfs['Sharpe.Ratio']      = -1
+        #perfs['Sharpe.Ratio']      = tsu.get_sharpe_ratio(metrics['Returns'].values, risk_free = riskfree)
         perfs['Returns']           = (((metrics['Returns'] + 1).cumprod()) - 1)[-1]
         perfs['Max.Drawdown']      = max(metrics['Max.Drawdown'])
         perfs['Volatility']        = np.mean(metrics['Volatility'])

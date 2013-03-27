@@ -17,14 +17,11 @@
 import time
 import random
 import math
-import os
-import sys
 import numpy as np
 
 import logbook
 log = logbook.Logger('Optimization')
 
-sys.path.append(os.environ['QTRADE'])
 from neuronquant.network.transport import ZMQ_Dealer
 
 
@@ -146,7 +143,6 @@ def genetic_optimize(domain, cost_obj, popsize=50, step=1,
     client = ZMQ_Dealer(id=genetic_optimize.__name__)
     client.run(host='127.0.0.1', port=5570)
     check_buffer = [1] * 4
-    #NOTE Getting parameters remotely ?
 
     # Mutation Operation
     def mutate(vec):

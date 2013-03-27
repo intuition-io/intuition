@@ -185,7 +185,10 @@ class Fetcher(object):
             #NOTE could just remove field and continue
             if f not in datautils.yahooCode:
                 log.error('** Invalid stock information request.')
-                return None
+                #return None
+                fields.pop(f)
+                if len(fields) == 0:
+                    return DataFrame()
         #TODO: remove " from results
         #TODO A wrapper interface to have this document through ticker names
         #symbols, markets = self.db.getTickersCodes(index, quotes)

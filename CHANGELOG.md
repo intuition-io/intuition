@@ -1,6 +1,15 @@
 Changelog
 =========
 
+22-03-2013
+----------
+- UML and Presentation of the project in management/Introduction (french)
+- Fixed new configuration reader bugs
+- Began data module reshape (check in ziplinesource and tmpdata)
+- Optimization module updated with new improvements
+- New util and decorator functions
+
+
 19-03-2013
 ----------
 - Creating refactoring branch, much cleaner and up-to-date

@@ -141,3 +141,13 @@ def reIndexDF(df, **kwargs):
     if not df.index.tzinfo:
         df.index = df.index.tz_localize(tz)
     return df
+
+
+def apply_mapping(raw_row, mapping):
+    """
+    Override this to hand craft conversion of row.
+    """
+    row = {target: mapping_func(raw_row[source_key])
+           for target, (mapping_func, source_key)
+           in mapping.fget().items()}
+    return row

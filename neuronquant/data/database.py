@@ -56,7 +56,7 @@ class Database(object):
                                                      sql['database'])
         self.Engine = create_engine(engine_config)
         self.Session = sessionmaker()
-        log.info('Configure database {}'.format(sql['database']))
+        log.info('Opening database {}'.format(sql['database']))
         self.Session.configure(bind=self.Engine)
 
 

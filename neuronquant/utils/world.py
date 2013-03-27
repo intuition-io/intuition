@@ -69,6 +69,7 @@ class Currency(object):
         return locale.currency(value, self.conv, grouping=True)
 
 
+#TODO merge it with datautils
 class Markets:
     def __init__(self, market):
         self.selector = None
