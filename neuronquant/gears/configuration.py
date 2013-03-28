@@ -3,7 +3,8 @@ import logbook
 import os
 import json
 import pytz
-from datetime import datetime
+#from datetime import datetime
+from dateutil.parser import parse
 
 import neuronquant.network.transport as network
 from neuronquant.data.datafeed import DataFeed
@@ -107,10 +108,10 @@ class Setup(object):
                             action='store', default='random',
                             required=False, help='target names to process')
         parser.add_argument('-s', '--start',
-                            action='store', default='1/1/2006',
+                            action='store', default='2006-01-01',
                             required=False, help='Start date of the backtester')
         parser.add_argument('-e', '--end',
-                            action='store', default='1/12/2010',
+                            action='store', default='2010-1-12',
                             required=False, help='Stop date of the backtester')
         parser.add_argument('-ex', '--exchange',
                             action='store', default='',
@@ -220,4 +221,5 @@ class Setup(object):
                 String date like YYYY-MM-DD
         '''
         assert isinstance(date, str)
-        return pytz.utc.localize(datetime.strptime(date, '%Y-%m-%d'))
+        #return pytz.utc.localize(datetime.strptime(date, '%Y-%m-%d%H:%M'))
+        return pytz.utc.localize(parse(date))

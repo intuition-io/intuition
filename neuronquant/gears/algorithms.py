@@ -28,25 +28,25 @@ import statsmodels.api as sm
 #TODO Should handle in parameter all of the set_*
 class BuyAndHold(TradingAlgorithm):
     '''Simpliest algorithm ever, just buy a stock at the first frame'''
-    def initialize(self, properties):
+    #NOTE test of a new configuration passing
+    def initialize(self, *args, **kwargs):
         #NOTE You can't use it here, no self.manager yet. Issue ? Could configure every common parameters in Backtester engine
         #     and use setupe_strategie as an update
         #self.manager.setup_strategie({'commission_cost': self.commission.cost})
         pass
 
     def handle_data(self, data):
-        #NOTE as self.frame_count, manager could be update in zipline.gens.tradesimulation, or use decorator ?
         ''' ----------------------------------------------------------    Init   --'''
-        self.manager.update(self.portfolio, self.datetime.to_pydatetime())
+        user_instruction = self.manager.update(self.portfolio, self.datetime.to_pydatetime(), save=True)
+        self.process_instruction(user_instruction)
+
         signals = dict()
 
         ''' ----------------------------------------------------------    Scan   --'''
-        import ipdb; ipdb.set_trace()
-        if self.frame_count == 4:
+        self.logger.notice(self.portfolio)
+        if self.frame_count == 2:
             for ticker in data:
                 signals[ticker] = data[ticker].price
-        if self.frame_count == 6:
-            self.stop_trading()
 
         ''' ----------------------------------------------------------   Orders  --'''
         if signals:
@@ -54,6 +54,15 @@ class BuyAndHold(TradingAlgorithm):
             for stock in orderBook:
                 self.logger.info('{}: Ordering {} {} stocks'.format(self.datetime, stock, orderBook[stock]))
                 self.order(stock, orderBook[stock])
+
+    def process_instruction(self, instruction):
+        '''
+        Process orders from instruction
+        '''
+        if instruction:
+            self.logger.info('Processing user instruction')
+            if (instruction['command'] == 'order') and ('amount' in instruction):
+                self.logger.error('{}: Ordering {} {} stocks'.format(self.datetime, instruction['amount'], instruction['asset']))
 
     #NOTE self.done flag could be used to avoid in zipline waist of computation
     #TODO Anyway should find a more elegant way

@@ -55,7 +55,6 @@ class DataFeed(object):
         df_tmp = dict()
 
         for name in names:
-            log.info('Retrieving {} portfolio from database'.format(name))
             data = self.stock_db.get_portfolio(name)
             if data is None:
                 continue
@@ -141,7 +140,7 @@ class DataFeed(object):
             if match:
                 infos = self.stock_db.get_infos(symbol=match[0])
             else:
-                return None
+                return partial_input
         else:
             infos = self.stock_db.get_infos(name=match[0])
         return infos.Ticker

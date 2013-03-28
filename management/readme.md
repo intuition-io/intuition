@@ -27,7 +27,7 @@ TODO
 [x] Replace OLMAR algo with https://github.com/quantopian/zipline/pull/98/files#diff-0 (+check logbook setup)
 [ ] googlegroups 
 [ ] Android app with C2DM push notification (and node.js module)
-[ ] node tests with nodeunit, jscoverage, http://visionmedia.github.com/mocha/
+[ ] node tests with nodeunit, jscoverage, http://visionmedia.github.com/mocha/, or jasmine 
 [ ] Study msgpack for more efficient messages passing with zmq
 
 

@@ -7,11 +7,11 @@
     "Constant":
     {
         "name": "Xavier Bruhiere",
-        "load_backup": 0,
+        "load_backup": 1,
         "max_weight": 0.5,
-        "buy_amount": 100,
+        "buy_amount": 80,
         "connected": 0,
-        "sell_amount": 100
+        "sell_amount": 70
     },
     "OptimalFrontier":
     {

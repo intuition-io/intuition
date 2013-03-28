@@ -58,7 +58,8 @@ class BacktesterEngine(object):
         log.info('Manager {} available, getting a reference and initializing it.'.format(manager))
 
         #NOTE Other params: annualizer (default is cool), capital_base, sim_params (both are set in run function)
-        trading_algorithm = BacktesterEngine.algorithms[algo](strategie_configuration['algorithm'])
+        trading_algorithm = BacktesterEngine.algorithms[algo](properties=strategie_configuration['algorithm'])
+                #capital_base=10000.0, data_frequency='minute')
 
         trading_algorithm.set_logger(logbook.Logger(algo))
 
@@ -78,7 +79,7 @@ class BacktesterEngine(object):
                 log.warning('! Unable to set {} portfolio: not found'.format(portfolio_name))
             else:
                 trading_algorithm.set_portfolio(backup_portfolio)
-                log.info('Portfolio setup successfull')
+                log.info('Portfolio setup successful')
 
         return trading_algorithm
 
@@ -114,20 +115,21 @@ class Simulation(object):
 
     #NOTE Should the data be loaded in zipline sourcedata class ?
     #FIXME data default not suitable for live mode
-    def _configure_data(self, tickers, start_time=None, end_time=pd.datetime.now(pytz.utc), freq='daily', exchange='', live=False):
+    def _configure_data(self, tickers, start_time = pd.datetime.now(pytz.utc),
+                                       end_time   = pd.datetime.now(pytz.utc),
+                                       freq='daily', exchange='', live=False):
+        assert start_time != end_time
+
         if live:
             # Default end_date is now, suitable for live trading
             self.load_market_data = LiveBenchmark(end_time, frequency=freq).load_market_data
 
-            #dates = pd.date_range(start_time, end_time, freq=freq)
-            #NOTE A temporary hack to avoid zipline dirty modification
-            #periods = end_time - start_time
-            #dates = datautils.filter_market_hours(pd.date_range(pd.datetime.now(), periods=periods.days + 1,
+            #### !! Dev temporary hack
+            #end_time = pd.datetime.now() + pd.datetools.Minute(20)
             dates = datautils.filter_market_hours(pd.date_range(pytz.utc.localize(pd.datetime.now()), end_time,
                                                                 freq='1min'),
                                                                 #TODO ...hard coded, later: --frequency daily,3
                                                   exchange)
-            import ipdb; ipdb.set_trace()
             #dates = datautils.filter_market_hours(dates, exchange)
             if len(dates) == 0:
                 log.warning('! Market closed.')
@@ -140,8 +142,6 @@ class Simulation(object):
             # Use default zipline load_market_data, i.e. data from msgpack files in ~/.zipline/data/
             self.load_market_data = None
 
-            #TODO if start_time is None get default start_time in ~/.quantrade/default.json
-            assert start_time
             # Fetch data from mysql database
             data = self.datafeed.quotes(tickers,
                                      start_date = start_time,

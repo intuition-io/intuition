@@ -113,6 +113,7 @@ def historical_pandas_yahoo(symbol, source='yahoo', start=None, end=None):
 
 #_________________________________________________________________________________________________
 #NOTE From here every methods has the same signature: pandas.DataFrame = fct(yahoo_symbol(s))
+# Index symbol ex: ^fchi
 @invert_dataframe_axis
 def snapshot_yahoo_pandas(symbols):
     '''
@@ -129,6 +130,7 @@ def snapshot_yahoo_pandas(symbols):
 
 #NOTE Can use symbol with market: 'goog:nasdaq', any difference ?
 @use_google_symbol
+# Index symbol ex: PX1
 def snapshot_google_light(symbols):
     payload = {'client': 'ig', 'q': ','.join(symbols)}
     response = requests.get(finance_urls['snapshot_google_light'], params=payload)
@@ -144,7 +146,7 @@ def snapshot_google_light(symbols):
     return pd.DataFrame(snapshot)
 
 
-#TODO all values are string, make them floats
+#TODO all values are string, make them floats (with a mapping)
 @use_google_symbol
 def snapshot_google_heavy(symbols):
     url = finance_urls['snapshot_google_heavy'] + '?stock=' + '&stock='.join(symbols)
@@ -153,14 +155,14 @@ def snapshot_google_heavy(symbols):
         url_fd = urllib2.urlopen(url)
     except IOError:
         log.error('** Bad url: %s' % url)
-        return None
+        return pd.DataFrame()
 
     try:
         xml_doc = minidom.parse(url_fd)
         root_node = xml_doc.documentElement
     except:
         log.error('** Parsing xml google response')
-        return None
+        return pd.DataFrame()
     i = 0
     snapshot = {q : {} for q in symbols}
     for i, node in enumerate(root_node.childNodes):

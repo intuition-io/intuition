@@ -16,6 +16,7 @@
 
 import abc
 from logbook import Logger
+import json
 
 from neuronquant.data.datafeed import DataFeed
 from neuronquant.utils import to_dict
@@ -66,22 +67,31 @@ class PortfolioManager:
         '''
         pass
 
-    def update(self, portfolio, date):
+    def update(self, portfolio, date, save=False):
         '''
         Actualizes the portfolio universe
         and if connected, sends it through the wires
         ________________________________
         Parameters
-            portfolio: zipline.portfolio(1)
+            portfolio: zipline.portfolio
                 ndict object storing portfolio values at the given date
-            date: datetime.datetime(1)
+            date: datetime.datetime
                 Current date in zipline simulation
+            save: boolean
+                If true, save the portfolio in database under self.name key
         '''
         self.portfolio = portfolio
         self.date      = date
 
+        if save:
+            self.save_portfolio(portfolio)
+
         if self.connected:
-            self.server.send(to_dict(portfolio),
+            #NOTE Something smarter ?
+            packet_portfolio = to_dict(portfolio)
+            for pos in packet_portfolio['positions']:
+                packet_portfolio['positions'][pos] = to_dict(packet_portfolio['positions'][pos])
+            self.server.send(packet_portfolio,
                               type    = 'portfolio',
                               channel = 'dashboard')
 
@@ -190,7 +200,7 @@ class PortfolioManager:
         portfolio.returns = db_pf['Returns']
         portfolio.cash = db_pf['Cash']
         portfolio.start_date = db_pf['StartDate']
-        portfolio.positions = self._adapt_positions_format(db_pf['Positions'])
+        portfolio.positions = self._adapt_positions_type(db_pf['Positions'])
         portfolio.positions_value = db_pf['PositionsValue']
 
         return portfolio
@@ -221,4 +231,9 @@ class PortfolioManager:
         #TODO msg is a command or an information, process it
         if msg:
             self.log.info('Got message from user: {}'.format(msg))
+            try:
+                msg = json.loads(msg)
+            except:
+                msg = ''
+                self.log.error('Unable to parse user message')
         return msg

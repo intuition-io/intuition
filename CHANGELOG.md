@@ -8,6 +8,13 @@ Changelog
 - Began data module reshape (check in ziplinesource and tmpdata)
 - Optimization module updated with new improvements
 - New util and decorator functions
+- Studies about bluetooth serial communication (smartphone client)
+- start and end date specified with minute resolution and various format on command line (use of dateutil.parser.parse())
+- Fixed live sources
+- Generic timer and date handler for live sources
+- Node server bug fixed
+- Complete command line implementation in remote console
+- Squizzing of the exception at the end of a very short live session in zipline
 
 
 19-03-2013

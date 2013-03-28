@@ -63,3 +63,4 @@ nosetests.xml
 *.out
 *.log
 *.toc
+images/*

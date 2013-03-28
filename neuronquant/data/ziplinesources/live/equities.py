@@ -20,7 +20,7 @@ Tools to generate data sources.
 import sys
 import os
 import time
-import json
+#import json
 import datetime
 import pandas as pd
 
@@ -28,7 +28,7 @@ from zipline.gens.utils import hash_args
 from zipline.sources.data_source import DataSource
 
 sys.path.append(os.environ['QTRADE'])
-from neuronquant.data.remote import Fetcher
+from neuronquant.tmpdata.remote import Remote
 from neuronquant.data.datafeed import DataFeed
 
 import logbook
@@ -58,14 +58,14 @@ class DataLiveSource(DataSource):
         self.start = kwargs.get('start', data['index'][0])
         self.end   = kwargs.get('end', data['index'][-1])
 
-        self.fake_index = pd.date_range(self.start, self.end, freq=pd.datetools.BDay())
+        #self.fake_index = pd.date_range(self.start, self.end, freq=pd.datetools.BDay())
 
         # Hash_value for downstream sorting.
         self.arg_string = hash_args(data, **kwargs)
 
         self._raw_data = None
 
-        self.remote = Fetcher()
+        self.remote = Remote()
         self.feed = DataFeed()
 
     @property
@@ -83,39 +83,44 @@ class DataLiveSource(DataSource):
     def instance_hash(self):
         return self.arg_string
 
-    def raw_data_gen(self):
+    def _wait_for_dt(self, dt):
+        '''
+        Only return when we reach given datetime
+        '''
         current_dt = datetime.datetime.now()
-        index = self.data['index']
-        selector = (index.day > current_dt.day) \
-                | ((index.day == current_dt.day) & (index.hour > current_dt.hour)) \
-                | ((index.day == current_dt.day) & (index.hour == current_dt.hour) & (index.minute >= current_dt.minute))
-        #NOTE Not an equal size issue ?
-        for fake_dt, dt in zip(self.fake_index, index[selector]):
-            while (current_dt.minute != dt.minute) or (current_dt.hour != dt.hour) :
-                time.sleep(15)
-                current_dt = datetime.datetime.now()
-                print('Waiting {} / {}'.format(current_dt, dt))
-            #for fake_dt, dt in zip(self.fake_index, self.data['index']):
-            for sid in self.data['tickers']:
-                if sid in self.sids:
-                    symbol = self.feed.guess_name(sid).lower()
-                    #FIXME Erros because no markets specifie, use light=True and add market
-                    #snapshot = self.remote.get_stock_snapshot(symbol, light=False)
-                    snapshot = self.remote.get_stock_snapshot(symbol, light=True)
-                    import ipdb; ipdb.set_trace()
-                    log.debug('Data available:\n{}'.format(json.dumps(snapshot,
-                                                           sort_keys=True, indent=4, separators=(',', ': '))))
-                    if not snapshot:
-                        log.error('** No data snapshot available, maybe stopped by google ?')
-                        sys.exit(2)
+        #FIXME Error: will wait for 14h02 / 13h58
+        while (current_dt.minute < dt.minute) or (current_dt.hour < dt.hour) :
+            time.sleep(15)
+            current_dt = datetime.datetime.now()
+            log.info('Waiting {} / {}'.format(current_dt, dt))
+
+    def _get_updated_index(self):
+        '''
+        truncate past dates in index
+        '''
+        late_index = self.data['index']
+        current_dt = datetime.datetime.now()
+        selector = (late_index.day > current_dt.day) \
+                | ((late_index.day == current_dt.day) & (late_index.hour > current_dt.hour)) \
+                | ((late_index.day == current_dt.day) & (late_index.hour == current_dt.hour) & (late_index.minute >= current_dt.minute))
+        return self.data['index'][selector]
+
+    def raw_data_gen(self):
+        index = self._get_updated_index()
+        for dt in index:
+            self._wait_for_dt(dt)
+            snapshot = self.remote.fetch_equities_snapshot(symbols=self.sids, level=2)
+            if snapshot.empty:
+                log.error('** No data snapshot available, maybe stopped by google ?')
+                sys.exit(2)
+            for sid in self.sids:
                     event = {
-                        'dt': fake_dt,
-                        'trade_time': dt,
+                        'dt': dt,
                         'sid': sid,
-                        'price': float(snapshot[symbol]['last']),
-                        'currency': snapshot[symbol]['currency'],
-                        'perc_change': float(snapshot[symbol]['perc_change']),
-                        'volume': int(snapshot[symbol]['volume']),
+                        'price': float(snapshot[sid]['last']),
+                        'currency': snapshot[sid]['currency'],
+                        'perc_change': float(snapshot[sid]['perc_change']),
+                        'volume': int(snapshot[sid]['volume']),
                     }
                     yield event
 
