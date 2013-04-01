@@ -14,13 +14,11 @@ log = logbook.Logger('Configuration')
 
 class Setup(object):
     ''' Configuration object for the Trading engine'''
-    def __init__(self, config_dir='', offline=False):
+    def __init__(self, config_dir=''):
         '''
         Parameters
             configuration_folder: str
                 default is current location for configuration files
-            offline: boolean
-                Can force to switch off internal server
         '''
         #NOTE timezone as parameter
         super(Setup, self).__init__()
@@ -29,17 +27,11 @@ class Setup(object):
 
         # Config data structures
         self.config_backtest    = dict()
-        self.config_strategie   = dict()
+        self.config_strategy   = dict()
         self.config_environment = self._inspect_environment()
 
         # Client for easy mysql database access
         self.datafeed = DataFeed()
-
-        self.offline = offline
-        if not offline:
-            # It makes the entire simulator able to receive configuration and
-            # send informations to remote users and other processes like web frontend
-            self.server = network.ZMQ_Dealer(id=self.__class__.__name__)
 
     def _inspect_environment(self, local_file='~/.quantrade/default.json'):
         '''
@@ -52,6 +44,7 @@ class Setup(object):
             context = self._read_structured_file(os.path.expanduser(local_file))
         return context
 
+    #NOTE More likely to be an utils function
     def _read_structured_file(self, formatfile, config_folder=False, select_field=None, format='json'):
         '''
         Map well structured, i.e. common file format like key-value storage, csv, ...,  file content into a dictionnary
@@ -129,7 +122,7 @@ class Setup(object):
 
         #TODO Same as zipline in datasource, a mapping function with type and conversion function tuple
         #NOTE self.config_backtest = args.__dict__
-        # For generic use, further modules will need a dictionnary of parameters, not the namespace provided by argparse
+        # For generic use, future modules will need a dictionnary of parameters, not the namespace provided by argparse
         log.debug('Mapping arguments to backtest parameters dictionnary')
         self.config_backtest = {'algorithm'   : args.algorithm,
                                 'frequency'   : args.frequency,
@@ -148,46 +141,52 @@ class Setup(object):
 
     def get_strategie_configuration(self, *args, **kwargs):
         '''
-        Read localy or receive remotely
-        strategie's parameters
+        Read localy or receive remotely strategie's parameters
         '''
+        assert self.config_backtest
         if kwargs.get('remote', self.config_backtest['remote']):
             # Get configuration through ZMQ socket
-            self.config_strategie = self._get_remote_data(port=self.config_backtest['port'])
+            self.config_strategy = self._get_remote_data(port=kwargs.get('port', self.config_backtest['port']))
+
         else:
             log.info('Reading strategie configuration from json files')
-            self.config_strategie['manager'] = \
+            self.config_strategy['manager'] = \
                     self._read_structured_file('managers.json',
                                                config_folder=True,
                                                select_field=self.config_backtest['manager'])
-            self.config_strategie['algorithm'] = \
-                    self._read_structured_file('algorithms.json',
+            self.config_strategy['algorithm'] = \
+                    self._read_structured_file('strategies.json',
                                                config_folder=True,
                                                select_field=self.config_backtest['algorithm'])
 
-        # The manager can use the same socket during simulation to emit portfolio informations
-        self.config_strategie['manager']['server'] = self.server
         log.info('Configuration is Done.')
 
-        return self.config_strategie
+        return self.config_strategy
 
+    #NOTE In this configuration remote client can't run a simulation
+    #     that would use local file configurations, issue ?
     def _get_remote_data(self, port, host='localhost'):
         '''
         Listen on backend ZMQ socket configuration data
         '''
-        # We need data from network, start the server
-        assert not self.offline
-        self.server.run(host=host, port=port)
+        # ZMQ Server makes the entire simulator able to receive configuration
+        # and send informations to remote users and other processes like web frontend
+        server = network.ZMQ_Dealer(id='Engine server')
+
+        server.run(host=host, port=port)
 
         # In remote mode, client sends missing configuration through zmq socket
         log.info('Fetching backtest configuration from client')
-        msg = self.server.receive(json=True)
+        msg = server.receive(json=True)
         log.debug('Got it !')
 
         # Check message format and fields
         assert isinstance(msg, dict)
         assert 'algorithm' in msg
         assert 'manager' in msg
+
+        # The manager can use the same socket during simulation to emit portfolio informations
+        msg['manager']['server'] = server
 
         return msg
 
@@ -214,12 +213,26 @@ class Setup(object):
     def _normalize_date_format(self, date):
         '''
         Dates can be defined in many ways, but zipline use
-        aware datetime objects only
+        aware datetime objects only. Plus, th software work
+        with utc timezone so we convert it.
         __________________________________________________
         Parameters
             date: str
-                String date like YYYY-MM-DD
+                String date, see dateutils module for precisions
         '''
         assert isinstance(date, str)
-        #return pytz.utc.localize(datetime.strptime(date, '%Y-%m-%d%H:%M'))
-        return pytz.utc.localize(parse(date))
+        locale_date = parse(date)
+        if locale_date.tzinfo is None:
+            locale_date = locale_date.replace(tzinfo=pytz.timezone(_detect_timezone()))
+        #FIXME astimezone() retieve 8 minutes from Paris timezone Oo 20 from Amsterdam WTF
+        return locale_date.astimezone(pytz.utc)
+
+
+def _detect_timezone():
+    '''
+    Experimental and temporary (since there is a world module)
+    get timezone as set by the system
+    '''
+    import locale
+    locale_code = locale.getdefaultlocale()[0]
+    return str(pytz.country_timezones[locale_code[:2]][0])

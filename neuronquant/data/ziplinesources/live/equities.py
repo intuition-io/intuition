@@ -20,7 +20,7 @@ Tools to generate data sources.
 import sys
 import os
 import time
-#import json
+import pytz
 import datetime
 import pandas as pd
 
@@ -87,19 +87,18 @@ class DataLiveSource(DataSource):
         '''
         Only return when we reach given datetime
         '''
-        current_dt = datetime.datetime.now()
-        #FIXME Error: will wait for 14h02 / 13h58
-        while (current_dt.minute < dt.minute) or (current_dt.hour < dt.hour) :
+        # QuanTrade works with utc dates, conversion
+        # are made for I/O
+        while datetime.datetime.now(pytz.utc) < dt:
+            log.info('Waiting for {}'.format(dt))
             time.sleep(15)
-            current_dt = datetime.datetime.now()
-            log.info('Waiting {} / {}'.format(current_dt, dt))
 
     def _get_updated_index(self):
         '''
         truncate past dates in index
         '''
         late_index = self.data['index']
-        current_dt = datetime.datetime.now()
+        current_dt = datetime.datetime.now(pytz.utc)
         selector = (late_index.day > current_dt.day) \
                 | ((late_index.day == current_dt.day) & (late_index.hour > current_dt.hour)) \
                 | ((late_index.day == current_dt.day) & (late_index.hour == current_dt.hour) & (late_index.minute >= current_dt.minute))
@@ -114,15 +113,15 @@ class DataLiveSource(DataSource):
                 log.error('** No data snapshot available, maybe stopped by google ?')
                 sys.exit(2)
             for sid in self.sids:
-                    event = {
-                        'dt': dt,
-                        'sid': sid,
-                        'price': float(snapshot[sid]['last']),
-                        'currency': snapshot[sid]['currency'],
-                        'perc_change': float(snapshot[sid]['perc_change']),
-                        'volume': int(snapshot[sid]['volume']),
-                    }
-                    yield event
+                event = {
+                    'dt': dt,
+                    'sid': sid,
+                    'price': float(snapshot[sid]['last']),
+                    'currency': snapshot[sid]['currency'],
+                    'perc_change': float(snapshot[sid]['perc_change']),
+                    'volume': int(snapshot[sid]['volume']),
+                }
+                yield event
 
     @property
     def raw_data(self):

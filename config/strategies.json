@@ -38,6 +38,6 @@
     "Momentum":
     {
         "debug": 1,
-        "window_length": 30
+        "window_length": 10
     }
 }

@@ -125,6 +125,7 @@ def deprecated(fct):
 
 
 #NOTE with_market symbol, build jxr.pa => JXR:EPA
+#TODO mega class decorator which will harmonize eveything
 def use_google_symbol(fct):
     '''
     Removes ".PA" or other market indicator from yahoo symbol

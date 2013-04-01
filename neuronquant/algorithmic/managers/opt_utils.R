@@ -25,7 +25,8 @@ suppressPackageStartupMessages(require(tseries))
 suppressPackageStartupMessages(require(stats))
 suppressPackageStartupMessages(require(RMySQL))
 suppressPackageStartupMessages(require(zoo))
-suppressPackageStartupMessages(require(futils.logger))
+suppressPackageStartupMessages(require(futile.logger))
+suppressPackageStartupMessages(require(RJSONIO))
 
 # Initial setup
 options(scipen=100)
@@ -91,19 +92,19 @@ downloadOneSerie = function (symbol, from, to) {
 serieFromDB <- function(symbol,
                         from,
                         to,                     #TODO default to today
-                        dbfile='mysql.cfg')
+                        dbfile='default.json')
 {
 
     flog.info('Fetching serie from database')
     flog.info('Reading MySQL configuration')
-    config <- fromJSON(file(paste(Sys.getenv('QTRADE'), 'config', dbfile, sep='/'), 'r'))
+    config <- fromJSON(file(paste('~/.quantrade', dbfile, sep='/'), 'r'))$mysql
 
     flog.debug('Connecting to MySQL')
     stocksDB = dbConnect(MySQL(),
-                         user=config['USER'][[1]], 
-                         password=config['PASSWORD'][[1]], 
-                         dbname=config['DATABASE'][[1]], 
-                         host=config['HOSTNAME'][[1]])
+                         user=config['user'][[1]], 
+                         password=config['password'][[1]], 
+                         dbname=config['database'][[1]], 
+                         host=config['hostname'][[1]])
     on.exit(dbDisconnect(stocksDB))
 
     stmt <- paste("select Date, AdjClose from Quotes where Quotes.Ticker = ", symbol, " and Quotes.Date >= ", from, " and Quotes.Date <= ", to, "", sep="'") 

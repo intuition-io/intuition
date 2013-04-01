@@ -14,7 +14,12 @@ Changelog
 - Generic timer and date handler for live sources
 - Node server bug fixed
 - Complete command line implementation in remote console
+- On-the-fly orders
 - Squizzing of the exception at the end of a very short live session in zipline
+- Quick and dirty solution for dates timezone
+- Android notivifations OK
+- Renames, splitted strategies and managers in different directories and files
+- Fixed sharpe ratio computation
 
 
 19-03-2013

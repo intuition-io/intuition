@@ -31,17 +31,17 @@ if __name__ == '__main__':
     # Dedicated object for configuration setup
     setup = Setup()
 
-    # General simulation behavior is defined using command line args
+    # General simulation behavior is defined using command line arguments
     configuration = setup.parse_commandline()
 
-    # Color_setup : Pretty print of errors, warning, and so on Remote_setup:
-    # ZMQ based messaging, route logs on the network (catched by server's
-    # broker)
+    # Color_setup : Pretty print of errors, warning, and so on
+    # Remote_setup: ZMQ based messaging, route logs on the network
+    # (catched by server's broker)
     log_setup = (utils.remote_setup if configuration['remote'] else
                  utils.color_setup)
     with log_setup.applicationbound():
 
-        # Fill algorithm and manager parameters
+        # Fill strategie and manager parameters
         # Localy, reading configuration file
         # Remotely, listening gor messages through zmq socket
         strategie = setup.get_strategie_configuration(remote=configuration['remote'])
@@ -53,14 +53,14 @@ if __name__ == '__main__':
         # Setup quotes data and financial context (location, market, ...)
         # simulation from user parameters Wrap _configure_data() and
         # _configure_context() you can use directly for better understanding
-        data, context = engine.configure(configuration)
+        data, trading_context = engine.configure(configuration)
 
         # See neuronquant/calculus/engine.py for details of results which is an
         # analyzes object
-        analyzes = engine.run(data, configuration, strategie, context)
+        analyzes = engine.run(data, configuration, strategie, trading_context)
 
         if analyzes is None:
-            utils.log.error('** Backtest failed, exiting')
+            utils.log.error('** Backtest failed.')
             sys.exit(1)
 
         '''_______________________________________________________________________________________    Results   ____'''
@@ -89,8 +89,8 @@ if __name__ == '__main__':
                                                 save=True,
                                                 db_id=configuration['database'])
 
-        #FIXME irrelevant results if no transactions were made
-        utils.log.info('\n\nReturns: {} {}\nVolatility: t{} \
+        #FIXME irrelevant results if no transactions were ordered
+        utils.log.info('\n\nReturns: {}% / {}%\nVolatility: {} \
                 \nSharpe:\t\t{}\nMax drawdown:\t{}\n\n'.format(
                 risk_metrics['Returns'] * 100.0,
                 risk_metrics['Benchmark.Returns'] * 100.0,
@@ -105,7 +105,8 @@ if __name__ == '__main__':
             plt.show()
 
             # R statistical analyzes
-            os.system('{}/backtester/analysis.R --source mysql --table {} --verbose'
+            #TODO Wrap it in Analyze object using rpy or rest server
+            os.system('{}/application/analysis.R --source mysql --table {} --verbose'
                     .format(os.environ['QTRADE'], configuration['database']))
             os.system('evince ./Rplots.pdf')
 

@@ -30,7 +30,7 @@ fi
 echo "QuanTrade $1 list..."
 
 count=0
-#FIXME how ugly...
+#NOTE how ugly...
 for file in $(find . -type f | grep -v "res" | grep -v "git" | grep -v "doc" | grep -v "management" | grep -v "^./data" | grep -v "deprecated"); do 
     #echo $file
     TODOS=$(cat $file | grep -i $1)

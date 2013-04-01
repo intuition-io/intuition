@@ -35,7 +35,7 @@ program
 //TODO Move it to default.json, read by config ?
 var bt_config = {
     type: "fork",
-    script: "backtester/backtest.py",
+    script: "application/app.py",
     port: 5555,
     args: {
         cash: {
@@ -44,11 +44,11 @@ var bt_config = {
         } ,
         ticker: {
             prefix: "--ticker",
-            value: "random,2" 
+            value: "random,3" 
         },
         exchange: {
             prefix: "--exchange",
-            value: 'nasdaq'
+            value: 'paris'
         } ,
         db: {
             prefix: "--database",
@@ -64,7 +64,7 @@ var bt_config = {
         },
         manager: {
             prefix: "--manager",
-            value: "Constant" 
+            value: "Fair" 
         },
         start: {
             prefix: "--start",
@@ -72,7 +72,7 @@ var bt_config = {
         },
         end: {
             prefix: "--end",
-            value: "19h20" 
+            value: "15h50" 
         } ,
         client: {
             prefix: "flag",
@@ -93,8 +93,12 @@ var bt_config = {
         manager: {
             name: "Xavier Bruhiere",
             load_backup: 1,
-            max_weight: 0.5,
+            max_weight: 0.3,
             connected: 1,
+            android: 1,
+            loopback: 60,
+            source: "mysql",
+            perc_sell: 1.0,
             buy_amount: 80, 
             sell_amount: 70
         }
@@ -104,7 +108,7 @@ var bt_config = {
 
 var opt_config = {
     type: "fork",
-    script: "backtester/optimization/genetic_function.py",
+    script: "application/optimization/genetic_function.py",
     args: {
         population: {
             prefix: "--popsize",

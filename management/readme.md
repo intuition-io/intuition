@@ -115,6 +115,7 @@ Github
 * https://github.com/fearofcode/bateman
 * https://github.com/usablica/intro.js
 * https://github.com/cantino/huginn
+* https://github.com/saoj/options-lib
 
 Portfolio optimization on r-bloggers
 ------------------------------------

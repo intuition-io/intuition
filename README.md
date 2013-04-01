@@ -1,4 +1,4 @@
-NeuronQuant: Automated quantitative trading system
+QuanTrade: Automated quantitative trading system
 ==================================================
 
 Overview
@@ -36,9 +36,6 @@ Features
 Installation
 ------------
 
-- ```# > apt-get install git libzmq-dev r-base python2.7 mysql-server libmysqlclient-dev npm python-pip planner python-dev```
-- ``` # > pip install pip-tools```
-    
 - Zipline backtster engine: 
    - Clone (outside QuanTrade project) or fork (then clone your own copy) the original project at https://github.com/quantopian/zipline
    - To stay up-to-date: add streams to the original project and to my fork:
@@ -49,7 +46,7 @@ Installation
       - note: I keep my version updated with the original, so you usually won't need to fetch both
 
 - Run now the installation script (or check in the wiki how to do it manually):
-    - ``` ./ppQuanTrade #> ./scripts/installation/install.sh```
+``` ./ppQuanTrade #> ./scripts/installation/install.sh```
 
 - Edit ~/.quantrade/local.sh to suit your environment
 
@@ -58,7 +55,7 @@ Installation
    - ``` $> mysql -u root -p ```
    - ```mysql> create database stock_data;```
    - ```mysql> set password for 'user'@'host' = password('chut');
-   - ```mysql> grant all privileges on *.* to 'user'@'host'``` (replace user and host as you want)
+   - ```mysql> grant all privileges on stock_data.* to 'user'@'host'``` (replace user and host as you want)
    - Edit ./ppQuanTrade/config/mysql.cfg 
    - Create tables with ```./ppQuanTrade $>`./scripts/database.py -c```
    - Fill it with ``` ./ppQuanTrade $> ./scripts/database.py -a data/dump_sql.csv ```

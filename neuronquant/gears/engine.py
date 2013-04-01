@@ -14,22 +14,31 @@
 # limitations under the License.
 
 
-from algorithms import *
-
 import sys
-
-from neuronquant.data.datafeed import DataFeed
-from neuronquant.ai.managers import Constant, Equity, OptimalFrontier
-import neuronquant.utils.datautils as datautils
-from neuronquant.data.ziplinesources.loader import LiveBenchmark
-#from neuronquant.data.ziplinesources.live.equities import DataLiveSource
-from neuronquant.gears.analyzes import Analyze
-
 import pytz
 import pandas as pd
-
 import logbook
 log = logbook.Logger('Engine')
+
+from neuronquant.algorithmic.strategies import (
+        DualMovingAverage,
+        Momentum,
+        VolumeWeightAveragePrice,
+        BuyAndHold,
+        StddevBased,
+        OLMAR,
+        MultiMA,
+        MovingAverageCrossover
+)
+from neuronquant.algorithmic.managers import (
+        Constant,
+        Fair,
+        OptimalFrontier
+)
+from neuronquant.data.datafeed import DataFeed
+import neuronquant.utils.datautils as datautils
+from neuronquant.data.ziplinesources.loader import LiveBenchmark
+from neuronquant.gears.analyzes import Analyze
 
 from zipline.finance.trading import TradingEnvironment
 from zipline.utils.factory import create_simulation_parameters
@@ -42,7 +51,7 @@ class BacktesterEngine(object):
                   'StdBased'    : StddevBased             , 'OLMAR'      : OLMAR,
                   'MultiMA'     : MultiMA                 , 'MACrossover': MovingAverageCrossover}
 
-    portfolio_managers = {'Equity': Equity, 'Constant': Constant, 'OptimalFrontier': OptimalFrontier}
+    portfolio_managers = {'Fair': Fair, 'Constant': Constant, 'OptimalFrontier': OptimalFrontier}
 
     def __new__(self, algo, manager, strategie_configuration):
         '''
@@ -126,7 +135,7 @@ class Simulation(object):
 
             #### !! Dev temporary hack
             #end_time = pd.datetime.now() + pd.datetools.Minute(20)
-            dates = datautils.filter_market_hours(pd.date_range(pytz.utc.localize(pd.datetime.now()), end_time,
+            dates = datautils.filter_market_hours(pd.date_range(pd.datetime.now(pytz.utc), end_time,
                                                                 freq='1min'),
                                                                 #TODO ...hard coded, later: --frequency daily,3
                                                   exchange)
@@ -171,13 +180,13 @@ class Simulation(object):
         '''
         # Environment configuration
         if exchange in datautils.Exchange:
-            finance_context = TradingEnvironment(bm_symbol   = datautils.Exchange[exchange]['index'],
+            trading_context = TradingEnvironment(bm_symbol   = datautils.Exchange[exchange]['index'],
                                                  exchange_tz = datautils.Exchange[exchange]['timezone'],
                                                  load        = self.load_market_data)
         else:
             raise NotImplementedError('Because of computation limitation, trading worldwide not permitted currently')
 
-        return finance_context
+        return trading_context
 
     def run(self, data, configuration, strategie, context):
         #___________________________________________________________________________    Running    ________

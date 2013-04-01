@@ -135,6 +135,11 @@ class TimeZone(object):
         self.date_fmt = locale.nl_langinfo(locale.D_FMT) + ' %Z%z'
         self.hour_fmt = locale.nl_langinfo(locale.T_FMT) + ' %Z%z'
 
+    def _detect_timezone(self):
+        locale_code = locale.getdefaultlocale()[0]
+        locale_tz = pytz.country_timezones[code[:2]]
+        return pytz.timezone(locale_tz)
+
     def setTimezone(self, tz):
         self.tz = pytz.timezone(tz)
         self.actualize(tz)

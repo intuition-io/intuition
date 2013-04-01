@@ -31,7 +31,24 @@ import datetime as dt
 Quant
 ---------------------------------------------------------------------------------------'''
 
-log = logbook.Logger('finance')
+log = logbook.Logger('Finance')
+
+
+#NOTE This is temporary copied from QSTK library
+#     which will be more used in the future
+def qstk_get_sharpe_ratio(rets, risk_free=0.00):
+    """
+    @summary Returns the daily Sharpe ratio of the returns.
+    @param rets: 1d numpy array or fund list of daily returns (centered on 0)
+    @param risk_free: risk free returns, default is 0%
+    @return Annualized rate of return, not converted to percent
+    """
+    f_dev = np.std(rets, axis=0)
+    f_mean = np.mean(rets, axis=0)
+
+    f_sharpe = (f_mean * 252 - risk_free) / (f_dev * np.sqrt(252))
+
+    return f_sharpe
 
 
 def moving_average(x, n, type='simple'):

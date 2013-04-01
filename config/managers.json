@@ -1,6 +1,9 @@
 {
-    "Equity":
+    "Fair":
     {
+        "name": "Xavier Bruhiere",
+        "load_backup": 1,
+        "android": 0,
         "connected": 0,
         "max_weight": 0.5
     },
@@ -8,6 +11,7 @@
     {
         "name": "Xavier Bruhiere",
         "load_backup": 1,
+        "android": 1,
         "max_weight": 0.5,
         "buy_amount": 80,
         "connected": 0,
@@ -15,7 +19,10 @@
     },
     "OptimalFrontier":
     {
+        "name": "Xavier Bruhiere",
+        "load_backup": 0,
         "connected": 0,
+        "android": 0,
         "loopback": 60,
         "source": "mysql",
         "perc_sell": 1.0,

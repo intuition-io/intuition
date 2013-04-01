@@ -19,69 +19,7 @@ import os
 import pandas as pd
 import rpy2.robjects as robjects
 
-from neuronquant.data.datafeed import DataFeed
-from neuronquant.ai.portfolio import PortfolioManager
-
-
-class Constant(PortfolioManager):
-    '''
-    Buy and sell a constant defined amount
-    '''
-    def optimize(self, date, to_buy, to_sell, parameters):
-        '''
-        Specifies the portfolio's allocation strategy
-        The user can use :
-        self.portfolio    : zipline portfolio object
-        self.max_assets   : maximum assets the portfolio can have at a time
-        self.max_weigths  : maximum weigth for an asset can have in the portfolio
-        _____________________________________________
-        Parameters
-            date: datetime.timestamp
-                Date signals were emitted
-            to_buy: list(...)
-                Symbols to buy triggered by the strategie signals
-            to_sell: list(...)
-                Symbols to sell triggered by the strategie signals
-            parameters: dict(...)
-                Custom user parameters
-        _____________________________________________
-        Return:
-            allocations: dict(...)
-                Symbols with their -> weigths -> for buy: according the whole portfolio value   (must be floats)
-                                              -> for sell: according total symbol position in portfolio
-                                   -> amount: number of stocks to process (must be ints)
-            e_ret: float
-                Expected return
-            e_risk: float
-                Expected risk
-        '''
-        allocations = dict()
-        # Process every stock the same way
-        for s in to_buy:
-            # Allocate defined amount to buy
-            allocations[s] = parameters.get('buy_amount', 100)
-        for s in to_sell:
-            allocations[s] = - parameters.get('sell_amount', self.portfolio.positions[s].amount)
-
-        # Defaults values
-        e_ret = 0
-        e_risk = 1
-        return allocations, e_ret, e_risk
-
-
-class Equity(PortfolioManager):
-    '''
-    dispatch equals weigths
-    '''
-    def optimize(self, date, to_buy, to_sell, parameters):
-        allocations = dict()
-        if to_buy:
-            fraction = round(1.0 / float(len(to_buy)), 2)
-            for s in to_buy:
-                allocations[s] = fraction
-        for s in to_sell:
-            allocations[s] = - self.portfolio.positions[s].amount
-        return allocations, 0, 1
+from portfolio import PortfolioManager
 
 
 class OptimalFrontier(PortfolioManager):
@@ -90,12 +28,10 @@ class OptimalFrontier(PortfolioManager):
     '''
     def __init__(self, parameters):
         PortfolioManager.__init__(self, parameters)
-        # Database access for symbols retrieving
-        self.feeds = DataFeed()
 
         # R stuff: R functions file and rpy interface
         self.r = robjects.r
-        portfolio_opt_file = '/'.join((os.environ['QTRADE'], 'neuronquant/ai/opt_utils.R'))
+        portfolio_opt_file = '/'.join((os.environ['QTRADE'], 'neuronquant/algorithmic/managers/opt_utils.R'))
         self.r('source("{}")'.format(portfolio_opt_file))
 
     def optimize(self, date, to_buy, to_sell, parameters):
@@ -115,7 +51,7 @@ class OptimalFrontier(PortfolioManager):
         if len(positions) == 1:
             return {positions.pop(): parameters.get('max_weigths', 0.2)}, 0, 1
         for p in positions:
-            symbols.append(self.feeds.guess_name(p).lower())
+            symbols.append(self.datafeed.guess_name(p).lower())
 
         loopback    = parameters.get('loopback', 50)
         source      = parameters.get('source', 'yahoo')

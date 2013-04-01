@@ -108,7 +108,7 @@ def annealingoptimize(domain, costf, T=10000.0, cool=0.95, step=1):
     return vec
 
 
-def genetic_optimize(domain, cost_obj, popsize=50, step=1,
+def genetic(domain, cost_obj, popsize=50, step=1,
                      mutprob=0.2, elite=0.2, maxiter=100, stop=0, notify_android=False):
     '''
     Parameter optimization using genetic algorithm

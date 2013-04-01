@@ -15,14 +15,13 @@
 
 
 from neuronquant.data.datafeed import DataFeed
-#from neuronquant.network.transport import ZMQ_Dealer
-#from neuronquant.data.ziplinesources.live.equities import DataLiveSource
 
 import pytz
 import pandas as pd
 import numpy as np
 
 #from qstkutil import tsutil as tsu
+from finance import qstk_get_sharpe_ratio
 
 import logbook
 log = logbook.Logger('Analyze')
@@ -106,8 +105,7 @@ class Analyze(object):
         if db_id is None:
             db_id = self.configuration['algorithm'] + pd.datetime.strftime(pd.datetime.now(), format='%Y%m%d')
         perfs['Name']              = db_id
-        perfs['Sharpe.Ratio']      = -1
-        #perfs['Sharpe.Ratio']      = tsu.get_sharpe_ratio(metrics['Returns'].values, risk_free = riskfree)
+        perfs['Sharpe.Ratio']      = qstk_get_sharpe_ratio(metrics['Returns'].values, risk_free=riskfree)
         perfs['Returns']           = (((metrics['Returns'] + 1).cumprod()) - 1)[-1]
         perfs['Max.Drawdown']      = max(metrics['Max.Drawdown'])
         perfs['Volatility']        = np.mean(metrics['Volatility'])

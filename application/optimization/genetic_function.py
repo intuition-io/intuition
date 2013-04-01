@@ -21,11 +21,11 @@ import pytz
 from datetime import datetime
 
 from neuronquant.gears.engine import Simulation
-from neuronquant.ai.optimize import genetic_optimize
+import neuronquant.algorithmic.optimizations.optimize as optimize
 from neuronquant.utils import log, color_setup, remote_setup
 
 
-#TODO Develop genetic function (cf old class and methods choice)
+#TODO Develop genetic specific functions (cf old class and methods choice)
 #     Then Integrate more optimization functions on same model
 #     Then store and analyse the data in database
 class Metric(object):
@@ -126,7 +126,7 @@ if __name__ == "__main__":
         #TODO manage float parameters
         #NOTE A dico might be more readable
         #FIXME Step is the same whatever the parameter, scale issue
-        score, best_parameters = genetic_optimize([(100, 200), (3, 9), (0, 20)],
+        score, best_parameters = optimize.genetic([(100, 200), (3, 9), (0, 20)],
                                                   Metric(),
                                                   popsize = args.popsize,
                                                   step    = args.step,

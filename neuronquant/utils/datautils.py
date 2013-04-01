@@ -55,18 +55,21 @@ FX_PAIRS = ['EUR/USD', 'USD/JPY', 'GBP/USD',
             'CAD/JPY', 'CHF/JPY', 'NZD/USD']
 
 
-#NOTE keys will be exchange and timezone (third parameter)command line parameters
-#TODO Implement them all
-#TODO Here are hours from Paris point of view, make it adapatable from everywhere
+#TODO Complete with http://en.wikipedia.org/wiki/List_of_stock_exchange_opening_times
 def filter_market_hours(dates, exchange):
-    ''' Only return market open hours '''
+    ''' Only return market open hours from UTC timezone'''
     if dates.freq > pd.datetools.Day():
         # Daily or lower frequency, no hours filter required
         return dates
     if exchange == 'paris':
-        selector = ((dates.hour > 8) & (dates.hour < 17)) | ((dates.hour == 17) & (dates.minute < 31))
+        selector = ((dates.hour > 9) & (dates.hour < 16)) | ((dates.hour == 17) & (dates.minute < 31)) \
+                | ((dates.hour == 8) & (dates.minute > 29))
+    elif exchange == 'london':
+        selector = ((dates.hour > 8) & (dates.hour < 16)) | ((dates.hour == 16) & (dates.minute > 31))
+    elif exchange == 'tokyo':
+        selector = ((dates.hour > 0) & (dates.hour < 6))
     elif exchange == 'nasdaq' or exchange == 'nyse':
-        selector = ((dates.hour > 15) & (dates.hour < 22)) | ((dates.hour == 15) & (dates.minute > 31))
+        selector = ((dates.hour > 14) & (dates.hour < 21)) | ((dates.hour == 14) & (dates.minute > 31))
     else:
         # Forex or Unknown market, return as is
         return dates
@@ -80,7 +83,7 @@ Exchange = {
     # Market code, from yahoo stock code (store in database) to google market code (needed for reliable download)
     #Later Londres = LON
     'paris': {'index': '^FTSE',
-         'timezone': 'Europe/London',
+         'timezone': 'Europe/Paris',
          'code': 1001,
          'google_market': 'EPA'},
     'forex': {'index': '^FCHI',

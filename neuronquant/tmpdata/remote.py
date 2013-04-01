@@ -78,6 +78,7 @@ class Remote(object):
         if not equities:
             equities = kwargs.get('symbols', [])
         level = kwargs.get('level', 0)
+        #TODO Symbols are usualy reused, cach them
         symbols = [self.datafeed.guess_name(equity) for equity in equities]
 
         if not level:
@@ -101,6 +102,8 @@ class Remote(object):
         '''
         assert isinstance(data, pd.Dataframe) or isinstance(data, dict)
 
+
+#NOTE check zipline.utils.factory, use DataReader as well
 
 def historical_pandas_yahoo(symbol, source='yahoo', start=None, end=None):
     '''

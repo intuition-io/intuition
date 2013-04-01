@@ -26,44 +26,69 @@ import zipline.protocol as zp
 
 class PortfolioManager:
     '''
-    Observes the trader universe and produces
-    orders to be excuted within zipline
-    Abstract method meant to be used by user
-    to construct their portfolio optimizer
+    Manages portfolio during simulation, and stays aware of the situation
+    through the update() method. It is configured through zmq message (manager
+    field) or QuanTrade/config/managers.json file.
+
+    User strategies call it with a dictionnnary of detected opportunities (i.e.
+    buy or sell signals).  Then the optimize function computes assets
+    allocation, returning a dictionnary of symbols with their weigths or amount
+    to reallocate.
+                                  __________________________      _____________
+    signals {'google': 745.5} --> |                         | --> |            |
+                                  | trade_signals_handler() |     | optimize() |
+    orders  {'google': 34}    <-- |_________________________| <-- |____________|
+
+    In addition, portfolio objects can be saved in database and reloaded later,
+    and user on-the-fly orders are catched and executed in remote mode. Finally
+    portfolios are connected to the server broker and, if requested, send state
+    messages to client.
+
+    This is abstract class, inheretid class will eventally overwrite optmize()
+    to expose their own asset allocation strategy.
     '''
+
     __metaclass__ = abc.ABCMeta
 
     #TODO Add in the constructor or setup parameters some general settings like maximum weights, positions, frequency,...
-    def __init__(self, parameters):
+    def __init__(self, configuration):
         '''
         Parameters
-            parameters : dict(...)
+            configuration : dict
                 Named parameters used either for general portfolio settings
                 (server and constraints), and for user optimizer function
         '''
         super(PortfolioManager, self).__init__()
         self.log       = Logger('Manager')
-        self.datafeed      = DataFeed()
+
+        # Easy mysql access
+        self.datafeed = DataFeed()
+
+        # Zipline portfolio object, updated during simulation with self.date
         self.portfolio = None
         self.date      = None
-        self.name      = parameters.get('name', 'Chuck Norris')
-        self._optimizer_parameters = parameters
-        self.connected = False
-        #TODO Should send stuff anyway, and accept new connections while running
 
-        self.connected = parameters.get('connected', False)
+        # Portfolio owner, mainly use for database saving and client communication
+        self.name      = configuration.get('name', 'Chuck Norris')
 
-        # Run the server if the engine didn't while it is asked
-        if 'server' in parameters:
-            self.server = parameters.pop('server')
-            if self.server.port is None and self.connected:
-                self.log.info('Binding manager on default port...')
-                self.server.run(host='127.0.0.1', port=5570)
+        # Other parameters are used in user optimize() method
+        self._optimizer_parameters = configuration
+
+        # Make the manager talk to connected clients
+        self.connected = configuration.get('connected', False)
+        # Send android notifications when orders are processed
+        # It's only possible with a running server
+        self.android   = configuration.get('android', False) & self.connected
+
+        # Run the server if the engine didn't, while it is asked
+        if 'server' in configuration and self.connected:
+            # Getting server object instanciated anyway before (by Setup object)
+            self.server = configuration.pop('server')
 
     @abc.abstractmethod
     def optimize(self):
         '''
-        Users must overwrite this method
+        Users should overwrite this method
         '''
         pass
 
@@ -80,30 +105,40 @@ class PortfolioManager:
             save: boolean
                 If true, save the portfolio in database under self.name key
         '''
+        # Make the manager aware of current simulation portfolio and date
         self.portfolio = portfolio
         self.date      = date
 
         if save:
             self.save_portfolio(portfolio)
 
+        # Send portfolio object to client
         if self.connected:
             #NOTE Something smarter ?
+            # We need to translate zipline portfolio and position objects into json data (i.e. dict)
             packet_portfolio = to_dict(portfolio)
             for pos in packet_portfolio['positions']:
                 packet_portfolio['positions'][pos] = to_dict(packet_portfolio['positions'][pos])
+
             self.server.send(packet_portfolio,
                               type    = 'portfolio',
                               channel = 'dashboard')
 
+            # Check user remote messages and return it
             return self.catch_messages()
         return dict()
 
     def trade_signals_handler(self, signals):
         '''
-        Process buy and sell signals from backtester or live trader
-        @param signals: dict holding stocks of interest, format like {"google": 567.89, "apple": -345.98}
-                       If the value is negative -> sell signal, otherwize buy one
-        @return: dict orderBook, like {"google": 34, "apple": -56}
+        Process buy and sell signals from the simulation
+        ___________________________________________________________
+        Parameters
+            signals: dict
+                hold stocks of interest, format like {"google": 567.89, "apple": -345.98}
+                If the value is negative -> sell signal, otherwize buy one
+        ___________________________________________________________
+        Return
+            dict orderBook, like {"google": 34, "apple": -56}
         '''
         orderBook       = dict()
 
@@ -142,22 +177,34 @@ class PortfolioManager:
                     orderBook[t] = (int(alloc[t] * self.portfolio.portfolio_value / price)
                                     - self.portfolio.positions[t].amount)
 
+        if self.android and orderBook:
+            # Alert user of the orders about to be processed
+            # Ok... kind of fancy
+            ords = {'-1': 'sell', '1': 'buy'}
+            msg = 'QuanTrade suggests you to '
+            msg += ', '.join(['{} {} stocks of {}'
+                .format(ords[str(amount / abs(amount))], amount, ticker) for
+                ticker, amount in orderBook.iteritems()])
+            self.server.send_to_android({'title': 'Portfolio manager notification',
+                                         'priority': 1,
+                                         'description': msg})
+
         return orderBook
 
     def setup_strategie(self, parameters):
         '''
-        General parameters or user ones setting
+        General parameters or user settings
         (maw_weigth, max_assets, max_frequency, commission cost)
         ________________________________________________________
         Parameters
-            parameters: dict(...)
+            parameters: dict
                 Arbitrary values to change general constraints,
                 or for user algorithm settings
         '''
+        assert isinstance(parameters, dict)
         for name, value in parameters.iteritems():
             self._optimizer_parameters[name] = value
 
-    #TODO Still need here this dict = f(ndict)
     def save_portfolio(self, portfolio):
         '''
         Store in database given portfolio,
@@ -184,24 +231,24 @@ class PortfolioManager:
             None otherwize
         '''
         self.log.info('Loading portfolio from database')
-        ## Get the portfolio as a pandas Serie
+        # Get the portfolio as a pandas Serie
         db_pf = self.datafeed.saved_portfolios(name)
-        ## The function returns None if it didn't find a portfolio with id 'name' in db
-        if db_pf is None:
-            return None
 
-        # Creating portfolio object
+        # Create empty Portfolio object to be filled
         portfolio = zp.Portfolio()
 
-        portfolio.capital_used = db_pf['Capital']
-        portfolio.starting_cash = db_pf['StartingCash']
-        portfolio.portfolio_value = db_pf['PortfolioValue']
-        portfolio.pnl = db_pf['PNL']
-        portfolio.returns = db_pf['Returns']
-        portfolio.cash = db_pf['Cash']
-        portfolio.start_date = db_pf['StartDate']
-        portfolio.positions = self._adapt_positions_type(db_pf['Positions'])
-        portfolio.positions_value = db_pf['PositionsValue']
+        # The function returns an empty dataframe if it didn't find a portfolio with id 'name' in db
+        if len(db_pf):
+            # Fill new portfolio data structure
+            portfolio.capital_used    = db_pf['Capital']
+            portfolio.starting_cash   = db_pf['StartingCash']
+            portfolio.portfolio_value = db_pf['PortfolioValue']
+            portfolio.pnl             = db_pf['PNL']
+            portfolio.returns         = db_pf['Returns']
+            portfolio.cash            = db_pf['Cash']
+            portfolio.start_date      = db_pf['StartDate']
+            portfolio.positions       = self._adapt_positions_type(db_pf['Positions'])
+            portfolio.positions_value = db_pf['PositionsValue']
 
         return portfolio
 
@@ -210,6 +257,7 @@ class PortfolioManager:
         From array of sql Positions data model
         To Zipline Positions object
         '''
+        # Create empty Positions object to be filled
         positions = zp.Positions()
 
         for pos in db_pos:

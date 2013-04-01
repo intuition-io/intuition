@@ -41,7 +41,7 @@ class Database(object):
         self.Base = Base
 
         # Handle edge case here
-        log.info('Reading NeuronQuant MySQL configuration...')
+        log.info('Reading QuanTrade MySQL configuration...')
         #NOTE Make it global
         sql = json.load(open('/'.join((os.path.expanduser('~/.quantrade'), 'default.json')), 'r'))['mysql']
         if sql['password'] == '':

@@ -29,7 +29,8 @@ chown -R $USER ~/.quantrade
 chgrp -R $USER ~/.quantrade
 
 echo "installation of debian packages..."
-apt-get install git libzmq-dev r-base python2.7 mysql-server libmysqlclient-dev npm pip planner python-dev
+apt-get install git libzmq-dev r-base python2.7 mysql-server libmysqlclient-dev npm python-pip planner python-dev
+pip install pip-tools
 
 echo "Writing python quantrade dependances"
 cat ./scripts/installation/qt_*.txt > qt_deps.txt
