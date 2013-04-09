@@ -18,12 +18,12 @@ if (!suppressPackageStartupMessages(require(quantmod))) {
     stop("This app requires the quantmod package. To install it, run 'install.packages(\"quantmod\")'.\n")
 }
 
-if (!suppressPackageStartupMessages(require(futile.logger))) {
-    stop("This app requires the futile.logger package. To install it, run 'install.packages(\"futile.logger\")'.\n")
-}
+#if (!suppressPackageStartupMessages(require(futile.logger))) {
+    #stop("This app requires the futile.logger package. To install it, run 'install.packages(\"futile.logger\")'.\n")
+#}
 
 # This file defined json network bridge with R
-source(paste(Sys.getenv('QTRADE'), 'server/shiny-backtest/RClientInterface.R', sep='/'))
+source(paste(Sys.getenv('QTRADE'), 'application/shiny-backtest/RClientInterface.R', sep='/'))
 
 # Fix a bug in performanceanalytics package
 require(utils)

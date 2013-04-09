@@ -15,24 +15,27 @@
 // limitations under the License.
 
 
-var zmq = require('zmq')
-    , ui = require('console_ui')
-    , program = require('commander')
-    , consign = require('commander')
-    , config = require('config')
-    , broker_uri = config.network.frontport
-    , voice = require('vocal');
+var ui      = require('../server/console_ui')
+    voice   = require('../server/vocal'),
+    utils = require('../server/utils'),
+    messenger = require('../server/messenger'),
+    program = require('commander'),
+    consign = require('commander'),
+    config  = require('config');
 
 program
     .version('0.0.1')
     .usage('[commands] <args>')
     .description('Remote client for NeuronQuant trading system')
     .option('-v, --verbose <level>', 'verbosity', Number, 2)
+    .option('-l, --local', 'Make it fork server broker and work in local')
+    .option('-s, --speak', 'Allows the program to synthetize voice')
     .option('-c, --channel <name>', 'Channel name of the client', String, 'dashboard')
     .parse(process.argv);
 
 
-//TODO Move it to default.json, read by config ?
+
+//TODO Move it to default.json, read by config ? built from config directory with others ?
 var bt_config = {
     type: "fork",
     script: "application/app.py",
@@ -147,88 +150,6 @@ var fd_config = {
 var mega_config = {'backtest': bt_config,
                    'broker': fd_config,
                    'optimization': opt_config};
-    
-/*
- * ZMQ based client, meant to communicate with the server forwarder 
- * TODO on-the-fly parameters visualisation and edition
- */
-function create_client (port, channel) {
-    //NOTE Could set a flag to make it talk
-    console_ui.write_log('Log window setup done.');
-    console_ui.write_msg('Message window setup done.');
-
-    var socket = zmq.socket('dealer');
-    
-    // Channel is used on the server to route messages
-    socket.identity = channel;
-
-    // Main stuff, handle every message sent back
-    socket.on('message', function(data) {
-        json_data = JSON.parse(data);
-
-        if (json_data.type == 'portfolio') {
-            console_ui.write_msg(json_data.time + ' Portfolio:');
-            //console_ui.write_msg(JSON.stringify(json_data.msg.portfolio_value));
-            console_ui.write_msg(JSON.stringify(json_data.msg));
-            
-            //FIXME Work only in above line configuration
-            //console_ui.write_msg(json_data.time + ' Returns:', json_data.msg['returns']);
-            //console_ui.write_msg(json_data.time + ' PNL:', json_data.msg.pnl);
-        }
-
-        else if (json_data.type == 'optimization') {
-            console_ui.write_msg(json_data.msg['iteration'] + ' ' + json_data.msg['progress'] + '% | ' + json_data.msg['best'] + ' (' + json_data.msg['mean'] +')');
-        }
-
-        else if (json_data.type == 'acknowledgment') {
-            console_ui.write_msg(json_data.time + ' - Worker returned: ' + json_data.msg);
-            socket.send(JSON.stringify({type: 'acknowledgment', statut: 0}));
-        }
-
-        //TODO Could be a vocal optimization message -> flag in the message or multiple type possible
-        else if (json_data.type == 'vocal') {
-            console_ui.write_log(json_data.time + ' ' + json_data.func_name + ': ' + json_data.msg);
-            voice.synthetize(json_data.msg, config.vocal.lang);
-        }
-
-        else {
-            //NOTE Should be dedicated to unexpected message, for now it's for logging
-            //NOTE could configure a channel_log_filter in addition to the type filter, or merge them
-            //TODO msg can be json object, detect and parse it
-            console_ui.write_log(json_data.time + ' ' + json_data.func_name + ': ' + json_data.msg);
-        }
-    });
-
-    socket.connect(port);
-    console_ui.write_msg('[Node:Client] ' + socket.identity + ' connected');
-    
-    console_ui.write_msg('Initialize the forwarder with default configuration');
-    socket.send(JSON.stringify(fd_config));
-
-    this.send_json = function(msg) {
-        socket.send(JSON.stringify(msg));
-    }
-}    
-
-
-// Because I can
-//voice.synthetize('Yo, remote client ready.', config.vocal.lang);
-
-// Define client interfaces, ui for curses graphics, be for backend work
-// The test function is a callback called when hitting keyboard
-var console_ui = new ui.UI_interface(command),
-    client_be = new create_client(broker_uri, program.channel);
-
-
-function isJsonString(text) {
-
-    try {
-        res = JSON.parse(text);
-    } catch (e) {
-        return false;
-    }
-    return true;
-}
 
 function command(msg) {
     // We're building a command line alike array from msg,
@@ -253,7 +174,7 @@ function command(msg) {
     }
 
     else if (command_line[1] == 'order') {
-        if (isJsonString(consign.property)) {
+        if (utils.isJsonString(consign.property)) {
             console_ui.write_msg('Valid order, sending: ' + consign.property);
             client_be.send_json(consign.property);
         } else {
@@ -269,7 +190,7 @@ function command(msg) {
         //TODO handle depth 2 at least
         bt_config.monitor = 'pouet';
 
-        if (isJsonString(consign.property)) {
+        if (utils.isJsonString(consign.property)) {
             new_values = JSON.parse(consign.property);
             console_ui.write_msg('Whole: ' + JSON.stringify(new_values))
             for (var key in new_values) {
@@ -282,3 +203,28 @@ function command(msg) {
         }
     }
 }
+    
+
+// Because I can
+if (program.speak) {
+    voice.synthetize('Yo, remote client ready.', config.vocal.lang);
+    require('sleep').sleep(5)
+}
+
+//TODO Should be after with the right socket. Reshape worker module
+//     workers logs swrew ncurses ui and sleeps are annoying
+//TODO Automatic detection from frontend and backend uris
+if (program.local) {
+    if (program.speak) {
+        voice.synthetize('Running on local machine, forking broker process...', config.vocal.lang);
+    }
+    require('../server/worker').run({script: './application/server_fwd.js'}, null, null, program.channel);
+}
+
+// Define client interfaces, ui for curses graphics, be for backend work
+// The test function is a callback called when hitting keyboard
+var console_ui = new ui.UI_interface(command),
+    client_be = new messenger.create_client(console_ui,
+            config.network.frontport,
+            program.channel,
+            mega_config['broker']);

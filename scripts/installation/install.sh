@@ -1,15 +1,18 @@
 #!/bin/bash
 
-clear
-echo "-- QuanTrade installation script"
+set -e
 
+clear
+echo $(date) " -- QuanTrade installation script"
+
+# There is a lot to install, so run it as root
 if [ $(whoami) != 'root' ]; then
     echo '** Error: This installation script needs root permissions'
     exit 1
 fi
 
 echo "Environment setup"
-#TODO Add a test
+#TODO Improve robustness
 echo "Creating project configuraiton directory: ~/.quantrade"
 mkdir $HOME/.quantrade
 echo "Copying configuration file templates..."
@@ -57,9 +60,9 @@ echo "Node modules for QuanTrade installation, locally"
 cd $QTRADE/server
 npm install
 
-echo "Now edit ~/.quantrade/local.sh and ~/.quantrade/default.json to suit your environment"
-echo "Finally, setup a mysql database"
-
 echo "Cleaning..."
 rm *_deps.txt
 rm -rf node-v0.10.0*
+
+echo "Now edit ~/.quantrade/local.sh and ~/.quantrade/default.json to suit your environment"
+echo "Finally, setup a mysql database"

@@ -1,0 +1,63 @@
+\section{Projet de gestion des flux}
+
+Ce projet, évoqué en partie 2, n'a pas été développé mais tient une place
+essentielle dans l'architecture du système et mérite donc sa place en
+annexe.\newline
+
+Son objectif est de fournir un module capable d'intégrer l'ensemble des
+nombreuses données qui transitent au sein du drone. Il doit permettre de
+garantir le traitement efficace de toutes les informations d'une part, et
+de leur octroyer une plus-value intelligente d'autre part en les
+enrichissant des axes temporels et spatiaux.\newline
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[scale=0.6]{body/images/droneSkeleton.png}
+    \end{center}
+    \caption{Squelette fonctionnel du drone}
+    \label{fig:squelette}
+\end{figure}
+
+Ce dispositif s'intègre dans la logique d'assister l'opérateur sur le plan
+décisionnel, lui fournissant un état temps réel du fonctionnement de
+l'appareil et de l'évolution de la mission. \newline
+
+D'un point de vue technique, cette structure autorise le développement du
+système complexe imaginé. En effet il est difficile d'imaginer que les
+modules décisionnels soient efficaces sans reposer sur une production
+synchronisée et fiable des données. On peut parler enfin de haute
+disponibilité des données.\newline
+
+En outre une telle maîtrise de fonctionnement renforce de manière évidente
+la sécurité de l'appareil. En effet il devient possible d'intégrer de
+manière cohérente des modules de contrôle et de diagnostique, permettant de
+détecter en temps réel des défaillances. \newline
+
+Une interface cloud devient de plus envisageable, autorisant par exemple
+une communication optimisée du réseau de drones, qui deviendrait capable
+d'accéder à tous moments aux états des autres systèmes.\newline
+
+La structure du module est représentée figure x.
+
+\begin{figure}[H]
+    \begin{center}
+        \includegraphics[scale=0.5]{body/images/schema_projet_DB.png}
+    \end{center}
+    \caption{Gestion du flux de données}
+    \label{fig:fluxData}
+\end{figure}
+
+
+Notons qu'une telle architecture n'est pas présente sur les systèmes de vol
+du même domaine et consitue donc une innovation.
+
+L'un de ses autres avantages tient à la méthodologie de développement qu'il
+induit. En effet il doit permettre de développer autour des modules plus
+simplement et plus rapidement. 
+
+Enfin une telle conception est générique, s'intéressant à un problème
+récurrent au sein des systèmes, et est donc réutilisable.\newline
+
+Pour conclure, ce concept pose les bases d'un développement d'intelligence
+artificiel, temps réel et est surtout nécessaire à la cohérence des données
+traitées.

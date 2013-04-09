@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 //
 // Copyright 2012 Xavier Bruhiere
 //
@@ -18,28 +17,21 @@
  * This module is a bridge between a remote server and the client
  * It uses 0MQ to dispatch bi-directionnal messages to clients according to the channel parameter
  * In addition it can run local program (with futur cluster module, one per core actually)
- * FIXME Prevent him from stopping (forever module ?)
  */
 
-//TODO Use optimist or other cli tools to configure those ugly harcoded uri
-var zmq          = require('zmq')
-    , nma        = require('android_notify')
-    , log        = require('logging')
-    , worker     = require('worker')
-    , program    = require('commander')
-    , config     = require('config')
-    , backPort   = config.network.backport
-    , frontPort  = config.network.frontport
-    , logger_uri = config.network.logger
-    
-program
-    .version('0.0.1')
-    .usage('[commands] <args>')
-    .description('Forwarder interface for NeuronQuant trading system, server part')
-    .option('-v, --verbose <level>', 'verbosity', Number, 2)
-    .parse(process.argv);
 
-function createQueueDevice(frontPort, backPort) {
+// client needs
+var zmq = require('zmq'),
+    config = require('config'),
+    voice = require('./vocal');
+
+//server ones
+var nma      = require('./android_notify'),
+    worker = require('./worker'),
+    log    = require('logging');
+
+    
+exports.create_queue_device = function(server_uri_frontend, server_uri_backend, server_uri_logger) {
     // Type of data the forwarder will route to the client
     var filters = [];
 
@@ -51,8 +43,8 @@ function createQueueDevice(frontPort, backPort) {
     frontSocket.identity = 'router' + process.pid;
     backSocket.identity = 'dealer' + process.pid;
     
-    frontSocket.bind(frontPort, function (err) {
-        log('Frontend connection bound to', frontPort);
+    frontSocket.bind(server_uri_frontend, function (err) {
+        log('Frontend connection bound to', server_uri_frontend);
     });
 
     // Depending of type, route messages from "envelope" to everybody connected to backsocket
@@ -73,24 +65,25 @@ function createQueueDevice(frontPort, backPort) {
         else if (json_data.type == 'configure') {
             log('Configuring forwarder...');
             filters = json_data.filters
-            createZmQLogHandler(logger_uri, frontSocket, json_data.verbose, json_data.log_redirection);
+            createZmQLogHandler(server_uri_logger, frontSocket, json_data.verbose, json_data.log_redirection);
         }
 
         else if (json_data.type == 'acknowledgment') {
-            if (json_data.statut != 0) {
+            if (json_data.msg != 0) {
                 log('** Error on client side')
             }
         }
 
         // All other types route to backend socket, not that sophisticated neither
         else {
-            log('Routing data to backend socket...')
-            backSocket.send(JSON.stringify(json_data))
+            log(JSON.stringify(json_data));
+            log('Routing data to backend socket...');
+            backSocket.send(JSON.stringify(json_data));
         }
     });
 
-    backSocket.bind(backPort, function (err) {
-        log('Backend connection bound to', backPort);
+    backSocket.bind(server_uri_backend, function (err) {
+        log('Backend connection bound to', server_uri_backend);
     });
     
     // Route every message from clients, connected to backsocket, to clients connected to frontsocket
@@ -139,7 +132,73 @@ function createQueueDevice(frontPort, backPort) {
             log('ZMQ distributed logger connected on ', uri);
         });
     };
-    //createZmQLogHandler(logger_uri, frontSocket);
 }
 
-createQueueDevice(frontPort, backPort);
+
+
+/*
+ * ZMQ based client, meant to communicate with the server forwarder 
+ * TODO on-the-fly parameters visualisation and edition
+ */
+exports.create_client = function(console_ui, server_uri, channel, broker_config) {
+    server_uri = server_uri || 'tcp://127.0.0.1:5555';
+    channel = channel || 'dashboard';
+    
+    //NOTE Could set a flag to make it talk
+    console_ui.write_log('Log window setup done.');
+    console_ui.write_msg('Message window setup done.');
+
+    var socket = zmq.socket('dealer');
+    
+    // Channel is used on the server to route messages
+    socket.identity = channel;
+
+    // Main stuff, handle every message sent back
+    socket.on('message', function(data) {
+        json_data = JSON.parse(data);
+
+        if (json_data.type == 'portfolio') {
+            console_ui.write_msg(json_data.time + ' portfolio:');
+            //console_ui.write_msg(JSON.stringify(json_data.msg.portfolio_value));
+            console_ui.write_msg(JSON.stringify(json_data.msg));
+            
+            //FIXME Work only in above line configuration
+            //console_ui.write_msg(json_data.time + ' Returns:', json_data.msg['returns']);
+            //console_ui.write_msg(json_data.time + ' PNL:', json_data.msg.pnl);
+        }
+
+        else if (json_data.type == 'optimization') {
+            console_ui.write_msg(json_data.msg['iteration'] + ' ' + json_data.msg['progress'] + '% | ' + json_data.msg['best'] + ' (' + json_data.msg['mean'] +')');
+        }
+
+        else if (json_data.type == 'acknowledgment') {
+            console_ui.write_msg(json_data.time + ' - Worker returned: ' + json_data.msg);
+            socket.send(JSON.stringify({type: 'acknowledgment', msg: 0}));
+        }
+
+        //TODO Could be a vocal optimization message -> flag in the message or multiple type possible
+        else if (json_data.type == 'vocal') {
+            console_ui.write_log(json_data.time + ': ' + json_data.msg);
+            voice.synthetize(json_data.msg, config.vocal.lang);
+        }
+
+        else {
+            //NOTE Should be dedicated to unexpected message, for now it's for logging
+            //NOTE could configure a channel_log_filter in addition to the type filter, or merge them
+            //TODO msg can be json object, detect and parse it
+            console_ui.write_log(json_data.time + ' ' + json_data.func_name + ': ' + json_data.msg);
+        }
+    });
+
+    socket.connect(server_uri);
+    console_ui.write_msg('[Node:Client] ' + socket.identity + ' connected');
+    
+    if (broker_config != undefined) {
+        console_ui.write_msg('Initialize the forwarder with default configuration');
+        socket.send(JSON.stringify(broker_config));
+    }
+
+    this.send_json = function(msg) {
+        socket.send(JSON.stringify(msg));
+    }
+}    

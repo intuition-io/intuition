@@ -31,8 +31,8 @@ echo "QuanTrade $1 list..."
 
 count=0
 #NOTE how ugly...
-for file in $(find . -type f | grep -v "res" | grep -v "git" | grep -v "doc" | grep -v "management" | grep -v "^./data" | grep -v "deprecated"); do 
-    #echo $file
+for file in $(find . -type f | grep -v "res" | grep -v "git" | grep -v "doc" | grep -v "management" | grep -v "check" | grep -v "readme" \
+                             | grep -v "^./data" | grep -v "deprecated" | grep -v "^./tests/" | grep -v "playground"); do 
     TODOS=$(cat $file | grep -i $1)
     if [ ! -z "${TODOS}" ]; then
         count=$((count + 1))

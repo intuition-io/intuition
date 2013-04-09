@@ -42,7 +42,7 @@ shinyServer(function(input, output)
                        manager   = portfolio)
 
         request <- list(type          = 'fork',
-                        script        = 'backtester/backtest.py',
+                        script        = 'application/app.py',
                         port          = 5555,
                         monitoring    = 0,
                         args          = arguments,
@@ -50,64 +50,64 @@ shinyServer(function(input, output)
         
         if ( input$done )
         {
-            remoteNodeWorker(request, port=5555, debug=F)
-            #zmqSend(request, config='default.json', debug=TRUE)
+            #remoteNodeWorker(request, port=5555, debug=F)
+            zmqSend(request, config='default.json', debug=TRUE)
         } 
         getTradeData(dataId=input$dataTable, config='default.json', source='mysql')
     })
 
-    output$performance <- reactivePlot(function() 
+    output$performance <- renderPlot(function() 
     {
         charts.PerformanceSummary(compute()[, c('Returns', 'BenchmarkReturns')], colorset=rich6equal, main='Performance of the strategie')
     })
 
-    output$distribution <- reactivePlot(function() 
+    output$distribution <- renderPlot(function() 
     {
         drawDistribution(compute()[, c('Returns', 'BenchmarkReturns')])
     })
 
-    output$relations <- reactivePlot(function() 
+    output$relations <- renderPlot(function() 
     {
         drawRelations(compute()[, c('Returns', 'BenchmarkReturns' )], riskfree=riskfree)
     })
 
-    output$rollperfs <- reactivePlot(function() 
+    output$rollperfs <- renderPlot(function() 
     {
         chart.RollingPerformance(compute()[, 'Returns'], width=12)
     })
 
-    output$rollregression <- reactivePlot(function() 
+    output$rollregression <- renderPlot(function() 
     {
         charts.RollingRegression(compute()[, 'Returns', drop=FALSE], compute()[, 'BenchmarkReturns', drop=FALSE])
     })
 
-    output$regression <- reactivePlot(function() 
+    output$regression <- renderPlot(function() 
     {
         chart.Regression(compute()[, 'Returns', drop=F], compute()[, 'BenchmarkReturns', drop=F], Rf=riskfree, excess.returns=T, fit=c('loess', 'linear'), legend.loc='topleft')
     })
 
-    output$snailtrail <- reactivePlot(function() 
+    output$snailtrail <- renderPlot(function() 
     {
         chart.SnailTrail(compute()[, 'Returns'], Rf=riskfree)
     })
 
-    output$plotcorr <- reactivePlot(function() 
+    output$plotcorr <- renderPlot(function() 
     {
         chart.Correlation(compute()[, c('Returns', 'BenchmarkReturns')])
     })
 
     ## Generate a summary stats table of the dataset
-    output$stats <- reactiveTable(function() 
+    output$stats <- renderTable(function() 
     {
         t(table.Stats(compute()[, 'Returns']))
     })
 
-    output$drawdown <- reactiveTable(function()
+    output$drawdown <- renderTable(function()
     {
         t(table.DownsideRisk(compute()[, 'Returns'], Rf=riskfree))
     })
 
-    output$correlation <- reactiveTable(function() 
+    output$correlation <- renderTable(function() 
     {
         table.Correlation(compute()[, 'Returns'], compute()[, 'BenchmarkReturns'], legend.loc='lowerleft')
     })
@@ -122,12 +122,12 @@ shinyServer(function(input, output)
         tail(compute())
     })
 
-    output$capm <- reactiveTable(function()
+    output$capm <- renderTable(function()
     {
         t(table.CAPM(compute()[, 'Returns'], compute()[, 'BenchmarkReturns'], Rf=riskfree, scale=12))
     })
 
-    output$annualizedRets <- reactiveTable(function()
+    output$annualizedRets <- renderTable(function()
     {
         t(table.AnnualizedReturns(compute()[, c('Returns', 'BenchmarkReturns')], Rf=riskfree))
     })

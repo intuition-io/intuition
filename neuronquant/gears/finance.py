@@ -156,8 +156,8 @@ def CC_returns(ts, **kwargs):
     return math.log(1 + rets)
 
 
-#TODO dividends in account
-#TODO inflation in account
+#TODO care of dividends
+#TODO care of inflation
 def returns(ts, **kwargs):
     '''
     Compute returns on the given period

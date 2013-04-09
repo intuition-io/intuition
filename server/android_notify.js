@@ -24,9 +24,11 @@
 var xml     = require('xml2js');
 var request = require('request');
 var log     = require('logging');
+var nma_config  = require('config').notifymyandroid;
 
 // The apikey provided by NotifyMyAndroid connects their servers with the device
-exports.apikey = process.env.QTRADE_NMA_KEY;
+//exports.apikey = process.env.QTRADE_NMA_KEY;
+exports.apikey = nma_config.apikey
 
 /*
  *@summary   Send notification to the android device attached to the api key
@@ -35,7 +37,8 @@ exports.apikey = process.env.QTRADE_NMA_KEY;
 exports.notify = function(keystring, appname, eventtitle, descriptiontext, priorityvalue) {
     //NOTE you can also use (http|https).request but this was easier for me
     //Post the notification with a check callback
-    var r = request.post('http://www.notifymyandroid.com/publicapi/notify', 
+    //var r = request.post('http://www.notifymyandroid.com/publicapi/notify', 
+    var r = request.post(nma_config.url_notify, 
                     {form : 
                         {apikey: keystring,
                          application: appname,
@@ -82,8 +85,9 @@ exports.notify = function(keystring, appname, eventtitle, descriptiontext, prior
  *@parameter Api key obviously...
  */
 exports.check_key = function(keystring) {
-    check_url = 'https://www.notifymyandroid.com/publicapi/verify';
-    var r_code = request.get(check_url, {qs: {apikey: keystring}}, function(error, response, body) {
+    //check_url = 'https://www.notifymyandroid.com/publicapi/verify';
+    //var r_code = request.get(check_url, {qs: {apikey: keystring}}, function(error, response, body) {
+    var r_code = request.get(nma_config.url_check, {qs: {apikey: keystring}}, function(error, response, body) {
         if (!error) {
             if (response.statusCode == 200) {
                 var parser = new xml.Parser()

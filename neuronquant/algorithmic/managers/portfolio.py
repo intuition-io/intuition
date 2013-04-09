@@ -15,7 +15,7 @@
 
 
 import abc
-from logbook import Logger
+import logbook
 import json
 
 from neuronquant.data.datafeed import DataFeed
@@ -24,7 +24,7 @@ from neuronquant.utils import to_dict
 import zipline.protocol as zp
 
 
-class PortfolioManager:
+class PortfolioManager(object):
     '''
     Manages portfolio during simulation, and stays aware of the situation
     through the update() method. It is configured through zmq message (manager
@@ -51,6 +51,7 @@ class PortfolioManager:
     __metaclass__ = abc.ABCMeta
 
     #TODO Add in the constructor or setup parameters some general settings like maximum weights, positions, frequency,...
+    #TODO Better to return 0 stocks to trade: remove the field
     def __init__(self, configuration):
         '''
         Parameters
@@ -59,7 +60,7 @@ class PortfolioManager:
                 (server and constraints), and for user optimizer function
         '''
         super(PortfolioManager, self).__init__()
-        self.log       = Logger('Manager')
+        self.log       = logbook.Logger('Manager')
 
         # Easy mysql access
         self.datafeed = DataFeed()

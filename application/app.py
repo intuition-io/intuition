@@ -72,11 +72,14 @@ if __name__ == '__main__':
             # relevant, neither backtest without orders
             sys.exit(0)
 
+        #NOTE Save only if database id provided, probably temporary solution
+        should_save = bool(configuration['database'])
+
         #TODO Implement in datafeed a generic save method
         # (which could call the correct database save method)
         # Get a portfolio monthly risk analyzis
         perf_series  = analyzes.rolling_performances(timestamp='one_month',
-                                                     save=True,
+                                                     save=should_save,
                                                      db_id=configuration['database'])
 
         #TODO save returns not ready yet, don't try to save #TODO Becnhmark was
@@ -86,7 +89,7 @@ if __name__ == '__main__':
                 save=False)
 
         risk_metrics = analyzes.overall_metrics(metrics=perf_series,
-                                                save=True,
+                                                save=should_save,
                                                 db_id=configuration['database'])
 
         #FIXME irrelevant results if no transactions were ordered

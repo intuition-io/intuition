@@ -1,6 +1,15 @@
 Changelog
 =========
 
+02-04-2013
+----------
+- Quandl R and python implementation
+- That + NotifyMyAndroid configs moved to default.json
+- Database cli arument is now also an indicator to save or not results
+- A quick and dirty menu for scripts/run_app.sh, along with my aliases
+- Change file doublon to symbolic links
+- Complete node server module, used in application directory
+
 22-03-2013
 ----------
 - UML and Presentation of the project in management/Introduction (french)
@@ -17,7 +26,7 @@ Changelog
 - On-the-fly orders
 - Squizzing of the exception at the end of a very short live session in zipline
 - Quick and dirty solution for dates timezone
-- Android notivifations OK
+- Android notififations OK
 - Renames, splitted strategies and managers in different directories and files
 - Fixed sharpe ratio computation
 

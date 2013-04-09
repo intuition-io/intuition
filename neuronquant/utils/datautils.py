@@ -15,10 +15,10 @@
 
 import pandas as pd
 
-#TODO: Same for google json and xml retrievig
+#TODO Same for google json and xml retrievig
 googleCode = dict()
 
-#TODO: Tester, comprendre, et reformater ces valeurs
+#TODO test and understang everything
 yahooCode = {'ask': 'a'                          , 'average daily volume': 'a2'            , 'ask size': 'a5'                  ,
         'bid': 'b'                               , 'ask rt': 'b2'                          , 'bid rt': 'b3'                    , 'dividend yield': 'y' ,
         'book value': 'b4'                       , 'bid size': 'b6'                        , 'change and percent': 'c'         ,

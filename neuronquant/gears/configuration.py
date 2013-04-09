@@ -91,8 +91,8 @@ class Setup(object):
         parser.add_argument('-m', '--manager',
                             action='store',
                             required=True, help='Portfolio strategie to be used')
-        parser.add_argument('-b', '--database',
-                            action='store', default='test',
+        parser.add_argument('-d', '--database',
+                            action='store', default='',
                             required=False, help='Table to considere in database')
         parser.add_argument('-i', '--initialcash',
                             type=float, action='store', default=100000.0,

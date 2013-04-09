@@ -16,6 +16,7 @@
 
 //NOTE Use of the cluster plugin
 //NOTE colors, socket.io, jade, stylus, express, websocket
+//FIXME Errors and neither elegant nor generic
 
 var log = require('logging');
 
@@ -25,13 +26,16 @@ var log = require('logging');
 function run(parameters, backSocket, frontSocket, channel)
 {
     // Creating command line args from the 'args' field in json config
-    var script_args = []
-    for (var arg in parameters.args) {
-        if (parameters.args[arg].prefix != 'flag') {
-            script_args.push(parameters.args[arg].prefix);
-        }
-        script_args.push(parameters.args[arg].value);
-    };
+    var script_args = [];
+        
+    if ('args' in parameters) {
+        for (var arg in parameters.args) {
+            if (parameters.args[arg].prefix != 'flag') {
+                script_args.push(parameters.args[arg].prefix);
+            }
+            script_args.push(parameters.args[arg].value);
+        };
+    }
 
     // Spawning script (path relative to project's root directory)
     var script = require('path').join(process.env.QTRADE, parameters.script);

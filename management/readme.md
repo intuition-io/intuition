@@ -116,6 +116,17 @@ Github
 * https://github.com/usablica/intro.js
 * https://github.com/cantino/huginn
 * https://github.com/saoj/options-lib
+* https://github.com/klen/python-mode
+* https://github.com/Valloric/YouCompleteMe
+* https://github.com/Mic92/python-mpd2
+* https://github.com/docopt/docopt
+* https://github.com/samuraisam/pyapns
+* https://github.com/kennethreitz/clint 
+* http://www.clips.ua.ac.be/pages/pattern
+* https://github.com/tweepy/tweepy
+* https://github.com/progrium/localtunnel
+* http://www.git-legit.org/
+* http://www.tidesdk.org/
 
 Portfolio optimization on r-bloggers
 ------------------------------------

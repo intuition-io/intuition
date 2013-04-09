@@ -75,7 +75,7 @@ def BIndexGenerator(start, end, delta=pd.datetools.bday, market=''):
         start += dt.timedelta(hours=23 - start.hour)
     #Business date_range doesn't seem to work
     dates = pd.date_range(start, end, freq=delta)
-    # TODO: Substracting special days like christmas
+    #TODO Substracting special days like christmas
     if dates.freq > pd.datetools.Day():
         selector = ((dates.hour > 8) & (dates.hour < 17)) | \
                    ((dates.hour > 16) & (dates.hour < 18) &

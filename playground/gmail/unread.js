@@ -9,7 +9,6 @@ var Imap = require('imap'),
 var imap = new Imap({
       user: 'xavier.bruhiere@gmail.com',
       password: '',
-      host: 'imap.gmail.com',
       port: 993,
       secure: true
     });

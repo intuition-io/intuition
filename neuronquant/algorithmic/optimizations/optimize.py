@@ -14,7 +14,6 @@
 # limitations under the License.
 
 
-import time
 import random
 import math
 import numpy as np
@@ -140,7 +139,7 @@ def genetic(domain, cost_obj, popsize=50, step=1,
            parameters that gave the best score
     '''
     # Initialisation
-    client = ZMQ_Dealer(id=genetic_optimize.__name__)
+    client = ZMQ_Dealer(id=genetic.__name__)
     client.run(host='127.0.0.1', port=5570)
     check_buffer = [1] * 4
 
@@ -190,11 +189,9 @@ def genetic(domain, cost_obj, popsize=50, step=1,
         while len(pop) < popsize:
             if random.random() < mutprob:
                 log.debug('Process mutation')
-                # Mutation
                 c = random.randint(0, topelite)
                 pop.append(mutate(ranked[c]))
             else:
-                # Crossover
                 log.debug('Process crossover')
                 c1 = random.randint(0, topelite)
                 c2 = random.randint(0, topelite)
@@ -217,7 +214,7 @@ def genetic(domain, cost_obj, popsize=50, step=1,
             break
 
     if notify_android:
-        client.send_to_android({'title': 'Optimization done',
+        client.send_to_android({'title': 'Optimization is done',
                                 'priority': 1,
                                 'description': 'Genetic algorithm evolved the solution to {} \
                                                (with parameters {})'.format(scores[0][0], scores[0][1])})

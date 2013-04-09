@@ -15,8 +15,8 @@
 
 #TODO move later utils function like mysql access in a didicated module (or somewhat common in R package design)
 
-## From http://statsadventure.blogspot.fr
-# TODO - transaction costs, turnover constraints
+# From http://statsadventure.blogspot.fr
+#TODO - transaction costs, turnover constraints
 
 suppressPackageStartupMessages(require(polynom))
 suppressPackageStartupMessages(require(fImport))
@@ -34,7 +34,7 @@ options(digits=4)
 flog.threshold(INFO)
 
 
-## Intermediate function used in portfolio rebalancing
+# Intermediate function used in portfolio rebalancing
 reweight = function(returns, startWeight){
     flog.info('Re-computating weights')
     n          = nrow(returns)

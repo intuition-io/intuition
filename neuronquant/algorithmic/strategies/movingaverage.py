@@ -183,14 +183,14 @@ class Momentum(TradingAlgorithm):
                 signals[ticker] = - price
             elif sma < price and notional < 0.2 * (capital_used + cash):
                 signals[ticker] = price
-
+        
         ''' ----------------------------------------------------------   Orders  --'''
         if signals:
             order_book = self.manager.trade_signals_handler(signals)
             for ticker in order_book:
                 self.order(ticker, order_book[ticker])
                 if self.debug:
-                    self.logger.info('{}: Ordering {} {} stocks'.format(self.datetime, ticker, order_book[ticker]))
+                    self.logger.notice('{}: Ordering {} {} stocks'.format(self.datetime, ticker, order_book[ticker]))
                     #self.logger.info('{}:  {} / {}'.format(self.datetime, sma, price))
 
 

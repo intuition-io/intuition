@@ -9,5 +9,5 @@ if [ $# -gt 1 ]; then
 else
     echo "No directory argument, Default shiny app used"
     echo "Running shiny server shiny-backtest ..."
-    R -q -e "shiny::runApp(\"./server/shiny-backtest\")"
+    R -q -e "shiny::runApp(\"./application/shiny-backtest\")"
 fi
