@@ -89,8 +89,8 @@ class Setup(object):
                             action='store',
                             required=True, help='Trading algorithm to be used')
         parser.add_argument('-m', '--manager',
-                            action='store',
-                            required=True, help='Portfolio strategie to be used')
+                            action='store', default='',
+                            required=False, help='Portfolio strategie to be used')
         parser.add_argument('-d', '--database',
                             action='store', default='',
                             required=False, help='Table to considere in database')
@@ -122,6 +122,7 @@ class Setup(object):
 
         #TODO Same as zipline in datasource, a mapping function with type and conversion function tuple
         #NOTE self.config_backtest = args.__dict__
+        #NOTE Algorithm should be strategie, to be consistent
         # For generic use, future modules will need a dictionnary of parameters, not the namespace provided by argparse
         log.debug('Mapping arguments to backtest parameters dictionnary')
         self.config_backtest = {'algorithm'   : args.algorithm,
@@ -143,7 +144,13 @@ class Setup(object):
         '''
         Read localy or receive remotely strategie's parameters
         '''
-        assert self.config_backtest
+        # If no command line was parsed you can use manually a dict
+        # for config_backtest or must specifie it outside
+        if 'config_backtest' in kwargs:
+            self.config_backtest = kwargs.pop('config_backtest')
+        else:
+            assert self.config_backtest
+
         if kwargs.get('remote', self.config_backtest['remote']):
             # Get configuration through ZMQ socket
             self.config_strategy = self._get_remote_data(port=kwargs.get('port', self.config_backtest['port']))
@@ -154,6 +161,7 @@ class Setup(object):
                     self._read_structured_file('managers.json',
                                                config_folder=True,
                                                select_field=self.config_backtest['manager'])
+            #NOTE Algorithm should be strategie, to be consistent
             self.config_strategy['algorithm'] = \
                     self._read_structured_file('strategies.json',
                                                config_folder=True,
@@ -219,6 +227,9 @@ class Setup(object):
         Parameters
             date: str
                 String date, see dateutils module for precisions
+        __________________________________________________
+        Return
+            datetime.datetime utc tz aware object
         '''
         assert isinstance(date, str)
         locale_date = parse(date)

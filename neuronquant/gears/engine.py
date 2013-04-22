@@ -25,10 +25,14 @@ from neuronquant.algorithmic.strategies import (
         Momentum,
         VolumeWeightAveragePrice,
         BuyAndHold,
+        FollowTrend,
         StddevBased,
         OLMAR,
         MultiMA,
-        MovingAverageCrossover
+        MovingAverageCrossover,
+        PredictHiddenStates,
+        StochasticGradientDescent,
+        AutoAdjustingStopLoss
 )
 from neuronquant.algorithmic.managers import (
         Constant,
@@ -49,7 +53,9 @@ class BacktesterEngine(object):
     algorithms = {'DualMA'      : DualMovingAverage       , 'Momentum'   : Momentum,
                   'VWAP'        : VolumeWeightAveragePrice, 'BuyAndHold' : BuyAndHold,
                   'StdBased'    : StddevBased             , 'OLMAR'      : OLMAR,
-                  'MultiMA'     : MultiMA                 , 'MACrossover': MovingAverageCrossover}
+                  'MultiMA'     : MultiMA                 , 'MACrossover': MovingAverageCrossover,
+                  'Follower'    : FollowTrend             , 'HMM'        : PredictHiddenStates,
+                  'Gradient'    : StochasticGradientDescent, 'AASL'      : AutoAdjustingStopLoss}
 
     portfolio_managers = {'Fair': Fair, 'Constant': Constant, 'OptimalFrontier': OptimalFrontier}
 
@@ -59,12 +65,17 @@ class BacktesterEngine(object):
         '''
         # CHecking if algorithm and manager the user asks for are available
         if algo not in BacktesterEngine.algorithms:
-            raise NotImplementedError('Algorithm {} not available or implemented'.format(algo))
+            # If could be the algo object itself
+            #NOTE Pretty ugly... temporary
+            if type(algo) == type:
+                BacktesterEngine.algorithms['CUSTOM'] = algo
+                algo = 'CUSTOM'
+            else:
+                raise NotImplementedError('Algorithm {} not available or implemented'.format(algo))
         log.info('Algorithm {} available, getting a reference to it.'.format(algo))
 
-        if manager not in BacktesterEngine.portfolio_managers:
+        if (manager) and (manager not in BacktesterEngine.portfolio_managers):
             raise NotImplementedError('Manager {} not available or implemented'.format(manager))
-        log.info('Manager {} available, getting a reference and initializing it.'.format(manager))
 
         #NOTE Other params: annualizer (default is cool), capital_base, sim_params (both are set in run function)
         trading_algorithm = BacktesterEngine.algorithms[algo](properties=strategie_configuration['algorithm'])
@@ -72,23 +83,29 @@ class BacktesterEngine(object):
 
         trading_algorithm.set_logger(logbook.Logger(algo))
 
-        # Linking to the algorithm the configured portfolio manager
-        trading_algorithm.manager = BacktesterEngine.portfolio_managers[manager](strategie_configuration['manager'])
+        # Use of a portfolio manager
+        if manager:
+            log.info('Manager {} available, getting a reference and initializing it.'.format(manager))
+            # Linking to the algorithm the configured portfolio manager
+            trading_algorithm.manager = BacktesterEngine.portfolio_managers[manager](strategie_configuration['manager'])
 
-        # If requested and possible, load the named portfolio to start trading with it
-        #FIXME Works, but every new event resets the portfolio
-        portfolio_name = strategie_configuration['manager'].get('name')
+            # If requested and possible, load the named portfolio to start trading with it
+            #FIXME Works, but every new event resets the portfolio
+            portfolio_name = strategie_configuration['manager'].get('name')
 
-        if strategie_configuration['manager'].get('load_backup', False) and portfolio_name:
-            log.info('Re-loading last {} portfolio from database'.format(portfolio_name))
-            ## Retrieving a zipline portfolio object. str() is needed as the parameter is of type unicode
-            backup_portfolio = trading_algorithm.manager.load_portfolio(str(portfolio_name))
+            if strategie_configuration['manager'].get('load_backup', False) and portfolio_name:
+                log.info('Re-loading last {} portfolio from database'.format(portfolio_name))
+                ## Retrieving a zipline portfolio object. str() is needed as the parameter is of type unicode
+                backup_portfolio = trading_algorithm.manager.load_portfolio(str(portfolio_name))
 
-            if backup_portfolio is None:
-                log.warning('! Unable to set {} portfolio: not found'.format(portfolio_name))
-            else:
-                trading_algorithm.set_portfolio(backup_portfolio)
-                log.info('Portfolio setup successful')
+                if backup_portfolio is None:
+                    log.warning('! Unable to set {} portfolio: not found'.format(portfolio_name))
+                else:
+                    trading_algorithm.set_portfolio(backup_portfolio)
+                    log.info('Portfolio setup successful')
+        else:
+            trading_algorithm.manager = None
+            log.info('No portfolio manager used')
 
         return trading_algorithm
 

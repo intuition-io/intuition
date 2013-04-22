@@ -26,6 +26,31 @@ import neuronquant.utils.datautils as datautils
 from neuronquant.gears.configuration import Setup
 
 
+def plot_results(analyzes):
+    # Plot portfolio
+    fig = plt.figure()
+    ax1 = fig.add_subplot(311)
+    analyzes.results.portfolio_value.plot(ax=ax1)
+    plt.legend()
+
+    # Plot prices
+    ax2 = fig.add_subplot(312)
+    for sid in data:
+        data[sid].plot(ax=ax2)
+    plt.legend()
+
+    # Plot slope and buy/sell orders
+    ax3 = fig.add_subplot(313)
+    analyzes.results.slope.plot(ax=ax3)
+    ax3.plot(analyzes.results.ix[analyzes.results.buy].index, analyzes.results.slope[analyzes.results.buy],
+             '^', markersize=10, color='m')
+    ax3.plot(analyzes.results.ix[analyzes.results.sell].index, analyzes.results.slope[analyzes.results.sell],
+             'v', markersize=10, color='k')
+    plt.legend()
+    plt.savefig('results.png', dpi=144)
+
+
+#TODO profiling with http://docs.python.org/2/library/profile.html, http://pycallgraph.slowchop.com/
 if __name__ == '__main__':
     '''___________________________________________________________________________________________    Setup    ____'''
     # Dedicated object for configuration setup
@@ -40,6 +65,14 @@ if __name__ == '__main__':
     log_setup = (utils.remote_setup if configuration['remote'] else
                  utils.color_setup)
     with log_setup.applicationbound():
+        '''
+        TODO HUGE: Run multiple backtest with communication possibilities (ZMQ)
+             for sophisticated multiple strategies strategy
+                 - Available capital allocation
+                 - Strategies repartition
+                 - Use of each-other signals behavior
+                 - Global monitoring and evaluation
+        '''
 
         # Fill strategie and manager parameters
         # Localy, reading configuration file
@@ -55,7 +88,7 @@ if __name__ == '__main__':
         # _configure_context() you can use directly for better understanding
         data, trading_context = engine.configure(configuration)
 
-        # See neuronquant/calculus/engine.py for details of results which is an
+        # See neuronquant/gears/engine.py for details of results which is an
         # analyzes object
         analyzes = engine.run(data, configuration, strategie, trading_context)
 
@@ -71,6 +104,9 @@ if __name__ == '__main__':
             # Currently, live tests don't last more than 20min; analyzes is not
             # relevant, neither backtest without orders
             sys.exit(0)
+
+        #TODO A simple test of recorded vars (zipline feature), works only for Follower algo
+        #plot_results(analyzes)
 
         #NOTE Save only if database id provided, probably temporary solution
         should_save = bool(configuration['database'])
@@ -102,6 +138,8 @@ if __name__ == '__main__':
                 risk_metrics['Max.Drawdown']))
 
         # If we work in local, draw a quick summary plot
+        #FIXME futils.logger can no longer be used, so those scripts crash
+        sys.exit()
         if not configuration['remote']:
             data = returns_df.drop(['Returns', 'Benchmark.Returns'], axis=1)
             data.plot()

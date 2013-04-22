@@ -22,6 +22,7 @@ from zipline.transforms import batch_transform
 import statsmodels.api as sm
 
 
+#http://nbviewer.ipython.org/3962843
 class Pairtrade(TradingAlgorithm):
     """Pairtrading relies on cointegration of two stocks.
 

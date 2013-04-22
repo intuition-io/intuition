@@ -31,7 +31,8 @@ from utils import get_ip
 def inject_information(record):
     record.extra['ip'] = get_ip()
 
-log_format = u'[{record.time:%Y-%m-%d %H:%M}] {record.channel} - {record.level_name}: {record.message} \t({record.extra[ip]})'
+#log_format = u'[{record.time:%Y-%m-%d %H:%M}] {record.channel} - {record.level_name}: {record.message} \t({record.extra[ip]})'
+log_format = u'[{record.time:%Y-%m-%d %H:%M}] {record.channel} - {record.level_name}: {record.message}'
 
 # a nested handler setup can be used to configure more complex setups
 setup = NestedSetup([
@@ -39,18 +40,18 @@ setup = NestedSetup([
     StreamHandler(sys.stdout, format_string=log_format),
     # then write messages that are at least warnings to to a logfile
     FileHandler(os.environ['QTRADE_LOG'], level='WARNING'),
-    Processor(inject_information)
+    #Processor(inject_information)
 ])
 
 color_setup = NestedSetup([
     StreamHandler(sys.stdout, format_string=log_format),
     ColorizedStderrHandler(format_string=log_format, level='NOTICE'),
-    Processor(inject_information)
+    #Processor(inject_information)
 ])
 
 remote_setup = NestedSetup([
     ZeroMQHandler('tcp://127.0.0.1:5540'),
-    Processor(inject_information)
+    #Processor(inject_information)
 ])
 
 log = Logger('Trade Labo')

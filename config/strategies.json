@@ -35,6 +35,22 @@
         "stddev_window": 9,
         "vwap_window": 5
     },
+    "HMM":
+    {
+        "refresh_period": 1
+    },
+    "Follower":
+    {
+        "refresh_period": 1,
+        "window_length": 50
+    },
+    "Gradient":
+    {
+        "refresh_period": 1,
+        "window_length": 60,
+        "gradient_iterations": 5
+    },
+    "AASL": {},
     "Momentum":
     {
         "debug": 1,

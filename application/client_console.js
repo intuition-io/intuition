@@ -163,8 +163,10 @@ function command(msg) {
         .option('-c, --config <name>', 'Target configuration object', String, 'backtest')
         .parse(command_line);
 
+    // Provides to the server one of the configuration object defined above
     if (command_line[1] == 'send') {
         if (consign.config in mega_config) {
+            // Extra arguments are for pretty printing
             console_ui.write_msg(JSON.stringify(mega_config[consign.config], null, 4))
             client_be.send_json(mega_config[consign.config]);
         }
@@ -173,6 +175,8 @@ function command(msg) {
         }
     }
 
+    // Arbitrary json object to send to the server
+    // Only used at this time to send asynchronous order to running portfolio
     else if (command_line[1] == 'order') {
         if (utils.isJsonString(consign.property)) {
             console_ui.write_msg('Valid order, sending: ' + consign.property);
@@ -182,17 +186,18 @@ function command(msg) {
         }
     }
 
+    // Simply print of one of the configuration oject
     else if (command_line[1] == 'show') {
         console_ui.write_msg(JSON.stringify(mega_config[consign.config]), null, 4);
     }
 
+    // Change a value of configuration objects
     else if (command_line[1] == 'edit') {
         //TODO handle depth 2 at least
-        bt_config.monitor = 'pouet';
 
         if (utils.isJsonString(consign.property)) {
             new_values = JSON.parse(consign.property);
-            console_ui.write_msg('Whole: ' + JSON.stringify(new_values))
+                
             for (var key in new_values) {
                 console_ui.write_msg('Value: ' + new_values[key])
                 mega_config[consign.config][key] = new_values[key]
@@ -208,6 +213,7 @@ function command(msg) {
 // Because I can
 if (program.speak) {
     voice.synthetize('Yo, remote client ready.', config.vocal.lang);
+    // Wait for completion, otherwize will overflow on next speech part
     require('sleep').sleep(5)
 }
 
@@ -224,7 +230,7 @@ if (program.local) {
 // Define client interfaces, ui for curses graphics, be for backend work
 // The test function is a callback called when hitting keyboard
 var console_ui = new ui.UI_interface(command),
-    client_be = new messenger.create_client(console_ui,
-            config.network.frontport,
-            program.channel,
-            mega_config['broker']);
+    client_be  = new messenger.create_client(console_ui,
+                        config.network.frontport,
+                        program.channel,
+                        mega_config['broker']);

@@ -121,10 +121,9 @@ process.on('uncaughtException', function (err) {
  *
  *
  * Usage:
- *var ui = new UI_interface();
+ *var ui = new UI_interface(callback);
  *
  *for (var i = 0; i < 20; i += 1) {
- *    ui.write_log('pouet bla bla blaaaaaaaaaaaaaaaaaaaaaaaaaaaavvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
- *    ui.write_msg('pouet bla bla blaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaffffffffffffffffffffffffffffffffffffffaaaaaaaa');
+ *    ui.write_log('pouet bla bla blaaa');
  *}
  */

@@ -2,22 +2,29 @@
 Portfolio managers
 '''
 
-from buyandhold import BuyAndHold
+from followers import BuyAndHold, FollowTrend
 from movingaverage import (
         DualMovingAverage,
         Momentum,
         MovingAverageCrossover,
         MultiMA,
         VolumeWeightAveragePrice
-        )
+)
 from olmar import OLMAR
 from pairtrade import Pairtrade
 from stddev import StddevBased
+from machinelearning import (
+        PredictHiddenStates,
+        StochasticGradientDescent
+)
+from orderbased import AutoAdjustingStopLoss
 
 __all__ = [
-        'buyandhold',
+        'followers',
         'movingaverage',
         'pairtrade',
         'stddev',
-        'olmar'
+        'olmar',
+        'machinelearning',
+        'orderbased'
         ]

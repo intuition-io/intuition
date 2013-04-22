@@ -15,10 +15,14 @@
 # limitations under the License.
 
 
-# This script read mysql database
+# This script performs some quantitative analyzis on trade results
+# stored in database
 
-# file of analysis functions
-source(paste(Sys.getenv('QTRADE'), 'server/shiny-backtest/global.R', sep='/'))
+# file of analyzis functions
+analyzisLib <- paste(Sys.getenv('QTRADE'),
+                     'application/shiny-backtest/global.R',
+                     sep='/')
+source(analyzisLib)
 
 ## ==========================    Args handle    =========================== ##
 if(!suppressPackageStartupMessages(require(optparse)))
@@ -28,9 +32,6 @@ option_list <- list(
     make_option(c("-v", "--verbose"), 
         action = "store_true", default = FALSE,
         help   = "Print extra output"),
-    make_option(c("-m", "--mode"), 
-        action = "store_true", default = "regular",
-        type   = "character", help     = "Specified wether it musts run experimental or regular analysis"),
     make_option(c("-s", "--source"), 
         action = "store_true", default = "mysql",
         type   = "character" ,help     = "Type of source where there is data to process"),
@@ -41,10 +42,14 @@ option_list <- list(
 
 opt <- parse_args(OptionParser(option_list=option_list, usage="./script [options] <args>"))
 
-## =========================    Preparing metrics    ========================== ##
+## ========================    Preparing metrics    ======================= ##
 
+# Retrieve from database monthly rolling metrics
 metrics   <- getTradeData(dataId=opt$table, source=opt$source, debug=opt$verbose)
+
+# Retrieve final performances summary
 perfs     <- getTradeData(dataId=opt$table, source=opt$source, overall=T, debug=opt$verbose)
+
 riskfree  <- mean(metrics[,"TreasuryReturns"])
 portfolio <- metrics[, 'Returns']
 benchmark <- metrics[, 'BenchmarkReturns']
@@ -75,7 +80,8 @@ drawDistribution(metrics[, c('Returns', 'BenchmarkReturns')])
 table.Correlation(portfolio, benchmark)
 drawRelations(metrics[, c('Returns', 'BenchmarkReturns')])
 chart.Correlation(metrics[, c('Returns', 'BenchmarkReturns')])
-chart.Regression(metrics[, 'Returns', drop=F], metrics[, 'BenchmarkReturns', drop=F], Rf=riskfree, excess.returns=T, fit=c("loess", "linear"), legend.loc="topleft")
+chart.Regression(metrics[, 'Returns', drop=F], metrics[, 'BenchmarkReturns', drop=F], Rf=riskfree,
+                 excess.returns=T, fit=c("loess", "linear"), legend.loc="topleft")
 
 ## ============================    Cleaning    ============================= ##
 quit(save="no", status=0)

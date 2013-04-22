@@ -56,6 +56,7 @@ FX_PAIRS = ['EUR/USD', 'USD/JPY', 'GBP/USD',
 
 
 #TODO Complete with http://en.wikipedia.org/wiki/List_of_stock_exchange_opening_times
+#http://en.wikipedia.org/wiki/List_of_S&P_500_companies
 def filter_market_hours(dates, exchange):
     ''' Only return market open hours from UTC timezone'''
     if dates.freq > pd.datetools.Day():

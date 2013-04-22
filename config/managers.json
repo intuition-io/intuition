@@ -2,7 +2,7 @@
     "Fair":
     {
         "name": "Xavier Bruhiere",
-        "load_backup": 1,
+        "load_backup": 0,
         "android": 0,
         "connected": 0,
         "max_weight": 0.5
@@ -10,7 +10,7 @@
     "Constant":
     {
         "name": "Xavier Bruhiere",
-        "load_backup": 1,
+        "load_backup": 0,
         "android": 1,
         "max_weight": 0.5,
         "buy_amount": 80,

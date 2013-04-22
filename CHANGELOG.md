@@ -1,6 +1,13 @@
 Changelog
 =========
 
+10-04-2013
+----------
+- Fixed run_app script for use on server
+- New algorithms
+- playground/webfrontend
+- Tests and playground adds
+
 02-04-2013
 ----------
 - Quandl R and python implementation
@@ -9,6 +16,9 @@ Changelog
 - A quick and dirty menu for scripts/run_app.sh, along with my aliases
 - Change file doublon to symbolic links
 - Complete node server module, used in application directory
+- Portfolio manager no longer needed
+- Manual setup fixed
+
 
 22-03-2013
 ----------

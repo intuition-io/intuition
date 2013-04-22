@@ -1,12 +1,14 @@
 # http://www.quintuitive.com/2012/11/30/trading-with-support-vector-machines-svm/
 
-require(e1071)
+#require(e1071)
 require(quantmod)
-require(parallel)
+#require(parallel)
 
 source("e1071.R")
 
-tt = get( getSymbols( "^GSPC", from="1900-01-01" ) )
+#tt = get( getSymbols( "^GSPC", from="1990-01-01" ) )
+# Get usual OLHCV data
+tt = get( getSymbols( "GOOG", from="2005-01-01" ) )
 
 rets = na.trim( ROC( Cl( tt ), type="discrete" ) )
 
@@ -15,7 +17,6 @@ data = svmFeatures( tt )[,c(1,2)]
 
 rets = rets[index(data)]
 data = data[index(rets)]
-
 stopifnot( NROW( rets ) == NROW( data ) )
 
 forecast = svmComputeForecasts(
@@ -25,9 +26,12 @@ forecast = svmComputeForecasts(
                cores=2,
                trace=TRUE,
                modelPeriod="days",
-               startDate="1959-12-28",
-               endDate="1959-12-31",
+               startDate="2013-04-09",
+               endDate="2013-04-12",
                featureSelection="all" )
+
+print('---------------------------------------------------')
+print(forecast)
 
 # An other attempt (list of 3):
     #http://quantumfinancier.wordpress.com/2010/05/21/application-of-svms/

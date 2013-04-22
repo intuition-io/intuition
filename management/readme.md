@@ -12,7 +12,7 @@ Ideas
 -----
 
 * Logbook lib enable logging to twitter, might be a better way than email to remote notify
-* Generate a report that can be fetch from shiny, the webapp, or automatically when pushing a notification to android device
+* Generate a report that can be fetched from shiny, the webapp, or automatically when pushing a notification to android device
 
 TODO
 ----
@@ -100,6 +100,11 @@ Econometric tools, R
 
 * http://braverock.com/brian/R/PerformanceAnalytics/html/PerformanceAnalytics-package.html
 
+Graphics
+--------
+
+* Polycde
+
 Github
 ------
 
@@ -143,10 +148,36 @@ Portfolio optimization on r-bloggers
 * http://www.r-bloggers.com/2-dimensions-of-portfolio-diversity/
 * http://www.r-bloggers.com/the-top-7-portfolio-optimization-problems/ 
 
-Quantopian
+Co-working
 ----------
 
-* Added sortino and informations ration as risk metrics
-* http://www.investopedia.com/terms/s/sortinoratio.asp#axzz2KUJ6ZYyV
-* http://www.investopedia.com/terms/i/informationratio.asp#axzz2KUJ6ZYyV
+* http://letank.spintank.fr/
+* http://www.studios-singuliers.fr/offre/
+* http://www.dojocrea.fr/nos_lieux.html
+* http://www.lelaptop.com/
+* http://www.mozaik-coworking.com/
+* http://www.soleillescowork.com/59-0-SERVICES.html
+* http://propulseurs.com/des-references-qui-decollent/
+* http://lamutinerie.org
 
+Start-up
+--------
+* http://www.swnext.co/about/
+* http://www.amazon.fr/Business-Model-G%C3%A9n%C3%A9ration-Alexander-Osterwalder/dp/2744064874/ref=sr_1_1?ie=UTF8&qid=1366105065&sr=8-1&keywords=Business+Model+Generation
+* http://www.amazon.fr/Startup-Owners-Manual-Step---step/dp/0984999302/ref=sr_1_1?ie=UTF8&qid=1366105081&sr=8-1&keywords=The+Startup+Owner%27s+Manual
+* https://launchpadcentral.com/
+* https://strategyzer.com/
+* http://www.businessmodelgeneration.com/
+
+Knowledge management
+--------------------
+
+* https://github.com/mikedeboer/node-github
+* https://github.com/christkv/node-git/tree/master/test
+* https://github.com/qrpike/NodeJS-Git-Server
+
+* https://codenvy.com/features
+* http://ace.ajax.org/#nav=about
+
+* http://www.openstack.org/
+* http://devstack.org/

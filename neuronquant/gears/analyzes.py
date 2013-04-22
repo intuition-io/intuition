@@ -151,7 +151,7 @@ class Analyze(object):
     def _get_index(self, perfs):
         #NOTE No frequency infos or just period number ?
         start = pytz.utc.localize(pd.datetime.strptime(perfs[0]['period_label'] + '-01', '%Y-%m-%d'))
-        end = pytz.utc.localize(pd.datetime.strptime(perfs[-1]['period_label'] + '-01', '%Y-%m-%d'))
+        end   = pytz.utc.localize(pd.datetime.strptime(perfs[-1]['period_label'] + '-01', '%Y-%m-%d'))
         return pd.date_range(start - pd.datetools.BDay(10), end, freq=pd.datetools.MonthBegin())
 
     def _extract_perf(self, perfs, field):

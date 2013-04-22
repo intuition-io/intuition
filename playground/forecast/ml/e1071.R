@@ -149,8 +149,8 @@ svmComputeOneForecast = function(
 
    # Predict using the SVM, use only the remaining features
    xtsNewData = data[index(data)[startIndex:endIndex]]
-   newData = as.matrix( coredata( xtsNewData[,features] ) )
-   fore = predict( best$best.model, newData )
+   newData    = as.matrix( coredata( xtsNewData[,features] ) )
+   fore       = predict( best$best.model, newData )
 
    if( trace ) {
       str = paste( sep="",
@@ -232,11 +232,11 @@ svmComputeForecasts = function(
 
    modelPeriod = tolower( modelPeriod[1] )
 
-   forecasts = rep( NA, len )
-   gammas = rep( NA, len )
-   costs = rep( NA, len )
+   forecasts    = rep( NA, len )
+   gammas       = rep( NA, len )
+   costs        = rep( NA, len )
    performances = rep( NA, len )
-   features = rep( "", len )
+   features     = rep( "", len )
 
    # Get the interesting indexes
    periods = index(data)[startIndex:lastIndex]
@@ -317,6 +317,7 @@ svmComputeForecasts = function(
    return( res )
 }
 
+
 svmFeatures = function(series)
 {
    require(PerformanceAnalytics)
@@ -353,4 +354,17 @@ svmFeatures = function(series)
                      "VOLUME")
 
    return(res)
+}
+
+
+# Python rpy use help
+require(quantmod)
+getReturns = function(ohlcvData)
+{
+    return ( na.trim( ROC(Cl(ohlcvData), type="discrete") ) )
+}
+
+getSVMFeatures = function(ohlcvData)
+{
+    return ( svmFeatures(ohlcvData)[, c(1, 2)] )
 }
