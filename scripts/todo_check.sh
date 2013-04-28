@@ -31,6 +31,7 @@ echo "QuanTrade $1 list..."
 
 count=0
 #NOTE how ugly...
+#try: egrep 'res|git'
 for file in $(find . -type f | grep -v "res" | grep -v "git" | grep -v "doc" | grep -v "management" | grep -v "check" | grep -v "readme" \
                              | grep -v "^./data" | grep -v "deprecated" | grep -v "^./tests/" | grep -v "playground"); do 
     TODOS=$(cat $file | grep -i $1)

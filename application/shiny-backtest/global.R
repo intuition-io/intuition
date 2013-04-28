@@ -25,6 +25,14 @@ if (!suppressPackageStartupMessages(require(quantmod))) {
 # This file defined json network bridge with R
 source(paste(Sys.getenv('QTRADE'), 'application/shiny-backtest/RClientInterface.R', sep='/'))
 
+# Util function
+loadSilentely <- function(package)
+{
+    if (!suppressPackageStartupMessages(require(package))) {
+        stop("Package not available. Install it with 'install.packages(\"\")'.\n")
+    }
+}
+
 # Fix a bug in performanceanalytics package
 require(utils)
 assignInNamespace(

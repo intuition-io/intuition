@@ -1,6 +1,10 @@
 Changelog
 =========
 
+23-04-2013
+----------
+- Errors module
+
 10-04-2013
 ----------
 - Fixed run_app script for use on server

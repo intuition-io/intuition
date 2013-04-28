@@ -28,6 +28,7 @@ from neuronquant.utils import log, color_setup, remote_setup
 #TODO Develop genetic specific functions (cf old class and methods choice)
 #     Then Integrate more optimization functions on same model
 #     Then store and analyse the data in database
+#TODO http://en.wikipedia.org/wiki/Particle_swarm_optimization
 class Metric(object):
     ''' Evaluate error of a solution in optimization '''
     def __init__(self):
