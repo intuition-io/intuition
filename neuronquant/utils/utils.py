@@ -32,6 +32,7 @@ import socket
 from urllib2 import urlopen
 
 
+#NOTE Could use pprint module
 def emphasis(obj, align=True):
     if isinstance(obj, dict):
         if align:

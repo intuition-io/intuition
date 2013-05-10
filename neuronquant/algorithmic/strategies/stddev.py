@@ -17,10 +17,37 @@
 from zipline.algorithm import TradingAlgorithm
 from zipline.transforms import MovingVWAP, MovingStandardDev
 
+from neuronquant.network.dashboard import Dashboard
+dashboard = Dashboard('Sandbox<br>')
 
+from neuronquant.tmpdata.extractor import Extractor
+extractor = Extractor('mysql://xavier:quantrade@localhost/stock_data')
+metrics_fields = ['Information', 'Returns', 'MaxDrawdown', 'SortinoRatio', 'Period', 'Volatility', 'BenchmarkVolatility', 'Beta', 'ExcessReturn', 'TreasuryReturns', 'SharpeRatio', 'Date', 'Alpha', 'BenchmarkReturns', 'Name']
+
+
+def save_monitoring_snapshot(name, dt, cmr):
+    #TODO Save Transactions
+    #data = extractor('INSERT INTO Transactions () VALUES ()')
+    #TODO Save Orders
+    #data = extractor('INSERT INTO Orders () VALUES ()')
+    # Save Cumulative risk metrics
+    #NOTE Simple self.datetime enough ?
+    cmr['date'] = "'{}'".format(dt.strftime(format='%Y-%m-%d %H:%M'))
+    cmr['period_label'] = "'{}-30'".format(cmr['period_label'])
+    cmr['name'] = "'" + name + "'"
+    cmr.pop('trading_days')
+    for key in cmr:
+        #NOTE if isinstance(type(cmr[key]), float): cmr[key] = round(cmr[key], 4)
+        if cmr[key] is None:
+            cmr[key] = 0
+    query = 'INSERT INTO Metrics ({}) VALUES ({})'
+    extractor(query.format(', '.join(metrics_fields), ', '.join(map(str, cmr.values()))))
+
+
+#TODO The portfolio management is included here, make it a stand alone manager
 class StddevBased(TradingAlgorithm):
     def initialize(self, properties):
-        self.debug    = properties.get('debug', 0)
+        self.save = properties.get('save', 0)
         # Variable to hold opening price of long trades
         self.long_open_price = 0
 
@@ -50,6 +77,36 @@ class StddevBased(TradingAlgorithm):
 
     def handle_data(self, data):
         ''' ----------------------------------------------------------    Init   --'''
+        if self.initialized:
+            user_instruction = self.manager.update(self.portfolio, self.datetime.to_pydatetime(), save=self.save)
+            save_monitoring_snapshot(self.manager.name,
+                                     self.datetime.to_pydatetime(),
+                                     self.perf_tracker.cumulative_risk_metrics.to_dict())
+
+            for stock in self.portfolio.positions:
+                amount = self.portfolio.positions[stock].amount
+                stock = stock.replace(' ', '+')
+                if (amount == 0) and (stock in self.previous_positions):
+                    self.previous_positions.pop(stock)
+                    dashboard.del_widget(stock)
+                if (amount != 0) and (stock not in self.previous_positions):
+                    self.previous_positions[stock] = amount
+                    dashboard.add_number_widget(
+                            {'name': stock,
+                             'source': 'http_proxy',
+                             'proxy_url': 'http://127.0.0.1:8080/dashboard/number?data=Amount&table=Positions&field=Ticker&value={}'.format(stock),
+                             'proxy_value_path': ' ',
+                             'label': '$',
+                             'update_interval': '30',
+                             'use_metrics_suffix': True})
+        else:
+            #TODO Obviously the manager should clean by himself
+            extractor('DELETE FROM Positions WHERE PortfolioName=\'{}\''.format(self.manager.name))
+            extractor('DELETE FROM Portfolios where Name=\'{}\''.format(self.manager.name))
+            extractor('DELETE FROM Metrics where Name=\'{}\''.format(self.manager.name))
+            self.initialized = True
+            self.previous_positions = {}
+
         # Reporting Variables
         profit = 0
         total_trades = self.successes + self.fails
@@ -71,6 +128,7 @@ class StddevBased(TradingAlgorithm):
             # "and price < 1000" - is a scalable way of setting (initially :P)
             # affordable order quantities (for most stocks).
 
+            # Very very low for forex
             order_amount = self.portfolio.starting_cash / 1000
 
             # Open Long Position if current price is larger than the 9 day volume weighted average

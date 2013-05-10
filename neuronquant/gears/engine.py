@@ -23,14 +23,14 @@ log = logbook.Logger('Engine')
 from neuronquant.algorithmic.strategies import (
         DualMovingAverage,
         Momentum,
-        VolumeWeightAveragePrice,
+        VolumeWeightAveragePrice,  # Does not work
         BuyAndHold,
         FollowTrend,
         StddevBased,
-        OLMAR,
-        MultiMA,
-        MovingAverageCrossover,
-        PredictHiddenStates,
+        OLMAR,  # Broken
+        MultiMA,  # No transactions
+        MovingAverageCrossover,  # No transactions
+        PredictHiddenStates, # Broken
         StochasticGradientDescent,
         AutoAdjustingStopLoss
 )
@@ -50,12 +50,12 @@ from zipline.utils.factory import create_simulation_parameters
 
 class BacktesterEngine(object):
     ''' Factory class wrapping zipline Backtester, returns the requested algo ready for use '''
-    algorithms = {'DualMA'      : DualMovingAverage       , 'Momentum'   : Momentum,
-                  'VWAP'        : VolumeWeightAveragePrice, 'BuyAndHold' : BuyAndHold,
-                  'StdBased'    : StddevBased             , 'OLMAR'      : OLMAR,
-                  'MultiMA'     : MultiMA                 , 'MACrossover': MovingAverageCrossover,
-                  'Follower'    : FollowTrend             , 'HMM'        : PredictHiddenStates,
-                  'Gradient'    : StochasticGradientDescent, 'AASL'      : AutoAdjustingStopLoss}
+    algorithms = {'DualMA'  : DualMovingAverage       , 'Momentum'   : Momentum,
+                  'VWAP'    : VolumeWeightAveragePrice, 'BuyAndHold' : BuyAndHold,
+                  'StdBased': StddevBased             , 'OLMAR'      : OLMAR,
+                  'MultiMA' : MultiMA                 , 'MACrossover': MovingAverageCrossover,
+                  'Follower': FollowTrend             , 'HMM'        : PredictHiddenStates,
+                  'Gradient': StochasticGradientDescent, 'AASL'      : AutoAdjustingStopLoss}
 
     portfolio_managers = {'Fair': Fair, 'Constant': Constant, 'OptimalFrontier': OptimalFrontier}
 
@@ -152,7 +152,8 @@ class Simulation(object):
 
             #### !! Dev temporary hack
             #end_time = pd.datetime.now() + pd.datetools.Minute(20)
-            dates = datautils.filter_market_hours(pd.date_range(pd.datetime.now(pytz.utc), end_time,
+            dates = datautils.filter_market_hours(pd.date_range(pd.datetime.now(pytz.utc),
+                                                                end_time,
                                                                 freq='1min'),
                                                                 #TODO ...hard coded, later: --frequency daily,3
                                                   exchange)
@@ -161,9 +162,9 @@ class Simulation(object):
                 log.warning('! Market closed.')
                 sys.exit(0)
             #TODO Wrap it in a dataframe (always same return type)
-            data = {'stream_source' : exchange,
-                    'tickers'       : tickers,
-                    'index'         : dates}
+            data = {'stream_source': exchange,
+                    'tickers'      : tickers,
+                    'index'        : dates}
         else:
             # Use default zipline load_market_data, i.e. data from msgpack files in ~/.zipline/data/
             self.load_market_data = None

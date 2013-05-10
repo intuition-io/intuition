@@ -6,7 +6,7 @@ set -e
 if [ $# -gt 0 ]; then
     choice=$1
 else
-    if [ $(hostname) == 'xav-QG' ]; then
+    if [ $(hostname) != 'laptop-300E5A' ]; then
         # We are on the server, no gui menu, use command line
         echo 'Provide a shorcut number [1..3]'
         read choice
@@ -32,19 +32,19 @@ echo "C'est parti..."
 # Equitie backtest 
 if [ $choice == 1 ]; then
     time $QTRADE/application/app.py --initialcash 10000 --tickers random,8 \
-        --algorithm AASL --start 2009-01-10 --end 2012-07-03 \
+        --algorithm StdBased --manager Constant --start 2011-01-10 --end 2012-07-03 \
         --frequency daily --database test --exchange paris
 
 # Forex live test !
 elif [ $choice == 2 ]; then
     time $QTRADE/application/app.py --initialcash 10000 --tickers EUR/USD,EUR/GBP,EUR/JPY \
-        --algorithm Momentum --manager Constant --end 21h20 \
+        --algorithm StdBased --manager Constant --end 23h \
         --database test --exchange forex --frequency minute --live
 
 # Equitie live test !
 elif [ $choice == 3 ]; then
     time $QTRADE/application/app.py --initialcash 10000 --tickers random,20 \
-        --algorithm Momentum --manager OptimalFrontier --end 12h00 \
+        --algorithm StdBased --manager OptimalFrontier --end 23h \
         --database test --exchange paris --frequency minute --live
 
 else

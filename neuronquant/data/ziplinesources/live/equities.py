@@ -18,7 +18,6 @@
 Tools to generate data sources.
 """
 import sys
-import os
 import time
 import pytz
 import datetime
@@ -27,7 +26,6 @@ import pandas as pd
 from zipline.gens.utils import hash_args
 from zipline.sources.data_source import DataSource
 
-sys.path.append(os.environ['QTRADE'])
 from neuronquant.tmpdata.remote import Remote
 from neuronquant.data.datafeed import DataFeed
 
@@ -89,9 +87,12 @@ class DataLiveSource(DataSource):
         '''
         # QuanTrade works with utc dates, conversion
         # are made for I/O
-        while datetime.datetime.now(pytz.utc) < dt:
-            log.info('Waiting for {}'.format(dt))
+        #while datetime.datetime.now(pytz.utc) < dt:
+        now = datetime.datetime.now(pytz.utc)
+        while now < dt:
+            log.info('Waiting for {} / {}'.format(now, dt))
             time.sleep(15)
+            now = datetime.datetime.now(pytz.utc)
 
     def _get_updated_index(self):
         '''
@@ -113,6 +114,14 @@ class DataLiveSource(DataSource):
                 log.error('** No data snapshot available, maybe stopped by google ?')
                 sys.exit(2)
             for sid in self.sids:
+                # Fix volume = 0, (later will be denominator)
+                if not int(snapshot[sid]['volume']):
+                    #TODO Here just a special value that the algo could detect like a missing data
+                    snapshot[sid]['volume'] = 10001
+                #import ipdb; ipdb.set_trace()
+                #NOTE Conversions here are useless ?
+                if snapshot[sid]['perc_change'] == '':
+                    snapshot[sid]['perc_change'] = 0
                 event = {
                     'dt': dt,
                     'sid': sid,

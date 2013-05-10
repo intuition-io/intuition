@@ -40,7 +40,7 @@ class DataFeed(object):
         Fetch from database a previously stored portfolio
         _________________________________________________
         Parameter
-            names: str
+            names: list or str
                 Portfolios are stored with a name as unique ID,
                 get those
         _________________________________________________
@@ -48,6 +48,7 @@ class DataFeed(object):
             A Portfolio database model if name was found,
             None otherwize
         '''
+        #FIXME Should now provide a date as well, an complete history is now stored
         lonely = False
         if isinstance(names, str):
             names = [names]

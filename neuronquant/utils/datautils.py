@@ -59,12 +59,12 @@ FX_PAIRS = ['EUR/USD', 'USD/JPY', 'GBP/USD',
 #http://en.wikipedia.org/wiki/List_of_S&P_500_companies
 def filter_market_hours(dates, exchange):
     ''' Only return market open hours from UTC timezone'''
+    #NOTE UTC times ! Beware of summer and winter hours
     if dates.freq > pd.datetools.Day():
         # Daily or lower frequency, no hours filter required
         return dates
     if exchange == 'paris':
-        selector = ((dates.hour > 9) & (dates.hour < 16)) | ((dates.hour == 17) & (dates.minute < 31)) \
-                | ((dates.hour == 8) & (dates.minute > 29))
+        selector = ((dates.hour > 6) & (dates.hour < 16)) | ((dates.hour == 17) & (dates.minute < 31))
     elif exchange == 'london':
         selector = ((dates.hour > 8) & (dates.hour < 16)) | ((dates.hour == 16) & (dates.minute > 31))
     elif exchange == 'tokyo':
@@ -85,6 +85,10 @@ Exchange = {
     #Later Londres = LON
     'paris': {'index': '^FTSE',
          'timezone': 'Europe/Paris',
+         'code': 1001,
+         'google_market': 'EPA'},
+    'london': {'index': '^FCHI',
+         'timezone': 'Europe/London',
          'code': 1001,
          'google_market': 'EPA'},
     'forex': {'index': '^FCHI',

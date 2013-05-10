@@ -30,18 +30,18 @@ class OLMAR(TradingAlgorithm):
     More info can be found in the corresponding paper:
     http://icml.cc/2012/papers/168.pdf
     """
-    def initialize(self, eps=1, window_length=5):
+    def initialize(self, properties):
         #self.stocks = STOCKS
         #self.m = len(self.stocks)
         self.price = {}
         self.b_t = np.ones(self.m) / self.m
         self.last_desired_port = np.ones(self.m) / self.m
-        self.eps = eps
+        self.eps = properties.get('eps', 1)
         self.init = True
         self.days = 0
-        self.window_length = window_length
+        self.window_length = properties.get('window_length', 5)
         self.add_transform(MovingAverage, 'mavg', ['price'],
-                           window_length=window_length)
+                           window_length=self.window_length)
 
         no_delay = datetime.timedelta(minutes=0)
         slip = self.slippage.VolumeShareSlippage(volume_limit=0.25,

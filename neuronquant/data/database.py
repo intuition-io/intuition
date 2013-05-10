@@ -309,7 +309,7 @@ class Client(object):
 
         # Cleaning
         session.execute("delete from Positions where Positions.PortfolioName = '{}'".format(name))
-        session.execute("delete from Portfolios where Portfolios.Name = '{}'".format(name))
+        #session.execute("delete from Portfolios where Portfolios.Name = '{}'".format(name))
 
         pf_object = Portfolio(name=name,
                               date         = date.strftime(format='%Y-%m-%d %H:%M'),
@@ -326,6 +326,7 @@ class Client(object):
         assert isinstance(positions, dict)
         for ticker in positions:
             positions[ticker]['name'] = name
+            positions[ticker]['date'] = date
             session.add(Position(**positions[ticker]))
             #FIXME bug: 'not list-like object', but not an issue ?
             #pf_object.Positions = Position(**positions[ticker])

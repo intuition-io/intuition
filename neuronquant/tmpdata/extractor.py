@@ -11,8 +11,14 @@ import csv
 
 class ResultSet(list):
     def __init__(self, result):
-        for r in result:
-            self.append(dict((a, b) for a, b in r.items()))
+        #import ipdb; ipdb.set_trace()
+        # result.out_parameters()
+        # result.rowcount
+        if result.keys():
+            for r in result:
+                self.append(dict((a, b) for a, b in r.items()))
+        else:
+            self.append([])
 
     def export(self, filename, columns):
         #TODO automatic columns detection

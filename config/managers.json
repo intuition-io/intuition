@@ -9,7 +9,7 @@
     },
     "Constant":
     {
-        "name": "Xavier Bruhiere",
+        "name": "xavier-forex",
         "load_backup": 0,
         "android": 1,
         "max_weight": 0.5,
@@ -19,7 +19,7 @@
     },
     "OptimalFrontier":
     {
-        "name": "Xavier Bruhiere",
+        "name": "xavier-equities",
         "load_backup": 0,
         "connected": 0,
         "android": 0,

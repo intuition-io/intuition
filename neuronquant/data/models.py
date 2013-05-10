@@ -180,6 +180,7 @@ class Metrics(Base):
 
     Id                  = Column(Integer, primary_key=True)
     Name                = Column(String(50))
+    Date                = Column(DateTime)
     Period              = Column(DateTime)
     SharpeRatio         = Column(Float)
     SortinoRatio        = Column(Float)
@@ -195,8 +196,9 @@ class Metrics(Base):
     TreasuryReturns     = Column(Float)
 
     def __init__(self, name, period, sharpe, sortino, info, returns, maxdrawdown, volatility,
-                 beta, alpha, excessreturn, benchmarkreturns, benchmarkvolatility, treasuryreturns):
+                 beta, alpha, excessreturn, benchmarkreturns, benchmarkvolatility, treasuryreturns, date=None):
         self.Name                = name
+        self.Date                = date
         self.Period              = period
         self.SharpeRatio         = sharpe
         self.SortinoRatio        = sortino
@@ -258,9 +260,10 @@ class Portfolio(Base):
     """
     __tablename__ = 'Portfolios'
 
-    Name           = Column(String(50), primary_key=True)
+    Id   = Column(Integer, primary_key = True)
+    #Name           = Column(String(50), primary_key=True)
+    Name           = Column(String(50))
     Date           = Column(DateTime)
-    #NOTE use date ?
     StartDate      = Column(String(50))
     Cash           = Column(Float)
     StartingCash   = Column(Float)
@@ -269,7 +272,7 @@ class Portfolio(Base):
     PNL            = Column(Float)
     PortfolioValue = Column(Float)
     PositionsValue = Column(Float)
-    Positions      = relationship('Position', backref='Portfolios')
+    #Positions      = relationship('Position', backref='Portfolios')
 
     def __init__(self, **kwargs):
         self.Name           = kwargs.get('name')
@@ -296,15 +299,19 @@ class Position(Base):
     """
     __tablename__ = 'Positions'
 
-    Id        = Column(Integer, primary_key = True)
-    PortfolioName = Column(String(50), ForeignKey('Portfolios.Name'))
+    Id        = Column(Integer, primary_key=True)
+    #Date = Column(DateTime, ForeignKey('Portfolios.Date'))
+    #PortfolioName = Column(String(50), ForeignKey('Portfolios.Name'))
+    Date = Column(DateTime)
+    PortfolioName = Column(String(50))
     #NOTE Could be an other relationship to Symbol table
-    Ticker = Column(String(10))
+    Ticker = Column(String(128))
     Amount = Column(Integer)
     LastSalePrice = Column(Float)
     CostBasis = Column(Float)
 
     def __init__(self, **kwargs):
+        self.Date = kwargs.get('date')
         self.PortfolioName = kwargs.get('name')
         self.Ticker = kwargs.get('sid')
         self.Amount = kwargs.get('amount')

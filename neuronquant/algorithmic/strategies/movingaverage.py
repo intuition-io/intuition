@@ -198,7 +198,7 @@ class MovingAverageCrossover(TradingAlgorithm):
     '''
     https://www.quantopian.com/posts/moving-average-crossover
     '''
-    def initialize(self, properties, strategie, parameters):
+    def initialize(self, properties):
         self.debug    = properties.get('debug', 0)
         #window_length = properties.get('window_length', 3)
         self.fast = []
@@ -314,7 +314,7 @@ class MultiMA(TradingAlgorithm):
     R_P = 1   # refresh_period
     W_L = 1   # window_length
 
-    def initialize(self, properties, strategie, parameters):
+    def initialize(self, properties):
         #tickers = [sid(21090), sid(698),sid(6872),sid(4415),sid(6119),\
                 #sid(8229),sid(39778),sid(14328),sid(630),sid(4313)]
         self.debug    = properties.get('debug', 0)

@@ -32,6 +32,7 @@
     "StdBased":
     {
         "debug": 1,
+        "save": 1,
         "stddev_window": 9,
         "vwap_window": 5
     },
