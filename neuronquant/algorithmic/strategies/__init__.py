@@ -13,6 +13,7 @@ from movingaverage import (
 from olmar import OLMAR
 from pairtrade import Pairtrade
 from stddev import StddevBased
+from bollingerbands import BollingerBands
 from machinelearning import (
         PredictHiddenStates,
         StochasticGradientDescent

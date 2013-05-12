@@ -39,15 +39,16 @@ class Pairtrade(TradingAlgorithm):
     two. Divergence of the spread is evaluated by z-scoring.
     """
 
-    def initialize(self, window_length=100):
+    def initialize(self, properties):
         self.spreads = []
         self.zscores = []
         self.invested = 0
-        self.window_length = window_length
+        self.window_length = properties.get('window_length', 100)
         self.ols_transform = ols_transform(refresh_period=self.window_length,
                                            window_length=self.window_length)
 
     def handle_data(self, data):
+        #FIXME The two sids are hard coded...
         ######################################################
         # 1. Compute regression coefficients between PEP and KO
         params = self.ols_transform.handle_data(data, 'PEP', 'KO')
@@ -65,8 +66,9 @@ class Pairtrade(TradingAlgorithm):
         self.place_orders(data, zscore)
 
     def compute_zscore(self, data, slope, intercept):
-        """1. Compute the spread given slope and intercept.
-           2. zscore the spread.
+        """
+        1. Compute the spread given slope and intercept.
+        2. zscore the spread.
         """
         spread = (data['PEP'].price - (slope * data['KO'].price + intercept))
         self.spreads.append(spread)
@@ -75,7 +77,8 @@ class Pairtrade(TradingAlgorithm):
         return zscore
 
     def place_orders(self, data, zscore):
-        """Buy spread if zscore is > 2, sell if zscore < .5.
+        """
+        Buy spread if zscore is > 2, sell if zscore < .5.
         """
         if zscore >= 2.0 and not self.invested:
             self.order('PEP', int(100 / data['PEP'].price))

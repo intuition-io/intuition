@@ -40,7 +40,8 @@ class BuyAndHold(TradingAlgorithm):
 
         ''' ----------------------------------------------------------    Scan   --'''
         #self.logger.notice(self.portfolio)
-        if self.frame_count == 2:
+        if not self.initialized:
+            self.initialized = True
             for ticker in data:
                 signals[ticker] = data[ticker].price
 

@@ -22,8 +22,8 @@ import pandas
 #NOTE The post_func customs traditionnal data format, interesting
 class BollingerBands(TradingAlgorithm):
     def process_df(self, df):
-        df = df.rename(columns={'Close': 'price'})
-        df = df.fillna(method='ffill')
+        #df = df.rename(columns={'Close': 'price'})
+        #df = df.fillna(method='ffill')
         df['MA20']     = pandas.stats.moments.rolling_mean(df['price'], 20)
         df['ABS']      = abs(df['price'] - df['MA20'])
         df['STDDEV']   = pandas.stats.moments.rolling_std(df['ABS'], 20)
@@ -43,14 +43,19 @@ class BollingerBands(TradingAlgorithm):
         self.stddev_limit = properties.get('stddev_limit', 1.75)
 
     def handle_data(self, data):
+        #if not self.initialized:
+            #import ipdb; ipdb.set_trace()
+            #self.process_df(data)
+            #self.initialized = True
         self.manager.update(self.portfolio, self.datetime.to_pydatetime(), save=False)
         for stock in data:
+            self.process_df(data[stock])
             if str(data[stock].datetime.year) == "2011":
                 self.record(CMG=data[stock].price)
                 self.record(Upper=data[stock]['UPPER_BB'])
                 self.record(MA20=data[stock]['MA20'])
                 self.record(Lower=data[stock]['LOWER_BB'])
-                self.order_handling(self, data)
+                self.order_handling(data)
 
     def order_handling(self, data):
         for stock in data:

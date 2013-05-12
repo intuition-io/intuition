@@ -39,7 +39,8 @@ setup = NestedSetup([
     #StderrHandler(format_string=u'[{record.time:%Y-%m-%d %H:%M}] {record.channel} - {record.level_name}: {record.message} \t({record.extra[ip]})'),
     StreamHandler(sys.stdout, format_string=log_format),
     # then write messages that are at least warnings to to a logfile
-    FileHandler(os.environ['QTRADE_LOG'], level='WARNING'),
+    #FIXME FileHandler(os.environ['QTRADE_LOG'], level='WARNING'),
+    FileHandler('/home/xavier/.quantrade/quantrade.log', level='WARNING'),
     #Processor(inject_information)
 ])
 
@@ -50,7 +51,7 @@ color_setup = NestedSetup([
 ])
 
 remote_setup = NestedSetup([
-    ZeroMQHandler('tcp://127.0.0.1:5540'),
+    ZeroMQHandler('tcp://127.0.0.1:56540'),
     #Processor(inject_information)
 ])
 

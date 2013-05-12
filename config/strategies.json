@@ -52,6 +52,8 @@
         "gradient_iterations": 5
     },
     "AASL": {},
+    "Pairtrade": {},
+    "Bollinger": {},
     "Momentum":
     {
         "debug": 1,

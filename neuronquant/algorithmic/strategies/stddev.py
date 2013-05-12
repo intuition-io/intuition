@@ -25,7 +25,7 @@ extractor = Extractor('mysql://xavier:quantrade@localhost/stock_data')
 metrics_fields = ['Information', 'Returns', 'MaxDrawdown', 'SortinoRatio', 'Period', 'Volatility', 'BenchmarkVolatility', 'Beta', 'ExcessReturn', 'TreasuryReturns', 'SharpeRatio', 'Date', 'Alpha', 'BenchmarkReturns', 'Name']
 
 
-def save_monitoring_snapshot(name, dt, cmr):
+def save_metrics_snapshot(name, dt, cmr):
     #TODO Save Transactions
     #data = extractor('INSERT INTO Transactions () VALUES ()')
     #TODO Save Orders
@@ -42,6 +42,34 @@ def save_monitoring_snapshot(name, dt, cmr):
             cmr[key] = 0
     query = 'INSERT INTO Metrics ({}) VALUES ({})'
     extractor(query.format(', '.join(metrics_fields), ', '.join(map(str, cmr.values()))))
+
+
+def clean_previous_trades(portfolio_name):
+    extractor('DELETE FROM Positions WHERE PortfolioName=\'{}\''.format(portfolio_name))
+    extractor('DELETE FROM Portfolios where Name=\'{}\''.format(portfolio_name))
+    extractor('DELETE FROM Metrics where Name=\'{}\''.format(portfolio_name))
+    #TODO Clean previous widgets
+
+
+def update_positions_widgets(previous_positions, current_positions):
+    for stock in current_positions:
+        amount = current_positions[stock].amount
+        stock = stock.replace(' ', '+')
+        if (amount == 0) and (stock in previous_positions):
+            previous_positions.pop(stock)
+            dashboard.del_widget(stock)
+        if (amount != 0) and (stock not in previous_positions):
+            previous_positions[stock] = amount
+            dashboard.add_number_widget(
+                    {'name': stock,
+                     'source': 'http_proxy',
+                     'proxy_url': 'http://127.0.0.1:8080/dashboard/number?data=Amount&table=Positions&field=Ticker&value={}'.format(stock),
+                     'proxy_value_path': ' ',
+                     'label': '$',
+                     'update_interval': '30',
+                     'use_metrics_suffix': True})
+    #NOTE previous_positions is a pointer in python so no need to return ?
+    return previous_positions
 
 
 #TODO The portfolio management is included here, make it a stand alone manager
@@ -79,31 +107,14 @@ class StddevBased(TradingAlgorithm):
         ''' ----------------------------------------------------------    Init   --'''
         if self.initialized:
             user_instruction = self.manager.update(self.portfolio, self.datetime.to_pydatetime(), save=self.save)
-            save_monitoring_snapshot(self.manager.name,
+            save_metrics_snapshot(self.manager.name,
                                      self.datetime.to_pydatetime(),
                                      self.perf_tracker.cumulative_risk_metrics.to_dict())
 
-            for stock in self.portfolio.positions:
-                amount = self.portfolio.positions[stock].amount
-                stock = stock.replace(' ', '+')
-                if (amount == 0) and (stock in self.previous_positions):
-                    self.previous_positions.pop(stock)
-                    dashboard.del_widget(stock)
-                if (amount != 0) and (stock not in self.previous_positions):
-                    self.previous_positions[stock] = amount
-                    dashboard.add_number_widget(
-                            {'name': stock,
-                             'source': 'http_proxy',
-                             'proxy_url': 'http://127.0.0.1:8080/dashboard/number?data=Amount&table=Positions&field=Ticker&value={}'.format(stock),
-                             'proxy_value_path': ' ',
-                             'label': '$',
-                             'update_interval': '30',
-                             'use_metrics_suffix': True})
+            update_positions_widgets(self.previous_positions, self.portfolio.positions)
         else:
             #TODO Obviously the manager should clean by himself
-            extractor('DELETE FROM Positions WHERE PortfolioName=\'{}\''.format(self.manager.name))
-            extractor('DELETE FROM Portfolios where Name=\'{}\''.format(self.manager.name))
-            extractor('DELETE FROM Metrics where Name=\'{}\''.format(self.manager.name))
+            clean_previous_trades(self.manager.name)
             self.initialized = True
             self.previous_positions = {}
 

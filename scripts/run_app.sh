@@ -32,7 +32,7 @@ echo "C'est parti..."
 # Equitie backtest 
 if [ $choice == 1 ]; then
     time $QTRADE/application/app.py --initialcash 10000 --tickers random,8 \
-        --algorithm StdBased --manager Constant --start 2011-01-10 --end 2012-07-03 \
+        --algorithm BuyAndHold --manager Constant --start 2011-01-10 --end 2012-07-03 \
         --frequency daily --database test --exchange paris
 
 # Forex live test !
@@ -44,8 +44,8 @@ elif [ $choice == 2 ]; then
 # Equitie live test !
 elif [ $choice == 3 ]; then
     time $QTRADE/application/app.py --initialcash 10000 --tickers random,20 \
-        --algorithm StdBased --manager OptimalFrontier --end 23h \
-        --database test --exchange paris --frequency minute --live
+        --algorithm StdBased --manager OptimalFrontier --end 22h \
+        --database test --exchange nasdaq --frequency minute --live
 
 else
     echo '** Error: invalid simulation number provided: ' $choice

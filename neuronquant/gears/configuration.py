@@ -130,8 +130,8 @@ class Setup(object):
                                 'manager'     : args.manager,
                                 'database'    : args.database,
                                 'tickers'     : self._smart_tickers_select(args.tickers, exchange=args.exchange),
-                                'start'       : self._normalize_date_format(args.start),
-                                'end'         : self._normalize_date_format(args.end),
+                                'start'       : normalize_date_format(args.start),
+                                'end'         : normalize_date_format(args.end),
                                 'live'        : args.live,
                                 'port'        : args.port,
                                 'exchange'    : args.exchange,
@@ -217,30 +217,31 @@ class Setup(object):
 
         return tickers_description
 
-    #TODO Handle in-day dates, with hours and minutes
-    def _normalize_date_format(self, date):
-        '''
-        Dates can be defined in many ways, but zipline use
-        aware datetime objects only. Plus, the software work
-        with utc timezone so we convert it.
-        __________________________________________________
-        Parameters
-            date: str
-                String date, see dateutils module for precisions
-        __________________________________________________
-        Return
-            datetime.datetime utc tz aware object
-        '''
-        assert isinstance(date, str)
-        local_tz = pytz.timezone(_detect_timezone())
-        local_dt = local_tz.localize(parse(date), is_dst=None)
-        return local_dt.astimezone (pytz.utc)
 
-        #locale_date = parse(date)
-        #if locale_date.tzinfo is None:
-            #locale_date = locale_date.replace(tzinfo=pytz.timezone(_detect_timezone()))
-        ##FIXME astimezone() retieve 8 minutes from Paris timezone Oo 20 from Amsterdam WTF
-        #return locale_date.astimezone(pytz.utc)
+#TODO Handle in-day dates, with hours and minutes
+def normalize_date_format(date):
+    '''
+    Dates can be defined in many ways, but zipline use
+    aware datetime objects only. Plus, the software work
+    with utc timezone so we convert it.
+    __________________________________________________
+    Parameters
+        date: str
+            String date, see dateutils module for precisions
+    __________________________________________________
+    Return
+        datetime.datetime utc tz aware object
+    '''
+    assert isinstance(date, str)
+    local_tz = pytz.timezone(_detect_timezone())
+    local_dt = local_tz.localize(parse(date), is_dst=None)
+    return local_dt.astimezone (pytz.utc)
+
+    #locale_date = parse(date)
+    #if locale_date.tzinfo is None:
+        #locale_date = locale_date.replace(tzinfo=pytz.timezone(_detect_timezone()))
+    ##FIXME astimezone() retieve 8 minutes from Paris timezone Oo 20 from Amsterdam WTF
+    #return locale_date.astimezone(pytz.utc)
 
 
 def _detect_timezone():

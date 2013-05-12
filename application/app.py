@@ -63,6 +63,7 @@ if __name__ == '__main__':
     # Color_setup : Pretty print of errors, warning, and so on
     # Remote_setup: ZMQ based messaging, route logs on the network
     # (catched by server's broker)
+    #TODO Parametric log handler and level
     log_setup = (utils.remote_setup if configuration['remote'] else
                  utils.color_setup)
     with log_setup.applicationbound():
@@ -91,6 +92,7 @@ if __name__ == '__main__':
 
         # See neuronquant/gears/engine.py for details of results which is an
         # analyzes object
+        import ipdb; ipdb.set_trace()
         analyzes = engine.run(data, configuration, strategie, trading_context)
 
         if analyzes is None:

@@ -32,6 +32,8 @@ from neuronquant.algorithmic.strategies import (
         MovingAverageCrossover,  # No transactions
         PredictHiddenStates, # Broken
         StochasticGradientDescent,
+        Pairtrade,
+        BollingerBands,
         AutoAdjustingStopLoss
 )
 from neuronquant.algorithmic.managers import (
@@ -55,7 +57,8 @@ class BacktesterEngine(object):
                   'StdBased': StddevBased             , 'OLMAR'      : OLMAR,
                   'MultiMA' : MultiMA                 , 'MACrossover': MovingAverageCrossover,
                   'Follower': FollowTrend             , 'HMM'        : PredictHiddenStates,
-                  'Gradient': StochasticGradientDescent, 'AASL'      : AutoAdjustingStopLoss}
+                  'Gradient': StochasticGradientDescent, 'AASL'      : AutoAdjustingStopLoss,
+                  'Pairtrade': Pairtrade,                'Bollinger' : BollingerBands}
 
     portfolio_managers = {'Fair': Fair, 'Constant': Constant, 'OptimalFrontier': OptimalFrontier}
 

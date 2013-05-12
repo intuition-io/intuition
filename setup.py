@@ -78,14 +78,15 @@ except ImportError:
     LONG_DESCRIPTION = README_MARKDOWN
 
 setup(
-    name='neuronquant',
-    version='0.0.3',
+    name='quantrade',
+    version='0.1.3',
     description='Engine and tools for quantitative trading.',
     author='Xavier Bruhiere',
     author_email='xavier.bruhiere@gmail.com',
     packages=find_packages(),
     long_description=LONG_DESCRIPTION,
-    license='DWTFYW',
+    license='Apache 2.0',
+    #TODO Update with .quantrade !
     data_files=[
         ('scripts', ['scripts/ordered_pip.sh',
                      'scripts/run_labo.py',
@@ -105,15 +106,16 @@ setup(
         'Topic :: System :: Distributed Computing'
     ],
     install_requires=[
-        'msgpack-python',
-        'python-zmq',
-        'Logbook',
+        'logbook',
         'pytz',
         'numpy',
-        'pandas'
+        'pandas',
+        'pyzmq',
+
     ],
     dependency_links = [
         'http://github.com/Gusabi/zipline',
+        'http://github.com/quandl/Python'
     ],
     url="https://github.com/Gusabi/ppQuanTrade"
 )
