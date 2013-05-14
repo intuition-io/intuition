@@ -14,7 +14,8 @@ def forex_rates(user, password, pairs='', fmt='csv'):
 
     if auth.ok:
         log.debug('[{}] Request successful {}:{}'.format(auth.headers['date'], auth.reason, auth.status_code))
-    return auth.content.split('\n')[:2]
+    #return auth.content.split('\n')[:-2]
+    return auth.content.split('\n')
 
 
 #FIXME 'Not authorized' mode works weird

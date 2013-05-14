@@ -20,16 +20,31 @@ from zipline.algorithm import TradingAlgorithm
 # https://www.quantopian.com/posts/auto-adjusting-stop-loss
 class AutoAdjustingStopLoss(TradingAlgorithm):
     def initialize(self, properties):
+        self.save = properties.get('save', 0)
+        self.debug = properties.get('debug', 0)
+        self.base_price = properties.get('base_price', 10)
+
         self.stock = {}
 
     def handle_data(self, data):
+        ''' ----------------------------------------------------------    Init   --'''
+        if self.initialized:
+            user_instruction = self.manager.update(
+                    self.portfolio,
+                    self.datetime.to_pydatetime(), 
+                    self.perf_tracker.cumulative_risk_metrics.to_dict(),
+                    save=self.save,
+                    widgets=False)
+        else:
+            # Perf_tracker need at least a turn to have an index
+            self.initialized = True
 
         for sid in data:
-
             current_price = data[sid].price
             r_o_r = 0
             current_shares = self.portfolio.positions[sid].amount
 
+            #NOTE New manager !
             #Check if this stock is already in portfolio
             if sid in self.stock:
                 #If it is in the portfolio, check if the sell price needs to be updated
@@ -45,28 +60,28 @@ class AutoAdjustingStopLoss(TradingAlgorithm):
                     elif r_o_r > 1:
                         if (1.8 * purchase_price) > self.stock[sid]:
                             self.stock[sid] = 1.8 * purchase_price
-                        self.order(sid, 10)
+                        self.order(sid, self.base_price)
                         message = "Bought 10 shares of %s sold for return of %.2f" % (sid, r_o_r)
                         self.logger.info(message)
 
                     elif r_o_r > .5:
                         if (1.35 * purchase_price) > self.stock[sid]:
                             self.stock[sid] = 1.35 * purchase_price
-                        self.order(sid, 20)
+                        self.order(sid, 2 * self.base_price)
                         message = "Bought 20 shares of %s sold for return of %.2f" % (sid, r_o_r)
                         self.logger.info(message)
 
                     elif r_o_r > .15:
                         if (1.05 * purchase_price) > self.stock[sid]:
                             self.stock[sid] = 1.05 * purchase_price
-                        self.order(sid, 30)
+                        self.order(sid, 3 * self.base_price)
                         message = "Bought 30 shares of %s sold for return of %.2f" % (sid, r_o_r)
                         self.logger.info(message)
 
                     elif r_o_r > .05:
                         if (.95 * purchase_price) > self.stock[sid]:
                             self.stock[sid] = .95 * purchase_price
-                        self.order(sid, 40)
+                        self.order(sid, 4 * self.base_price)
                         message = "Bought 40 shares of %s sold for return of %.2f" % (sid, r_o_r)
                         self.logger.info(message)
 
@@ -76,7 +91,7 @@ class AutoAdjustingStopLoss(TradingAlgorithm):
                         message = "Sold %d shares of %s sold for return of %.2f" % (current_shares, sid, r_o_r)
                         self.logger.info(message)
             else:
-                self.order(sid, 10)
+                self.order(sid, self.base_price)
                 message = "Bought 10 shares of %s bought at %s" % (sid, current_price)
                 self.logger.info(message)
                 sell_price = .85 * current_price

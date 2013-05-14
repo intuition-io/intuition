@@ -21,19 +21,19 @@ import logbook
 log = logbook.Logger('Engine')
 
 from neuronquant.algorithmic.strategies import (
+        StddevBased,
         DualMovingAverage,
         Momentum,
-        VolumeWeightAveragePrice,  # Does not work
+        VolumeWeightAveragePrice,
         BuyAndHold,
         FollowTrend,
-        StddevBased,
-        OLMAR,  # Broken
-        MultiMA,  # No transactions
-        MovingAverageCrossover,  # No transactions
+        OLMAR,  # Mega Broken
+        MultiMA,  # Learning purpose
+        MovingAverageCrossover,  # prices hard coded, dummy
         PredictHiddenStates, # Broken
-        StochasticGradientDescent,
-        Pairtrade,
-        BollingerBands,
+        StochasticGradientDescent, # Sell or buy every stocks every time
+        Pairtrade,  # Both stocks are hard coded
+        BollingerBands,  # Broken, pandas error
         AutoAdjustingStopLoss
 )
 from neuronquant.algorithmic.managers import (
@@ -84,6 +84,7 @@ class BacktesterEngine(object):
         trading_algorithm = BacktesterEngine.algorithms[algo](properties=strategie_configuration['algorithm'])
                 #capital_base=10000.0, data_frequency='minute')
 
+        trading_algorithm.capital_base = 10
         trading_algorithm.set_logger(logbook.Logger(algo))
 
         # Use of a portfolio manager

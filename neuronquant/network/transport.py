@@ -25,7 +25,8 @@ import datetime as dt
 import abc
 
 from neuronquant.utils.signals import SignalManager
-from neuronquant.utils import remote_setup
+from neuronquant.utils.logger import get_nestedlog
+#from neuronquant.utils import remote_setup
 
 log = logbook.Logger('ZMQ Messaging')
 #TODO http://pythonhosted.org/Logbook/setups.html
@@ -267,5 +268,6 @@ def dealer_test():
                  'description': 'Google dual moving average crossed: you should buy 23 stocks with a risk of 0.23'})
 
 if __name__ == '__main__':
-    with remote_setup.applicationbound():
+    log_setup = get_nestedlog(uri='tcp://127.0.0.1:5555')
+    with log_setup.applicationbound():
         dealer_test()

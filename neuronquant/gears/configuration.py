@@ -30,9 +30,6 @@ class Setup(object):
         self.config_strategy   = dict()
         self.config_environment = self._inspect_environment()
 
-        # Client for easy mysql database access
-        self.datafeed = DataFeed()
-
     def _inspect_environment(self, local_file='~/.quantrade/default.json'):
         '''
         Read common user and project configuration files
@@ -81,7 +78,7 @@ class Setup(object):
         parser = argparse.ArgumentParser(description='Backtester module, the terrific financial simukation')
         parser.add_argument('-v', '--version',
                             action='version',
-                            version='%(prog)s v0.8.1 Licence rien du tout', help='Print program version')
+                            version='%(prog)s v0.1.3 Licence Apache 2.0', help='Print program version')
         parser.add_argument('-f', '--frequency',
                             type=str, action='store', default='daily',
                             required=False, help='(pandas) frequency in days betweend two quotes fetch')
@@ -109,6 +106,9 @@ class Setup(object):
         parser.add_argument('-ex', '--exchange',
                             action='store', default='',
                             required=False, help='list of markets where trade, separated with a coma')
+        parser.add_argument('-ll', '--loglevel',
+                            action='store', default='WARNING',
+                            required=False, help='File stream log level')
         parser.add_argument('-r', '--remote',
                             action='store_true',
                             help='Indicates if the program was ran manually or not')
@@ -125,18 +125,19 @@ class Setup(object):
         #NOTE Algorithm should be strategie, to be consistent
         # For generic use, future modules will need a dictionnary of parameters, not the namespace provided by argparse
         log.debug('Mapping arguments to backtest parameters dictionnary')
-        self.config_backtest = {'algorithm'   : args.algorithm,
-                                'frequency'   : args.frequency,
-                                'manager'     : args.manager,
-                                'database'    : args.database,
-                                'tickers'     : self._smart_tickers_select(args.tickers, exchange=args.exchange),
-                                'start'       : normalize_date_format(args.start),
-                                'end'         : normalize_date_format(args.end),
-                                'live'        : args.live,
-                                'port'        : args.port,
-                                'exchange'    : args.exchange,
-                                'cash'        : args.initialcash,
-                                'remote'      : args.remote}
+        self.config_backtest = {'algorithm': args.algorithm,
+                                'frequency': args.frequency,
+                                'manager'  : args.manager,
+                                'database' : args.database,
+                                'tickers'  : smart_tickers_select(args.tickers, exchange=args.exchange),
+                                'start'    : normalize_date_format(args.start),
+                                'end'      : normalize_date_format(args.end),
+                                'live'     : args.live,
+                                'port'     : args.port,
+                                'exchange' : args.exchange,
+                                'cash'     : args.initialcash,
+                                'loglevel' : args.loglevel,
+                                'remote'   : args.remote}
 
         return self.config_backtest
 
@@ -198,24 +199,25 @@ class Setup(object):
 
         return msg
 
-    def _smart_tickers_select(self, tickers_description, exchange=''):
-        '''
-        Take tickers string description and return
-        an array of explicit and usuable symbols
-        '''
-        # Informations are coma separated within the string
-        tickers_description = tickers_description.split(',')
 
-        # Useful way of stocks selection in order to test algorithm strength
-        if tickers_description[0] == 'random':
-            # Basic check: the second argument is the the number, integer, of stocks to pick up randomly
-            assert len(tickers_description) == 2
-            assert int(tickers_description[1])
+def smart_tickers_select(tickers_description, exchange=''):
+    '''
+    Take tickers string description and return
+    an array of explicit and usuable symbols
+    '''
+    # Informations are coma separated within the string
+    tickers_description = tickers_description.split(',')
 
-            # Pick up stocks on specified (or not) market exchange
-            tickers_description = self.datafeed.random_stocks(int(tickers_description[1]), exchange=exchange.split(','))
+    # Useful way of stocks selection in order to test algorithm strength
+    if tickers_description[0] == 'random':
+        # Basic check: the second argument is the the number, integer, of stocks to pick up randomly
+        assert len(tickers_description) == 2
+        assert int(tickers_description[1])
 
-        return tickers_description
+        # Pick up stocks on specified (or not) market exchange
+        tickers_description = DataFeed().random_stocks(int(tickers_description[1]), exchange=exchange.split(','))
+
+    return tickers_description
 
 
 #TODO Handle in-day dates, with hours and minutes

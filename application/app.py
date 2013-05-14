@@ -22,7 +22,7 @@ import os
 import pylab as plt
 
 from neuronquant.gears.engine import Simulation
-import neuronquant.utils as utils
+from neuronquant.utils.logger import log, get_nestedlog
 import neuronquant.utils.datautils as datautils
 from neuronquant.gears.configuration import Setup
 
@@ -64,8 +64,11 @@ if __name__ == '__main__':
     # Remote_setup: ZMQ based messaging, route logs on the network
     # (catched by server's broker)
     #TODO Parametric log handler and level
-    log_setup = (utils.remote_setup if configuration['remote'] else
-                 utils.color_setup)
+    #log_setup = (utils.remote_setup if configuration['remote'] else
+                 #utils.color_setup)
+    
+    #FIXME Remote log broken here
+    log_setup = get_nestedlog(level=configuration['loglevel'], file=configuration['logfile'])
     with log_setup.applicationbound():
         '''
         TODO HUGE: Run multiple backtest with communication possibilities (ZMQ)
@@ -92,15 +95,14 @@ if __name__ == '__main__':
 
         # See neuronquant/gears/engine.py for details of results which is an
         # analyzes object
-        import ipdb; ipdb.set_trace()
         analyzes = engine.run(data, configuration, strategie, trading_context)
 
         if analyzes is None:
-            utils.log.error('** Backtest failed.')
+            log.error('** Backtest failed.')
             sys.exit(1)
 
         '''_______________________________________________________________________________________    Results   ____'''
-        utils.log.info('Portfolio returns: \
+        log.info('Portfolio returns: \
                 {}'.format(analyzes.results.portfolio_value[-1]))
 
         if configuration['live'] or analyzes.results.portfolio_value[-1] == configuration['cash']:
@@ -132,7 +134,7 @@ if __name__ == '__main__':
                                                 db_id=configuration['database'])
 
         #FIXME irrelevant results if no transactions were ordered
-        utils.log.info('\n\nReturns: {}% / {}%\nVolatility: {} \
+        log.info('\n\nReturns: {}% / {}%\nVolatility: {} \
                 \nSharpe:\t\t{}\nMax drawdown:\t{}\n\n'.format(
                 risk_metrics['Returns'] * 100.0,
                 risk_metrics['Benchmark.Returns'] * 100.0,

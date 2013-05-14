@@ -1,7 +1,7 @@
 {
     "Fair":
     {
-        "name": "Xavier Bruhiere",
+        "name": "xavier",
         "load_backup": 0,
         "android": 0,
         "connected": 0,
@@ -9,9 +9,9 @@
     },
     "Constant":
     {
-        "name": "xavier-forex",
+        "name": "xavier",
         "load_backup": 0,
-        "android": 1,
+        "android": 0,
         "max_weight": 0.5,
         "buy_amount": 80,
         "connected": 0,
@@ -19,7 +19,7 @@
     },
     "OptimalFrontier":
     {
-        "name": "xavier-equities",
+        "name": "xavier",
         "load_backup": 0,
         "connected": 0,
         "android": 0,

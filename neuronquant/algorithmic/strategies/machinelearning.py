@@ -21,7 +21,7 @@ from sklearn.hmm import GaussianHMM
 from zipline.transforms import batch_transform
 
 
-HIDDEN_STATES = 4
+HIDDEN_STATES = 3
 INFINITE = np.inf
 
 
@@ -35,11 +35,13 @@ def HMM(data, means_prior=None):
 
     # Create scikit-learn model using the means
     # from the previous model as a prior
-    for sid in data:
+    #import ipdb; ipdb.set_trace()
+    for sid in data['price'].columns:
         model = GaussianHMM(HIDDEN_STATES,
                             covariance_type="diag",
+                            n_iter=10,
                             means_prior=means_prior,
-                            means_weight=1)
+                            means_weight=0.5)
 
         # Extract variation and volume
         diff = data.variation[sid].values
@@ -55,8 +57,8 @@ def HMM(data, means_prior=None):
 class PredictHiddenStates(TradingAlgorithm):
     def initialize(self, properties):
         # Instantiate batch_transform
-        self.hmm_transform = HMM(refresh_period=properties.get('refresh_period', 500),  # recompute every 500 days
-                                 window_length=100000,
+        self.hmm_transform = HMM(refresh_period=properties.get('refresh_period', 300),  # recompute every 500 days
+                                 window_length=properties.get('window_length', 100),
                                  #window_length=INFINITE,  # store all data
                                  compute_only_full=False)  # do not wait until window is full
 
@@ -65,24 +67,32 @@ class PredictHiddenStates(TradingAlgorithm):
         self.means_prior = None
 
     def handle_data(self, data):
+        if not self.initialized:
+            self.initialized = True
+            for sid in data:
+                data[sid]['variation'] = 0.0
+            return
         # Pass event frame to batch_transform
         # Will _not_ directly call the transform but append
         # data to a window until full and then compute.
-        self.hmm = self.hmm_transform.handle_data(data,
-                                                  means_prior=self.means_prior)
+        self.hmm = self.hmm_transform.handle_data(data, means_prior=self.means_prior)
 
         # Have we fit the model yet?
         if self.hmm is None:
             return
 
+        # Remember mean for the prior
+        self.means_prior = self.hmm.means_
+
         for sid in data:
-            # Remember mean for the prior
-            self.means_prior = self.hmm.means_
+            data[sid]['variation'] = (data[sid].close_price - data[sid].open_price)
 
             # Predict current state
             data_vec = [data[sid].variation, data[sid].volume]
             self.state = self.hmm.predict([data_vec])
             self.record(state=self.state)
+
+            self.logger.info(self.state)
 
 
 # ___________________________________________________________________
@@ -94,14 +104,28 @@ class StochasticGradientDescent(TradingAlgorithm):
     https://www.quantopian.com/posts/second-attempt-at-ml-stochastic-gradient-descent-method-using-hinge-loss-function
     '''
     def initialize(self, properties):
-        self.bet_amount    = 100000.0
-        self.max_notional  = 1000000.1
+        self.save = properties.get('save', 0)
+        #FIXME Should be set
+        self.capital_base = properties.get('capital_base', 10000.0)
+        self.bet_amount    = self.capital_base
+        self.max_notional  = self.capital_base + 0.1
         self.min_notional  = -100000.0
         self.gradient_iterations = properties.get('gradient_iterations', 5)
         self.calculate_theta = calculate_theta(refresh_period=properties.get('refresh_period', 1),
                 window_length=properties.get('window_length', 60))
 
     def handle_data(self, data):
+        ''' ----------------------------------------------------------    Init   --'''
+        if self.initialized:
+            user_instruction = self.manager.update(
+                    self.portfolio,
+                    self.datetime.to_pydatetime(), 
+                    self.perf_tracker.cumulative_risk_metrics.to_dict(),
+                    save=self.save,
+                    widgets=False)
+        else:
+            # Perf_tracker need at least a turn to have an index
+            self.initialized = True
 
         for stock in data:
             thetaAndPrices = self.calculate_theta.handle_data(data, stock, self.gradient_iterations)
@@ -110,6 +134,7 @@ class StochasticGradientDescent(TradingAlgorithm):
 
             theta, historicalPrices = thetaAndPrices
 
+            # Indicator is a new manager !
             indicator = np.dot(theta, historicalPrices)
             # normalize
             hlen = sum([k * k for k in historicalPrices])
@@ -121,11 +146,11 @@ class StochasticGradientDescent(TradingAlgorithm):
 
             if indicator >= 0 and notional < self.max_notional:
                 self.order(stock, indicator * self.bet_amount)
-                self.logger.info("[%s] %f shares of %s bought." % (self.datetime, self.bet_amount * indicator, stock))
+                self.logger.notice("[%s] %f shares of %s bought." % (self.datetime, self.bet_amount * indicator, stock))
 
             if indicator < 0 and notional > self.min_notional:
                 self.order(stock, indicator * self.bet_amount)
-                self.logger.info("[%s] %f shares of %s sold." % (self.datetime, self.bet_amount * indicator, stock))
+                self.logger.notice("[%s] %f shares of %s sold." % (self.datetime, self.bet_amount * indicator, stock))
 
 
 @batch_transform

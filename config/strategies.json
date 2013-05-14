@@ -1,9 +1,11 @@
 {
     "DualMA":
     {
-        "long_window" : 100,
-        "short_window" : 50,
-        "threshold" : 10
+        "debug": 1,
+        "save": 0,
+        "long_window" : 30,
+        "short_window" : 25,
+        "threshold" : 0
     },
     "BuyAndHold":
     {
@@ -12,6 +14,7 @@
     "VWAP":
     {
         "debug": 1,
+        "save": 0,
         "window_length": 3
     },
     "MultiMA":
@@ -26,19 +29,21 @@
     },
     "OLMAR":
     {
+        "eps": 1,
         "debug": 1,
-        "window_length": 3
+        "window_length": 6
     },
     "StdBased":
     {
         "debug": 1,
-        "save": 1,
+        "save": 0,
         "stddev_window": 9,
         "vwap_window": 5
     },
     "HMM":
     {
-        "refresh_period": 1
+        "refresh_period": 300,
+        "window_length": 100
     },
     "Follower":
     {
@@ -47,15 +52,27 @@
     },
     "Gradient":
     {
+        "debug": 1,
+        "save": 0,
         "refresh_period": 1,
         "window_length": 60,
         "gradient_iterations": 5
     },
-    "AASL": {},
+    "AASL": {
+        "debug": 1,
+        "save": 0,
+        "base_price": 50
+    },
     "Pairtrade": {},
-    "Bollinger": {},
+    "Bollinger": {
+        "debug": 1,
+        "save": 0,
+        "quantity": 400,
+        "stddev_limit": 1.75
+    },
     "Momentum":
     {
+        "save": 0,
         "debug": 1,
         "window_length": 5
     }

@@ -16,9 +16,9 @@
 # limitations under the License.
 
 
-from neuronquant.gears.engine import Simulation
-from neuronquant.gears.configuration import normalize_date_format
-import neuronquant.utils as utils
+from neuronquant.gears.configuration import (
+    normalize_date_format, smart_tickers_select
+)
 
 
 def trade(mega_config):
@@ -26,19 +26,17 @@ def trade(mega_config):
     One function to rule them all
     '''
     from neuronquant.gears.engine import Simulation
-    from neuronquant.gears.configuration import normalize_date_format
-    import neuronquant.utils as utils
-    #from neuronquant.gears.engine import Simulation
-    #import neuronquant.utils as utils
+    from neuronquant.utils.logger import get_nestedlog
+
     # General simulation behavior
+    #NOTE Portfolio server setup in Setup() object,
+    #if needed, create it manually here
     configuration = mega_config['configuration']
     strategie = mega_config['strategie']
 
-    # Color_setup : Pretty print of errors, warning, and so on
-    # Remote_setup: ZMQ based messaging, route logs on the network
+    # Remote: ZMQ based messaging, route logs on the network
     # (catched by server's broker)
-    log_setup = (utils.remote_setup if configuration['remote'] else
-                 utils.color_setup)
+    log_setup = get_nestedlog(level=configuration['log_level'])
     with log_setup.applicationbound():
         # Backtest or live engine
         engine = Simulation()
@@ -54,30 +52,62 @@ def trade(mega_config):
         assert analyzes
 
 
-mega_configuration = {
+def get_configuration(changes={}, backtest=True):
+    # Reset to root_config (doesn't work)
+    config = root_configuration.copy()
+
+    if not backtest:
+        config['configuration']['live'] = True
+        config['configuration']['frequency'] = 'minute'
+
+    for item, value in changes.iteritems():
+        if item in config['configuration']:
+            config['configuration'][item] = value
+        for category in ['algorithm', 'manager']:
+            if item in config['strategie'][category]:
+                config['strategie'][category][item] = value
+
+    # Check for normalzation
+    if isinstance(config['configuration']['start'], str):
+        config['configuration']['start'] = normalize_date_format(config['configuration']['start'])
+    if isinstance(config['configuration']['end'], str):
+        config['configuration']['end'] = normalize_date_format(config['configuration']['end'])
+    if isinstance(config['configuration']['tickers'], str):
+        config['configuration']['tickers'] = smart_tickers_select(config['configuration']['tickers'])
+    return config
+
+
+root_configuration = {
     'configuration': {
         'cash': 10000,
-        'tickers': ['GEMALTO', 'LAFARGE'],
+        'loglevel': 'WARNING',
+        'logfile': 'quantrade.log',
+        'tickers': 'random,4',
         'port': 5555,
         'exchange': 'paris',
         'db': 'test',
-        'algorithm': 'BuyAndHold',
+        'algorithm': 'StdBased',
         'frequency': 'daily',
         'manager': 'Constant',
-        'start': normalize_date_format('2011-01-10'),
-        'end': normalize_date_format('2012-07-03'),
+        'start': '2011-01-10',
+        'end': '2012-07-03',
         'remote': False,
         'live': False
     },
     'strategie': {
         'algorithm': {
-            'debug': 1,
-            'long_window': 200,
-            'short_window': 100,
+            'debug': 0,
+            'long_window': 30,
+            'short_window': 25,
+            'stddev_window': 9,
+            'vwap_window': 5,
+            'refresh_period': 1,
+            'base_price': 50,
+            'save': 1,
             'threshold': 0
         },
         'manager': {
-            'name': 'xavier-remote',
+            'name': 'xavier',
             'load_backup': 0,
             'max_weight': 0.3,
             'connected': 0,

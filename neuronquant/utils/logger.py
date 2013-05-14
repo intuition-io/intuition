@@ -20,10 +20,10 @@ import os
 import sys
 
 #NOTE Database: http://pythonhosted.org/Logbook/api/ticketing.html#module-logbook.ticketing
-from logbook import Logger
+import logbook
 from logbook.queues import ZeroMQHandler
 from logbook.more import ColorizingStreamHandlerMixin, ColorizedStderrHandler
-from logbook import NestedSetup, FileHandler, Processor, StderrHandler, StreamHandler
+from logbook import Logger, NestedSetup, FileHandler, Processor, StderrHandler, StreamHandler
 
 from utils import get_ip
 
@@ -32,7 +32,25 @@ def inject_information(record):
     record.extra['ip'] = get_ip()
 
 #log_format = u'[{record.time:%Y-%m-%d %H:%M}] {record.channel} - {record.level_name}: {record.message} \t({record.extra[ip]})'
-log_format = u'[{record.time:%Y-%m-%d %H:%M}] {record.channel} - {record.level_name}: {record.message}'
+log_format = u'[{record.time:%Y-%m-%d %H:%M}] {record.channel}::{record.level_name} - {record.message}'
+
+
+def get_nestedlog(level='WARNING', file='quantrade.log', uri=None):
+    # Default uri: tcp://127.0.0.1:5540
+    if uri is not None:
+        log_setup = NestedSetup([
+            ZeroMQHandler(uri),
+        ])
+    else:
+        log_setup = NestedSetup([
+            logbook.NullHandler(level=logbook.DEBUG, bubble=True),
+            logbook.StreamHandler(sys.stdout, level=logbook.INFO, format_string=log_format),
+            logbook.StreamHandler(sys.stderr, level=logbook.ERROR, format_string=log_format),
+            logbook.FileHandler('/home/xavier/.quantrade/{}'.format(file), level=level),
+        ])
+
+    return log_setup
+
 
 # a nested handler setup can be used to configure more complex setups
 setup = NestedSetup([
@@ -50,10 +68,10 @@ color_setup = NestedSetup([
     #Processor(inject_information)
 ])
 
-remote_setup = NestedSetup([
-    ZeroMQHandler('tcp://127.0.0.1:56540'),
-    #Processor(inject_information)
-])
+#remote_setup = NestedSetup([
+    #ZeroMQHandler('tcp://127.0.0.1:56540'),
+    ##Processor(inject_information)
+#])
 
 log = Logger('Trade Labo')
 

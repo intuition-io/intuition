@@ -1,12 +1,17 @@
 Changelog
 =========
 
+13-05-2013
+----------
+- Installation process improvement
+
 23-04-2013
 ----------
 - Errors module
 - Many many fixes
 - New RESTful API along of the broker
 - Better live integration, with team_dashboard integration
+- Grid deployement script
 
 10-04-2013
 ----------

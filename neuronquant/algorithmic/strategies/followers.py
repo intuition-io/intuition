@@ -49,7 +49,7 @@ class BuyAndHold(TradingAlgorithm):
         if signals:
             orderBook = self.manager.trade_signals_handler(signals)
             for stock in orderBook:
-                self.logger.info('{}: Ordering {} {} stocks'.format(self.datetime, stock, orderBook[stock]))
+                self.logger.notice('{}: Ordering {} {} stocks'.format(self.datetime, stock, orderBook[stock]))
                 self.order(stock, orderBook[stock])
 
     def process_instruction(self, instruction):

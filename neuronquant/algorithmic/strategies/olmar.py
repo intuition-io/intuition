@@ -16,11 +16,12 @@
 # From quantopian: https://github.com/quantopian/quantopian-algos
 
 
-import datetime
 import numpy as np
 
 from zipline.algorithm import TradingAlgorithm
 from zipline.transforms import MovingAverage
+from zipline.finance.slippage import VolumeShareSlippage
+from zipline.finance.commission import PerShare
 
 
 class OLMAR(TradingAlgorithm):
@@ -31,33 +32,34 @@ class OLMAR(TradingAlgorithm):
     http://icml.cc/2012/papers/168.pdf
     """
     def initialize(self, properties):
-        #self.stocks = STOCKS
-        #self.m = len(self.stocks)
         self.price = {}
-        self.b_t = np.ones(self.m) / self.m
-        self.last_desired_port = np.ones(self.m) / self.m
         self.eps = properties.get('eps', 1)
-        self.init = True
         self.days = 0
         self.window_length = properties.get('window_length', 5)
         self.add_transform(MovingAverage, 'mavg', ['price'],
                            window_length=self.window_length)
 
-        no_delay = datetime.timedelta(minutes=0)
-        slip = self.slippage.VolumeShareSlippage(volume_limit=0.25,
-                                            price_impact=0,
-                                            delay=no_delay)
-        self.set_slippage(slip)
-        self.set_commission(self.commission.PerShare(cost=0))
+        #slip = VolumeShareSlippage(volume_limit=0.25, price_impact=0)
+        #self.set_slippage(slip)
+        #self.set_commission(PerShare(cost=0))
+
+        self.stocks = None
+        self.m = None
+        self.b_t = None
+        self.last_desired_port = None
 
     def handle_data(self, data):
         self.days += 1
         if self.days < self.window_length:
             return
 
-        if self.init:
+        if not self.initialized:
+            self.stocks = data.keys()
+            self.m = len(data.keys())
+            self.b_t = np.ones(self.m) / self.m
+            self.last_desired_port = np.ones(self.m) / self.m
             self.rebalance_portfolio(data, self.b_t)
-            self.init = False
+            self.initialized = True
             return
 
         m = self.m
@@ -98,13 +100,14 @@ class OLMAR(TradingAlgorithm):
         # update portfolio
         self.b_t = b_norm
 
+    #NOTE Here is a new manager !
     def rebalance_portfolio(self, data, desired_port):
         #rebalance portfolio
         desired_amount = np.zeros_like(desired_port)
         current_amount = np.zeros_like(desired_port)
         prices = np.zeros_like(desired_port)
 
-        if self.init:
+        if not self.initialized:
             positions_value = self.portfolio.starting_cash
         else:
             positions_value = self.portfolio.positions_value + \
@@ -117,7 +120,7 @@ class OLMAR(TradingAlgorithm):
         desired_amount = np.round(desired_port * positions_value / prices)
 
         self.last_desired_port = desired_port
-        diff_amount = desired_amount - current_amount
+        diff_amount = np.nan_to_num(desired_amount - current_amount)
 
         for i, stock in enumerate(self.stocks):
             self.order(stock, diff_amount[i])
@@ -147,6 +150,9 @@ def simplex_projection(v, b=1):
     """
 
     v = np.asarray(v)
+    if np.isnan(v).any():
+        return np.ones(len(v))
+    #v = np.nan_to_num(np.asarray(v))
     p = len(v)
 
     # Sort v into u in descending order
@@ -154,8 +160,12 @@ def simplex_projection(v, b=1):
     u = np.sort(v)[::-1]
     sv = np.cumsum(u)
 
-    rho = np.where(u > (sv - b) / np.arange(1, p + 1))[0][-1]
-    theta = np.max([0, (sv[rho] - b) / (rho + 1)])
-    w = (v - theta)
-    w[w < 0] = 0
+    try:
+        rho = np.where(u > (sv - b) / np.arange(1, p + 1))[0][-1]
+        theta = np.max([0, (sv[rho] - b) / (rho + 1)])
+        w = (v - theta)
+        w[w < 0] = 0
+    except:
+        import ipdb; ipdb.set_trace()
     return w
+    #return np.nan_to_num(w)

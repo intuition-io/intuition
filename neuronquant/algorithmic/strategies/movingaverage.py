@@ -30,6 +30,7 @@ class DualMovingAverage(TradingAlgorithm):
     momentum).
     """
     def initialize(self, properties):
+        self.save = properties.get('save', False)
         long_window        = properties.get('long_window', 400)
         short_window       = properties.get('short_window', None)
         if short_window is None:
@@ -49,18 +50,20 @@ class DualMovingAverage(TradingAlgorithm):
         self.short_mavgs = []
         self.long_mavgs  = []
 
-        self.init = True
-
     def handle_data(self, data):
         ''' ----------------------------------------------------------    Init   --'''
-        self.manager.update(self.portfolio, self.datetime.to_pydatetime())
-        signals = dict()
-        #FIXME 2 is the first frame...
-        #if (self.frame_count == 3):
-        if self.init:
-            self.init = False
+        if self.initialized:
+            instructions = self.manager.update(
+                    self.portfolio,
+                    self.datetime.to_pydatetime(),
+                    self.perf_tracker.cumulative_risk_metrics.to_dict(),
+                    save=self.save,
+                    widgets=False)
             for t in data:
                 self.invested[t] = False
+        else:
+            self.initialized = True
+        signals = {}
 
         ''' ----------------------------------------------------------    Scan   --'''
         for ticker in data:
@@ -78,7 +81,8 @@ class DualMovingAverage(TradingAlgorithm):
             orderBook = self.manager.trade_signals_handler(signals)
             for ticker in orderBook:
                 if self.debug:
-                    self.logger.info('Ordering {} {} stocks'.format(ticker, orderBook[ticker]))
+                    self.logger.notice('{} Ordering {} {} stocks'
+                            .format(self.datetime, ticker, orderBook[ticker]))
                 self.order(ticker, orderBook[ticker])
 
         # Save mavgs for later analysis.
@@ -90,6 +94,7 @@ class VolumeWeightAveragePrice(TradingAlgorithm):
     '''https://www.quantopian.com/posts/updated-multi-sid-example-algorithm-1'''
     def initialize(self, properties):
         # Common setup
+        self.save    = properties.get('save', 0)
         self.debug    = properties.get('debug', 0)
 
         # Here we initialize each stock.  Note that we're not storing integers; by
@@ -104,12 +109,21 @@ class VolumeWeightAveragePrice(TradingAlgorithm):
         # initializing the time variables we use for logging
         self.d = datetime.datetime(2005, 1, 10, 0, 0, 0, tzinfo=pytz.utc)
 
-        self.add_transform(MovingVWAP, 'vwap', market_aware=True, window_length=properties.get('window_length', 3))
+        self.add_transform(MovingVWAP, 'vwap', market_aware=True,
+                window_length=properties.get('window_length', 3))
 
     def handle_data(self, data):
         ''' ----------------------------------------------------------    Init   --'''
+        if self.initialized:
+            instruction = self.manager.update(
+                    self.portfolio,
+                    self.datetime.to_pydatetime(),
+                    self.perf_tracker.cumulative_risk_metrics.to_dict(),
+                    save=self.save,
+                    widgets=False)
+        else:
+            self.initialized = True
         signals = dict()
-        self.manager.update(self.portfolio, self.datetime.to_pydatetime())
 
         # Initializing the position as zero at the start of each frame
         notional = 0
@@ -145,7 +159,7 @@ class VolumeWeightAveragePrice(TradingAlgorithm):
             order_book = self.manager.trade_signals_handler(signals)
             for stock in order_book:
                 if self.debug:
-                    self.logger.info('{}: Ordering {} {} stocks'.format(self.datetime, stock, order_book[stock]))
+                    self.logger.notice('{}: Ordering {} {} stocks'.format(self.datetime, stock, order_book[stock]))
                 self.order(stock, order_book[stock])
                 notional = notional + price * order_book[stock]
 
@@ -156,6 +170,7 @@ class Momentum(TradingAlgorithm):
     !! Many transactions, so makes the algorithm explode when traded with many positions
     '''
     def initialize(self, properties):
+        self.save    = properties.get('save', 0)
         self.debug    = properties.get('debug', 0)
         window_length = properties.get('window_length', 3)
 
@@ -166,7 +181,15 @@ class Momentum(TradingAlgorithm):
 
     def handle_data(self, data):
         ''' ----------------------------------------------------------    Init   --'''
-        user_instruction = self.manager.update(self.portfolio, self.datetime.to_pydatetime(), save=True)
+        if self.initialized:
+            instruction = self.manager.update(
+                    self.portfolio,
+                    self.datetime.to_pydatetime(),
+                    self.perf_tracker.cumulative_risk_metrics.to_dict(),
+                    save=self.save,
+                    widgets=False)
+        else:
+            self.initialized = True
         signals = dict()
         notional = 0
 
@@ -217,7 +240,7 @@ class MovingAverageCrossover(TradingAlgorithm):
     def handle_data(self, data):
         ''' ----------------------------------------------------------    Init   --'''
         self.manager.update(self.portfolio, self.datetime.to_pydatetime())
-        #signals = dict()
+        signals = {}
 
         ''' ----------------------------------------------------------    Scan   --'''
         for ticker in data:

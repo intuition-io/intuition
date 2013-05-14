@@ -92,6 +92,7 @@ def delete_widget(dashboard_id, widget_id):
 #TODO Check for allowed values, like update_interval
 class Dashboard(object):
     properties = {}
+    positions_buffer = {}
 
     def __init__(self, id):
         '''
@@ -145,6 +146,24 @@ class Dashboard(object):
                 return delete_widget(widget['dashboard_id'], widget['id'])
         log.warning('Unabled to find widget with provided id')
         return {'messag': 'ressource not found'}
+
+    def update_position_widgets(current_positions):
+        for stock in current_positions:
+            amount = current_positions[stock].amount
+            stock = stock.replace(' ', '+')
+            if (amount == 0) and (stock in self.positions_buffer):
+                self.positions_buffer.pop(stock)
+                dashboard.del_widget(stock)
+            if (amount != 0) and (stock not in self.positions_buffer):
+                self.positions_buffer[stock] = amount
+                dashboard.add_number_widget(
+                        {'name': stock,
+                         'source': 'http_proxy',
+                         'proxy_url': 'http://127.0.0.1:8080/dashboard/number?data=Amount&table=Positions&field=Ticker&value={}'.format(stock),
+                         'proxy_value_path': ' ',
+                         'label': '$',
+                         'update_interval': '30',
+                         'use_metrics_suffix': True})
 
     def _build_proxy_url(self):
         '''

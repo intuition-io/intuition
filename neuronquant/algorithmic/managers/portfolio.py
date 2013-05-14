@@ -23,7 +23,40 @@ from neuronquant.utils import to_dict
 
 import zipline.protocol as zp
 
+from neuronquant.network.dashboard import Dashboard
 
+from neuronquant.tmpdata.extractor import Extractor
+extractor = Extractor('mysql://xavier:quantrade@localhost/stock_data')
+metrics_fields = ['Information', 'Returns', 'MaxDrawdown', 'SortinoRatio', 'Period', 'Volatility', 'BenchmarkVolatility', 'Beta', 'ExcessReturn', 'TreasuryReturns', 'SharpeRatio', 'Date', 'Alpha', 'BenchmarkReturns', 'Name']
+
+
+def save_metrics_snapshot(name, dt, cmr):
+    #TODO Save Transactions
+    #data = extractor('INSERT INTO Transactions () VALUES ()')
+    #TODO Save Orders
+    #data = extractor('INSERT INTO Orders () VALUES ()')
+    # Save Cumulative risk metrics
+    #NOTE Simple self.datetime enough ?
+    cmr['date'] = "'{}'".format(dt.strftime(format='%Y-%m-%d %H:%M'))
+    cmr['period_label'] = "'{}-30'".format(cmr['period_label'])
+    cmr['name'] = "'" + name + "'"
+    cmr.pop('trading_days')
+    for key in cmr:
+        #NOTE if isinstance(type(cmr[key]), float): cmr[key] = round(cmr[key], 4)
+        if cmr[key] is None:
+            cmr[key] = 0
+    query = 'INSERT INTO Metrics ({}) VALUES ({})'
+    extractor(query.format(', '.join(metrics_fields), ', '.join(map(str, cmr.values()))))
+
+
+def clean_previous_trades(portfolio_name):
+    extractor('DELETE FROM Positions WHERE PortfolioName=\'{}\''.format(portfolio_name))
+    extractor('DELETE FROM Portfolios where Name=\'{}\''.format(portfolio_name))
+    extractor('DELETE FROM Metrics where Name=\'{}\''.format(portfolio_name))
+    #TODO Clean previous widgets
+
+
+#FIXME Extractor is for test purpose, data module will change
 class PortfolioManager(object):
     '''
     Manages portfolio during simulation, and stays aware of the situation
@@ -63,7 +96,7 @@ class PortfolioManager(object):
         self.log       = logbook.Logger('Manager')
 
         # Easy mysql access
-        self.datafeed = DataFeed()
+        self.datafeed  = DataFeed()
 
         # Zipline portfolio object, updated during simulation with self.date
         self.portfolio = None
@@ -81,10 +114,18 @@ class PortfolioManager(object):
         # It's only possible with a running server
         self.android   = configuration.get('android', False) & self.connected
 
-        # Run the server if the engine didn't, while it is asked
+        # Delete from database data with the same portfolio name
+        if configuration.get('clean', True):
+            self.log.info('Cleaning previous trades.')
+            clean_previous_trades(self.name)
+
+        # Run the server if the engine didn't, while it is asked for
         if 'server' in configuration and self.connected:
             # Getting server object instanciated anyway before (by Setup object)
             self.server = configuration.pop('server')
+
+        # Web based dashboard where real time results are monitored (test: Sandbox<br>)
+        self.dashboard = Dashboard(self.name)
 
     @abc.abstractmethod
     def optimize(self):
@@ -93,7 +134,7 @@ class PortfolioManager(object):
         '''
         pass
 
-    def update(self, portfolio, date, save=False):
+    def update(self, portfolio, date, metrics=None, save=False, widgets=False):
         '''
         Actualizes the portfolio universe
         and if connected, sends it through the wires
@@ -113,6 +154,13 @@ class PortfolioManager(object):
         if save:
             self.save_portfolio(portfolio)
 
+        # Delete sold items and add new ones on dashboard
+        if widgets:
+            self.dashboard.update_position_widgets(self.portfolio.positions)
+
+        if metrics is not None:
+            save_metrics_snapshot(self.name, self.date, metrics)
+
         # Send portfolio object to client
         if self.connected:
             #NOTE Something smarter ?
@@ -122,8 +170,8 @@ class PortfolioManager(object):
                 packet_portfolio['positions'][pos] = to_dict(packet_portfolio['positions'][pos])
 
             self.server.send(packet_portfolio,
-                              type    = 'portfolio',
-                              channel = 'dashboard')
+                             type   ='portfolio',
+                             channel='dashboard')
 
             # Check user remote messages and return it
             return self.catch_messages()
