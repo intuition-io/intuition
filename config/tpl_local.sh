@@ -11,8 +11,7 @@ export QTRADE=$HOME/dev/projects/ppQuanTrade
 export ZIPLINE=$HOME/dev/projects/zipline
 export QTRADEDATA=$QTRADE/data
 export QTRADE_SQLITE=stocks.db
-export QTRADE_LOG=$HOME/.quantrade/quantrade.log
-export QTRADE_CONFIGURATION=local
+export QTRADE_LOG=$HOME/.quantrade/log/quantrade.log
 
 # For development: add zipline and neuronquant lib in python path
 export PYTHONPATH=$PYTHONPATH:$QTRADE:$ZIPLINE

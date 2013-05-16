@@ -36,7 +36,7 @@ def trade(mega_config):
 
     # Remote: ZMQ based messaging, route logs on the network
     # (catched by server's broker)
-    log_setup = get_nestedlog(level=configuration['log_level'])
+    log_setup = get_nestedlog(level=configuration['loglevel'], file=configuration['logfile'])
     with log_setup.applicationbound():
         # Backtest or live engine
         engine = Simulation()
@@ -87,7 +87,7 @@ root_configuration = {
         'exchange': 'paris',
         'db': 'test',
         'algorithm': 'StdBased',
-        'frequency': 'daily',
+        'frequency': 'minute',
         'manager': 'Constant',
         'start': '2011-01-10',
         'end': '2012-07-03',

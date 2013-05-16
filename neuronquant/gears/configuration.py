@@ -109,6 +109,9 @@ class Setup(object):
         parser.add_argument('-ll', '--loglevel',
                             action='store', default='WARNING',
                             required=False, help='File stream log level')
+        parser.add_argument('-lf', '--logfile',
+                            action='store', default='quantrade.log',
+                            required=False, help='File where store logs')
         parser.add_argument('-r', '--remote',
                             action='store_true',
                             help='Indicates if the program was ran manually or not')
@@ -137,6 +140,7 @@ class Setup(object):
                                 'exchange' : args.exchange,
                                 'cash'     : args.initialcash,
                                 'loglevel' : args.loglevel,
+                                'logfile'  : args.logfile,
                                 'remote'   : args.remote}
 
         return self.config_backtest

@@ -11,6 +11,10 @@ if [ $(whoami) != 'root' ]; then
     exit 1
 fi
 
+
+#pip install zipline
+#TODO Patch zipline !
+
 echo "Environment setup"
 #TODO Improve robustness
 echo "Creating project configuraiton directory: ~/.quantrade"

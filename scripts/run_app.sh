@@ -32,13 +32,14 @@ echo "C'est parti..."
 # Equitie backtest 
 if [ $choice == 1 ]; then
     time $QTRADE/application/app.py --initialcash 10000 --tickers random,20 \
-        --algorithm VWAP --manager Fair --start 2011-01-10 --end 2012-01-11 \
+        --algorithm BuyAndHold --manager Fair --start 2011-01-10 --end 2012-01-11 \
         --frequency daily --database backtest --exchange paris
 
 # Forex live test !
 elif [ $choice == 2 ]; then
-    time $QTRADE/application/app.py --initialcash 10000 --tickers EUR/USD,EUR/GBP,EUR/JPY \
-        --algorithm StdBased --manager Constant --end 23h \
+    #time $QTRADE/application/app.py --initialcash 10000 --tickers EUR/USD,EUR/GBP,EUR/JPY \
+    time $QTRADE/application/app.py --initialcash 10000 --tickers EUR/USD,EUR/GBP,GBP/USD,USD/CHF,EUR/JPY,EUR/CHF,USD/CAD,AUD/USD,GBP/JPY \
+        --algorithm BuyAndHold --manager Fair --end 23h \
         --database liveforex --exchange forex --frequency minute --live
 
 # Equitie live test !

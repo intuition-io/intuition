@@ -131,15 +131,10 @@ function dashboard(req, res, next) {
 };
 
 
-if (program.password == '') {
-    log('** Error: You must provide MySQL password');
-    process.exit(1);
-}
-
 var connection = mysql.createConnection({
     host     : program.server,
     user     : config.mysql.user,
-    password : program.password,
+    password : config.mysql.password,
     database : config.mysql.database
 });
 
@@ -161,6 +156,7 @@ server.use(restify.throttle({
     ip: true, // throttle based on source ip address
     overrides: {
         '127.0.0.1': {
+        //'192.168.0.12': {
             rate: 0, // unlimited
     burst: 0
         }
@@ -173,7 +169,9 @@ server.head('/auth/:name', authentification);  // Useless ?
 server.get('/dashboard/:widget', dashboard);
 
 var port = 8080;
+//var port = 4000;
 var ip = '127.0.0.1';
+//var ip = '192.168.0.12';
 server.listen(port, ip, function() {
     log(server.name + ' listening at ' + server.url);
 });

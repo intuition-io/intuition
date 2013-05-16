@@ -112,12 +112,12 @@ class DataLiveSource(DataSource):
         for dt in index:
             self._wait_for_dt(dt)
             while True:
-                log.debug('Waiting for Forex update')
                 currencies = self.forex.QueryTrueFX()
                 #if not currencies.empty:
                 if len(currencies.keys()) >= len(self.sids):
                     log.debug('New income data, fire an event !')
                     break
+                log.debug('Waiting for Forex update')
                 time.sleep(30)
 
             try:

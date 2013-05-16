@@ -46,7 +46,7 @@ def get_nestedlog(level='WARNING', file='quantrade.log', uri=None):
             logbook.NullHandler(level=logbook.DEBUG, bubble=True),
             logbook.StreamHandler(sys.stdout, level=logbook.INFO, format_string=log_format),
             logbook.StreamHandler(sys.stderr, level=logbook.ERROR, format_string=log_format),
-            logbook.FileHandler('/home/xavier/.quantrade/{}'.format(file), level=level),
+            logbook.FileHandler('/home/xavier/.quantrade/log/{}'.format(file), level=level),
         ])
 
     return log_setup

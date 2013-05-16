@@ -20,9 +20,10 @@ def forex_rates(user, password, pairs='', fmt='csv'):
 
 #FIXME 'Not authorized' mode works weird
 class ConnectTrueFX(object):
-    def __init__(self, user=None, password=None, auth_file='default.json', pairs='', fmt='csv'):
+    def __init__(self, user=None, password=None, auth_file='default.json', pairs=[], fmt='csv'):
         #NOTE Without authentification you still can acess some data
-        #FIXME Not authorized response prevent from downloading quotes. However later you indeed retrieve 10 defaults
+        #FIXME Not authorized response prevent from downloading quotes.
+        #      However later you indeed retrieve 10 defaults
         self._code = None
         if (user is None) or (password is None):
             log.info('No credentials provided, trying to read configuration file')
@@ -30,6 +31,7 @@ class ConnectTrueFX(object):
                 config   = json.load(open('/'.join([os.path.expanduser('~/.quantrade'), auth_file]), 'r'))['truefx']
                 user     = config['user']
                 password = config['password']
+                log.info('Found configuration: {}'.format(config))
             except:
                 log.error('** Loading configuration file, no authentification will be used')
                 user = password = ''
