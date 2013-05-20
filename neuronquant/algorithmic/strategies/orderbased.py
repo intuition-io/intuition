@@ -24,7 +24,7 @@ class AutoAdjustingStopLoss(TradingAlgorithm):
         self.debug = properties.get('debug', 0)
         self.base_price = properties.get('base_price', 10)
 
-        self.stock = {}
+        self.scale = {}
 
     def handle_data(self, data):
         ''' ----------------------------------------------------------    Init   --'''
@@ -46,7 +46,7 @@ class AutoAdjustingStopLoss(TradingAlgorithm):
 
             #NOTE New manager !
             #Check if this stock is already in portfolio
-            if sid in self.stock:
+            if sid in data:
                 #If it is in the portfolio, check if the sell price needs to be updated
                 purchase_price = self.portfolio.positions[sid].cost_basis
                 if purchase_price > 0:
@@ -54,12 +54,13 @@ class AutoAdjustingStopLoss(TradingAlgorithm):
                     sell_price = (1 - ((-r_o_r * .05) + .10)) * current_price
 
                     if r_o_r > 1.5:
-                        if (.9 * r_o_r) > self.stock[sid]:
-                            self.stock[sid] = (.9 * r_o_r)
+                        if (.9 * r_o_r) > data[sid]:
+                            data[sid] = (.9 * r_o_r)
 
                     elif r_o_r > 1:
-                        if (1.8 * purchase_price) > self.stock[sid]:
-                            self.stock[sid] = 1.8 * purchase_price
+                        if (1.8 * purchase_price) > data[sid]:
+                            data[sid] = 1.8 * purchase_price
+                        signals[sid] = current_price
                         self.order(sid, self.base_price)
                         message = "Bought 10 shares of %s sold for return of %.2f" % (sid, r_o_r)
                         self.logger.info(message)

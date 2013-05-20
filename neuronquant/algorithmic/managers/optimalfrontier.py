@@ -15,6 +15,7 @@
 
 
 import os
+import re
 
 import pandas as pd
 import rpy2.robjects as robjects
@@ -31,15 +32,16 @@ class OptimalFrontier(PortfolioManager):
 
         # R stuff: R functions file and rpy interface
         self.r = robjects.r
-        portfolio_opt_file = '/'.join((os.environ['QTRADE'], 'neuronquant/algorithmic/managers/opt_utils.R'))
+        portfolio_opt_file = '/'.join((os.environ['QTRADE'],
+            'neuronquant/algorithmic/managers/opt_utils.R'))
         self.r('source("{}")'.format(portfolio_opt_file))
 
     def optimize(self, date, to_buy, to_sell, parameters):
-        symbols     = []
         allocations = dict()
 
         # Considere only portfolio positions + future positions - positions about to be sold
-        positions = set([t for t in self.portfolio.positions.keys() if self.portfolio.positions[t].amount]).union(to_buy).difference(to_sell)
+        positions = set([t for t in self.portfolio.positions.keys()
+                         if self.portfolio.positions[t].amount]).union(to_buy).difference(to_sell)
         if not positions and to_sell:
             for t in to_sell:
                 allocations[t] = - parameters.get('perc_sell', 1.0)
@@ -50,32 +52,41 @@ class OptimalFrontier(PortfolioManager):
             self.log.error('** No positions determined')
         if len(positions) == 1:
             return {positions.pop(): parameters.get('max_weigths', 0.2)}, 0, 1
-        for p in positions:
-            symbols.append(self.datafeed.guess_name(p).lower())
 
-        loopback    = parameters.get('loopback', 50)
-        source      = parameters.get('source', 'yahoo')
-        start       = pd.datetime.strftime(date - pd.datetools.BDay(loopback), format = '%Y-%m-%d')
-        date        = pd.datetime.strftime(date, format = '%Y-%m-%d')
-        r_symbols   = self.r('c("{}")'.format('", "'.join(symbols)))
-        r_names     = self.r('c("{}.Return")'.format('.Return", "'.join(symbols)))
-        data        = self.r('importSeries')(r_symbols, start, date, source=source)
-        frontier = self.r('getEfficientFrontier')(data, r_names, points = 500, Debug   = False, graph = False)
+        if 'historical_prices' in parameters['algo']:
+            #TODO The converion needs dates, should get the complete dataframe
+            raise NotImplementedError()
+            returns = pd.rpy.common.convert_to_r_matrix(pd.DataFrame(parameters['algo']['historical_prices']))
+        else:
+            returns = self.remote.fetch_equities_daily(
+                positions, r_type=True, returns=True, indexes={},
+                start=date-pd.datetools.Day(parameters.get('loopback', 50)),
+                end=date)
+
+        frontier = self.r('getEfficientFrontier')(returns,
+            points=500, Debug=False, graph=False)
         if not frontier:
             self.log.warning('No optimal frontier found')
             return dict(), None, None
+
         try:
-            mp       = self.r('marketPortfolio')(frontier, 0.02, Debug      = False, graph = False)
+            mp = self.r('marketPortfolio')(frontier, 0.02, Debug=False, graph=False)
         except:
             self.log.error('** Error running R optimizer')
             return dict(), None, None
+
         self.log.debug('Allocation: {}'.format(mp))
         #FIXME Some key errors survive so far
-        for s, t in zip(symbols, positions):
-            allocations[t] = round(mp.rx('.'.join((s, 'Return')))[0][0], 2)
+        for p in positions:
+            #NOTE R change a bit names
+            try:
+                allocations[p] = round(mp.rx(re.sub("[-,!\ ]", ".", p))[0][0], 2)
+            except:
+                import ipdb; ipdb.set_trace()
+
         er   = round(mp.rx('er')[0][0], 2)
         eStd = round(mp.rx('eStd')[0][0], 2)
-        self.log.debug('Allocation: {}\nWith expected return: {}\tand expected risk: {}'.format(allocations, er, eStd))
+        self.log.info('Allocation: {} With expected return: {} and expected risk: {}'.format(allocations, er, eStd))
 
         return allocations, er, eStd
 

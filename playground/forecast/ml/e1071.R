@@ -368,3 +368,31 @@ getSVMFeatures = function(ohlcvData)
 {
     return ( svmFeatures(ohlcvData)[, c(1, 2)] )
 }
+
+predict = function(symbol, date=Sys.Date(), history=500)
+{
+    require(quantmod)
+    tt = get( getSymbols(symbol, from=date - history ) )
+
+    rets = na.trim( ROC( Cl( tt ), type="discrete" ) )
+
+    # only the first two features so that we may see some results in reasonable time
+    data = svmFeatures( tt )[,c(1,2)]
+
+    rets = rets[index(data)]
+    data = data[index(rets)]
+    stopifnot( NROW( rets ) == NROW( data ) )
+
+    forecast = svmComputeForecasts(
+                   data=data,
+                   history=500,
+                   response=rets,
+                   cores=4,
+                   trace=TRUE,
+                   modelPeriod="days",
+                   startDate="2012-03-09",
+                   endDate="2012-03-12",
+                   featureSelection="all" )
+    print(forecast)
+    return(forecast)
+}

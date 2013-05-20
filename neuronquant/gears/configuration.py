@@ -3,7 +3,7 @@ import logbook
 import os
 import json
 import pytz
-#from datetime import datetime
+import datetime
 from dateutil.parser import parse
 
 import neuronquant.network.transport as network
@@ -65,6 +65,7 @@ class Setup(object):
         return content[select_field] if select_field else content
 
     def parse_commandline(self):
+        #NOTE Use instead: https://github.com/docopt/docopt (no dictionnary transformation needed)
         '''
         Read command lines arguments and map them
         to a more usuable dictionnary
@@ -101,7 +102,7 @@ class Setup(object):
                             action='store', default='2006-01-01',
                             required=False, help='Start date of the backtester')
         parser.add_argument('-e', '--end',
-                            action='store', default='2010-1-12',
+                            action='store', default=datetime.date.strftime(datetime.date.today(), format='%Y-%m-%d'),
                             required=False, help='Stop date of the backtester')
         parser.add_argument('-ex', '--exchange',
                             action='store', default='',
@@ -238,7 +239,7 @@ def normalize_date_format(date):
     Return
         datetime.datetime utc tz aware object
     '''
-    assert isinstance(date, str)
+    assert isinstance(date, str) or isinstance(date, unicode)
     local_tz = pytz.timezone(_detect_timezone())
     local_dt = local_tz.localize(parse(date), is_dst=None)
     return local_dt.astimezone (pytz.utc)

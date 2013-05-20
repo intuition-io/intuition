@@ -22,6 +22,7 @@ import pandas
 #NOTE The post_func customs traditionnal data format, interesting
 class BollingerBands(TradingAlgorithm):
     def process_df(self, df):
+        import ipdb; ipdb.set_trace()
         #df = df.rename(columns={'Close': 'price'})
         #df = df.fillna(method='ffill')
         df['MA20']     = pandas.stats.moments.rolling_mean(df['price'], 20)

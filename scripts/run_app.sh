@@ -8,7 +8,7 @@ if [ $# -gt 0 ]; then
 else
     if [ $(hostname) != 'laptop-300E5A' ]; then
         # We are on the server, no gui menu, use command line
-        echo 'Provide a shorcut number [1..3]'
+        echo 'No gui available, Provide a shorcut number [1..3]'
         read choice
     else
         # Quick and dirty zenity menu
@@ -32,20 +32,19 @@ echo "C'est parti..."
 # Equitie backtest 
 if [ $choice == 1 ]; then
     time $QTRADE/application/app.py --initialcash 10000 --tickers random,20 \
-        --algorithm BuyAndHold --manager Fair --start 2011-01-10 --end 2012-01-11 \
+        --algorithm Gradient --manager Fair --start 2012-05-10 \
         --frequency daily --database backtest --exchange paris
 
 # Forex live test !
 elif [ $choice == 2 ]; then
-    #time $QTRADE/application/app.py --initialcash 10000 --tickers EUR/USD,EUR/GBP,EUR/JPY \
     time $QTRADE/application/app.py --initialcash 10000 --tickers EUR/USD,EUR/GBP,GBP/USD,USD/CHF,EUR/JPY,EUR/CHF,USD/CAD,AUD/USD,GBP/JPY \
         --algorithm BuyAndHold --manager Fair --end 23h \
         --database liveforex --exchange forex --frequency minute --live
 
 # Equitie live test !
 elif [ $choice == 3 ]; then
-    time $QTRADE/application/app.py --initialcash 10000 --tickers random,20 \
-        --algorithm StdBased --manager OptimalFrontier --end 22h \
+    time $QTRADE/application/app.py --initialcash 50000 --tickers random,20 \
+        --algorithm Rebalance --manager GMV --end 22h \
         --database live-equities --exchange nasdaq --frequency minute --live
 
 else

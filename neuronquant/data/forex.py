@@ -10,7 +10,7 @@ log = logbook.Logger('Forex')
 def forex_rates(user, password, pairs='', fmt='csv'):
     auth = requests.get('http://webrates.truefx.com/rates/connect.html?&q=ozrates&c={}&f={}&s=n'
                         .format(','.join(pairs), fmt),
-                        auth=('Gusabi', 'quantrade'))
+                        auth=(user, password))
 
     if auth.ok:
         log.debug('[{}] Request successful {}:{}'.format(auth.headers['date'], auth.reason, auth.status_code))

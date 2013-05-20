@@ -13,11 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#TODO move later utils function like mysql access in a didicated module (or somewhat common in R package design)
+#TODO move utils function like mysql access in a dedicated module (or somewhat common in R package design)
 
 # From http://statsadventure.blogspot.fr
 #TODO - transaction costs, turnover constraints
 
+#TODO Check for package to be installed
 suppressPackageStartupMessages(require(polynom))
 suppressPackageStartupMessages(require(fImport))
 suppressPackageStartupMessages(require(PerformanceAnalytics))
@@ -27,6 +28,7 @@ suppressPackageStartupMessages(require(RMySQL))
 suppressPackageStartupMessages(require(zoo))
 suppressPackageStartupMessages(require(futile.logger))
 suppressPackageStartupMessages(require(RJSONIO))
+suppressPackageStartupMessages(require(TTR))
 
 # Initial setup
 options(scipen=100)
@@ -68,7 +70,8 @@ downloadOneSerie = function (symbol, from, to) {
     CReturn     = paste(symbol, ".CReturn", sep   = "")
     
     # Calculate the Returns and put it on the time series
-    input.Return = returns(input[, adjClose])
+    #input.Return = returns(input[, adjClose])
+    input.Return = ROC(input[, adjClose])
     colnames(input.Return)[1] = inputReturn
     input = merge(input,input.Return)
     
@@ -119,7 +122,8 @@ serieFromDB <- function(symbol,
     CReturn     = paste(symbol, ".CReturn", sep   = "")
 
     # Calculate the Returns and put it on the time series
-    input.Return    = xts(returns(input), order.by=as.Date(inputTmp$Date))
+    #input.Return    = xts(returns(input), order.by=as.Date(inputTmp$Date))
+    input.Return    = xts(ROC(input), order.by=as.Date(inputTmp$Date))
     input           = merge(input, input.Return)
     colnames(input) = c(adjClose, inputReturn)
 
@@ -169,15 +173,16 @@ importSeries <- function(symbols,
 }
 
 #TODO Instead or 'error in this try', count errors and print a bilan
-getEfficientFrontier <- function(returns, returnNames, periods=255, points=500, maxWeight=.334, Debug=FALSE, graph=FALSE)
+getEfficientFrontier <- function(returns, periods=255, points=500, maxWeight=.334, Debug=FALSE, graph=FALSE)
 {
+    returnNames = colnames(returns)
     #create an empty data frame for the portfolio weights
     weights = data.frame(t(rep(NA,length(returnNames))))
     colnames(weights) = returnNames
     weights = weights[-1,]
 
     #Calculate Annualized Returns
-    t = table.AnnualizedReturns(returns[,returnNames])
+    t = table.AnnualizedReturns(returns)
 
     #Range to optimize over
     maxRet = max(t['Annualized Return',]) - .005
@@ -200,7 +205,8 @@ getEfficientFrontier <- function(returns, returnNames, periods=255, points=500, 
     }
 
     #portfolio.optim cannot have NA values in the time series, filter them out
-    m2 = removeNA(returns[,returnNames])
+    #m2 = removeNA(returns[,returnNames])
+    m2 = removeNA(returns)
     er = NULL
     eStd = NULL
 

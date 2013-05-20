@@ -33,6 +33,13 @@
         "debug": 1,
         "window_length": 6
     },
+    "Rebalance":
+    {
+        "debug": 1,
+        "save": 1,
+        "refresh_period": 10,
+        "window_length": 40
+    },
     "StdBased":
     {
         "debug": 1,
@@ -42,8 +49,8 @@
     },
     "HMM":
     {
-        "refresh_period": 300,
-        "window_length": 100
+        "refresh_period": 10,
+        "window_length": 300
     },
     "Follower":
     {
@@ -54,6 +61,7 @@
     {
         "debug": 1,
         "save": 0,
+        "rebalance_period": 15,
         "refresh_period": 1,
         "window_length": 60,
         "gradient_iterations": 5

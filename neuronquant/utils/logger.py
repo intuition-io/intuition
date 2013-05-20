@@ -46,7 +46,7 @@ def get_nestedlog(level='WARNING', file='quantrade.log', uri=None):
             logbook.NullHandler(level=logbook.DEBUG, bubble=True),
             logbook.StreamHandler(sys.stdout, level=logbook.INFO, format_string=log_format),
             logbook.StreamHandler(sys.stderr, level=logbook.ERROR, format_string=log_format),
-            logbook.FileHandler('/home/xavier/.quantrade/log/{}'.format(file), level=level),
+            logbook.FileHandler('{}/.quantrade/log/{}'.format(os.path.expanduser('~'), file), level=level),
         ])
 
     return log_setup
@@ -58,7 +58,7 @@ setup = NestedSetup([
     StreamHandler(sys.stdout, format_string=log_format),
     # then write messages that are at least warnings to to a logfile
     #FIXME FileHandler(os.environ['QTRADE_LOG'], level='WARNING'),
-    FileHandler('/home/xavier/.quantrade/quantrade.log', level='WARNING'),
+    FileHandler('{}/.quantrade/log/quantrade.log'.format(os.path.expanduser('~')), level='WARNING'),
     #Processor(inject_information)
 ])
 

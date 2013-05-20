@@ -2,7 +2,8 @@
 
 #require(e1071)
 require(quantmod)
-#require(parallel)
+require(parallel)
+require(multicore)
 
 source("e1071.R")
 

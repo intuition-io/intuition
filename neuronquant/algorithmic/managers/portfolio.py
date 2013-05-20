@@ -19,6 +19,7 @@ import logbook
 import json
 
 from neuronquant.data.datafeed import DataFeed
+from neuronquant.tmpdata.remote import Remote
 from neuronquant.utils import to_dict
 
 import zipline.protocol as zp
@@ -103,7 +104,7 @@ class PortfolioManager(object):
         self.date      = None
 
         # Portfolio owner, mainly use for database saving and client communication
-        self.name      = configuration.get('name', 'Chuck Norris')
+        self.name      = configuration.get('name', 'ChuckNorris')
 
         # Other parameters are used in user optimize() method
         self._optimizer_parameters = configuration
@@ -126,6 +127,9 @@ class PortfolioManager(object):
 
         # Web based dashboard where real time results are monitored (test: Sandbox<br>)
         self.dashboard = Dashboard(self.name)
+
+        # In case user optimization would need to retrieve more data
+        self.remote = Remote()
 
     @abc.abstractmethod
     def optimize(self):
@@ -153,13 +157,13 @@ class PortfolioManager(object):
 
         if save:
             self.save_portfolio(portfolio)
+            if metrics is not None:
+                save_metrics_snapshot(self.name, self.date, metrics)
 
         # Delete sold items and add new ones on dashboard
         if widgets:
             self.dashboard.update_position_widgets(self.portfolio.positions)
 
-        if metrics is not None:
-            save_metrics_snapshot(self.name, self.date, metrics)
 
         # Send portfolio object to client
         if self.connected:
@@ -177,7 +181,7 @@ class PortfolioManager(object):
             return self.catch_messages()
         return dict()
 
-    def trade_signals_handler(self, signals):
+    def trade_signals_handler(self, signals, extras={}):
         '''
         Process buy and sell signals from the simulation
         ___________________________________________________________
@@ -185,10 +189,13 @@ class PortfolioManager(object):
             signals: dict
                 hold stocks of interest, format like {"google": 567.89, "apple": -345.98}
                 If the value is negative -> sell signal, otherwize buy one
+            extras: whatever
+                Object sent from algorithm for certain managers
         ___________________________________________________________
         Return
             dict orderBook, like {"google": 34, "apple": -56}
         '''
+        self._optimizer_parameters['algo'] = extras
         orderBook       = dict()
 
         # If value < 0, it's a sell signal on the key, else buy signal
@@ -228,7 +235,7 @@ class PortfolioManager(object):
 
         if self.android and orderBook:
             # Alert user of the orders about to be processed
-            # Ok... kind of fancy
+            # Ok... kind of fancy method
             ords = {'-1': 'sell', '1': 'buy'}
             msg = 'QuanTrade suggests you to '
             msg += ', '.join(['{} {} stocks of {}'

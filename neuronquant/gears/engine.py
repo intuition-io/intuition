@@ -21,25 +21,22 @@ import logbook
 log = logbook.Logger('Engine')
 
 from neuronquant.algorithmic.strategies import (
-        StddevBased,
-        DualMovingAverage,
-        Momentum,
-        VolumeWeightAveragePrice,
-        BuyAndHold,
-        FollowTrend,
-        OLMAR,  # Mega Broken
-        MultiMA,  # Learning purpose
-        MovingAverageCrossover,  # prices hard coded, dummy
-        PredictHiddenStates, # Broken
-        StochasticGradientDescent, # Sell or buy every stocks every time
-        Pairtrade,  # Both stocks are hard coded
-        BollingerBands,  # Broken, pandas error
-        AutoAdjustingStopLoss
+    StddevBased,
+    DualMovingAverage,
+    Momentum,
+    RegularRebalance,
+    VolumeWeightAveragePrice,
+    BuyAndHold,
+    MovingAverageCrossover,
+    AutoAdjustingStopLoss,
+    FollowTrend,
+    StochasticGradientDescent
 )
 from neuronquant.algorithmic.managers import (
-        Constant,
-        Fair,
-        OptimalFrontier
+    Constant,
+    Fair,
+    GlobalMinimumVariance,
+    OptimalFrontier
 )
 from neuronquant.data.datafeed import DataFeed
 import neuronquant.utils.datautils as datautils
@@ -54,13 +51,12 @@ class BacktesterEngine(object):
     ''' Factory class wrapping zipline Backtester, returns the requested algo ready for use '''
     algorithms = {'DualMA'  : DualMovingAverage       , 'Momentum'   : Momentum,
                   'VWAP'    : VolumeWeightAveragePrice, 'BuyAndHold' : BuyAndHold,
-                  'StdBased': StddevBased             , 'OLMAR'      : OLMAR,
-                  'MultiMA' : MultiMA                 , 'MACrossover': MovingAverageCrossover,
-                  'Follower': FollowTrend             , 'HMM'        : PredictHiddenStates,
-                  'Gradient': StochasticGradientDescent, 'AASL'      : AutoAdjustingStopLoss,
-                  'Pairtrade': Pairtrade,                'Bollinger' : BollingerBands}
+                  'StdBased': StddevBased             , 'MACrossover': MovingAverageCrossover,
+                  'Follower': FollowTrend             , 'Gradient': StochasticGradientDescent,
+                  'AASL'      : AutoAdjustingStopLoss , 'Rebalance': RegularRebalance}
 
-    portfolio_managers = {'Fair': Fair, 'Constant': Constant, 'OptimalFrontier': OptimalFrontier}
+    portfolio_managers = {'Fair': Fair, 'Constant': Constant, 'OptimalFrontier': OptimalFrontier,
+                          'GMV' : GlobalMinimumVariance}
 
     def __new__(self, algo, manager, strategie_configuration):
         '''

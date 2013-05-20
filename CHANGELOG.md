@@ -4,6 +4,10 @@ Changelog
 13-05-2013
 ----------
 - Installation process improvement
+- New GMV portfolio, optimal frontier cleaning
+- tmpdata improvements
+- POO Grid, monitoring and logs integration
+- Algos and managers fixes
 
 23-04-2013
 ----------

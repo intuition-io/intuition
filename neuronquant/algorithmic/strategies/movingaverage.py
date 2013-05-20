@@ -95,7 +95,10 @@ class VolumeWeightAveragePrice(TradingAlgorithm):
     def initialize(self, properties):
         # Common setup
         self.save    = properties.get('save', 0)
-        self.debug    = properties.get('debug', 0)
+        self.debug   = properties.get('debug', 0)
+
+        self.buy_trigger = properties.get('buy_trigger', 0.995)
+        self.sell_trigger = properties.get('sell_trigger', 1.005)
 
         # Here we initialize each stock.  Note that we're not storing integers; by
         # calling sid(123) we're storing the Security object.
@@ -123,7 +126,8 @@ class VolumeWeightAveragePrice(TradingAlgorithm):
                     widgets=False)
         else:
             self.initialized = True
-        signals = dict()
+
+        signals = {}
 
         # Initializing the position as zero at the start of each frame
         notional = 0
@@ -144,9 +148,9 @@ class VolumeWeightAveragePrice(TradingAlgorithm):
             vwap = data[stock].vwap
             price = data[stock].price
 
-            if price < vwap * 0.995 and notional > self.min_notional:
+            if price < vwap * self.buy_trigger and notional > self.min_notional:
                 signals[stock] = price
-            elif price > vwap * 1.005 and notional < self.max_notional:
+            elif price > vwap * self.sell_trigger and notional < self.max_notional:
                 signals[stock] = - price
 
         # If this is the first trade of the day, it logs the notional.
@@ -159,7 +163,8 @@ class VolumeWeightAveragePrice(TradingAlgorithm):
             order_book = self.manager.trade_signals_handler(signals)
             for stock in order_book:
                 if self.debug:
-                    self.logger.notice('{}: Ordering {} {} stocks'.format(self.datetime, stock, order_book[stock]))
+                    self.logger.notice('{}: Ordering {} {} stocks'.format(
+                        self.datetime, stock, order_book[stock]))
                 self.order(stock, order_book[stock])
                 notional = notional + price * order_book[stock]
 
@@ -171,13 +176,13 @@ class Momentum(TradingAlgorithm):
     '''
     def initialize(self, properties):
         self.save    = properties.get('save', 0)
-        self.debug    = properties.get('debug', 0)
-        window_length = properties.get('window_length', 3)
+        self.debug   = properties.get('debug', 0)
 
         self.max_notional = 100000.1
         self.min_notional = -100000.0
 
-        self.add_transform(MovingAverage, 'mavg', ['price'], window_length=window_length)
+        self.add_transform(MovingAverage, 'mavg', ['price'],
+                window_length=properties.get('window_length', 3))
 
     def handle_data(self, data):
         ''' ----------------------------------------------------------    Init   --'''
@@ -203,9 +208,9 @@ class Momentum(TradingAlgorithm):
 
             # notional stuff are portfolio strategies, implement a new one, combinaison => parameters !
             if sma > price and notional > -0.2 * (capital_used + cash):
-                signals[ticker] = - price
-            elif sma < price and notional < 0.2 * (capital_used + cash):
                 signals[ticker] = price
+            elif sma < price and notional < 0.2 * (capital_used + cash):
+                signals[ticker] = - price
         
         ''' ----------------------------------------------------------   Orders  --'''
         if signals:
@@ -213,8 +218,8 @@ class Momentum(TradingAlgorithm):
             for ticker in order_book:
                 self.order(ticker, order_book[ticker])
                 if self.debug:
-                    self.logger.notice('{}: Ordering {} {} stocks'.format(self.datetime, ticker, order_book[ticker]))
-                    #self.logger.info('{}:  {} / {}'.format(self.datetime, sma, price))
+                    self.logger.notice('{}: Ordering {} {} stocks'.format(
+                        self.datetime, ticker, order_book[ticker]))
 
 
 class MovingAverageCrossover(TradingAlgorithm):
@@ -222,8 +227,9 @@ class MovingAverageCrossover(TradingAlgorithm):
     https://www.quantopian.com/posts/moving-average-crossover
     '''
     def initialize(self, properties):
-        self.debug    = properties.get('debug', 0)
-        #window_length = properties.get('window_length', 3)
+        self.debug = properties.get('debug', 0)
+        self.save  = properties.get('save', 0)
+
         self.fast = []
         self.slow = []
         self.medium = []
@@ -239,7 +245,17 @@ class MovingAverageCrossover(TradingAlgorithm):
 
     def handle_data(self, data):
         ''' ----------------------------------------------------------    Init   --'''
-        self.manager.update(self.portfolio, self.datetime.to_pydatetime())
+        if self.initialized:
+            user_instruction = self.manager.update(
+                    self.portfolio,
+                    self.datetime.to_pydatetime(), 
+                    self.perf_tracker.cumulative_risk_metrics.to_dict(),
+                    save=self.save,
+                    widgets=False)
+        else:
+            # Perf_tracker need at least a turn to have an index
+            self.initialized = True
+
         signals = {}
 
         ''' ----------------------------------------------------------    Scan   --'''
@@ -282,7 +298,7 @@ class MovingAverageCrossover(TradingAlgorithm):
 
                 if self.breakoutFilter > 5:
                     self.logger.info("ENTERING LONG POSITION")
-                    self.order(ticker, 100)
+                    signals[ticker] = data[ticker].price
 
                     self.holdingLongPosition = True
                     self.breakoutFilter = 0
@@ -297,7 +313,8 @@ class MovingAverageCrossover(TradingAlgorithm):
 
                 if self.breakoutFilter > 5:
                     self.logger.info("ENTERING SHORT POSITION")
-                    self.order(ticker, -100)
+                    #self.order(ticker, -100)
+                    signals[ticker] = - data[ticker].price
                     self.holdingShortPosition = True
                     self.breakoutFilter = 0
                     self.entryPrice = data[ticker].price
@@ -310,7 +327,7 @@ class MovingAverageCrossover(TradingAlgorithm):
                     and (fastMovingAverage < mediumMovingAverage))):
 
             if self.breakoutFilter > 5:
-                self.order(ticker, -100)
+                signals[ticker] = - data[ticker].price
                 self.holdingLongPosition = False
                 self.breakoutFilter = 0
             else:
@@ -320,40 +337,22 @@ class MovingAverageCrossover(TradingAlgorithm):
                 and ((fastMovingAverage > 0.0 and slowMovingAverage > 0.0)
                 and (fastMovingAverage > mediumMovingAverage))):
             if self.breakoutFilter > 5:
-                self.order(ticker, 100)
+                signals[ticker] = data[ticker].price
                 self.holdingShortPosition = False
                 self.breakoutFilter = 0
             else:
                 self.breakoutFilter += 1
-        ''' ----------------------------------------------------------   Orders  --'''
+        ''' ---------------------------------------------------   Orders  --'''
+        self.process_signals(signals)
 
+    def process_signals(self, signals):
+        if not signals:
+            return
 
-class MultiMA(TradingAlgorithm):
-    ''' This class is for learning zipline decorator only '''
-    #FIXME decorator screw everything
-    #https://www.quantopian.com/posts/batch-transform-testing-trailing-window-updated-minutely
-    #https://www.quantopian.com/posts/code-example-multi-security-batch-transform-moving-average
-    # batch transform decorator settings
-    R_P = 1   # refresh_period
-    W_L = 1   # window_length
+        order_book = self.manager.trade_signals_handler(signals)
 
-    def initialize(self, properties):
-        #tickers = [sid(21090), sid(698),sid(6872),sid(4415),sid(6119),\
-                #sid(8229),sid(39778),sid(14328),sid(630),sid(4313)]
-        self.debug    = properties.get('debug', 0)
-        self.window_length = properties.get('window_length', 3)
-
-    def handle_data(self, data):
-        self.manager.update(self.portfolio, self.datetime.to_pydatetime())
-        avgs = get_avg(refresh_period=1, window_length=3)
-        self.logger.debug('{}: avgs: {}'.format(self.datetime, avgs))
-
-
-#@batch_transform(refresh_period=R_P, window_length=W_L)
-#def get_avg(datapanel, refresh_period=R_P, window_length=W_L):
-@batch_transform
-def get_avg(data, refresh_period=1, window_length=3):
-    avgs = np.zeros(len(data))
-    for ticker in data:
-        avgs[ticker] = np.average(data[ticker].price)
-    return avgs
+        for ticker in order_book:
+            if self.debug:
+                self.logger.notice('{} Ordering {} {} stocks'.format(
+                    self.datetime, ticker, order_book[ticker]))
+            self.order(ticker, order_book[ticker])

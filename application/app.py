@@ -1,7 +1,8 @@
-#!/usr/bin/python
-# encoding: utf-8
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
 #
-# Copyright 2012 Xavier Bruhiere
+# Copyright © 2013 xavier <xavier@laptop-300E5A>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -136,11 +137,11 @@ if __name__ == '__main__':
         #FIXME irrelevant results if no transactions were ordered
         log.info('\n\nReturns: {}% / {}%\nVolatility: {} \
                 \nSharpe:\t\t{}\nMax drawdown:\t{}\n\n'.format(
-                risk_metrics['Returns'] * 100.0,
-                risk_metrics['Benchmark.Returns'] * 100.0,
-                risk_metrics['Volatility'],
-                risk_metrics['Sharpe.Ratio'],
-                risk_metrics['Max.Drawdown']))
+                round(risk_metrics['Returns'] * 100.0, 2),
+                round(risk_metrics['Benchmark.Returns'] * 100.0, 2),
+                round(risk_metrics['Volatility'], 2),
+                round(risk_metrics['Sharpe.Ratio'], 2),
+                round(risk_metrics['Max.Drawdown'], 2)))
 
         # If we work in local, draw a quick summary plot
         #FIXME futils.logger can no longer be used, so those scripts crash

@@ -1,0 +1,12 @@
+exports.config = {
+  nodeName: "wallstreet",
+  logStreams: {
+    quantrade: [
+      {% block logs %}{% endblock %}
+    ]
+  },
+  server: {
+    host: '192.168.0.17',
+    port: 28777
+  }
+}

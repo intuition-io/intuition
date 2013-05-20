@@ -38,6 +38,8 @@ class Constant(PortfolioManager):
                 Symbols to sell triggered by the strategie signals
             parameters: dict(...)
                 Custom user parameters
+                An algo field in it stores data from the user-
+                defined algorithm
         _____________________________________________
         Return:
             allocations: dict(...)
@@ -49,13 +51,24 @@ class Constant(PortfolioManager):
             e_risk: float
                 Expected risk
         '''
-        allocations = dict()
+        if 'scale' in parameters['algo']:
+            is_scaled = True
+        else:
+            is_scaled = False
+        allocations = {}
         # Process every stock the same way
         for s in to_buy:
+            quantity = parameters.get('buy_amount', 100)
+            if is_scaled:
+                quantity *= parameters['algo']['scale'][s]
             # Allocate defined amount to buy
-            allocations[s] = parameters.get('buy_amount', 100)
+            allocations[s] = quantity
         for s in to_sell:
-            allocations[s] = - parameters.get('sell_amount', self.portfolio.positions[s].amount)
+            quantity = parameters.get('sell_amount', self.portfolio.positions[s].amount)
+            if is_scaled:
+                quantity *= parameters['algo']['scale'][s]
+            # Allocate defined amount to buy
+            allocations[s] = - quantity
 
         # Defaults values
         e_ret = 0

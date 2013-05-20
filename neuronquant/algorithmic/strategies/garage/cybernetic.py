@@ -20,9 +20,6 @@ import pandas
 import math
 
 
-Stock1 = ''
-
-
 @batch_transform
 def get_MinMax(datapanel):
     global Stock1
@@ -36,26 +33,35 @@ def get_MinMax(datapanel):
 #https://www.quantopian.com/posts/john-ehlers-fischer-transform?utm_source=All+Active+Members&utm_campaign=9887b9670f-13-04-24-backtested-thurs-send&utm_medium=email
 class FischerTransform(TradingAlgorithm):
     def initialize(self, properties):
-        global Stock1
-        self.Stock1 = 'goog'
+        self.save = properties.get('save', 0)
+        self.debug = properties.get('debug', 0)
+
+        self.extrems_transform = get_MinMax(
+                refresh_period=properties.get('refresh_period', 10),
+                window_length=properties.get('window_length', 40),
+                compute_only_full=False)
+
         self.qty = 100
         #Stock1 = int(str(self.Stock1)[9:-1])
 
     def handle_data(self, data):
-        result = get_MinMax(data)
+        import ipdb; ipdb.set_trace()
+        result = self.extrems_transform.handle_data(data)
         if result is None:
             return
-        min = result['Min'][19]
-        max = result['Max'][19]
+        min = result['Min'][-1]
+        max = result['Max'][-1]
         mid = min + (max - min) / 2
-        diff = data[self.Stock1].price - mid
-        transform = (2 * math.exp(diff) - 1) / (2 * math.exp(diff) + 1)
-        if transform > 0.9999:
-            transform = 1
-        elif transform < -0.9999:
-            transform = -1
-        self.record(Transform=transform)
-        self.order_handling(self, data, transform)
+
+        for sid on data:
+            diff = data[sid].price - mid
+            transform = (2 * math.exp(diff) - 1) / (2 * math.exp(diff) + 1)
+            if transform > 0.9999:
+                transform = 1
+            elif transform < -0.9999:
+                transform = -1
+            self.record(Transform=transform)
+            self.order_handling(self, data, transform)
 
     def order_handling(self, data, transform):
         if transform == -1:

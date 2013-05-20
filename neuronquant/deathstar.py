@@ -68,11 +68,14 @@ def get_configuration(changes={}, backtest=True):
                 config['strategie'][category][item] = value
 
     # Check for normalzation
-    if isinstance(config['configuration']['start'], str):
+    if isinstance(config['configuration']['start'], unicode) or isinstance(config['configuration']['start'], str):
         config['configuration']['start'] = normalize_date_format(config['configuration']['start'])
-    if isinstance(config['configuration']['end'], str):
+    if isinstance(config['configuration']['end'], unicode) or isinstance(config['configuration']['end'], str):
         config['configuration']['end'] = normalize_date_format(config['configuration']['end'])
-    if isinstance(config['configuration']['tickers'], str):
+        print '-'*100
+        print config['configuration']['end']
+        print '-'*100
+    if isinstance(config['configuration']['tickers'], unicode) or isinstance(config['configuration']['tickers'], str):
         config['configuration']['tickers'] = smart_tickers_select(config['configuration']['tickers'])
     return config
 
@@ -80,7 +83,7 @@ def get_configuration(changes={}, backtest=True):
 root_configuration = {
     'configuration': {
         'cash': 10000,
-        'loglevel': 'WARNING',
+        'loglevel': 'INFO',
         'logfile': 'quantrade.log',
         'tickers': 'random,4',
         'port': 5555,

@@ -70,7 +70,7 @@ def filter_market_hours(dates, exchange):
     elif exchange == 'tokyo':
         selector = ((dates.hour > 0) & (dates.hour < 6))
     elif exchange == 'nasdaq' or exchange == 'nyse':
-        selector = ((dates.hour > 14) & (dates.hour < 21)) | ((dates.hour == 14) & (dates.minute > 31))
+        selector = ((dates.hour > 13) & (dates.hour < 21)) | ((dates.hour == 13) & (dates.minute > 31))
     else:
         # Forex or Unknown market, return as is
         return dates

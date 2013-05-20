@@ -51,7 +51,10 @@ function get_dashboard_request(type, table, target, selector, from, to, callback
     // For now at least, only retrieve last value, and check if it is positive
     // order by Id: well not always indexed by Id ? (date)
     connection.query(statement, function(err, rows, fields) {
-        if (err) throw err;
+        //if (err) throw err;
+        if (err || rows.length == 0)
+            return;
+            
         if (type === 'boolean')
             result = (rows[0][target] > 0 ? true : false);
         else if (type === 'number')

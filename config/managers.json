@@ -17,6 +17,16 @@
         "connected": 0,
         "sell_amount": 70
     },
+    "GMV":
+    {
+        "name": "showcase",
+        "leverage": 1,
+        "load_backup": 0,
+        "connected": 0,
+        "android": 0,
+        "perc_sell": 1.0,
+        "max_weight": 0.3
+    }
     "OptimalFrontier":
     {
         "name": "xavier",

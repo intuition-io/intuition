@@ -25,18 +25,29 @@ import numpy as np
 class BuyAndHold(TradingAlgorithm):
     '''Simpliest algorithm ever, just buy a stock at the first frame'''
     #NOTE test of a new configuration passing
-    def initialize(self, *args, **kwargs):
-        #NOTE You can't use it here, no self.manager yet. Issue ? Could configure every common parameters in Backtester engine
+    def initialize(self, properties):
+        #NOTE can't use it here, no self.manager yet. Issue ?
+        #     Could configure every common parameters in Backtester engine
         #     and use setupe_strategie as an update
         #self.manager.setup_strategie({'commission_cost': self.commission.cost})
-        pass
+        self.debug = properties.get('debug', False)
+        self.save = properties.get('save', False)
 
     def handle_data(self, data):
         ''' ----------------------------------------------------------    Init   --'''
-        user_instruction = self.manager.update(self.portfolio, self.datetime.to_pydatetime(), save=False)
-        self.process_instruction(user_instruction)
+        if self.initialized:
+            user_instruction = self.manager.update(
+                    self.portfolio,
+                    self.datetime.to_pydatetime(),
+                    self.perf_tracker.cumulative_risk_metrics.to_dict(),
+                    save=self.save,
+                    widgets=False)
+            self.process_instruction(user_instruction)
+        else:
+            # Perf_tracker need at least a turn to have an index
+            self.initialized = True
 
-        signals = dict()
+        signals = {}
 
         ''' ----------------------------------------------------------    Scan   --'''
         #self.logger.notice(self.portfolio)
@@ -49,7 +60,9 @@ class BuyAndHold(TradingAlgorithm):
         if signals:
             orderBook = self.manager.trade_signals_handler(signals)
             for stock in orderBook:
-                self.logger.notice('{}: Ordering {} {} stocks'.format(self.datetime, stock, orderBook[stock]))
+                if self.debug:
+                    self.logger.notice('{}: Ordering {} {} stocks'.format(
+                        self.datetime, stock, orderBook[stock]))
                 self.order(stock, orderBook[stock])
 
     def process_instruction(self, instruction):
@@ -59,7 +72,8 @@ class BuyAndHold(TradingAlgorithm):
         if instruction:
             self.logger.info('Processing user instruction')
             if (instruction['command'] == 'order') and ('amount' in instruction):
-                self.logger.error('{}: Ordering {} {} stocks'.format(self.datetime, instruction['amount'], instruction['asset']))
+                self.logger.error('{}: Ordering {} {} stocks'.format(
+                    self.datetime, instruction['amount'], instruction['asset']))
 
     #NOTE self.done flag could be used to avoid in zipline waist of computation
     #TODO Anyway should find a more elegant way
@@ -90,14 +104,35 @@ def ols_transform(data):
 # http://nbviewer.ipython.org/4631031
 class FollowTrend(TradingAlgorithm):
     def initialize(self, properties):
-        self.ols_transform = ols_transform(refresh_period=properties.get('refresh_period', 1),
-                window_length=properties.get('window_length', 50),
-                fields='price')
+
+        self.debug = properties.get('debug', False)
+        self.save = properties.get('save', False)
+
+        self.buy_trigger = properties.get('buy_trigger', .4)
+        self.sell_trigger = properties.get('sell_trigger', -self.buy_trigger)
+        self.buy_leverage = properties.get('buy_leverage', 50)
+        self.sell_leverage = properties.get('sell_leverage', self.buy_leverage)
+
+        self.ols_transform = ols_transform(
+            refresh_period=properties.get('refresh_period', 1),
+            window_length=properties.get('window_length', 50),
+            fields='price')
         self.inter = 0
         self.slope = 0
 
     def handle_data(self, data):
-        #self.manager.update(self.portfolio, self.datetime.to_pydatetime(), save=False)
+
+        if self.initialized:
+            user_instruction = self.manager.update(
+                    self.portfolio,
+                    self.datetime.to_pydatetime(), 
+                    self.perf_tracker.cumulative_risk_metrics.to_dict(),
+                    save=self.save,
+                    widgets=False)
+        else:
+            # Perf_tracker need at least a turn to have an index
+            self.initialized = True
+
         self.buy = self.sell = False
 
         coeffs = self.ols_transform.handle_data(data)
@@ -111,13 +146,104 @@ class FollowTrend(TradingAlgorithm):
         for sid in data:
             self.inter, self.slope = coeffs[sid]
 
-            if self.slope >= .4:
-                self.order(sid, self.slope * 50)
+            if self.slope >= self.buy_trigger:
+                self.order(sid, self.slope * self.buy_leverage)
                 self.buy = True
-            if self.slope <= -.4:
-                self.order(sid, self.slope * 50)
+            if self.slope <= -self.sell_triger:
+                self.order(sid, self.slope * self.sell_leverage)
                 self.sell = True
 
         self.record(slope=self.slope,
                 buy=self.buy,
                 sell=self.sell)
+
+
+class RegularRebalance(TradingAlgorithm):
+
+    # https://www.quantopian.com/posts/global-minimum-variance-portfolio?c=1
+    # For this example, we're going to write a simple momentum script.  When the 
+    # stock goes up quickly, we're going to buy; when it goes down quickly, we're
+    # going to sell.  Hopefully we'll ride the waves.
+
+    # To run an algorithm in Quantopian, you need two functions: initialize and 
+    # handle_data.
+
+
+    def initialize(self, properties):
+  
+        self.debug = properties.get('debug', False)
+        self.save = properties.get('save', False)
+
+        #This is the lookback window that the entire algorithm depends on in days
+        self.refresh_period = properties.get('refresh_period', 10)
+        self.returns_transform = get_past_returns(
+                refresh_period=self.refresh_period,
+                window_length=properties.get('window_length', 40),
+                compute_only_full=False)
+
+        #Set day
+        self.day = 0
+     
+        # Set Max and Min positions in security
+        self.max_notional = 1000000.1
+        self.min_notional = -1000000.0
+        #Set commission
+        #self.set_commission(commission.PerTrade(cost=7.95))
+
+    def handle_data(self, data):
+
+        self.day += 1
+
+        if self.initialized:
+            user_instruction = self.manager.update(
+                    self.portfolio,
+                    self.datetime.to_pydatetime(),
+                    self.perf_tracker.cumulative_risk_metrics.to_dict(),
+                    save=self.save,
+                    widgets=False)
+        else:
+            # Perf_tracker need at least a turn to have an index
+            self.initialized = True
+
+        signals = {}
+
+        #get 20 days of prices for each security
+        daily_returns = self.returns_transform.handle_data(data)
+
+        #circuit breaker in case transform returns none
+        if daily_returns is None:
+            return
+        #circuit breaker, only calculate every 20 days
+        if self.day % self.refresh_period is not 0:
+            return
+
+        #reweight portfolio
+        for i, sid in enumerate(data):
+            signals[sid] = data[sid].price
+
+        self.process_signals(signals, historical_prices=daily_returns)
+
+    def process_signals(self, signals, **kwargs):
+        if not signals:
+            return
+
+        order_book = self.manager.trade_signals_handler(
+                signals, kwargs)
+
+        for sid in order_book:
+            if self.debug:
+                self.logger.notice('{} Ordering {} {} stocks'
+                        .format(self.datetime, sid, order_book[sid]))
+            self.order(sid, order_book[sid])
+
+
+@batch_transform
+def get_past_returns(data):
+    '''
+    Parameters: data
+        pandas.panel (major: index, minor: sids)
+    '''
+    returns_df = data['price'].pct_change()
+    # Because of return calculation, first raw is nan
+    #FIXME nan values remain anyway
+    return np.nan_to_num(returns_df.values[1:])
