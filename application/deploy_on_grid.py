@@ -19,6 +19,7 @@
 
 from fabric.colors import red, blue, cyan
 
+import os
 import time
 import argparse
 import logbook
@@ -59,6 +60,7 @@ def parse_command_line():
 
 
 if __name__ == '__main__':
+    os.system('clear')
     #TODO Multi-host support
     #TODO Local run, transparently
     args = parse_command_line()
@@ -80,9 +82,13 @@ if __name__ == '__main__':
         completion_logs
     )
 
-    processes_done = 0
-    living_processes = len(remote_processes)
-    while living_processes:
+    os.system('chromium-browser http://192.168.0.17:28778 &')
+    time.sleep(3)
+    os.system('chromium-browser http://192.168.0.12:4000 &')
+
+    processes_done = set()
+    living_processes = set(remote_processes.keys())
+    while len(living_processes):
         print cyan('-' * 60)
         if args.monitor:
             cpu_infos = json.loads(monitor_server.getCpu())
@@ -90,17 +96,18 @@ if __name__ == '__main__':
             log.info(red('User cpu use: {}'.format(cpu_infos['user'])))
             log.info(red(json.loads(monitor_server.getLoad())))
             msg = 'Alive rate: {} / {}'
-            log.info(red(msg.format(living_processes, len(remote_processes))))
+            log.info(red(msg.format(len(living_processes),
+                                    len(remote_processes))))
 
         for id, process in remote_processes.iteritems():
             log.info(blue('[{}] Uptime   {}'.format(id, process.elapsed)))
             log.info(blue('[{}] Progress {}'.format(id, process.progress)))
             if process.ready():
-                processes_done += 1
-                living_processes -= 1
+                processes_done.add(id)
+                living_processes.remove(id)
                 msg = '[{}] Done with status: {}'
                 log.info(red(msg.format(id, process.successful())))
-                log.info(blue(process.get()))
+                grid.on_end(id, process)
             print cyan('--')
 
         time.sleep(args.heartbeat)

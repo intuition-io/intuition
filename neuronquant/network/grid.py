@@ -25,7 +25,7 @@ from fabric.colors import red, blue
 import logbook
 log = logbook.Logger('Grid::Main')
 
-from IPython.parallel import Client
+from IPython.parallel import Client, error
 
 import neuronquant.network.fabfile as fab
 
@@ -33,10 +33,16 @@ import xmlrpclib
 import time
 import os
 import json
+from datetime import datetime
 
 
 class Grid(object):
+    report_path = os.path.expanduser('~/.quantrade/report.md')
+    nodes = []
+    active_drones = set()
+
     def __init__(self):
+        #NOTE Should clean previous report_path ?
         # Intercept CTRL-C
         SignalManager()
 
@@ -69,9 +75,9 @@ class Grid(object):
         #TODO Better Wait for controller and engines to be started
         # Create ipython.parallel interface
         self.nodes = Client()
-        log.info(blue('%d components to run' % len(components)))
         while len(self.nodes.ids) < len(components):
-            log.info(blue('%d node(s) online' % len(self.nodes.ids)))
+            log.info(blue('%d node(s) online / %d' %
+                     (len(self.nodes.ids), len(components))))
             time.sleep(4)
         log.info(blue('%d node(s) online' % len(self.nodes.ids)))
 
@@ -116,7 +122,7 @@ class Grid(object):
                 completion_logs['logfiles'].append({'name': name + '.log'})
 
             # Run remote process
-            remote_processes[name] = node.apply(trade, config)
+            remote_processes[name] = node.apply_async(trade, config)
 
         return remote_processes, completion_logs, completion_dashboard
 
@@ -142,6 +148,16 @@ class Grid(object):
             monitor_server = None
 
         return monitor_server
+
+    def on_end(self, id, process):
+        #log.error(process.get_dict())
+        #log.error(process.r)
+        try:
+            log.info(process.get())
+        except error.RemoteError, e:
+            log.error('Process {} ended with an exception: {}'.format(id, e))
+            with open(self.report_path, "a") as f:
+                f.write('[{}] {} - {}\n'.format(datetime.now(), id, e))
 
     def __del__(self):
         log.info(blue('Shutting down grid computer'))

@@ -70,7 +70,7 @@ def generate_dashboards(completion):
     fd.write(document)
     fd.close()
 
-    #FIXME with cd('~/openlibs/team_dashboard'):
+    #FIXME with cd('/home/xavier/openlibs/team_dashboard'):
     with hide('output'):
         local('cd {} && rake cleanup'.format(dashboard_path))
         local('cd {} && rake custom_populate'.format(dashboard_path))
@@ -78,10 +78,11 @@ def generate_dashboards(completion):
             dashboard_path, utils.get_ip()))
 
 
-#FIXME Should be installed on controller on only ran here
+#FIXME Should be installed on controller and only ran here
 @parallel
 @roles('nodes')
 def run_logserver():
+    run('rm /home/xavier/.quantrade/log/*')
     run('log.io-server')
 
 
@@ -151,7 +152,7 @@ def activate_restserver():
     log.info(blue('Waking up REST server on %(host)s' % env))
     #TODO Passwor read from default.json
     with hide('output'):
-        run('/home/xavier/dev/projects/ppQuanTrade/server/rest_server.js -p quantrade')
+        run('/home/xavier/dev/projects/ppQuanTrade/server/rest_server.js')
 
 
 def deploy_grid(engines_per_host=1, monitor=False):
@@ -165,6 +166,7 @@ def deploy_grid(engines_per_host=1, monitor=False):
         p.start()
 
     execute(activate_controller)
+
     p = Process(target=execute, args=(activate_restserver,))
     p.start()
     for i in range(engines_per_host):

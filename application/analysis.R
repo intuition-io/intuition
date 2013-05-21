@@ -33,10 +33,10 @@ option_list <- list(
         action = "store_true", default = FALSE,
         help   = "Print extra output"),
     make_option(c("-s", "--source"), 
-        action = "store_true", default = "mysql",
+        action = "store_true", default = "backtest",
         type   = "character" ,help     = "Type of source where there is data to process"),
     make_option(c("-t", "--table"), 
-        action = "store_true", default = "test",
+        action = "store_true", default = "backtest",
         type   = "character" ,help     = "MySQL or SQLite database table to analyse")
     )
 

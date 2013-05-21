@@ -31,6 +31,8 @@ class StochasticGradientDescent(TradingAlgorithm):
 
         self.rebalance_period = properties.get('rebalance_period', 5)
 
+        self.loops = 0
+
         #FIXME Should be set
         self.capital_base = properties.get('capital_base', 10000.0)
         self.bet_amount    = self.capital_base
@@ -42,6 +44,7 @@ class StochasticGradientDescent(TradingAlgorithm):
             window_length=properties.get('window_length', 60))
 
     def handle_data(self, data):
+        self.loops += 1
         ''' ----------------------------------------------------------    Init   --'''
         if self.initialized:
             instruction = self.manager.update(
@@ -74,7 +77,7 @@ class StochasticGradientDescent(TradingAlgorithm):
             notional = self.portfolio.positions[stock].amount * current_Prices
 
             if indicator >= 0 and notional < self.max_notional \
-                              and self.perf_tracker.day_count % self.rebalance_period == 0:
+                              and self.loops % self.rebalance_period == 0:
                 #TODO indicator should be used to pondrate
                 #     However it is much too small 
                 signals[stock] = current_Prices
@@ -82,7 +85,7 @@ class StochasticGradientDescent(TradingAlgorithm):
                 #self.logger.notice("[%s] %f shares of %s bought." % (self.datetime, self.capital_base * indicator * 10000, stock))
 
             if indicator < 0 and notional > self.min_notional \
-                             and self.perf_tracker.day_count % self.rebalance_period == 0:
+                             and self.loops % self.rebalance_period == 0:
                 signals[stock] = - current_Prices
                 #self.order(stock, indicator * self.capital_base * 10000)
                 #self.logger.notice("[%s] %f shares of %s sold." % (self.datetime, self.capital_base * indicator * 10000, stock))

@@ -20,7 +20,10 @@ from neuronquant.gears.configuration import (
     normalize_date_format, smart_tickers_select
 )
 
-
+#from IPython.parallel import require
+#from neuronquant.gears.engine import Simulation
+#from neuronquant.utils.logger import get_nestedlog
+#@require(Simulation, get_nestedlog)
 def trade(mega_config):
     '''
     One function to rule them all
@@ -72,9 +75,6 @@ def get_configuration(changes={}, backtest=True):
         config['configuration']['start'] = normalize_date_format(config['configuration']['start'])
     if isinstance(config['configuration']['end'], unicode) or isinstance(config['configuration']['end'], str):
         config['configuration']['end'] = normalize_date_format(config['configuration']['end'])
-        print '-'*100
-        print config['configuration']['end']
-        print '-'*100
     if isinstance(config['configuration']['tickers'], unicode) or isinstance(config['configuration']['tickers'], str):
         config['configuration']['tickers'] = smart_tickers_select(config['configuration']['tickers'])
     return config
@@ -82,7 +82,7 @@ def get_configuration(changes={}, backtest=True):
 
 root_configuration = {
     'configuration': {
-        'cash': 10000,
+        'cash': 50000,
         'loglevel': 'INFO',
         'logfile': 'quantrade.log',
         'tickers': 'random,4',

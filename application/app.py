@@ -144,7 +144,7 @@ if __name__ == '__main__':
                 round(risk_metrics['Max.Drawdown'], 2)))
 
         # If we work in local, draw a quick summary plot
-        #FIXME futils.logger can no longer be used, so those scripts crash
+        #FIXME R 3.0.0 apprently broke the script
         sys.exit()
         if not configuration['remote']:
             data = returns_df.drop(['Returns', 'Benchmark.Returns'], axis=1)

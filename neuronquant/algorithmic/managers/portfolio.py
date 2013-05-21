@@ -94,7 +94,6 @@ class PortfolioManager(object):
                 (server and constraints), and for user optimizer function
         '''
         super(PortfolioManager, self).__init__()
-        self.log       = logbook.Logger('Manager')
 
         # Easy mysql access
         self.datafeed  = DataFeed()
@@ -103,8 +102,9 @@ class PortfolioManager(object):
         self.portfolio = None
         self.date      = None
 
-        # Portfolio owner, mainly use for database saving and client communication
+        # Portfolio owner, mainly used for database saving and client communication
         self.name      = configuration.get('name', 'ChuckNorris')
+        self.log       = logbook.Logger('Manager::' + self.name)
 
         # Other parameters are used in user optimize() method
         self._optimizer_parameters = configuration
@@ -125,7 +125,8 @@ class PortfolioManager(object):
             # Getting server object instanciated anyway before (by Setup object)
             self.server = configuration.pop('server')
 
-        # Web based dashboard where real time results are monitored (test: Sandbox<br>)
+        # Web based dashboard where real time results are monitored
+        #FIXME With dynamic generation, dashboad never exists at this point
         self.dashboard = Dashboard(self.name)
 
         # In case user optimization would need to retrieve more data

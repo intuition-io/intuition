@@ -33,7 +33,11 @@ class BuyAndHold(TradingAlgorithm):
         self.debug = properties.get('debug', False)
         self.save = properties.get('save', False)
 
+        self.loops = 0
+
     def handle_data(self, data):
+        self.loops += 1
+        signals = {}
         ''' ----------------------------------------------------------    Init   --'''
         if self.initialized:
             user_instruction = self.manager.update(
@@ -47,12 +51,8 @@ class BuyAndHold(TradingAlgorithm):
             # Perf_tracker need at least a turn to have an index
             self.initialized = True
 
-        signals = {}
-
-        ''' ----------------------------------------------------------    Scan   --'''
-        #self.logger.notice(self.portfolio)
-        if not self.initialized:
-            self.initialized = True
+        if self.loops == 2:
+            ''' ------------------------------------------------------    Scan   --'''
             for ticker in data:
                 signals[ticker] = data[ticker].price
 
@@ -149,7 +149,7 @@ class FollowTrend(TradingAlgorithm):
             if self.slope >= self.buy_trigger:
                 self.order(sid, self.slope * self.buy_leverage)
                 self.buy = True
-            if self.slope <= -self.sell_triger:
+            if self.slope <= -self.sell_trigger:
                 self.order(sid, self.slope * self.sell_leverage)
                 self.sell = True
 

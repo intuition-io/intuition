@@ -64,7 +64,7 @@ class BacktesterEngine(object):
         '''
         # CHecking if algorithm and manager the user asks for are available
         if algo not in BacktesterEngine.algorithms:
-            # If could be the algo object itself
+            # It could be the algo object itself
             #NOTE Pretty ugly... temporary
             if type(algo) == type:
                 BacktesterEngine.algorithms['CUSTOM'] = algo
@@ -76,18 +76,23 @@ class BacktesterEngine(object):
         if (manager) and (manager not in BacktesterEngine.portfolio_managers):
             raise NotImplementedError('Manager {} not available or implemented'.format(manager))
 
-        #NOTE Other params: annualizer (default is cool), capital_base, sim_params (both are set in run function)
-        trading_algorithm = BacktesterEngine.algorithms[algo](properties=strategie_configuration['algorithm'])
+        #NOTE Other params: annualizer (default is cool), capital_base,
+        #     sim_params (both are set in run function)
+        trading_algorithm = BacktesterEngine.algorithms[algo](
+                properties=strategie_configuration['algorithm'])
                 #capital_base=10000.0, data_frequency='minute')
 
         trading_algorithm.capital_base = 10
-        trading_algorithm.set_logger(logbook.Logger(algo))
+        #trading_algorithm.set_logger(logbook.Logger(algo))
+        trading_algorithm.set_logger(logbook.Logger(
+            'Algo::' + strategie_configuration['manager'].get('name', 'ChuckNorris')))
 
         # Use of a portfolio manager
         if manager:
             log.info('Manager {} available, getting a reference and initializing it.'.format(manager))
             # Linking to the algorithm the configured portfolio manager
-            trading_algorithm.manager = BacktesterEngine.portfolio_managers[manager](strategie_configuration['manager'])
+            trading_algorithm.manager = BacktesterEngine.portfolio_managers[manager](
+                    strategie_configuration['manager'])
 
             # If requested and possible, load the named portfolio to start trading with it
             #FIXME Works, but every new event resets the portfolio

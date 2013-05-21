@@ -90,7 +90,7 @@ class DataLiveSource(DataSource):
         #while datetime.datetime.now(pytz.utc) < dt:
         now = datetime.datetime.now(pytz.utc)
         while now < dt:
-            log.info('Waiting for {} / {}'.format(now, dt))
+            log.debug('Waiting for {} / {}'.format(now, dt))
             time.sleep(15)
             now = datetime.datetime.now(pytz.utc)
 

@@ -428,7 +428,7 @@ class Client(object):
         #if asset not in session:
             #asset = session.query(Equity).get(asset.Ticker)
         #NOTE This prints ensure the assetQuotes persistence
-        log.info('Got infos: {}'.format(asset))
+        log.debug('Got infos: {}'.format(asset))
         session.close()
         return asset
 

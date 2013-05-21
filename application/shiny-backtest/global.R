@@ -18,9 +18,9 @@ if (!suppressPackageStartupMessages(require(quantmod))) {
     stop("This app requires the quantmod package. To install it, run 'install.packages(\"quantmod\")'.\n")
 }
 
-#if (!suppressPackageStartupMessages(require(futile.logger))) {
-    #stop("This app requires the futile.logger package. To install it, run 'install.packages(\"futile.logger\")'.\n")
-#}
+if (!suppressPackageStartupMessages(require(futile.logger))) {
+    stop("This app requires the futile.logger package. To install it, run 'install.packages(\"futile.logger\")'.\n")
+}
 
 # This file defined json network bridge with R
 source(paste(Sys.getenv('QTRADE'), 'application/shiny-backtest/RClientInterface.R', sep='/'))
@@ -64,7 +64,7 @@ assignInNamespace(
   "PerformanceAnalytics"
 )
 
-getFromSQLite <- function(name='test', database='stocks.db', debug=FALSE)
+getFromSQLite <- function(name='backtest', database='stocks.db', debug=FALSE)
 {
     ## Data = c(strategie, peers, indexes)
     dbRoot <- Sys.getenv('QTRADEDATA')
@@ -105,9 +105,9 @@ getFromSQLite <- function(name='test', database='stocks.db', debug=FALSE)
 }
 
 # Access to backtest perfs stored in MySQL database
-getMetricsFromMySQL <- function(dataId,                # Table the backtest saved metrics
+getMetricsFromMySQL <- function(dataId,                   # Table the backtest saved metrics
                                 dbfile  = 'default.json', # Json mysql configuration file
-                                overall = FALSE,       # When True, get final perfs, monthly otherwise
+                                overall = FALSE,          # When True, get final perfs, monthly otherwise
                                 debug   = FALSE)
 {
     # Getting database user settings
@@ -139,7 +139,7 @@ getMetricsFromMySQL <- function(dataId,                # Table the backtest save
         summary(input)
     }
     # monthly perfs are time series, casting it in suitable type data: xts
-	if ( !overall )
+	if ( !overall && length(input) != 0)
     	input =  xts(subset(input, select=-c(Name, Period, Id)), order.by=as.Date(input$Period))
 
 	return(input)
@@ -147,11 +147,11 @@ getMetricsFromMySQL <- function(dataId,                # Table the backtest save
 
 #TODO Add dates selection
 # Common interface to access data
-getTradeData <- function(dataId   = 'test',       # Table to access
-                         source   = 'sqlite',     # Type of data store
-                         config   = 'default.json',  # MySQL configuraiotn file
-                         database = 'stocks.db',  # SQLite database name
-                         overall  = FALSE,        # Final or monthly perfs
+getTradeData <- function(dataId   = 'backtest',       # Table to access
+                         source   = 'mysql',          # Type of data store
+                         config   = 'default.json',   # MySQL configuraiotn file
+                         database = 'stocks.db',      # SQLite database name
+                         overall  = FALSE,            # Final or monthly perfs
                          debug    = FALSE)
 {
     if (source == 'sqlite')
@@ -161,7 +161,7 @@ getTradeData <- function(dataId   = 'test',       # Table to access
 
     else if (source == 'mysql')
     {
-        perfs <- getMetricsFromMySQL(dataId, dbfile=config, overall=overall, debug=debug)
+        perfs <- getMetricsFromMySQL(dataId=dataId, dbfile=config, overall=overall, debug=debug)
     }
 
     if (debug)
@@ -171,7 +171,6 @@ getTradeData <- function(dataId   = 'test',       # Table to access
         flog.info('...')
         tail(perfs)
     }
-
     return(perfs)
 }
 
@@ -220,7 +219,7 @@ Distributions <- function(series)
 
 test <- function()
 {
-    perfs = getTradeData(dataId='test', source='mysql')
+    perfs = getTradeData(dataId='backtest', source='mysql')
     ## ============================    Cleaning    ============================= ##
     quit(save="no", status=0)
 }
@@ -229,5 +228,5 @@ test <- function()
 # It has to match the returns period
 #riskfree <- .04/12  # My bank CD
 #data <- NULL
-data <- getTradeData(dataId='test', source='mysql')
+data <- getTradeData(dataId='backtest', source='mysql')
 riskfree <- mean(data[, 'TreasuryReturns'])

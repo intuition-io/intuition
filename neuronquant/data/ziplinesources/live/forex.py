@@ -115,7 +115,7 @@ class DataLiveSource(DataSource):
                 currencies = self.forex.QueryTrueFX()
                 #if not currencies.empty:
                 if len(currencies.keys()) >= len(self.sids):
-                    log.debug('New income data, fire an event !')
+                    log.info('New income data, fire an event !')
                     break
                 log.debug('Waiting for Forex update')
                 time.sleep(30)
@@ -132,7 +132,6 @@ class DataLiveSource(DataSource):
                         'ask': currencies[sid]['Ask.Price'],
                         'high': currencies[sid]['High'],
                         'low': currencies[sid]['Low'],
-                        #'price': currencies[sid]['Bid.Price'],
                         'volume': 10000
                     }
                     yield event

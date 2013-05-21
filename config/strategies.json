@@ -9,7 +9,8 @@
     },
     "BuyAndHold":
     {
-        "useless": "nothing"
+        "save": 1,
+        "debug": 1
     },
     "VWAP":
     {
@@ -17,21 +18,10 @@
         "save": 0,
         "window_length": 3
     },
-    "MultiMA":
-    {
-        "debug": 1,
-        "window_length": 3
-    },
     "MACrossover":
     {
         "debug": 1,
         "window_length": 3
-    },
-    "OLMAR":
-    {
-        "eps": 1,
-        "debug": 1,
-        "window_length": 6
     },
     "Rebalance":
     {
@@ -46,11 +36,6 @@
         "save": 1,
         "stddev_window": 9,
         "vwap_window": 5
-    },
-    "HMM":
-    {
-        "refresh_period": 10,
-        "window_length": 300
     },
     "Follower":
     {
@@ -70,13 +55,6 @@
         "debug": 1,
         "save": 0,
         "base_price": 50
-    },
-    "Pairtrade": {},
-    "Bollinger": {
-        "debug": 1,
-        "save": 0,
-        "quantity": 400,
-        "stddev_limit": 1.75
     },
     "Momentum":
     {
