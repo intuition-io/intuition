@@ -1,12 +1,12 @@
 exports.config = {
-  nodeName: "wallstreet",
+  nodeName: "{{ nodename }}",
   logStreams: {
     quantrade: [
       {% block logs %}{% endblock %}
     ]
   },
   server: {
-    host: '192.168.0.17',
+    host: "{{ server_ip }}",
     port: 28777
   }
 }

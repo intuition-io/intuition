@@ -37,16 +37,15 @@ if [ $choice == 1 ]; then
 
 # Forex live test !
 elif [ $choice == 2 ]; then
-    #time $QTRADE/application/app.py --initialcash 10000 --tickers EUR/USD,EUR/GBP,GBP/USD,USD/CHF,EUR/JPY,EUR/CHF,USD/CAD,AUD/USD,GBP/JPY \
-    time $QTRADE/application/app.py --initialcash 50000 --tickers EUR/USD,EUR/GBP,GBP/USD,EUR/JPY,USD/CAD,AUD/USD,GBP/JPY \
-        --algorithm VWAP --manager Constant --end 23h \
+    time $QTRADE/application/app.py --initialcash 10000 --tickers EUR/USD,EUR/GBP,GBP/USD,USD/CHF,EUR/JPY,EUR/CHF,USD/CAD,AUD/USD,GBP/JPY \
+        --algorithm BuyAndHold --manager Constant --end 23h \
         --database liveforex --exchange forex --frequency minute --live
 
 # Equitie live test !
 elif [ $choice == 3 ]; then
     time $QTRADE/application/app.py --initialcash 50000 --tickers random,20 \
-        --algorithm BuyAndHold --manager Fair --end 22h \
-        --database live-equities --exchange paris --frequency minute --live
+        --algorithm BuyAndHold --manager Fair --end 22h --loglevel DEBUG \
+        --database live-equities --exchange nasdaq --frequency minute --live
 
 else
     echo '** Error: invalid simulation number provided: ' $choice

@@ -8,6 +8,7 @@ Changelog
 - tmpdata improvements
 - POO Grid, monitoring and logs integration
 - Algos and managers fixes
+- Multi nodes deployment
 
 23-04-2013
 ----------

@@ -18,9 +18,10 @@
 
 from neuronquant.deathstar import trade, get_configuration
 from neuronquant.utils.signals import SignalManager
+from neuronquant.utils.utils import get_ip
 
 from fabric.api import execute
-from fabric.colors import red, blue
+from fabric.colors import green, blue
 
 import logbook
 log = logbook.Logger('Grid::Main')
@@ -37,9 +38,11 @@ from datetime import datetime
 
 
 class Grid(object):
-    report_path = os.path.expanduser('~/.quantrade/report.md')
+    report_path = os.path.expanduser('~/.quantrade/report')
     nodes = []
-    active_drones = set()
+    hosts = []
+    active_engines = set()
+    default_glances_port = 61209
 
     def __init__(self):
         #NOTE Should clean previous report_path ?
@@ -53,17 +56,16 @@ class Grid(object):
 
         if zeroconfig:
             #TODO nmap network scan, results dumped into scan.xml
-            #TODO Read, store all known ips, check for unix system,
-            #     quant installed
-            raise NotImplementedError
+            #TODO Read, store all known ips, check for unix system
+            raise NotImplementedError()
         else:
             from fabfile import global_config
-            hosts = global_config['grid']['nodes']
+            self.hosts = global_config['grid']['nodes']
             self.root_name = global_config['grid']['name']
             self.root_port = global_config['grid']['port']
 
-        #NOTE Repartition according power ?
-        engines_per_host = int(len(components) / len(hosts))
+        #NOTE Repartition according available power ?
+        engines_per_host = int(len(components) / len(self.hosts))
 
         # Push and merge local changes on remote repos
         if push_app:
@@ -75,11 +77,24 @@ class Grid(object):
         #TODO Better Wait for controller and engines to be started
         # Create ipython.parallel interface
         self.nodes = Client()
+        buffer_count = -1
+        stuck_warning = 0
         while len(self.nodes.ids) < len(components):
+            #FIXME Sometimes get stuck waiting forever all nodes to be online
             log.info(blue('%d node(s) online / %d' %
                      (len(self.nodes.ids), len(components))))
-            time.sleep(4)
-        log.info(blue('%d node(s) online' % len(self.nodes.ids)))
+            time.sleep(5)
+            if len(self.nodes.ids) == buffer_count:
+                log.warning('No new nodes...')
+                stuck_warning += 1
+                if stuck_warning == 7:
+                    log.error('** Could not run every engines')
+                    #NOTE Running manually missing ones make it work...
+                    #import ipdb; ipdb.set_trace()
+                    #import sys
+                    #sys.exit(1)
+            buffer_count = len(self.nodes.ids)
+        log.info(green('Nodes ready.'))
 
         return components
 
@@ -87,7 +102,7 @@ class Grid(object):
         # Useful dicts, see below
         remote_processes = {}
         completion_dashboard = {'panel': []}
-        completion_logs = {'logfiles': []}
+        completion_logs = {ip: {'logfiles': []} for ip in self.hosts}
 
         # For each node:
         for i, node in enumerate(self.nodes):
@@ -103,25 +118,31 @@ class Grid(object):
             config['configuration']['logfile'] = name + '.log'
             config['configuration']['port'] = self.root_port + i
 
-            log.info(blue('Running trade system on node %d (%s)' % (i, name)))
-
             #NOTE do node object have the IP adress ?
             #     Seems not but access to node.targets, map them to ip ?
+            remote_ip = node.apply_sync(get_ip)
             completion_dashboard['panel'].append(
                 {
                     'i': i, 'title': name,
-                    'proxy_ip': '192.168.0.17',
+                    'proxy_ip': remote_ip,
                     'portfolio': name
                 }
             )
 
             # Trick to handle json strucutre (last coma of the line)
-            if i == len(self.nodes) - 1:
-                completion_logs['last'] = name + '.log'
+            if i >= len(completion_logs[remote_ip]['logfiles']) \
+                    and 'nodename' not in completion_logs[remote_ip]:
+                completion_logs[remote_ip]['last'] = name + '.log'
+                completion_logs[remote_ip]['nodename'] = remote_ip
+                completion_logs[remote_ip]['server_ip'] = get_ip()
             else:
-                completion_logs['logfiles'].append({'name': name + '.log'})
+                completion_logs[remote_ip]['logfiles'].append({'name': name + '.log'})
 
             # Run remote process
+            #NOTE Try not to run it simultanuously
+            time.sleep(5)
+            log.info(blue('Running trade system on node %d::%s (%s)'
+                          % (i, remote_ip, name)))
             remote_processes[name] = node.apply_async(trade, config)
 
         return remote_processes, completion_logs, completion_dashboard
@@ -141,22 +162,21 @@ class Grid(object):
         # Monitoring servers and remote processes
         # API: https://github.com/nicolargo/glances/wiki/The-Glances-API-How-To
         if glances_server:
-            monitor_server = xmlrpclib.ServerProxy('http://192.168.0.17:61209')
-            msg = '{} cores available on remote host'
-            log.info(red(msg.format(monitor_server.getCore())))
+            monitor_server = xmlrpclib.ServerProxy('http://{}:{}'.format(
+                self.hosts[0], self.default_glances_port))
+            #msg = '{} cores available on remote host'
+            #FIXME Not supported: log.info(red(msg.format(monitor_server.getCore())))
         else:
             monitor_server = None
 
         return monitor_server
 
     def on_end(self, id, process):
-        #log.error(process.get_dict())
-        #log.error(process.r)
         try:
             log.info(process.get())
         except error.RemoteError, e:
             log.error('Process {} ended with an exception: {}'.format(id, e))
-            with open(self.report_path, "a") as f:
+            with open('.'.join((self.report_path, self.hosts[0], 'md')), "a") as f:
                 f.write('[{}] {} - {}\n'.format(datetime.now(), id, e))
 
     def __del__(self):

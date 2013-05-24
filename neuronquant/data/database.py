@@ -18,13 +18,18 @@
 
 import csv
 from datetime import date, timedelta, datetime
-from models import Base, Equity, Index, Quote, IdxQuote, Metrics, Performances, Portfolio, Position
+from models import (
+    Base, Equity, Index, Quote, IdxQuote,
+    Metrics, Performances, Portfolio, Position
+)
 from numpy import array
+import numpy as np
 from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import and_
 
 import os
+import sys
 import json
 import yahoofinance as quotes
 
@@ -43,7 +48,11 @@ class Database(object):
         # Handle edge case here
         log.info('Reading QuanTrade MySQL configuration...')
         #NOTE Make it global
-        sql = json.load(open('/'.join((os.path.expanduser('~/.quantrade'), 'default.json')), 'r'))['mysql']
+        try:
+            sql = json.load(open('/'.join((os.path.expanduser('~/.quantrade'), 'default.json')), 'r'))['mysql']
+        except ValueError, e:
+            log.error('** Loading mysql configuration: {}'.format(e))
+            sys.exit(1)
         if sql['password'] == '':
             log.warn('No password provided')
             engine_config = 'mysql://%s@%s/%s' % (sql['user'],
@@ -231,7 +240,7 @@ class Manager(object):
 
     def check_portfolio_exists(self, name, session=None):
         """
-        Return true if stock is already in database
+        Return true if portfolio is already in database
         """
         newsession = False
         if session is None:
@@ -250,7 +259,8 @@ class Manager(object):
             newsession = True
             session = self.db.Session()
         stocks = array([stock.Ticker for stock in session.query(Equity).all()])
-        stocks.extend(array([stock.Ticker for stock in session.query(Index).all()]))
+        #stocks.extend(array([stock.Ticker for stock in session.query(Index).all()]))
+        stocks = np.append(stocks, array([stock.Ticker for stock in session.query(Index).all()]))
         if newsession:
             session.close()
         return stocks
@@ -324,11 +334,12 @@ class Client(object):
 
         positions = json.loads(str(portfolio.positions).replace('Position(', '').replace(')', '').replace("'", '"'))
         assert isinstance(positions, dict)
+        #FIXME In remote mode with lot of portfolios: make it crash !
         for ticker in positions:
             positions[ticker]['name'] = name
             positions[ticker]['date'] = date
             session.add(Position(**positions[ticker]))
-            #FIXME bug: 'not list-like object', but not an issue ?
+            #NOTE bug: 'not list-like object', but not an issue ?
             #pf_object.Positions = Position(**positions[ticker])
                                            #name=name,
                                            #ticker='pouet',

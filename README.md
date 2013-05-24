@@ -17,6 +17,9 @@ tools to mix languages like Python, node.js and R and a financial library.
 You will find some goodies like machine learning forecast, markowitz portfolio optimization, genetic optimization, sentiment analysis from twitter, ...
 
 
+![Dashboard](https://raw.github.com/Gusabi/ppQuanTrade/master/management/QuantDashboard.png)
+
+
 Features
 --------
 

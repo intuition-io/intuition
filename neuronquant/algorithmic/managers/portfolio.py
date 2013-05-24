@@ -272,7 +272,7 @@ class PortfolioManager(object):
                 ndict portfolio object to store
         ___________________________________________
         '''
-        self.log.info('Saving portfolio in database')
+        self.log.debug('Saving portfolio in database')
         self.datafeed.stock_db.save_portfolio(portfolio, self.name, self.date)
 
     def load_portfolio(self, name):
@@ -287,7 +287,7 @@ class PortfolioManager(object):
             The portfolio with the given name if found,
             None otherwize
         '''
-        self.log.info('Loading portfolio from database')
+        self.log.info('Loading portfolio {} from database'.foramt(name))
         # Get the portfolio as a pandas Serie
         db_pf = self.datafeed.saved_portfolios(name)
 

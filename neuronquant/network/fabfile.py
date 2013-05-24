@@ -23,6 +23,7 @@ from fabric.api import (
     run, local, env, execute,
     parallel, roles, hide, sudo)
 from fabric.colors import blue
+from fabric.context_managers import shell_env
 
 from multiprocessing import Process
 import time
@@ -34,12 +35,20 @@ log = logbook.Logger('Grid::Fabric')
 import jinja2
 
 
-templates_path = '/home/xavier/dev/projects/ppQuanTrade/scripts/templates'
+#TODO A function to scan all of this ?
+templates_path = '/home/xavier/dev/projects/ppQuanTrade/config/templates'
 dashboard_path = '/home/xavier/openlibs/team_dashboard'
 engines_path = '/home/xavier/.config/ipython/profile_default/security/ipcontroller-engine.json'
+node_path = "/home/xavier/.nvm/v0.10.7/lib/node_modules"
 
 global_config = json.load(open(os.path.expanduser('~/.quantrade/default.json'), 'r'))
 
+#http://docs.fabfile.org/en/1.4.3/usage/env.html#full-list-of-env-vars
+#env.forward_agent = True
+#env.key_filename = [""]
+env.user = global_config['grid']['name']
+env.password = global_config['grid']['password']
+env.hosts = global_config['grid']['nodes']
 env.roledefs = {
     'controller': global_config['grid']['controller'],
     'nodes': global_config['grid']['nodes']
@@ -55,7 +64,8 @@ def activate_controller():
             utils.get_ip(public=False)))
         #FIXME env.host=localhost
         time.sleep(2)
-        local('scp {} {}@{}:dev/'.format(engines_path, env.user, '192.168.0.17'))
+        for target_ip in env.hosts:
+            local('scp {} {}@{}:dev/'.format(engines_path, env.user, target_ip))
 
 
 @roles('controller')
@@ -63,7 +73,7 @@ def generate_dashboards(completion):
     log.info(blue('Generating dashboards on local machine'))
     env = jinja2.Environment(
         loader=jinja2.FileSystemLoader(templates_path))
-    template = env.get_template('build_core.rake')
+    template = env.get_template('dashboard_block.tpl')
     log.info(blue('Rendering templates'))
     document = template.render(completion)
     fd = open('{}/lib/tasks/populate.rake'.format(dashboard_path), 'w')
@@ -80,35 +90,40 @@ def generate_dashboards(completion):
 
 #FIXME Should be installed on controller and only ran here
 @parallel
-@roles('nodes')
+@roles('controller')
 def run_logserver():
-    run('rm /home/xavier/.quantrade/log/*')
-    run('log.io-server')
+    #run('rm /home/xavier/.quantrade/log/report*')
+    local('log.io-server')
 
 
 @parallel
 @roles('nodes')
 def run_logharvester():
-    run('log.io-harvester')
+    #time.sleep(10)
+    #NOTE I could run it on local as well to inspect report files
+    #run('rm /home/xavier/.quantrade/log/*')
+    local('scp {}/{}-harvester.conf {}@{}:.log.io/harvester.conf'.format(
+        templates_path, env.host, env.user, env.host))
+    #with hide('output'):
+    with shell_env(NODE_PATH=node_path):
+        run('log.io-harvester')
 
 
-def activate_logserver(completion):
-    #TODO integrate ip in the template
+def activate_logserver(completions_dict):
+    #TODO integrate server ip in the template
     #TODO Clean previous log files
-    log.info(blue('Running log watcher on remote machine'))
-    env = jinja2.Environment(
-        loader=jinja2.FileSystemLoader(templates_path))
-    template = env.get_template('template.logs')
-    log.info(blue('Rendering templates'))
-    document = template.render(completion)
-    fd = open('{}/harvester.conf'.format(templates_path), 'w')
-    fd.write(document)
-    fd.close()
+    for remote_ip, completion in completions_dict.iteritems():
+        log.info(blue('Running log watcher on remote machine'))
+        env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(templates_path))
+        template = env.get_template('logs_block.tpl')
+        log.info(blue('Rendering templates'))
+        document = template.render(completion)
+        fd = open('{}/{}-harvester.conf'.format(templates_path, remote_ip), 'w')
+        fd.write(document)
+        fd.close()
 
     #with hide('output'):
-    local('scp {}/harvester.conf {}@{}:.log.io/'.format(
-        templates_path, 'xavier', '192.168.0.17'))
-        #FIXME templates_path, env.user, env.host))
     p = Process(target=execute, args=(run_logserver,))
     p.start()
     time.sleep(2)
@@ -150,18 +165,17 @@ def activate_monitoring():
 @roles('nodes')
 def activate_restserver():
     log.info(blue('Waking up REST server on %(host)s' % env))
-    #TODO Passwor read from default.json
-    with hide('output'):
-        run('/home/xavier/dev/projects/ppQuanTrade/server/rest_server.js')
+    #with hide('output'):
+    with shell_env(NODE_PATH=node_path, NODE_CONFIG_DIR='/home/xavier/.quantrade/'):
+        run('node /home/xavier/dev/projects/ppQuanTrade/server/rest_server.js')
 
 
 def deploy_grid(engines_per_host=1, monitor=False):
-    LAUNCH_DELAY = 3
     log.info(blue('Deploying grid-tradesystem', bold=True))
 
     if monitor:
         #NOTE A daemon decorator ?
-        #NOTE Or use dtach shell command, or pty=False
+        #NOTE Or use dtach shell command
         p = Process(target=execute, args=(activate_monitoring,))
         p.start()
 
@@ -169,7 +183,9 @@ def deploy_grid(engines_per_host=1, monitor=False):
 
     p = Process(target=execute, args=(activate_restserver,))
     p.start()
+
     for i in range(engines_per_host):
-        time.sleep(LAUNCH_DELAY)
+        # Many parallel engines at the same time make it crash
+        time.sleep(1)
         p = Process(target=execute, args=(activate_node,))
         p.start()

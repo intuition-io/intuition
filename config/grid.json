@@ -1,96 +1,24 @@
 {"components": [
     {
-        "exchange": "paris",
+        "exchange": "nasdaq",
         "cash": 50000,
         "algorithm": "Gradient",
         "manager": "Fair",
         "tickers": "random,20",
         "debug": 1,
         "save": 1,
-        "loglevel": "NOTICE",
-        "end": "17h",
-        "refresh_period": 1,
-        "window_length": 30,
-        "rebalance_period": 5
-    },
-    {
-        "manager": "Constant"
-    },
-    {
-        "algorithm": "BuyAndHold",
-        "manager": "Fair"
-    },
-    {
-        "algorithm": "Rebalance",
-        "manager": "GMV",
-        "refresh_period": 5
-    },
-    {
-        "manager": "Fair"
-    },
-    {
-        "algorithm": "Momentum",
-        "manager": "OptimalFrontier",
-        "window_length": 5
-    },
-    {
-        "manager": "Fair"
-    },
-    {
-        "algorithm": "VWAP",
-        "manager": "Constant",
-        "window_length": 3
-    },
-    {
-        "manager": "GMV"
-    },
-    {
-        "algorithm": "StdBased",
-        "manager": "Fair",
-        "stddev_window": 9,
-        "vwap_window": 5
-    },
-    {
-        "manager": "Constant"
-    },
-    {
-        "manager": "GMV"
-    },
-    {
-        "algorithm": "Follower",
-        "refresh_period": 1,
-        "window_length": 50
-    },
-    {
-        "algorithm": "MACrossover",
-        "manager": "OptimalFrontier",
-        "window_length": 3
-    },
-    {
-        "algorithm": "DualMA",
-        "manager": "OptimalFrontier",
-        "long_window": 30,
-        "short_window": 10
-    },
-    {
-        "manager": "Constant",
-        "short_window": 20
-    },
-    {
-        "exchange": "forex",
-        "algorithm": "Gradient",
-        "manager": "Fair",
-        "tickers": "EUR/USD,EUR/GBP,GBP/USD,USD/CHF,EUR/JPY,EUR/CHF,USD/CAD,AUD/USD,GBP/JPY",
-        "debug": 1,
-        "save": 1,
         "loglevel": "INFO",
-        "end": "17h",
+        "end": "22h",
         "refresh_period": 1,
+        "clean": 0,
         "window_length": 30,
         "rebalance_period": 5
     },
     {
         "manager": "Constant"
+    },
+    {
+        "manager": "OptimalFrontier"
     },
     {
         "algorithm": "BuyAndHold",
@@ -108,9 +36,6 @@
         "algorithm": "Momentum",
         "manager": "OptimalFrontier",
         "window_length": 5
-    },
-    {
-        "manager": "Fair"
     },
     {
         "algorithm": "VWAP",

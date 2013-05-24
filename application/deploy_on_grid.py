@@ -82,32 +82,35 @@ if __name__ == '__main__':
         completion_logs
     )
 
-    os.system('chromium-browser http://192.168.0.17:28778 &')
-    time.sleep(3)
+    os.system('chromium-browser http://192.168.0.12:28778 &')
+    time.sleep(5)
     os.system('chromium-browser http://192.168.0.12:4000 &')
 
+    #TODO Several glances server connection to handle
     processes_done = set()
     living_processes = set(remote_processes.keys())
     while len(living_processes):
         print cyan('-' * 60)
+        msg = 'Alive rate: {} / {}'
+        log.info(red(msg.format(len(living_processes),
+                                len(remote_processes))))
         if args.monitor:
             cpu_infos = json.loads(monitor_server.getCpu())
-            log.info(red('System cpu use: {}'.format(cpu_infos['system'])))
-            log.info(red('User cpu use: {}'.format(cpu_infos['user'])))
+            #FIXME Not supported on laptop
+            #log.info(red('System cpu use: {}'.format(cpu_infos['system'])))
+            #log.info(red('User cpu use: {}'.format(cpu_infos['user'])))
             log.info(red(json.loads(monitor_server.getLoad())))
-            msg = 'Alive rate: {} / {}'
-            log.info(red(msg.format(len(living_processes),
-                                    len(remote_processes))))
 
         for id, process in remote_processes.iteritems():
             log.info(blue('[{}] Uptime   {}'.format(id, process.elapsed)))
             log.info(blue('[{}] Progress {}'.format(id, process.progress)))
             if process.ready():
-                processes_done.add(id)
-                living_processes.remove(id)
                 msg = '[{}] Done with status: {}'
                 log.info(red(msg.format(id, process.successful())))
-                grid.on_end(id, process)
+                if id in living_processes:
+                    processes_done.add(id)
+                    living_processes.remove(id)
+                    grid.on_end(id, process)
             print cyan('--')
 
         time.sleep(args.heartbeat)

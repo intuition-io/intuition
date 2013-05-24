@@ -18,7 +18,7 @@
         "password": "chut",
         "database": "dbname",
         "data_start": "2000-01-03"
-    }
+    },
     "twitter": {
         "user": "",
         "password": ""

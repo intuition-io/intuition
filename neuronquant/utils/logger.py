@@ -35,8 +35,9 @@ def inject_information(record):
 log_format = u'[{record.time:%Y-%m-%d %H:%M}] {record.channel}::{record.level_name} - {record.message}'
 
 
-def get_nestedlog(level='WARNING', file='quantrade.log', uri=None):
+def get_nestedlog(level='DEBUG', file='quantrade.log', uri=None):
     # Default uri: tcp://127.0.0.1:5540
+    print ' ******************** Level asked for: ', level
     if uri is not None:
         log_setup = NestedSetup([
             ZeroMQHandler(uri),

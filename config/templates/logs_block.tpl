@@ -1,4 +1,4 @@
-{% extends "template.harvester" %}
+{% extends "harvester.tpl" %}
 
 {% block logs %}
     {% for file in logfiles %}

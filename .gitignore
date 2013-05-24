@@ -64,3 +64,6 @@ nosetests.xml
 *.log
 *.toc
 images/*
+
+# node
+npm-debug.log

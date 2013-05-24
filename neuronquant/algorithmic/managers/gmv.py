@@ -35,7 +35,6 @@ def compute_weigths(daily_returns):
 
         return numerator / denominator
     except:
-        #import ipdb; ipdb.set_trace()
         return np.zeros(len(daily_returns))
 
 

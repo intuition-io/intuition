@@ -1,4 +1,4 @@
-{% extends "template.rake" %}
+{% extends "panel.tpl" %}
 
 {% block build %}
     {% for dashboard in panel %}

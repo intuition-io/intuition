@@ -32,7 +32,8 @@ class OptimalFrontier(PortfolioManager):
 
         # R stuff: R functions file and rpy interface
         self.r = robjects.r
-        portfolio_opt_file = '/'.join((os.environ['QTRADE'],
+        #FIXME in remote: portfolio_opt_file = '/'.join((os.environ['QTRADE'],
+        portfolio_opt_file = '/'.join((os.path.expanduser('~/dev/projects/ppQuanTrade'),
             'neuronquant/algorithmic/managers/opt_utils.R'))
         self.r('source("{}")'.format(portfolio_opt_file))
 
@@ -82,7 +83,7 @@ class OptimalFrontier(PortfolioManager):
             try:
                 allocations[p] = round(mp.rx(re.sub("[-,!\ ]", ".", p))[0][0], 2)
             except:
-                import ipdb; ipdb.set_trace()
+                allocations[p] = 0.00
 
         er   = round(mp.rx('er')[0][0], 2)
         eStd = round(mp.rx('eStd')[0][0], 2)
