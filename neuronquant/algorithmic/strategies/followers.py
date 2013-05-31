@@ -47,6 +47,7 @@ class BuyAndHold(TradingAlgorithm):
                     save=self.save,
                     widgets=False)
             self.process_instruction(user_instruction)
+            import ipdb; ipdb.set_trace()
         else:
             # Perf_tracker need at least a turn to have an index
             self.initialized = True
@@ -244,6 +245,7 @@ def get_past_returns(data):
         pandas.panel (major: index, minor: sids)
     '''
     returns_df = data['price'].pct_change()
+    #returns_df = returns_df.fillna(0.0)
     # Because of return calculation, first raw is nan
     #FIXME nan values remain anyway
     return np.nan_to_num(returns_df.values[1:])

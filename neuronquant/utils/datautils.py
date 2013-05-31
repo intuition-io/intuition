@@ -60,7 +60,7 @@ FX_PAIRS = ['EUR/USD', 'USD/JPY', 'GBP/USD',
 def filter_market_hours(dates, exchange):
     ''' Only return market open hours from UTC timezone'''
     #NOTE UTC times ! Beware of summer and winter hours
-    if dates.freq > pd.datetools.Day():
+    if dates.freq >= pd.datetools.Day():
         # Daily or lower frequency, no hours filter required
         return dates
     if exchange == 'paris':

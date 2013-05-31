@@ -1,6 +1,13 @@
 Changelog
 =========
 
+30-05-2013
+----------
+- Scripts to quickly begin a new strategie
+- Quandl integration in datafeed
+- New source selection available from command line
+- New datasources
+
 13-05-2013
 ----------
 - Installation process improvement

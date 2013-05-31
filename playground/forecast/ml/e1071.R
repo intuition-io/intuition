@@ -322,7 +322,7 @@ svmFeatures = function(series)
 {
    require(PerformanceAnalytics)
 
-   close = Cl(series)
+   close = Cl(xts(series))
 
    rets = na.trim(ROC(close, type="discrete"))
 
@@ -336,6 +336,7 @@ svmFeatures = function(series)
                na.trim(lag(ROC(close, type="discrete", n=50), 1)),
                all=FALSE)
 
+   print(res)
    # Add mean, median, sd, mad, skew and kurtosis
    res = merge(res,
                xts(na.trim(lag(rollmean(rets, k=21, align="right"),1))),

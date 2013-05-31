@@ -30,14 +30,27 @@ from neuronquant.algorithmic.strategies import (
     MovingAverageCrossover,
     AutoAdjustingStopLoss,
     FollowTrend,
+    MarkovGenerator,
     StochasticGradientDescent
 )
+
 from neuronquant.algorithmic.managers import (
     Constant,
     Fair,
     GlobalMinimumVariance,
     OptimalFrontier
 )
+
+from neuronquant.data.ziplinesources import (
+    YahooPriceSource,
+    YahooOHLCSource,
+    QuandlSource,
+    ForexLiveSource,
+    CSVSource,
+    DBPriceSource,
+    EquitiesLiveSource
+)
+
 from neuronquant.data.datafeed import DataFeed
 import neuronquant.utils.datautils as datautils
 from neuronquant.data.ziplinesources.loader import LiveBenchmark
@@ -53,12 +66,18 @@ class BacktesterEngine(object):
                   'VWAP'    : VolumeWeightAveragePrice, 'BuyAndHold' : BuyAndHold,
                   'StdBased': StddevBased             , 'MACrossover': MovingAverageCrossover,
                   'Follower': FollowTrend             , 'Gradient': StochasticGradientDescent,
-                  'AASL'      : AutoAdjustingStopLoss , 'Rebalance': RegularRebalance}
+                  'AASL'      : AutoAdjustingStopLoss , 'Rebalance': RegularRebalance,
+                  'Markov': MarkovGenerator}
 
     portfolio_managers = {'Fair': Fair, 'Constant': Constant, 'OptimalFrontier': OptimalFrontier,
                           'GMV' : GlobalMinimumVariance}
 
-    def __new__(self, algo, manager, strategie_configuration):
+    data_sources = {'forex_live': ForexLiveSource, 'equities_live': EquitiesLiveSource,
+            'quandl': QuandlSource, 'default': YahooPriceSource,
+            'yahooOHLC': YahooOHLCSource, 'csv': CSVSource,
+            'database': DBPriceSource}
+
+    def __new__(self, algo, manager, source, strategie_configuration):
         '''
         Reads the user configuration and returns
         '''
@@ -76,16 +95,20 @@ class BacktesterEngine(object):
         if (manager) and (manager not in BacktesterEngine.portfolio_managers):
             raise NotImplementedError('Manager {} not available or implemented'.format(manager))
 
+        if source not in BacktesterEngine.data_sources:
+            raise NotImplementedError('Source {} not available or implemented'.format(source))
+
         #NOTE Other params: annualizer (default is cool), capital_base,
         #     sim_params (both are set in run function)
         trading_algorithm = BacktesterEngine.algorithms[algo](
                 properties=strategie_configuration['algorithm'])
                 #capital_base=10000.0, data_frequency='minute')
 
-        trading_algorithm.capital_base = 10
-        #trading_algorithm.set_logger(logbook.Logger(algo))
         trading_algorithm.set_logger(logbook.Logger(
             'Algo::' + strategie_configuration['manager'].get('name', 'ChuckNorris')))
+
+        trading_algorithm.set_data_generator(
+            BacktesterEngine.data_sources[source])
 
         # Use of a portfolio manager
         if manager:
@@ -118,14 +141,15 @@ class BacktesterEngine(object):
 #NOTE engine.feed_data(tickers, start, end, freq) ? using set_source()
 class Simulation(object):
     ''' Take a trading strategie and evalute its results '''
-    def __init__(self, data=None):
+    def __init__(self, configuration):
         #NOTE Allowing different data access ?
         #self.metrics = None
         #self.server        = ZMQ_Dealer(id=self.__class__.__name__)
-        self.datafeed = DataFeed()
+        self.configuration = configuration
+        self.datafeed = DataFeed(configuration['env']['quandl'])
 
     #TODO For both, timezone configuration
-    def configure(self, configuration):
+    def configure(self):
         '''
         Prepare dates, data, trading environment for simulation
         _______________________________________________________
@@ -133,14 +157,15 @@ class Simulation(object):
             configuration: dict()
                 Structure with previously defined backtest behavior
         '''
-        data = self._configure_data(tickers    = configuration['tickers'],
-                                  start_time = configuration['start'],
-                                  end_time   = configuration['end'],
-                                  freq       = configuration['frequency'],
-                                  exchange   = configuration['exchange'],
-                                  live       = configuration['live'])
+        data = self._configure_data(tickers    = self.configuration['tickers'],
+                                    start_time = self.configuration['start'],
+                                    end_time   = self.configuration['end'],
+                                    freq       = self.configuration['frequency'],
+                                    #source     = self.configuration['source'],
+                                    exchange   = self.configuration['exchange'],
+                                    live       = self.configuration['live'])
 
-        context = self._configure_context(configuration['exchange'])
+        context = self._configure_context(self.configuration['exchange'])
 
         return data, context
 
@@ -155,8 +180,6 @@ class Simulation(object):
             # Default end_date is now, suitable for live trading
             self.load_market_data = LiveBenchmark(end_time, frequency=freq).load_market_data
 
-            #### !! Dev temporary hack
-            #end_time = pd.datetime.now() + pd.datetools.Minute(20)
             dates = datautils.filter_market_hours(pd.date_range(pd.datetime.now(pytz.utc),
                                                                 end_time,
                                                                 freq='1min'),
@@ -174,24 +197,54 @@ class Simulation(object):
             # Use default zipline load_market_data, i.e. data from msgpack files in ~/.zipline/data/
             self.load_market_data = None
 
-            # Fetch data from mysql database
-            data = self.datafeed.quotes(tickers,
-                                     start_date = start_time,
-                                     end_date   = end_time)
-            if len(data) == 0:
+            # Use datafeed object to retrieve data
+            #data = self._get_data(tickers, start_time, end_time)
+
+            dates = datautils.filter_market_hours(pd.date_range(start_time,
+                                                                end_time,
+                                                                freq='D'),
+                                                                #TODO ...hard coded, later: --frequency daily,3
+                                                  exchange)
+            #dates = datautils.filter_market_hours(dates, exchange)
+            if len(dates) == 0:
+                log.warning('! Market closed.')
+                sys.exit(0)
+            #TODO Wrap it in a dataframe (always same return type)
+            data = {'stream_source': exchange,
+                    'tickers'      : tickers,
+                    'index'        : dates}
+
+        return data
+
+    def _get_data(self, tickers, start_date, end_date):
+        self.implemented_sources = ['mysql', 'quandl']
+        for source in self.implemented_sources:
+            data = self._try(source, tickers, start_date=start_date, end_date=end_date)
+            if data.empty:
                 log.warning('Got nothing from database')
                 data = pd.DataFrame()
             else:
                 assert isinstance(data, pd.DataFrame)
                 assert data.index.tzinfo
+                break
 
+        return data
+
+    def _try(self, source, tickers, **kwargs):
+        if source == 'mysql':
+            data = self.datafeed.quotes(tickers, **kwargs)
+        elif source == 'csv':
+            raise NotImplementedError()
+        elif source == 'quandl':
+            data = self.datafeed.fetch_quandl(tickers, **kwargs)
+        else:
+            raise NotImplementedError()
         return data
 
     def set_becnhmark_loader(self, load_function):
         self.load_market_data = load_function
 
     #TODO Use of futur localisation database criteria
-    #TODO A list of markets to check if this one is in
     def _configure_context(self, exchange=''):
         '''
         Setup from exchange traded on benchmarks used, location
@@ -218,6 +271,7 @@ class Simulation(object):
 
         backtester = BacktesterEngine(configuration['algorithm'],
                                       configuration['manager'],
+                                      configuration['source'],
                                       strategie)
 
         #NOTE This method does not change anything
@@ -234,5 +288,4 @@ class Simulation(object):
             results, monthly_perfs = backtester.run(data,
                                                     sim_params=sim_params)
 
-        #return self.results
         return Analyze(results=results, metrics=monthly_perfs, datafeed=self.datafeed, configuration=configuration)

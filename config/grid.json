@@ -1,6 +1,6 @@
 {"components": [
     {
-        "exchange": "nasdaq",
+        "exchange": "paris",
         "cash": 50000,
         "algorithm": "Gradient",
         "manager": "Fair",
@@ -8,7 +8,7 @@
         "debug": 1,
         "save": 1,
         "loglevel": "INFO",
-        "end": "22h",
+        "end": "17h30",
         "refresh_period": 1,
         "clean": 0,
         "window_length": 30,

@@ -11,6 +11,7 @@ from movingaverage import (
 )
 from stddev import StddevBased
 from machinelearning import StochasticGradientDescent
+from patate import MarkovGenerator
 
 from orderbased import AutoAdjustingStopLoss
 
@@ -20,5 +21,6 @@ __all__ = [
         'stddev',
         'olmar',
         'machinelearning',
+        'patate',
         'orderbased'
         ]

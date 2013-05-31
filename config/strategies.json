@@ -61,5 +61,10 @@
         "save": 0,
         "debug": 1,
         "window_length": 5
+    },
+    "Markov":
+    {
+        "save": 0,
+        "debug": 1
     }
 }

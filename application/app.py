@@ -54,7 +54,7 @@ def plot_results(analyzes):
 
 #TODO profiling with http://docs.python.org/2/library/profile.html, http://pycallgraph.slowchop.com/
 if __name__ == '__main__':
-    '''___________________________________________________________________________________________    Setup    ____'''
+    '''__________________________________________________________________    Setup    ____'''
     # Dedicated object for configuration setup
     setup = Setup()
 
@@ -85,14 +85,14 @@ if __name__ == '__main__':
         # Remotely, listening gor messages through zmq socket
         strategie = setup.get_strategie_configuration(remote=configuration['remote'])
 
-        '''____________________________________________________________________________________    Backtest    ____'''
+        '''_________________________________________________________    Backtest    ____'''
         # Backtest or live engine
-        engine = Simulation()
+        engine = Simulation(configuration)
 
         # Setup quotes data and financial context (location, market, ...)
         # simulation from user parameters Wrap _configure_data() and
         # _configure_context() you can use directly for better understanding
-        data, trading_context = engine.configure(configuration)
+        data, trading_context = engine.configure()
 
         # See neuronquant/gears/engine.py for details of results which is an
         # analyzes object

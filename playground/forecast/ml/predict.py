@@ -18,6 +18,9 @@ import rpy2.robjects as robjects
 #from rpy2.robjects.packages import importr
 import datetime
 import pandas as pd
+import pandas.rpy.common as com
+
+from neuronquant.data.datafeed import DataFeed
 
 
 r = robjects.r
@@ -30,9 +33,18 @@ history = 500
 today = datetime.datetime.now()
 start_date = today - pd.datetools.Day(history)
 
-r('require(quantmod)')
-tt = r('get( getSymbols("{}", from="{}"))'.format(symbol, start_date.strftime(format='%Y-%m-%d')))
-#rets = r('na.trim( ROC(Cl({}), type="discrete"))'.format('tt'))
-data_matrix = r('svmFeatures')(tt)
-data_df = pd.rpy.common.convert_robj(data_matrix)
+#r('require(quantmod)')
+#tt = r('get( getSymbols("{}", from="{}"))'.format(symbol, start_date.strftime(format='%Y-%m-%d')))
+
+returns = DataFeed().quotes(symbol, start_date=start_date, end_date=today)
+#returns = data.pct_change().fillna(0.0)
+returns = returns.rename(columns={symbol: "Close"})
+r_quotes = com.convert_to_r_dataframe(returns)
 import ipdb; ipdb.set_trace()
+data_matrix = r('svmFeatures')(r_quotes)
+
+#rets = r('na.trim( ROC(Cl({}), type="discrete"))'.format('tt'))
+
+#data_matrix = r('svmFeatures')(tt)
+
+#data_df = pd.rpy.common.convert_robj(data_matrix)

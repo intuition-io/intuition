@@ -31,14 +31,14 @@ echo "C'est parti..."
 
 # Equitie backtest 
 if [ $choice == 1 ]; then
-    time $QTRADE/application/app.py --initialcash 50000 --tickers random,20 \
-        --loglevel INFO --algorithm BuyAndHold --manager Constant --start 2012-05-10 \
-        --frequency daily --database backtest --exchange nasdaq
+    time $QTRADE/application/app.py --initialcash 50000 --tickers random,3 \
+        --loglevel WARNING --algorithm BuyAndHold --manager Constant --start 2012-05-10 \
+        --frequency daily --database backtest --exchange paris --source database
 
 # Forex live test !
 elif [ $choice == 2 ]; then
     time $QTRADE/application/app.py --initialcash 10000 --tickers EUR/USD,EUR/GBP,GBP/USD,USD/CHF,EUR/JPY,EUR/CHF,USD/CAD,AUD/USD,GBP/JPY \
-        --algorithm BuyAndHold --manager Constant --end 23h \
+        --algorithm BuyAndHold --manager Constant --end 23h --logleve WARNING \
         --database liveforex --exchange forex --frequency minute --live
 
 # Equitie live test !

@@ -67,3 +67,6 @@ images/*
 
 # node
 npm-debug.log
+
+# Quandl
+authtoken.p

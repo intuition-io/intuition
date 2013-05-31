@@ -21,6 +21,10 @@ import pandas as pd
 import pytz
 import random
 import re
+import os
+
+import Quandl
+import json
 
 import logbook
 from neuronquant.data.database import Client
@@ -32,8 +36,9 @@ class DataFeed(object):
     """
     API for using database quotes into application
     """
-    def __init__(self):
+    def __init__(self, quandl_key=''):
         self.stock_db = Client()
+        self.quandl_key = quandl_key
 
     def saved_portfolios(self, names):
         '''
@@ -145,3 +150,44 @@ class DataFeed(object):
         else:
             infos = self.stock_db.get_infos(name=match[0])
         return infos.Ticker
+
+    #TODO Use of search feature for more powerfull and flexible use
+    def fetch_quandl(self, code, **kwargs):
+        '''
+        Quandl entry point in datafeed object
+        _____________________________________
+        Parameters
+            code: str
+                quandl data code 
+            kwargs: dict
+                keyword args passed to quandl call
+        _____________________________________
+        Return:
+            data: pandas.dataframe or numpy array
+                 returned from quandl call
+        '''
+        log.debug('Fetching QuanDL data (%s)' % code)
+        # This way you can use your credentials even if 
+        # you didn't provide them to the constructor 
+        if 'authtoken' in kwargs:
+            self.quandl_key = kwargs.pop('authtoken')
+
+        # Harmonization: Quandl call start_date trim_start
+        if 'start_date' in kwargs:
+            kwargs['trim_start'] = kwargs.pop('start_date')
+        if 'end_date' in kwargs:
+            kwargs['trim_end'] = kwargs.pop('end_date')
+
+        try:
+            data = Quandl.get(code, authtoken=self.quandl_key, **kwargs)
+            data.index = data.index.tz_localize(pytz.utc)
+        except:
+            log.error('** Fetching %s from Quandl' % code)
+            data = pd.DataFrame()
+        return data
+
+    def _search_quandlkey(self):
+        #NOTE Lately will use gears.configuration._read_structured_file
+        content = json.load(open(os.path.expanduser('~/.quantrade/default.json'), 'r'))
+        self.quandl_key = content['quandl']['apikey']
+        return bool(self.quandl_key)

@@ -31,7 +31,7 @@ import logbook
 log = logbook.Logger('ForexLiveSource')
 
 
-class DataLiveSource(DataSource):
+class ForexLiveSource(DataSource):
     """
     Yields all events in event_list that match the given sid_filter.
     If no event_list is specified, generates an internal stream of events

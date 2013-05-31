@@ -63,10 +63,9 @@ class Remote(object):
         '''
         #self.locatioon = world.International(country_code)
         self.datafeed = DataFeed()
-        pass
 
     #NOTE with args and kwargs ?
-    def fetch_equities_daily(self, equities, ohcl=False,
+    def fetch_equities_daily(self, equities, ohlc=False,
                              r_type=False, returns=False, **kwargs):
         if len(equities) == 0:
             return pd.DataFrame()
@@ -74,16 +73,19 @@ class Remote(object):
             equities = equities.split(',')
         symbols = [self.datafeed.guess_name(equity) for equity in equities]
 
-        if ohcl:
+        if ohlc:
             data = load_bars_from_yahoo(stocks=symbols, **kwargs)
+            data.items = equities
         else:
             data = load_from_yahoo(stocks=symbols, **kwargs)
             data.columns = equities
+
             #NOTE Would it work with a pandas panel ?
             if returns:
                 data = ((data - data.shift(1)) / data).fillna(method='bfill')
             if r_type:
                 data = convert_to_r_matrix(data)
+
         return data
 
     def fetch_equities_snapshot(self, *args, **kwargs):

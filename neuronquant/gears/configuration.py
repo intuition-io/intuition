@@ -26,8 +26,8 @@ class Setup(object):
         self.configuration_folder = config_dir if config_dir else '/'.join((os.environ['QTRADE'], 'config'))
 
         # Config data structures
-        self.config_backtest    = dict()
-        self.config_strategy   = dict()
+        self.config_backtest    = {}
+        self.config_strategy    = {}
         self.config_environment = self._inspect_environment()
 
     def _inspect_environment(self, local_file='~/.quantrade/default.json'):
@@ -35,7 +35,7 @@ class Setup(object):
         Read common user and project configuration files
         for usual environment parameters
         '''
-        context = dict()
+        context = {}
         if os.path.exists(os.path.expanduser(local_file)):
             log.info('Found local configuration file, loading {}'.format(local_file))
             context = self._read_structured_file(os.path.expanduser(local_file))
@@ -89,6 +89,9 @@ class Setup(object):
         parser.add_argument('-m', '--manager',
                             action='store', default='',
                             required=False, help='Portfolio strategie to be used')
+        parser.add_argument('-so', '--source',
+                            action='store', default='default',
+                            required=False, help='Data generator')
         parser.add_argument('-d', '--database',
                             action='store', default='',
                             required=False, help='Table to considere in database')
@@ -132,6 +135,7 @@ class Setup(object):
         self.config_backtest = {'algorithm': args.algorithm,
                                 'frequency': args.frequency,
                                 'manager'  : args.manager,
+                                'source'  : args.source,
                                 'database' : args.database,
                                 'tickers'  : smart_tickers_select(args.tickers, exchange=args.exchange),
                                 'start'    : normalize_date_format(args.start),
@@ -143,6 +147,9 @@ class Setup(object):
                                 'loglevel' : args.loglevel,
                                 'logfile'  : args.logfile,
                                 'remote'   : args.remote}
+
+        # We add local configuration (found or not in the constructor)
+        self.config_backtest['env'] = self.config_environment
 
         return self.config_backtest
 

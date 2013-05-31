@@ -34,7 +34,7 @@ forecast = svmComputeForecasts(
 print('---------------------------------------------------')
 print(forecast)
 
-# An other attempt (list of 3):
+# An other attempt:
     #http://quantumfinancier.wordpress.com/2010/05/21/application-of-svms/
     #http://quantumfinancier.wordpress.com/2010/06/10/svm-classification-using-rsi-from-various-lengths/
     #http://quantumfinancier.wordpress.com/2010/06/26/support-vector-machine-rsi-system/

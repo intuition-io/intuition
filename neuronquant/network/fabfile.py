@@ -68,6 +68,7 @@ def activate_controller():
             local('scp {} {}@{}:dev/'.format(engines_path, env.user, target_ip))
 
 
+#TODO Get generic function from script generator
 @roles('controller')
 def generate_dashboards(completion):
     log.info(blue('Generating dashboards on local machine'))

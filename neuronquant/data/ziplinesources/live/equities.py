@@ -33,7 +33,7 @@ import logbook
 log = logbook.Logger('DataLiveSource')
 
 
-class DataLiveSource(DataSource):
+class EquitiesLiveSource(DataSource):
     """
     Yields all events in event_list that match the given sid_filter.
     If no event_list is specified, generates an internal stream of events
@@ -55,8 +55,6 @@ class DataLiveSource(DataSource):
         self.sids  = kwargs.get('sids', data['tickers'])
         self.start = kwargs.get('start', data['index'][0])
         self.end   = kwargs.get('end', data['index'][-1])
-
-        #self.fake_index = pd.date_range(self.start, self.end, freq=pd.datetools.BDay())
 
         # Hash_value for downstream sorting.
         self.arg_string = hash_args(data, **kwargs)

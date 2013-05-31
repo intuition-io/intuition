@@ -20,7 +20,7 @@ import re
 from setuptools import setup, find_packages
 
 
-# _______________________________________________________________________  smart requirement detector _______________
+# ___________________________________________  smart requirement detector ___
 #NOTE not that smart, does not work for now
 def which(program):
     """
@@ -120,8 +120,9 @@ setup(
         'pytz',
         'numpy',
         'pandas',
-        'pyzmq',
-
+        "jinja2",
+        "quandl",
+        'pyzmq'
     ],
     dependency_links = [
         'http://github.com/Gusabi/zipline',
