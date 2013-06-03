@@ -1,1 +1,0 @@
-15/02   everything to zero when backtest with random,1 DualMA, Equity, 2005-01-10 2010-07-03

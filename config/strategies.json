@@ -65,6 +65,7 @@
     "Markov":
     {
         "save": 0,
-        "debug": 1
+        "debug": 1,
+        "ignored": ["volume", "pouet"]
     }
 }

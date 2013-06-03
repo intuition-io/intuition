@@ -12,6 +12,8 @@ dist
 QSData
 CSV
 node_modules/*
+management
+data
 
 # R
 # History files

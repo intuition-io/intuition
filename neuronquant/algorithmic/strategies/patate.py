@@ -2,6 +2,15 @@ from zipline.algorithm import TradingAlgorithm
 import numpy as np
 
 
+def get_input_fields(data, ignored):
+    assert len(data.items())
+    one_sid_event = data.items()[0][1]
+    unused_fields = ['datetime', 'sid', 'source_id', 'dt', 'type'] + ignored
+    #unused_fields.update(ignored)
+    data_fields = one_sid_event.__dict__.keys()
+    return [field for field in data_fields if field not in unused_fields]
+
+
 class MarkovGenerator(TradingAlgorithm):
     '''
     Build a probabilist state graph from input data
@@ -12,14 +21,9 @@ class MarkovGenerator(TradingAlgorithm):
 
         self.debug = properties.get('debug', False)
         self.save = properties.get('save', False)
-        self.loops = 0
-
-        self.data_size = 5
-        tmin = np.ones([self.data_size])
-        tmax = np.zeros([self.data_size])
-        self.tab_minmax = np.column_stack([tmin, tmax])
-
-        self.input_data = np.zeros([self.data_size])
+        self.ignored = properties.get('ignored', [])
+        if not isinstance(self.ignored, list):
+            self.ignored = [self.ignored]
 
         # phase 1
         self.states = []
@@ -29,10 +33,9 @@ class MarkovGenerator(TradingAlgorithm):
         self.matrix = WhoNext()
 
     def handle_data(self, data):
-        self.loops += 1
         ''' --------------------------------------------------    Init   --'''
         if self.initialized:
-            user_instruction = self.manager.update(
+            self.manager.update(
                 self.portfolio,
                 self.datetime.to_pydatetime(),
                 self.perf_tracker.cumulative_risk_metrics.to_dict(),
@@ -42,14 +45,19 @@ class MarkovGenerator(TradingAlgorithm):
         else:
             # Perf_tracker need at least a turn to have an index
             self.initialized = True
+            self.input_fields = get_input_fields(data, self.ignored)
+            self.data_size = len(self.input_fields)
+
+            tmin = np.ones([self.data_size])
+            tmax = np.zeros([self.data_size])
+            self.tab_minmax = np.column_stack([tmin, tmax])
+
+            self.input_data = np.zeros([self.data_size])
 
         for sid in data:
             #data frame type
-            self.input_data[0] = data[sid].Open
-            self.input_data[1] = data[sid].High
-            self.input_data[2] = data[sid].Low
-            self.input_data[3] = data[sid].Close
-            self.input_data[4] = data[sid].volume
+            for i, field in enumerate(self.input_fields):
+                self.input_data[i] = data[sid][field]
 
             alpha = np.zeros([self.data_size])
 
@@ -169,7 +177,7 @@ class WhoNext(object):
         for i in xrange(self.size):
             self.matrix_probability[0][i] = 1.0 / (self.size+1)
 
-        if self.current_state :
+        if self.current_state:
             self.matrix_occurence[self.current_state][self.size] = 1
 
             if self.state_id_expected:

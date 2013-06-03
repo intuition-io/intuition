@@ -61,6 +61,7 @@ class CSVSource(DataSource):
 
     @property
     def mapping(self):
+        #NOTE Round value for less computation overhead ?
         mapping = {
             'dt': (lambda x: x, 'dt'),
             'sid': (lambda x: x, 'sid'),
@@ -96,7 +97,7 @@ class CSVSource(DataSource):
         for dt, series in self.data.iterrows():
             event = {
                 'dt': dt,
-                'sid': self.csvname
+                'sid': self.sids[0]
             }
             for field_name, value in series.iteritems():
                 event[field_name] = value

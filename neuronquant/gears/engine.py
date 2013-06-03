@@ -20,37 +20,6 @@ import pandas as pd
 import logbook
 log = logbook.Logger('Engine')
 
-from neuronquant.algorithmic.strategies import (
-    StddevBased,
-    DualMovingAverage,
-    Momentum,
-    RegularRebalance,
-    VolumeWeightAveragePrice,
-    BuyAndHold,
-    MovingAverageCrossover,
-    AutoAdjustingStopLoss,
-    FollowTrend,
-    MarkovGenerator,
-    StochasticGradientDescent
-)
-
-from neuronquant.algorithmic.managers import (
-    Constant,
-    Fair,
-    GlobalMinimumVariance,
-    OptimalFrontier
-)
-
-from neuronquant.data.ziplinesources import (
-    YahooPriceSource,
-    YahooOHLCSource,
-    QuandlSource,
-    ForexLiveSource,
-    CSVSource,
-    DBPriceSource,
-    EquitiesLiveSource
-)
-
 from neuronquant.data.datafeed import DataFeed
 import neuronquant.utils.datautils as datautils
 from neuronquant.data.ziplinesources.loader import LiveBenchmark
@@ -59,71 +28,45 @@ from neuronquant.gears.analyzes import Analyze
 from zipline.finance.trading import TradingEnvironment
 from zipline.utils.factory import create_simulation_parameters
 
+import neuronquant.strateg_library as library
+
+
+BASE_CONFIG = {'algorithm': {}, 'manager': {}}
+
 
 class BacktesterEngine(object):
     ''' Factory class wrapping zipline Backtester, returns the requested algo ready for use '''
-    algorithms = {'DualMA'  : DualMovingAverage       , 'Momentum'   : Momentum,
-                  'VWAP'    : VolumeWeightAveragePrice, 'BuyAndHold' : BuyAndHold,
-                  'StdBased': StddevBased             , 'MACrossover': MovingAverageCrossover,
-                  'Follower': FollowTrend             , 'Gradient': StochasticGradientDescent,
-                  'AASL'      : AutoAdjustingStopLoss , 'Rebalance': RegularRebalance,
-                  'Markov': MarkovGenerator}
 
-    portfolio_managers = {'Fair': Fair, 'Constant': Constant, 'OptimalFrontier': OptimalFrontier,
-                          'GMV' : GlobalMinimumVariance}
-
-    data_sources = {'forex_live': ForexLiveSource, 'equities_live': EquitiesLiveSource,
-            'quandl': QuandlSource, 'default': YahooPriceSource,
-            'yahooOHLC': YahooOHLCSource, 'csv': CSVSource,
-            'database': DBPriceSource}
-
-    def __new__(self, algo, manager, source, strategie_configuration):
+    def __new__(self, algo, manager=None, source=None, strategie_configuration=BASE_CONFIG):
         '''
         Reads the user configuration and returns
         '''
-        # CHecking if algorithm and manager the user asks for are available
-        if algo not in BacktesterEngine.algorithms:
-            # It could be the algo object itself
-            #NOTE Pretty ugly... temporary
-            if type(algo) == type:
-                BacktesterEngine.algorithms['CUSTOM'] = algo
-                algo = 'CUSTOM'
-            else:
-                raise NotImplementedError('Algorithm {} not available or implemented'.format(algo))
-        log.info('Algorithm {} available, getting a reference to it.'.format(algo))
+        library.check_availability(algo, manager, source)
 
-        if (manager) and (manager not in BacktesterEngine.portfolio_managers):
-            raise NotImplementedError('Manager {} not available or implemented'.format(manager))
+        #NOTE Other params: annualizer (default is cool), capital_base, sim_params (both are set in run function)
+        trading_algorithm = library.algorithms[algo](
+            properties=strategie_configuration['algorithm'])
+            #capital_base=10000.0, data_frequency='minute')
 
-        if source not in BacktesterEngine.data_sources:
-            raise NotImplementedError('Source {} not available or implemented'.format(source))
+        portfolio_name = strategie_configuration['manager'].get('name', 'ChuckNorris')
+        trading_algorithm.set_logger(logbook.Logger('Algo::' + portfolio_name))
 
-        #NOTE Other params: annualizer (default is cool), capital_base,
-        #     sim_params (both are set in run function)
-        trading_algorithm = BacktesterEngine.algorithms[algo](
-                properties=strategie_configuration['algorithm'])
-                #capital_base=10000.0, data_frequency='minute')
-
-        trading_algorithm.set_logger(logbook.Logger(
-            'Algo::' + strategie_configuration['manager'].get('name', 'ChuckNorris')))
-
-        trading_algorithm.set_data_generator(
-            BacktesterEngine.data_sources[source])
+        if source:
+            trading_algorithm.set_data_generator(library.data_sources[source])
 
         # Use of a portfolio manager
         if manager:
-            log.info('Manager {} available, getting a reference and initializing it.'.format(manager))
+            log.info('Initializing Manager')
             # Linking to the algorithm the configured portfolio manager
-            trading_algorithm.manager = BacktesterEngine.portfolio_managers[manager](
-                    strategie_configuration['manager'])
+            trading_algorithm.manager = library.portfolio_managers[manager](
+                strategie_configuration['manager'])
 
             # If requested and possible, load the named portfolio to start trading with it
             #FIXME Works, but every new event resets the portfolio
-            portfolio_name = strategie_configuration['manager'].get('name')
 
             if strategie_configuration['manager'].get('load_backup', False) and portfolio_name:
                 log.info('Re-loading last {} portfolio from database'.format(portfolio_name))
-                ## Retrieving a zipline portfolio object. str() is needed as the parameter is of type unicode
+                # Retrieving a zipline portfolio object. str() is needed as the parameter is of type unicode
                 backup_portfolio = trading_algorithm.manager.load_portfolio(str(portfolio_name))
 
                 if backup_portfolio is None:
@@ -177,51 +120,41 @@ class Simulation(object):
         assert start_time != end_time
 
         if live:
-            # Default end_date is now, suitable for live trading
+            # Check that start_time is now or later
+            assert start_time > pd.datetime.now() - pd.datetools.Second(5)
+            # Default end_date is now, not suitable for live trading
             self.load_market_data = LiveBenchmark(end_time, frequency=freq).load_market_data
-
-            dates = datautils.filter_market_hours(pd.date_range(pd.datetime.now(pytz.utc),
-                                                                end_time,
-                                                                freq='1min'),
-                                                                #TODO ...hard coded, later: --frequency daily,3
-                                                  exchange)
-            #dates = datautils.filter_market_hours(dates, exchange)
-            if len(dates) == 0:
-                log.warning('! Market closed.')
-                sys.exit(0)
-            #TODO Wrap it in a dataframe (always same return type)
-            data = {'stream_source': exchange,
-                    'tickers'      : tickers,
-                    'index'        : dates}
+            #TODO ...hard coded, later for exemple: --frequency daily,3
+            data_freq = '1min'
         else:
             # Use default zipline load_market_data, i.e. data from msgpack files in ~/.zipline/data/
             self.load_market_data = None
+            data_freq = 'D'
 
             # Use datafeed object to retrieve data
             #data = self._get_data(tickers, start_time, end_time)
 
-            dates = datautils.filter_market_hours(pd.date_range(start_time,
-                                                                end_time,
-                                                                freq='D'),
-                                                                #TODO ...hard coded, later: --frequency daily,3
-                                                  exchange)
-            #dates = datautils.filter_market_hours(dates, exchange)
-            if len(dates) == 0:
-                log.warning('! Market closed.')
-                sys.exit(0)
-            #TODO Wrap it in a dataframe (always same return type)
-            data = {'stream_source': exchange,
-                    'tickers'      : tickers,
-                    'index'        : dates}
+        dates = datautils.filter_market_hours(pd.date_range(start_time,
+                                                            end_time,
+                                                            freq=data_freq),
+                                              exchange)
+
+        if len(dates) == 0:
+            log.warning('! Market closed.')
+            sys.exit(0)
+
+        data = {'stream_source': exchange,
+                'tickers'      : tickers,
+                'index'        : dates}
 
         return data
 
     def _get_data(self, tickers, start_date, end_date):
-        self.implemented_sources = ['mysql', 'quandl']
+        self.implemented_sources = ['mysql', 'quandl', 'csv']
         for source in self.implemented_sources:
             data = self._try(source, tickers, start_date=start_date, end_date=end_date)
             if data.empty:
-                log.warning('Got nothing from database')
+                log.warning('Got nothing from %s' %s source)
                 data = pd.DataFrame()
             else:
                 assert isinstance(data, pd.DataFrame)
@@ -236,7 +169,7 @@ class Simulation(object):
         elif source == 'csv':
             raise NotImplementedError()
         elif source == 'quandl':
-            data = self.datafeed.fetch_quandl(tickers, **kwargs)
+            data = self.datafeed.fetch_quandl(tickers, returns='pandas', **kwargs)
         else:
             raise NotImplementedError()
         return data
@@ -260,12 +193,12 @@ class Simulation(object):
                                                  exchange_tz = datautils.Exchange[exchange]['timezone'],
                                                  load        = self.load_market_data)
         else:
-            raise NotImplementedError('Because of computation limitation, trading worldwide not permitted currently')
+            raise NotImplementedError('Because of computation limitation, \
+                trading worldwide not permitted currently')
 
         return trading_context
 
     def run(self, data, configuration, strategie, context):
-        #___________________________________________________________________________    Running    ________
         log.info('\n-- Running backetester...\nUsing algorithm: {}\n'.format(configuration['algorithm']))
         log.info('\n-- Using portfolio manager: {}\n'.format(configuration['manager']))
 
