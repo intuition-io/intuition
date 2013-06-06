@@ -149,12 +149,13 @@ class Simulation(object):
 
         return data
 
+    '''
     def _get_data(self, tickers, start_date, end_date):
         self.implemented_sources = ['mysql', 'quandl', 'csv']
         for source in self.implemented_sources:
             data = self._try(source, tickers, start_date=start_date, end_date=end_date)
             if data.empty:
-                log.warning('Got nothing from %s' %s source)
+                log.warning('Got nothing from {}'.format(source))
                 data = pd.DataFrame()
             else:
                 assert isinstance(data, pd.DataFrame)
@@ -173,6 +174,7 @@ class Simulation(object):
         else:
             raise NotImplementedError()
         return data
+    '''
 
     def set_becnhmark_loader(self, load_function):
         self.load_market_data = load_function

@@ -32,8 +32,8 @@ echo "C'est parti..."
 # Equitie backtest 
 if [ $choice == 1 ]; then
     time $QTRADE/application/app.py --initialcash 50000 --tickers INDEX_FCHI \
-        --loglevel CRITICAL --algorithm Markov --manager Constant --start 2012-05-10 \
-        --frequency daily --database backtest --exchange paris --source csv
+        --loglevel CRITICAL --algorithm BuyAndHold --manager Constant --start 2012-05-10 \
+        --frequency daily --database backtest --exchange paris --source CSVSource
 
 # Forex live test !
 elif [ $choice == 2 ]; then

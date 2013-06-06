@@ -55,6 +55,7 @@ class MarkovGenerator(TradingAlgorithm):
             self.input_data = np.zeros([self.data_size])
 
         for sid in data:
+            self.logger.info(data[sid].price)
             #data frame type
             for i, field in enumerate(self.input_fields):
                 self.input_data[i] = data[sid][field]
