@@ -20,6 +20,7 @@ from neuronquant.gears.configuration import (
     normalize_date_format, smart_tickers_select
 )
 
+
 #from IPython.parallel import require
 #from neuronquant.gears.engine import Simulation
 #from neuronquant.utils.logger import get_nestedlog
@@ -42,12 +43,12 @@ def trade(mega_config):
     log_setup = get_nestedlog(level=configuration['loglevel'], file=configuration['logfile'])
     with log_setup.applicationbound():
         # Backtest or live engine
-        engine = Simulation()
+        engine = Simulation(configuration)
 
         # Setup quotes data and financial context (location, market, ...)
         # simulation from user parameters Wrap _configure_data() and
         # _configure_context() you can use directly for better understanding
-        data, trading_context = engine.configure(configuration)
+        data, trading_context = engine.configure()
 
         # See neuronquant/gears/engine.py for details of results which is an
         # analyzes object
@@ -58,6 +59,8 @@ def trade(mega_config):
 def get_configuration(changes={}, backtest=True):
     # Reset to root_config (doesn't work)
     config = root_configuration.copy()
+
+    #TODO read config['env']  (in setup.configuration)
 
     if not backtest:
         config['configuration']['live'] = True
@@ -95,7 +98,9 @@ root_configuration = {
         'start': '2011-01-10',
         'end': '2012-07-03',
         'remote': False,
-        'live': False
+        'live': False,
+        'source': 'DBPriceSource',
+        'env': {}
     },
     'strategie': {
         'algorithm': {

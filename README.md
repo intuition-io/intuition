@@ -41,34 +41,19 @@ Features
 Installation
 ------------
 
-- Zipline backtster engine: 
-   - Clone (outside QuanTrade project) or fork (then clone your own copy) the original project at https://github.com/quantopian/zipline
-   - To stay up-to-date: add streams to the original project and to my fork:
-      - ```./zipline $> git remote add quantopian https://github.com/quantopian/zipline.git ```
-      - ```./zipline $> git remote add neuronquant https://github.com/Gusabi/zipline.git ```
-      - ```./zipline $> git fetch quantopian && git merge quantopian/master ```
-      - ```./zipline $> git fetch neuronquant && git merge neuronquant/master ```
-      - note: I keep my version updated with the original, so you usually won't need to fetch both
+You are just a few steps away from algoritmic trading:
 
-- Run now the installation script (or check in the wiki how to do it manually):
-``` ./ppQuanTrade #> ./scripts/installation/install.sh```
+- ```$ > sudo ./install.sh```
 
-- Edit ~/.quantrade/local.sh to suit your environment
+- Edit your username and password in ./scripts/installation/createdb.sql
+- Edit as well ~/.quantrade/default.json and ~/.quantrade/local.sh to suit your environment
 
-- Database:
-   - Make sure you have a well configured mysql database running (check data/readme.rst or http://dev.mysql.com/tech-resources/articles/mysql_intro.html)
-   - ``` $> mysql -u root -p ```
-   - ```mysql> create database stock_data;```
-   - ```mysql> set password for 'user'@'host' = password('chut');
-   - ```mysql> grant all privileges on stock_data.* to 'user'@'host'``` (replace user and host as you want)
-   - Edit ./ppQuanTrade/config/mysql.cfg 
-   - Create tables with ```./ppQuanTrade $>`./scripts/database.py -c```
-   - Fill it with ``` ./ppQuanTrade $> ./scripts/database.py -a data/dump_sql.csv ```
+- ```$ > sudo ./install.sh database```
 
-- NeuronQuant is able to send to your android device(s) notifications, using NotifyMyAndroid. However you will need an API key,
+- QuanTrade is able to send to your android device(s) notifications, using NotifyMyAndroid. However you will need an API key,
 available for free with the trial version of the application. Super simple to setup, check their website and then edit ~/.quantrade/local.sh
 
-- Congrats you're Done !
+- Congrats you're Done ! If you encountered any issue, check into install.sh, there is nothing that exotic, or mail me at xavier.bruhiere@gmail.com.
 
 
 Getting started

@@ -42,20 +42,22 @@ def which(program):
 
     return None
 
-EDITABLE_REQUIREMENT = re.compile(r'^-e (?P<link>(?P<vcs>git|svn|hg|bzr).+#egg=(?P<package>.+)-(?P<version>\d(?:\.\d)*))$')
 
-install_requires = []
-dependency_links = []
+def get_requirements():
+    EDITABLE_REQUIREMENT = re.compile(r'^-e (?P<link>(?P<vcs>git|svn|hg|bzr).+#egg=(?P<package>.+)-(?P<version>\d(?:\.\d)*))$')
 
-for requirement in (l.strip() for l in open('scripts/requirements.txt')):
-    match = EDITABLE_REQUIREMENT.match(requirement)
-    if match:
-        assert which(match.group('vcs')) is not None, \
-            "VCS '%(vcs)s' must be installed in order to install %(link)s" % match.groupdict()
-        install_requires.append("%(package)s==%(version)s" % match.groupdict())
-        dependency_links.append(match.group('link'))
-    else:
-        install_requires.append(requirement)
+    install_requires = []
+    dependency_links = []
+
+    for requirement in (l.strip() for l in open('scripts/installation/requirements.txt')):
+        match = EDITABLE_REQUIREMENT.match(requirement)
+        if match:
+            assert which(match.group('vcs')) is not None, \
+                "VCS '%(vcs)s' must be installed in order to install %(link)s" % match.groupdict()
+            install_requires.append("%(package)s==%(version)s" % match.groupdict())
+            dependency_links.append(match.group('link'))
+        else:
+            install_requires.append(requirement)
 # ___________________________________________________________________________________________________________________
 
 LONG_DESCRIPTION = None
@@ -87,14 +89,14 @@ setup(
     long_description=LONG_DESCRIPTION,
     license='Apache 2.0',
     #TODO Update with .quantrade !
-    data_files=[
-        ('scripts', ['scripts/ordered_pip.sh',
-                     'scripts/run_labo.py',
-                     'scripts/run_shiny.sh']),
-        ('config', ['config/local.sh',
-                    'config/shiny-server.config',
-                    'config/mysql.cfg'])
-    ],
+    #data_files=[
+        #('scripts', ['scripts/ordered_pip.sh',
+                     #'scripts/run_labo.py',
+                     #'scripts/run_shiny.sh']),
+        #('config', ['config/local.sh',
+                    #'config/shiny-server.config',
+                    #'config/mysql.cfg'])
+    #],
     classifiers=[
         'Development Status :: 1 - Beta',
         'Natural Language :: English',
@@ -107,7 +109,7 @@ setup(
     ],
     install_requires=[
         'plac',
-        'sqlalchemy',
+        'SQLAlchemy',
         'beautifulsoup4',
         'scipy',
         #FIXME 'matplotlib',
@@ -124,7 +126,7 @@ setup(
         "quandl",
         'pyzmq'
     ],
-    dependency_links = [
+    dependency_links=[
         'http://github.com/Gusabi/zipline',
         'http://github.com/quandl/Python'
     ],

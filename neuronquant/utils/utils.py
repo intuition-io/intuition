@@ -32,6 +32,15 @@ import socket
 from urllib2 import urlopen
 
 
+def activate_pdb_hook():
+    def debug_exception(type, value, tb):
+        import pdb
+        pdb.post_mortem(tb)
+
+    import sys
+    sys.excepthook = debug_exception
+
+
 #NOTE Could use pprint module
 def emphasis(obj, align=True):
     if isinstance(obj, dict):

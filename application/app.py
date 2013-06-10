@@ -94,15 +94,17 @@ if __name__ == '__main__':
         # _configure_context() you can use directly for better understanding
         data, trading_context = engine.configure()
 
-        # See neuronquant/gears/engine.py for details of results which is an
-        # analyzes object
+        # See neuronquant/gears/engine.py for details of results 
+        #which is an Analyzes object
         analyzes = engine.run(data, configuration, strategie, trading_context)
 
         if analyzes is None:
             log.error('** Backtest failed.')
             sys.exit(1)
 
-        '''_______________________________________________________________________________________    Results   ____'''
+        '''___________________________________________________________    Results   ____'''
+        #analyzes.run_dashboard(portfolio=strategie['manager']['name'])
+
         log.info('Portfolio returns: \
                 {}'.format(analyzes.results.portfolio_value[-1]))
 

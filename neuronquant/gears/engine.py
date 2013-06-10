@@ -89,7 +89,10 @@ class Simulation(object):
         #self.metrics = None
         #self.server        = ZMQ_Dealer(id=self.__class__.__name__)
         self.configuration = configuration
-        self.datafeed = DataFeed(configuration['env']['quandl'])
+        if 'quandl' in configuration['env']:
+            self.datafeed = DataFeed(configuration['env']['quandl'])
+        else:
+            self.datafeed = DataFeed()
 
     #TODO For both, timezone configuration
     def configure(self):

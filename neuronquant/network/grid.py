@@ -29,6 +29,8 @@ log = logbook.Logger('Grid::Main')
 from IPython.parallel import Client, error
 
 import neuronquant.network.fabfile as fab
+from neuronquant.network.dashboard import Dashboard
+from neuronquant.network.dashboard import LogIO
 
 import xmlrpclib
 import time
@@ -43,13 +45,15 @@ class Grid(object):
     hosts = []
     active_engines = set()
     default_glances_port = 61209
+    dashboard = Dashboard()
+    app_monitor = False
 
     def __init__(self):
         #NOTE Should clean previous report_path ?
         # Intercept CTRL-C
         SignalManager()
 
-    def setup(self, monitor_app=False, push_app=False, zeroconfig=False):
+    def prepare_nodes(self, monitor_app=False, push_app=False, zeroconfig=False):
         # config file is a json object with each process params
         fd = open('/'.join((os.environ['QTRADE'], 'config/grid.json')), 'r')
         components = json.load(fd)['components']
@@ -62,28 +66,36 @@ class Grid(object):
             from fabfile import global_config
             self.hosts = global_config['grid']['nodes']
             self.root_name = global_config['grid']['name']
-            self.root_port = global_config['grid']['port']
+            self.port = global_config['grid']['port']
 
-        #NOTE Repartition according available power ?
-        engines_per_host = int(len(components) / len(self.hosts))
+        self.logio = LogIO(self.hosts)
 
         # Push and merge local changes on remote repos
         if push_app:
             execute(fab.update_git_repos)
 
+        self._wakeup_nodes(len(components), monitor_app)
+
+        return components
+
+    def _wakeup_nodes(self, nbr_to_deploy, monitor=False):
+        self.app_monitor = monitor
+        #NOTE Repartition according available power ?
+        engines_per_host = int(nbr_to_deploy / len(self.hosts))
+
         # Run local ipcontroller, remote monitoring, and remote ipengines
-        fab.deploy_grid(engines_per_host, monitor=monitor_app)
+        fab.deploy_grid(engines_per_host, monitor=monitor)
 
         #TODO Better Wait for controller and engines to be started
         # Create ipython.parallel interface
         self.nodes = Client()
         buffer_count = -1
         stuck_warning = 0
-        while len(self.nodes.ids) < len(components):
+        while len(self.nodes.ids) < nbr_to_deploy:
             #FIXME Sometimes get stuck waiting forever all nodes to be online
             log.info(blue('%d node(s) online / %d' %
-                     (len(self.nodes.ids), len(components))))
-            time.sleep(5)
+                     (len(self.nodes.ids), nbr_to_deploy)))
+            time.sleep(6)
             if len(self.nodes.ids) == buffer_count:
                 log.warning('No new nodes...')
                 stuck_warning += 1
@@ -96,80 +108,71 @@ class Grid(object):
             buffer_count = len(self.nodes.ids)
         log.info(green('Nodes ready.'))
 
-        return components
-
     def deploy(self, components, is_backtest=False):
         # Useful dicts, see below
         remote_processes = {}
-        completion_dashboard = {'panel': []}
-        completion_logs = {ip: {'logfiles': []} for ip in self.hosts}
 
         # For each node:
         for i, node in enumerate(self.nodes):
             # Retrieve a common configuration template, modified by given dict
             config = get_configuration(components[i], backtest=is_backtest)
-
             name = '-'.join((str(i),
                              self.root_name,
                              config['configuration']['exchange'],
                              config['configuration']['algorithm'],
                              config['configuration']['manager']))
-            config['strategie']['manager']['name'] = name
-            config['configuration']['logfile'] = name + '.log'
-            config['configuration']['port'] = self.root_port + i
 
-            #NOTE do node object have the IP adress ?
-            #     Seems not but access to node.targets, map them to ip ?
-            remote_ip = node.apply_sync(get_ip)
-            completion_dashboard['panel'].append(
-                {
-                    'i': i, 'title': name,
-                    'proxy_ip': remote_ip,
-                    'portfolio': name
-                }
-            )
+            remote_processes[name] = self._process_on_engine(node, name, config)
 
-            # Trick to handle json strucutre (last coma of the line)
-            if i >= len(completion_logs[remote_ip]['logfiles']) \
-                    and 'nodename' not in completion_logs[remote_ip]:
-                completion_logs[remote_ip]['last'] = name + '.log'
-                completion_logs[remote_ip]['nodename'] = remote_ip
-                completion_logs[remote_ip]['server_ip'] = get_ip()
-            else:
-                completion_logs[remote_ip]['logfiles'].append({'name': name + '.log'})
+        return remote_processes
 
-            # Run remote process
-            #NOTE Try not to run it simultanuously
-            time.sleep(5)
-            log.info(blue('Running trade system on node %d::%s (%s)'
-                          % (i, remote_ip, name)))
-            remote_processes[name] = node.apply_async(trade, config)
+    def _process_on_engine(self, node, name, config):
+        self.port += 1
+        config['strategie']['manager']['name'] = name
+        config['configuration']['logfile'] = name + '.log'
+        config['configuration']['port'] = self.port
 
-        return remote_processes, completion_logs, completion_dashboard
+        remote_ip = node.apply_sync(get_ip)
 
-    def setup_monitoring(self, glances_server=False,
-                         completion_dashboard=False,
-                         completion_logserver=False):
+        self.dashboard.add_description(remote_ip=remote_ip, portfolio=name)
+        self.logio.add_description(name, remote_ip=remote_ip)
+
+        # Run remote process
+        #TODO get node id for i
+        i = 0
+        log.info(blue('Running trade system on node %d::%s (%s)'
+                      % (i, remote_ip, name)))
+        return node.apply_async(trade, config)
+
+    def set_monitoring(self,
+                       glances_server=False,
+                       dashboard=False,
+                       completion_logserver=False):
         if completion_logserver:
-            fab.activate_logserver(completion_logserver)
+            self.logio.build()
+            self.logio.run()
 
-        if completion_dashboard:
-            fab.generate_dashboards(completion_dashboard)
+        if dashboard:
+            #TODO As logserver
+            self.dashboard.build()
+            self.dashboard.run(public_ip=False)
 
         log.info(blue('Done with remote deployement'))
 
         #TODO Improve, and take care of provided flags
         # Monitoring servers and remote processes
         # API: https://github.com/nicolargo/glances/wiki/The-Glances-API-How-To
-        if glances_server:
-            monitor_server = xmlrpclib.ServerProxy('http://{}:{}'.format(
-                self.hosts[0], self.default_glances_port))
-            #msg = '{} cores available on remote host'
-            #FIXME Not supported: log.info(red(msg.format(monitor_server.getCore())))
+        if glances_server and self.app_monitor:
+            glances_instances = {}
+            for ip in self.hosts:
+                glances_instances[ip] = xmlrpclib.ServerProxy(
+                    'http://{}:{}'.format(ip, self.default_glances_port))
+                #msg = '{} cores available on remote host'
+                #FIXME Not supported: log.info(red(msg.format(monitor_server.getCore())))
         else:
-            monitor_server = None
+            glances_instances = {}
 
-        return monitor_server
+        return glances_instances
 
     def on_end(self, id, process):
         try:

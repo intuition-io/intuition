@@ -51,7 +51,7 @@ def save_metrics_snapshot(name, dt, cmr):
 
 
 def clean_previous_trades(portfolio_name):
-    extractor('DELETE FROM Positions WHERE PortfolioName=\'{}\''.format(portfolio_name))
+    #extractor('DELETE FROM Positions WHERE PortfolioName=\'{}\''.format(portfolio_name))
     extractor('DELETE FROM Portfolios where Name=\'{}\''.format(portfolio_name))
     extractor('DELETE FROM Metrics where Name=\'{}\''.format(portfolio_name))
     #TODO Clean previous widgets
@@ -188,20 +188,27 @@ class PortfolioManager(object):
         ___________________________________________________________
         Parameters
             signals: dict
-                hold stocks of interest, format like {"google": 567.89, "apple": -345.98}
+                hold stocks of interest, format like {"google": 0.8, "apple": -0.2}
                 If the value is negative -> sell signal, otherwize buy one
+                Values are ranged between [-1 1] regarding signal confidence
             extras: whatever
                 Object sent from algorithm for certain managers
         ___________________________________________________________
         Return
             dict orderBook, like {"google": 34, "apple": -56}
         '''
+
         self._optimizer_parameters['algo'] = extras
-        orderBook       = dict()
+        orderBook = dict()
 
         # If value < 0, it's a sell signal on the key, else buy signal
-        to_buy          = [t for t in signals if signals[t] > 0]
-        to_sell         = set(self.portfolio.positions.keys()).intersection([t for t in signals if signals[t] < 0])
+        to_buy = dict(filter(lambda (sid, strength): strength > 0, signals.iteritems()))
+        to_sell = dict(filter(lambda (sid, strength): strength < 0, signals.iteritems()))
+        #to_buy    = [t for t in signals if signals[t] > 0]
+        #NOTE With this line we can't go short
+        #to_sell   = set(self.portfolio.positions.keys()).intersection(
+                #[t for t in signals if signals[t] < 0])
+
         if not to_buy and not to_sell:
             # Nothing to do
             return dict()

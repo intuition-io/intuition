@@ -1,7 +1,11 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 from zipline.algorithm import TradingAlgorithm
 import numpy as np
+import copy
 
-
+#format de la donnée
 def get_input_fields(data, ignored):
     assert len(data.items())
     one_sid_event = data.items()[0][1]
@@ -18,6 +22,11 @@ class MarkovGenerator(TradingAlgorithm):
     '''
 
     def initialize(self, properties):
+        self.vect_value = []
+        self.vect_fft = []
+
+
+        self.count = 0
 
         self.debug = properties.get('debug', False)
         self.save = properties.get('save', False)
@@ -25,14 +34,116 @@ class MarkovGenerator(TradingAlgorithm):
         if not isinstance(self.ignored, list):
             self.ignored = [self.ignored]
 
-        # phase 1
-        self.states = []
-        self.states_id = 1
+        self.input_data = []
+        self.scope = 5
 
-        # phase 2
-        self.matrix = WhoNext()
+        self.state1 = 0
+
+        self.next1 = 0
+
+        self.transfert1 = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]
+        #self.transfert1 = [[0.5, 0.358695652173913, 0.08695652173913043, 0.05434782608695652], [0.4411764705882353, 0.3088235294117647, 0.14705882352941177, 0.10294117647058823], [0.19642857142857142, 0.17857142857142858, 0.2857142857142857, 0.3392857142857143], [0.08163265306122448, 0.10204081632653061, 0.4489795918367347, 0.3673469387755102]]
+        self.transfert1 = [[0.511166253101737, 0.3829611248966088, 0.07030603804797353, 0.03556658395368073], [0.4066037735849057, 0.2981132075471698, 0.17452830188679244, 0.12075471698113208], [0.13178294573643412, 0.21705426356589147, 0.3067552602436323, 0.3444075304540421], [0.04026115342763874, 0.0957562568008705, 0.38737758433079433, 0.4766050054406964]]
+
+
+        self.frequence1 = [0,0,0,0]
+
+        self.occurence1 = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]
+        #self.occurence1 = [[46, 33, 8, 5], [30, 21, 10, 7], [11, 10, 16, 19], [4, 5, 22, 18]]
+        #self.occurence1 = [[92, 66, 16, 10], [60, 42, 20, 14], [22, 20, 32, 38], [8, 10, 44, 36]]
+        #self.occurence1 = [[138, 99, 24, 15], [90, 63, 30, 21], [33, 30, 48, 57], [12, 15, 66, 54]]
+        #self.occurence1 = [[618, 463, 85, 43], [431, 316, 185, 128], [119, 196, 277, 311], [37, 88, 356, 438]]
+        #self.occurence1 = [[1098, 827, 146, 71], [772, 569, 340, 235], [205, 362, 506, 565], [62, 161, 646, 822]]
+
+
+
+        self.result1 = [0,0]
+
+        self.memory = []
+
+        #trigger variable
+        self.scope_average = [0,0,0,0,0]
+        self.min = [0,0,0,0,0]
+        self.max = [0,0,0,0,0]
+
+        #input counter for init
+        self.init = 0
+
+	#compute the scope
+    def _average(self):
+	_sum = [0,0,0,0,0]
+
+	for ohlc in self.memory:
+		for i in xrange(len(ohlc)):
+			_sum[i] += ohlc[i]
+
+	for i in xrange(self.data_size):
+		self.scope_average[i] = _sum[i]/self.scope
+
+    def _min(self):
+	self.min = [0,0,0,0,0]
+
+	for i,value in enumerate(self.memory[0]):
+		self.min[i] = value
+	for ohlc in self.memory:
+		for i,value in enumerate(ohlc):
+			if self.min[i] > value:
+				self.min[i] = value
+
+    def _max(self):
+	self.max = [0,0,0,0,0]
+	for i,value in enumerate(self.memory[0]):
+		self.max[i] = value
+	for ohlc in self.memory:
+		for i,value in enumerate(ohlc):
+			if self.max[i] < value:
+				self.max[i] = value
+
+    def trigger(self,data):
+	#self.vect_fft.append(data[0])
+	self.vect_value.append(data[0])
+	#format de la donnée
+	self._average()
+	self._min()
+	self._max()
+
+	#donne l'état correspondant dans la dimension
+	#ont les mêmes critères quelque soit la dimension
+	selector = [0,0,0,0,0]
+
+	for i,value in enumerate(data):
+	    if value <= self.min[i]:
+		selector[i] = 3
+	    elif value >= self.max[i]:
+		selector[i] = 0
+	    else :
+		if value < self.scope_average[i]:
+		    selector[i] = 2
+		elif value > self.scope_average[i]:# >= ???
+		    selector[i] = 1
+		else:
+		    print 'error'
+
+	return selector
+
+    def get_next1(self):
+        _max = self.transfert1[self.state1][0]
+        next = 0
+        for i,value in enumerate(self.transfert1[self.state1]):
+            if _max < value:
+                _max = value
+                next = i
+        self.next1 = next
+
+    def push(self, data):
+        self.memory.pop(0)
+        self.memory.append(copy.deepcopy(data))
 
     def handle_data(self, data):
+
+        self.count += 1
+        signals = {}
+
         ''' --------------------------------------------------    Init   --'''
         if self.initialized:
             self.manager.update(
@@ -48,225 +159,117 @@ class MarkovGenerator(TradingAlgorithm):
             self.input_fields = get_input_fields(data, self.ignored)
             self.data_size = len(self.input_fields)
 
-            tmin = np.ones([self.data_size])
-            tmax = np.zeros([self.data_size])
-            self.tab_minmax = np.column_stack([tmin, tmax])
-
-            self.input_data = np.zeros([self.data_size])
-
         for sid in data:
-            self.logger.info(data[sid].price)
+            break
             #data frame type
+
+	    input_data = []
+	    for _ in xrange(self.data_size):
+		    input_data.append(0.0)
+
             for i, field in enumerate(self.input_fields):
-                self.input_data[i] = data[sid][field]
+                input_data[i] = data[sid][field]
 
-            alpha = np.zeros([self.data_size])
+	    if self.init < self.scope:
+	    	self.init += 1
+		self.memory.append(input_data)
+	    	return
+	    else :
 
-            # mobile normalize
-            for i in xrange(self.data_size):
-                if self.tab_minmax[i][0] > self.tab_minmax[i][1]:
-                    self.tab_minmax[i][0] = self.input_data[i]
-                    self.tab_minmax[i][1] = self.input_data[i]
-                    alpha[i] = -1.0
-                elif self.input_data[i] < self.tab_minmax[i][0]:
-                    self.tab_minmax[i][0] = self.input_data[i]
-                    alpha[i] = 0.0
-                elif self.input_data[i] > self.tab_minmax[i][1]:
-                    self.tab_minmax[i][1] = self.input_data[i]
-                    alpha[i] = 1.0
-                elif self.tab_minmax[i][0] != self.tab_minmax[i][1]:
-                    #normalize
-                    tmp0 = self.input_data[i] - self.tab_minmax[i][0]
-                    tmp1 = self.tab_minmax[i][1] - self.tab_minmax[i][0]
-                    alpha[i] = tmp0 / tmp1
-                else:
-                    #alpha = -1 #error or data unupdated yet
-                    alpha[i] = -1.0
+	    	selector = self.trigger(input_data)
 
-            #distance evaluation # ps : factorisable
-            #and add input to states
-            if len(self.states):
-                state = None
-                beta = 1.0  # range max
-                #match with states already poped?
-                for i in xrange(len(self.states)):
-                    beta0 = self.states[i].eval_range(alpha)
-                    if beta0 < beta:
-                        beta = beta0
-                        state = self.states[i]
-                if state:
-                    #yes, amomomomo => check the expected value
-                    state.add_input(alpha)
+		self.frequence1[selector[0]] +=1
 
-                    # Compare with planned result
-                    self.matrix.compare(state)
-                else:
-                    #nop, build a new one => awe, update the transfert matrix, it sucks
-                    state = State(self.data_size, self.states_id)
-                    state.add_input(alpha)
-                    self.states.append(state)
-                    self.states_id += 1
-                    #add the new state to the matrix index
-                    self.matrix.add_state(state)
+	    	#repeat for each dimension...
+	    	if self.next1 == selector[0]:
+			self.result1[0] += 1
+	   	else :
+			self.result1[1] += 1
 
-            else:
-                #no state on the queue, build the first one!
-                state = State(self.data_size, self.states_id)
-                state.add_input(alpha)
-                self.states.append(state)
-                self.states_id += 1
+	    	self.occurence1[self.state1][selector[0]] +=1
+	    	_sum = 0.0
+	    	for emission in self.occurence1[self.state1]:
+			_sum += emission
 
-                self.matrix.add_state(state)
+	    	for i, value in enumerate(self.occurence1[self.state1]):
+			self.transfert1[self.state1][i] = value / _sum
 
-                #self.states is the output of the state graph builder
+	    	#the input state become the current one
+	    	self.state1 = selector[0]
 
-        #phase 2 : WhoNext?
-        self.matrix.expect()
+	    	self.get_next1()
 
-        #phase 3 : Markov Regression
+	    	self.push(input_data)
 
+		if self.count == 172:
+			print 'transferts'
+			print self.transfert1
+			print 'occurence'
+			print self.occurence1
+			print 'results'
+			print 'bon : {0} , mauvais : {1}'.format(self.result1[0],self.result1[1])
 
-class WhoNext(object):
-    '''build the n by n transfert matrice for the state graph'''
-    def __init__(self):
-        #NB : self.index and the self.state from the main class are the same array
-        self.index = [0]
-        #this array ll help us to determine the efficiency of the basic probabilist approach
-        self.result = [[0, 0]]
-        #size of the index, this variable is used to a more explicit programming
-        self.size = 1
-        #count the number of input in a edge
-        self.matrix_occurence = np.array([0])
-        #eval the probability from the matrix occurence, could use other source
-        self.matrix_probability = np.array([0.0])
+			for i, line in enumerate(self.frequence1):
+				print 'state{0} : {1}'.format(i,line)
 
-        self.current_state = 0
-        self.state_id_expected = 0
+			_sum = 0.0
+			_sum += sum(self.frequence1)
 
-    def add_state(self, state):
-        #add a new state to the system
-        self.index.append(state.name)
-        self.result.append([0, 0])
+			for i, line in enumerate(self.frequence1):
+				print 'state{0} freq : {1}'.format(i,line/_sum)
 
-        right_builder = []
-        sub_builder = []
-        for i in xrange(self.size):
-            right_builder.append(0)
-            sub_builder.append(0)
+			'''import matplotlib.pyplot as plt
+			value = np.array(self.vect_value)
+			plt.plot(value)
+			plt.title("Data_Source")
+			plt.xlabel("Date")
+			plt.ylabel("Value")
+			plt.show()'''
 
-        #cos size(sub) = size(right)+1
-        sub_builder.append(0)
+			#import numpy as np
+			import pylab as py
+			import scipy as sc
 
-        right = np.array(right_builder)
-        sub = np.array(sub_builder)
+			#Fs = size_input
+			#Fs = 150.0;  # sampling rate
+			Fs = 365
 
-        self.matrix_occurence = np.column_stack([self.matrix_occurence, right])
-        self.matrix_occurence = np.transpose(self.matrix_occurence)
-        self.matrix_occurence = np.column_stack([self.matrix_occurence, sub])
-        self.matrix_occurence = np.transpose(self.matrix_occurence)
+			Ts = 1.0/Fs; # sampling interval
 
-        self.matrix_probability = np.column_stack([self.matrix_probability, right])
-        self.matrix_probability = np.transpose(self.matrix_probability)
-        self.matrix_probability = np.column_stack([self.matrix_probability, sub])
-        self.matrix_probability = np.transpose(self.matrix_probability)
+			Duration = len(self.vect_value) / 365
+			diff = len(self.vect_value)%365
+			value = self.vect_value[:-diff]
 
-        #update value after building system, 0 by default
-        self.matrix_occurence[0][self.size] += 1
+			t = sc.arange(0,Duration,Ts) # time vector
 
-        #update the univers row. As every state born one time from it, the probability
-        ##to build it is 1/number_of_state
-        for i in xrange(self.size):
-            self.matrix_probability[0][i] = 1.0 / (self.size+1)
+			print len(t)
+			print len(value)
 
-        if self.current_state:
-            self.matrix_occurence[self.current_state][self.size] = 1
+			signal = np.array(value)
 
-            if self.state_id_expected:
-                #cos of a bad prediction => bad mark
-                self.result[self.current_state][1] += 1
-            #else, if 0 was planned, that's not a bad prediction cos indeed, this new state born from state0
-            else:
-                self.result[self.current_state][0] += 1
+			py.subplot(2,1,1)
+			py.plot(t,signal)
+			py.xlabel('Time')
+			py.ylabel('Amplitude')
+			py.subplot(2,1,2)
 
-            _sum = np.sum(self.matrix_occurence[self.current_state])
-            for i in xrange(self.size):
-                #TODO use external data source and merge with the occurence one
-                self.matrix_probability[self.current_state][i] = self.matrix_occurence[self.current_state][i] / _sum
+			#plotSpectrum(y,Fs)
+			#def plotSpectrum(y,Fs):
+			n = len(signal) # length of the signal
+			k = sc.arange(n)
+			T = n/Fs
+			frq = k/T # two sides frequency range
+			frq = frq[range(n/2)] # one side frequency range
 
-        self.size += 1
+			Y = sc.fft(signal)/n # fft computing and normalization
+			Y = Y[range(n/2)]
 
-    def expect(self):
-        #read the n by n transition matrix to expect the next one
-        ## is it important to search hidden node from this dataframe
-        ### from current_state get highest probability value
-
-        if self.current_state:
-            self.state_id_expected = 0
-            _max = 0
-            for i in xrange(self.size):
-                if _max < self.matrix_probability[self.current_state][i]:
-                    _max = self.matrix_probability[self.current_state][i]
-                    self.state_id_expected = i;
-                    #TODO : choose also from the density value of the targeted state, need an access to it
-        else:
-            self.state_id_expected = self.size #predict a new one! this is a default approch from the universe state
-
-    def compare(self, state):
-        #if self.index(state.name):
-        if state.name in self.index:
-            if state.name == self.state_id_expected:
-                #WELL DONE BRO
-                self.matrix_occurence[self.current_state][self.state_id_expected] +=1
-                self.result[self.current_state][0] +=1
-            else:
-                #bad luck :/
-                self.matrix_occurence[self.current_state][state.name] +=1
-                self.result[self.current_state][1] +=1
-
-            #update probability matrix
-
-            _sum = np.sum(self.matrix_occurence[self.current_state])
-            for i in xrange(self.size):
-                #TODO use external data source and merge with the occurence one
-                self.matrix_probability[self.current_state][i] = self.matrix_occurence[self.current_state][i] / _sum
-
-            #update current_state
-            self.current_state = state.name
-
-        else:
-            #error, state havn't been indexed
-            return
+			frq = frq[1:150]
+			Y = Y[1:150]
 
 
-class State(object):
-    def __init__(self, dimension, name):
-        self.name = name
-        self.dim = dimension
-        self.core = np.zeros([dimension])
-        self.size = 0
-        self.range = 0.1  # 10%
+			py.plot(frq,abs(Y),'r') # plotting the spectrum
+			py.xlabel('Freq (Hz)')
+			py.ylabel('|Y(freq)|')
 
-    #get normalize data
-    def add_input(self, data):
-        if len(data) == self.dim:
-            #barycentric build
-            for i in xrange(self.dim):
-                weight0 = self.size * self.core[i] + data[i]
-                weight1 = self.size + 1.0
-                self.core[i] = weight0/weight1
-            #update
-            self.size += 1
-            #this define how the state growth according to his size
-            self.range = self.range / np.math.sqrt(self.size)
-
-    def eval_range(self, data):
-        if len(data) == self.dim:
-            _sum = 0.0
-        for i in xrange(self.dim):
-            _sum += pow(self.core[i] - data[i], 2)
-        #normalize
-        beta = np.math.sqrt(_sum) / np.math.sqrt(self.dim)
-        if beta <= self.range:
-            return beta
-        else:
-            return 1.0
+			py.show()

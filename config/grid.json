@@ -1,80 +1,19 @@
 {"components": [
     {
-        "exchange": "paris",
-        "cash": 50000,
-        "algorithm": "Gradient",
+        "algorithm": "BuyAndHold",
         "manager": "Fair",
-        "tickers": "random,20",
+        "source": "CSVSource",
+        "tickers": "INDEX_FCHI",
         "debug": 1,
         "save": 1,
         "loglevel": "INFO",
-        "end": "17h30",
-        "refresh_period": 1,
+        "start": "2011-05-10",
         "clean": 0,
-        "window_length": 30,
-        "rebalance_period": 5
+        "max_weight": 0.5,
+        "buy_amount": 80,
+        "sell_amount": 70
     },
     {
         "manager": "Constant"
-    },
-    {
-        "manager": "OptimalFrontier"
-    },
-    {
-        "algorithm": "BuyAndHold",
-        "manager": "Fair"
-    },
-    {
-        "algorithm": "Rebalance",
-        "manager": "GMV",
-        "refresh_period": 5
-    },
-    {
-        "manager": "Fair"
-    },
-    {
-        "algorithm": "Momentum",
-        "manager": "OptimalFrontier",
-        "window_length": 5
-    },
-    {
-        "algorithm": "VWAP",
-        "manager": "Constant",
-        "window_length": 3
-    },
-    {
-        "manager": "GMV"
-    },
-    {
-        "algorithm": "StdBased",
-        "manager": "Fair",
-        "stddev_window": 9,
-        "vwap_window": 5
-    },
-    {
-        "manager": "Constant"
-    },
-    {
-        "manager": "GMV"
-    },
-    {
-        "algorithm": "Follower",
-        "refresh_period": 1,
-        "window_length": 50
-    },
-    {
-        "algorithm": "MACrossover",
-        "manager": "OptimalFrontier",
-        "window_length": 3
-    },
-    {
-        "algorithm": "DualMA",
-        "manager": "OptimalFrontier",
-        "long_window": 30,
-        "short_window": 10
-    },
-    {
-        "manager": "Constant",
-        "short_window": 20
     }
 ]}

@@ -11,10 +11,39 @@ Dashboard class that interact with team_dashboard REST API
 '''
 
 
+import jinja2
 import requests
 import logbook
 import json
+import os
 log = logbook.Logger('Dashboard')
+
+import neuronquant.utils.utils as utils
+
+from fabric.api import (
+    run, local, env, execute,
+    hide, parallel, roles)
+from fabric.colors import blue
+from fabric.context_managers import shell_env
+
+from multiprocessing import Process
+
+import time
+
+
+#TODO Find a way to merge this replicate with fabfile
+global_config = json.load(open(os.path.expanduser('~/.quantrade/default.json'), 'r'))
+
+#http://docs.fabfile.org/en/1.4.3/usage/env.html#full-list-of-env-vars
+#env.forward_agent = True
+#env.key_filename = [""]
+env.user = global_config['grid']['name']
+env.password = global_config['grid']['password']
+env.hosts = global_config['grid']['nodes']
+env.roledefs = {
+    'controller': global_config['grid']['controller'],
+    'nodes': global_config['grid']['nodes']
+}
 
 
 def proxy_request(root_uri='http://127.0.0.1:3000/api/dashboards',
@@ -91,10 +120,15 @@ def delete_widget(dashboard_id, widget_id):
 #TODO Like for symbols, an abstraction between names and ids
 #TODO Check for allowed values, like update_interval
 class Dashboard(object):
+    #NOTE templates_path could be an env variable as well
+    templates_path = '/'.join((os.environ['QTRADE'], 'config/templates'))
+    #FIXME Where to put officially zipline and team_dashboard
+    dashboard_path = os.path.expanduser('~/openlibs/team_dashboard')
+    completion = {'panel': []}
     properties = {}
     positions_buffer = {}
 
-    def __init__(self, id):
+    def __init__(self, id=0):
         '''
         Id can be dasboard's name or id (whatever str or int)
         '''
@@ -147,26 +181,130 @@ class Dashboard(object):
         log.warning('Unabled to find widget with provided id')
         return {'messag': 'ressource not found'}
 
-    def update_position_widgets(current_positions):
+    def update_position_widgets(self, current_positions):
         for stock in current_positions:
             amount = current_positions[stock].amount
             stock = stock.replace(' ', '+')
             if (amount == 0) and (stock in self.positions_buffer):
                 self.positions_buffer.pop(stock)
-                dashboard.del_widget(stock)
+                self.del_widget(stock)
             if (amount != 0) and (stock not in self.positions_buffer):
                 self.positions_buffer[stock] = amount
-                dashboard.add_number_widget(
-                        {'name': stock,
-                         'source': 'http_proxy',
-                         'proxy_url': 'http://127.0.0.1:8080/dashboard/number?data=Amount&table=Positions&field=Ticker&value={}'.format(stock),
-                         'proxy_value_path': ' ',
-                         'label': '$',
-                         'update_interval': '30',
-                         'use_metrics_suffix': True})
+                self.add_number_widget(
+                    {'name': stock,
+                     'source': 'http_proxy',
+                     'proxy_url': 'http://127.0.0.1:8080/dashboard/number?data=Amount&table=Positions&field=Ticker&value={}'.format(stock),
+                     'proxy_value_path': ' ',
+                     'label': '$',
+                     'update_interval': '30',
+                     'use_metrics_suffix': True})
 
     def _build_proxy_url(self):
         '''
         url proxy api abstraction
         '''
         pass
+
+    def build(self):
+        tpl_env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(self.templates_path))
+        template = tpl_env.get_template('dashboard_block.tpl')
+        log.info('Rendering templates')
+        document = template.render(self.completion)
+        fd = open('{}/lib/tasks/populate.rake'.format(self.dashboard_path), 'w')
+        fd.write(document)
+        fd.close()
+
+    @roles('controller')
+    def run(self, port=4000, public_ip=False):
+        #NOTE run() in 'controller' role = local() ?
+        #TODO with fabric.cd()
+        with hide('output'):
+            log.info(blue('Cleaning up previous layout'))
+            local('cd {} && rake cleanup'.format(self.dashboard_path))
+            log.info(blue('Populating database'))
+            local('cd {} && rake custom_populate'.format(self.dashboard_path))
+            log.info(blue('Running server'))
+            local('cd {} && rails server -p 4000 -b {} &'.format(
+                self.dashboard_path, utils.get_ip(public=public_ip)))
+
+    def add_description(self, title=None, remote_ip='127.0.0.1', portfolio='ChuckNorris'):
+        if title is None:
+            title = portfolio
+        self.completion['panel'].append(
+            {
+                'i': len(self.completion['panel']) + 1,
+                'title': title,
+                'proxy_ip': remote_ip,
+                'portfolio': portfolio
+            }
+        )
+        return self.completion
+
+
+#NOTE Factorize Dashboard and LogIO ?
+class LogIO(object):
+    templates_path = '/'.join((os.environ['QTRADE'], 'config/templates'))
+    #FIXME xavier == $USER
+    node_path = "/home/xavier/.nvm/v0.10.7/lib/node_modules"
+
+    def __init__(self, hosts):
+        self.completion = {ip: {'logfiles': []} for ip in hosts}
+
+    def build(self):
+        #TODO integrate server ip in the template
+        #TODO Clean previous log files
+        for remote_ip, completion in self.completion.iteritems():
+            log.info(blue('Running log watcher on remote machine'))
+            tpl_env = jinja2.Environment(
+                loader=jinja2.FileSystemLoader(self.templates_path))
+            template = tpl_env.get_template('logs_block.tpl')
+            log.info(blue('Rendering templates'))
+            document = template.render(completion)
+            fd = open('{}/{}-harvester.conf'.format(self.templates_path, remote_ip), 'w')
+            fd.write(document)
+            fd.close()
+
+    def run(self):
+        p = Process(target=execute, args=(self._run_server,))
+        p.start()
+        time.sleep(2)
+        p = Process(target=execute, args=(self._run_harvester,))
+        p.start()
+
+    @parallel
+    @roles('controller')
+    def _run_server(self):
+        with shell_env(NODE_PATH=self.node_path):
+            local('log.io-server')
+
+    @parallel
+    @roles('nodes')
+    def _run_harvester(self):
+        #time.sleep(10)
+        #NOTE I could run it on local as well to inspect report files
+        #run('rm /home/xavier/.quantrade/log/*')
+        if env.host == utils.get_ip():
+            local('cp {}/{}-harvester.conf /home/{}/.log.io/harvester.conf'.format(
+                self.templates_path, env.host, env.user))
+            #with hide('output'):
+            with shell_env(NODE_PATH=self.node_path):
+                local('log.io-harvester')
+        else:
+            local('scp {}/{}-harvester.conf {}@{}:.log.io/harvester.conf'.format(
+                self.templates_path, env.host, env.user, env.host))
+            #with hide('output'):
+            with shell_env(NODE_PATH=self.node_path):
+                run('log.io-harvester')
+
+    def add_description(self, name, remote_ip='127.0.0.1'):
+        # Trick to handle json structure (last coma of the line)
+        if 'nodename' not in self.completion[remote_ip]:
+            self.completion[remote_ip]['last'] = name + '.log'
+            self.completion[remote_ip]['nodename'] = remote_ip
+            self.completion[remote_ip]['server_ip'] = utils.get_ip()
+
+        else:
+            self.completion[remote_ip]['logfiles'].append({'name': name + '.log'})
+
+        return self.completion

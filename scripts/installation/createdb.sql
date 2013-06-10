@@ -7,7 +7,3 @@
 
 CREATE database stock_data;
 GRANT ALL PRIVILEGES ON stock_data.* to 'user'@'localhost' identified by 'password'
-
-
--- vim:et
-

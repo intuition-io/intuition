@@ -90,8 +90,8 @@ class Setup(object):
                             action='store', default='',
                             required=False, help='Portfolio strategie to be used')
         parser.add_argument('-so', '--source',
-                            action='store', default='default',
-                            required=False, help='Data generator')
+                            action='store',
+                            required=True, help='Data generator')
         parser.add_argument('-d', '--database',
                             action='store', default='',
                             required=False, help='Table to considere in database')
@@ -135,7 +135,7 @@ class Setup(object):
         self.config_backtest = {'algorithm': args.algorithm,
                                 'frequency': args.frequency,
                                 'manager'  : args.manager,
-                                'source'  : args.source,
+                                'source'   : args.source,
                                 'database' : args.database,
                                 'tickers'  : smart_tickers_select(args.tickers, exchange=args.exchange),
                                 'start'    : normalize_date_format(args.start),

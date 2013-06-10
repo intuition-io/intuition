@@ -19,6 +19,7 @@
         "logging"   : "*",
         "config"    : "*",
         "ncurses"   : "*",
+        "log.io"   : "*",
         "sleep"     : "*"
     },
     "devDependencies": {},

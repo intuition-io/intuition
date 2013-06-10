@@ -13,8 +13,8 @@
         "load_backup": 0,
         "android": 0,
         "max_weight": 0.5,
-        "buy_amount": 80,
         "connected": 0,
+        "buy_amount": 80,
         "sell_amount": 70
     },
     "GMV":

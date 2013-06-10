@@ -47,7 +47,6 @@ class BuyAndHold(TradingAlgorithm):
                     save=self.save,
                     widgets=False)
             self.process_instruction(user_instruction)
-            import ipdb; ipdb.set_trace()
         else:
             # Perf_tracker need at least a turn to have an index
             self.initialized = True
@@ -58,6 +57,7 @@ class BuyAndHold(TradingAlgorithm):
                 signals[ticker] = data[ticker].price
 
         ''' ----------------------------------------------------------   Orders  --'''
+        import ipdb; ipdb.set_trace()
         if signals:
             orderBook = self.manager.trade_signals_handler(signals)
             for stock in orderBook:

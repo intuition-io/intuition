@@ -32,12 +32,8 @@ import json
 import logbook
 log = logbook.Logger('Grid::Fabric')
 
-import jinja2
-
 
 #TODO A function to scan all of this ?
-templates_path = '/home/xavier/dev/projects/ppQuanTrade/config/templates'
-dashboard_path = '/home/xavier/openlibs/team_dashboard'
 engines_path = '/home/xavier/.config/ipython/profile_default/security/ipcontroller-engine.json'
 node_path = "/home/xavier/.nvm/v0.10.7/lib/node_modules"
 
@@ -68,86 +64,26 @@ def activate_controller():
             local('scp {} {}@{}:dev/'.format(engines_path, env.user, target_ip))
 
 
-#TODO Get generic function from script generator
-@roles('controller')
-def generate_dashboards(completion):
-    log.info(blue('Generating dashboards on local machine'))
-    env = jinja2.Environment(
-        loader=jinja2.FileSystemLoader(templates_path))
-    template = env.get_template('dashboard_block.tpl')
-    log.info(blue('Rendering templates'))
-    document = template.render(completion)
-    fd = open('{}/lib/tasks/populate.rake'.format(dashboard_path), 'w')
-    fd.write(document)
-    fd.close()
-
-    #FIXME with cd('/home/xavier/openlibs/team_dashboard'):
-    with hide('output'):
-        local('cd {} && rake cleanup'.format(dashboard_path))
-        local('cd {} && rake custom_populate'.format(dashboard_path))
-        local('cd {} && rails server -p 4000 -b {} &'.format(
-            dashboard_path, utils.get_ip()))
-
-
-#FIXME Should be installed on controller and only ran here
-@parallel
-@roles('controller')
-def run_logserver():
-    #run('rm /home/xavier/.quantrade/log/report*')
-    local('log.io-server')
-
-
-@parallel
-@roles('nodes')
-def run_logharvester():
-    #time.sleep(10)
-    #NOTE I could run it on local as well to inspect report files
-    #run('rm /home/xavier/.quantrade/log/*')
-    local('scp {}/{}-harvester.conf {}@{}:.log.io/harvester.conf'.format(
-        templates_path, env.host, env.user, env.host))
-    #with hide('output'):
-    with shell_env(NODE_PATH=node_path):
-        run('log.io-harvester')
-
-
-def activate_logserver(completions_dict):
-    #TODO integrate server ip in the template
-    #TODO Clean previous log files
-    for remote_ip, completion in completions_dict.iteritems():
-        log.info(blue('Running log watcher on remote machine'))
-        env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(templates_path))
-        template = env.get_template('logs_block.tpl')
-        log.info(blue('Rendering templates'))
-        document = template.render(completion)
-        fd = open('{}/{}-harvester.conf'.format(templates_path, remote_ip), 'w')
-        fd.write(document)
-        fd.close()
-
-    #with hide('output'):
-    p = Process(target=execute, args=(run_logserver,))
-    p.start()
-    time.sleep(2)
-    p = Process(target=execute, args=(run_logharvester,))
-    p.start()
-
-
 @parallel
 @roles('nodes')
 def activate_node():
     log.info(blue('Running an ipengine on node %(host)s' % env))
+    #NOTE In local do something with ipcluster ?
     with hide('output'):
-        run('ipengine --file=/home/xavier/dev/ipcontroller-engine.json')
+        if env.host == utils.get_ip():
+            local('ipengine --file=/home/{}/dev/ipcontroller-engine.json'.format(env.user))
+        else:
+            run('ipengine --file=/home/{}/dev/ipcontroller-engine.json'.format(env.user))
 
 
 #FIXME sudo in parallel
+#NOTE Will be replaced by mina, or other much more robust deploy stuff
 @roles('nodes')
 def update_git_repos():
     project = 'ppQuanTrade'
     #TODO use setup.py instead
     #TODO More generic command
     log.info(blue('Updating remote version of ppQuanTrade %(host)s' % env))
-    #TODO Use get_ip()
     run('cd /home/xavier/dev/projects/{} && \
             git pull xavier@{}:dev/projects/{}'.format(
         project, utils.get_ip(public=False), project))
@@ -159,7 +95,10 @@ def update_git_repos():
 @roles('nodes')
 def activate_monitoring():
     log.info(blue('Running glances in server mode on %(host)s' % env))
-    run('glances -s')
+    if env.host == utils.get_ip():
+        local('glances -s')
+    else:
+        run('glances -s')
 
 
 @parallel
@@ -168,7 +107,11 @@ def activate_restserver():
     log.info(blue('Waking up REST server on %(host)s' % env))
     #with hide('output'):
     with shell_env(NODE_PATH=node_path, NODE_CONFIG_DIR='/home/xavier/.quantrade/'):
-        run('node /home/xavier/dev/projects/ppQuanTrade/server/rest_server.js')
+        print env.host
+        if env.host == utils.get_ip():
+            local('node /home/xavier/dev/projects/ppQuanTrade/server/rest_server.js')
+        else:
+            run('node /home/xavier/dev/projects/ppQuanTrade/server/rest_server.js')
 
 
 def deploy_grid(engines_per_host=1, monitor=False):

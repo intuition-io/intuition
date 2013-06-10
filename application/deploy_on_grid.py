@@ -61,45 +61,42 @@ def parse_command_line():
 
 if __name__ == '__main__':
     os.system('clear')
-    #TODO Multi-host support
-    #TODO Local run, transparently
     args = parse_command_line()
 
     grid = Grid()
 
-    components = grid.setup(args.monitor, args.pushapp, args.zeroconfig)
+    components = grid.prepare_nodes(args.monitor, args.pushapp, args.zeroconfig)
 
-    remote_processes, completion_logs, completion_dashboard = \
-        grid.deploy(components)
+    remote_processes = grid.deploy(components, is_backtest=True)
 
-    if not args.logserver:
-        completion_logs.clear()
-    if not args.dashboard:
-        completion_dashboard.clear()
-    monitor_server = grid.setup_monitoring(
+    glances_instances = grid.set_monitoring(
         args.monitor,
-        completion_dashboard,
-        completion_logs
-    )
+        args.dashboard,
+        args.logserver)
 
-    os.system('chromium-browser http://192.168.0.12:28778 &')
-    time.sleep(5)
-    os.system('chromium-browser http://192.168.0.12:4000 &')
+    if args.logserver:
+        log.notice('Dasboard available at http://192.168.0.12:28778')
+    if args.dashboard:
+        log.notice('Logs available at http://192.168.0.12:4000')
 
-    #TODO Several glances server connection to handle
     processes_done = set()
     living_processes = set(remote_processes.keys())
     while len(living_processes):
+        #TODO Check for new nodes (ie a new engine is ready)
+        #     if so, execute trade on it with configuration
+        #     and update everything else
         print cyan('-' * 60)
         msg = 'Alive rate: {} / {}'
         log.info(red(msg.format(len(living_processes),
                                 len(remote_processes))))
         if args.monitor:
-            cpu_infos = json.loads(monitor_server.getCpu())
-            #FIXME Not supported on laptop
-            #log.info(red('System cpu use: {}'.format(cpu_infos['system'])))
-            #log.info(red('User cpu use: {}'.format(cpu_infos['user'])))
-            log.info(red(json.loads(monitor_server.getLoad())))
+            for ip, monitor in glances_instances.iteritems():
+                log.info('Inforamtions on {}'.format(ip))
+                cpu_infos = json.loads(monitor.getCpu())
+                #FIXME Not supported on thib laptop
+                #log.info(red('System cpu use: {}'.format(cpu_infos['system'])))
+                #log.info(red('User cpu use: {}'.format(cpu_infos['user'])))
+                log.info(red(json.loads(monitor.getLoad())))
 
         for id, process in remote_processes.iteritems():
             log.info(blue('[{}] Uptime   {}'.format(id, process.elapsed)))

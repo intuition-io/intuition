@@ -15,6 +15,7 @@
 
 
 from neuronquant.data.datafeed import DataFeed
+from neuronquant.network.dashboard import Dashboard
 
 import pytz
 import pandas as pd
@@ -27,6 +28,9 @@ import logbook
 log = logbook.Logger('Analyze')
 
 from zipline.data.benchmarks import get_benchmark_returns
+
+#import neuronquant.network.fabfile as fab
+from neuronquant.network.grid import Grid
 
 
 #NOTE Methods names to review
@@ -158,3 +162,12 @@ class Analyze(object):
         index = self._get_index(perfs)
         values = [perfs[i][field] for i in range(len(perfs))]
         return pd.Series(values, index=index)
+
+    def run_dashboard(self, **kwargs):
+        dashboard = Dashboard()
+        log.info('Getting completion dictionnary')
+        dashboard.add_description(**kwargs)
+        log.info('Building dashboard database')
+        dashboard.build()
+        log.info('Running dashboard')
+        dashboard.run()

@@ -62,7 +62,7 @@
         "debug": 1,
         "window_length": 5
     },
-    "Markov":
+    "MarkovGenerator":
     {
         "save": 0,
         "debug": 1,

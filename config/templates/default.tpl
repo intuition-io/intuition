@@ -38,5 +38,12 @@
         "url_notify": "http://www.notifymyandroid.com/publicapi/notify",
         "url_check": "http://www.notifymyandroid.com/publicapi/verify",
         "apikey": ""
+    },
+    "grid": {
+        "controller": ["192.168.0.12"],
+        "nodes": ["192.168.0.17", "192.168.0.20"],
+        "name": "xavier",
+        "password": "",
+        "port": 5555
     }
 }
