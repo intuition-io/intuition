@@ -25,11 +25,11 @@ from logbook.queues import ZeroMQHandler
 from logbook.more import ColorizingStreamHandlerMixin, ColorizedStderrHandler
 from logbook import Logger, NestedSetup, FileHandler, Processor, StderrHandler, StreamHandler
 
-from utils import get_ip
+from utils import get_local_ip
 
 
 def inject_information(record):
-    record.extra['ip'] = get_ip()
+    record.extra['ip'] = get_local_ip()
 
 #log_format = u'[{record.time:%Y-%m-%d %H:%M}] {record.channel} - {record.level_name}: {record.message} \t({record.extra[ip]})'
 log_format = u'[{record.time:%Y-%m-%d %H:%M}] {record.channel}::{record.level_name} - {record.message}'

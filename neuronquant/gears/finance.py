@@ -27,9 +27,9 @@ import math
 import datetime as dt
 
 
-'''---------------------------------------------------------------------------------------
+'''-----------------------------------------------------------
 Quant
----------------------------------------------------------------------------------------'''
+-----------------------------------------------------------'''
 
 log = logbook.Logger('Finance')
 
@@ -104,7 +104,8 @@ def relative_strength(prices, n=14):
 
 def moving_average_convergence(x, nslow=26, nfast=12):
     """
-    compute the MACD (Moving Average Convergence/Divergence) using a fast and slow exponential moving avg'
+    compute the MACD (Moving Average Convergence/Divergence)
+    using a fast and slow exponential moving avg
     return value is emaslow, emafast, macd which are len(x) arrays
     """
     emaslow = moving_average(x, nslow, type='exponential')
@@ -152,7 +153,8 @@ def CC_returns(ts, **kwargs):
     end = kwargs.get('end', dt.datetime.today())
     delta = kwargs.get('deltaya', BDay())
     period = kwargs.get('period', None)
-    rets = returns(ts, type='net', start=start, end=end, delta=delta, period=period)
+    rets = returns(ts, type='net', start=start, end=end,
+                   delta=delta, period=period)
     return math.log(1 + rets)
 
 
@@ -161,6 +163,7 @@ def CC_returns(ts, **kwargs):
 def returns(ts, **kwargs):
     '''
     Compute returns on the given period
+
     @param ts : time serie to process
     @param kwargs.type: gross or simple returns
     @param delta : period betweend two computed returns
@@ -199,7 +202,8 @@ def daily_returns(ts, **kwargs):
 
 def panel_to_retsDF(dataPanel, kept_field='close', type='dataframe'):
     '''
-    @summary transform data in DataAccess format to a dataframe suitable for qstk.tsutils.optimizePortfolio()
+    @summary transform data in DataAccess format to a dataframe
+             suitable for qstk.tsutils.optimizePortfolio()
     @param dataPanel get with the reverse flag: data like quotes['close']['google']
     @output : a dataframe, cols = companies, rows = dates
     '''
@@ -225,4 +229,5 @@ def high_low_spread(df, offset):
     # df = df.reindex(subIndex)
     return df['high'] - df['low']
 
-#TODO: updateDB, every class has this method, factorisation ? shared memory map to synchronize
+#TODO: updateDB, every class has this method, factorisation ?
+#      shared memory map to synchronize

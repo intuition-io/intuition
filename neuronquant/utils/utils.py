@@ -65,7 +65,7 @@ def to_dict(obj):
     return dict_obj
 
 
-def get_ip(public=False):
+def get_local_ip(public=False):
     if public:
         data = str(urlopen('http://checkip.dyndns.com/').read())
         return re.compile(r'Address: (\d+\.\d+\.\d+\.\d+)').search(data).group(1)

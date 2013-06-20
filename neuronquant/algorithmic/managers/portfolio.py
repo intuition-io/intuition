@@ -86,6 +86,10 @@ class PortfolioManager(object):
 
     #TODO Add in the constructor or setup parameters some general settings like maximum weights, positions, frequency,...
     #TODO Better to return 0 stocks to trade: remove the field
+    #NOTE Regarding portfolio constraints: from a set of user-defined
+    #parameters, a unnique set should be constructed. Then the solution provided
+    #by optimize function would have to be a subset of it. (classic mathematical solution)
+    #Finally it should be defined how to handle non-correct solutions
     def __init__(self, configuration):
         '''
         Parameters

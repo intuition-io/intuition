@@ -43,21 +43,20 @@ class Grid(object):
     report_path = os.path.expanduser('~/.quantrade/report')
     nodes = []
     hosts = []
-    active_engines = set()
+    #active_engines = set()
     default_glances_port = 61209
     dashboard = Dashboard()
-    app_monitor = False
+    app_monitored = False
+    deployed = 0
+    glances_instances = {}
+    tasks = {}
 
     def __init__(self):
         #NOTE Should clean previous report_path ?
         # Intercept CTRL-C
         SignalManager()
 
-    def prepare_nodes(self, monitor_app=False, push_app=False, zeroconfig=False):
-        # config file is a json object with each process params
-        fd = open('/'.join((os.environ['QTRADE'], 'config/grid.json')), 'r')
-        components = json.load(fd)['components']
-
+    def get_tasks(self, path=None, remote=False, zeroconfig=False):
         if zeroconfig:
             #TODO nmap network scan, results dumped into scan.xml
             #TODO Read, store all known ips, check for unix system
@@ -67,6 +66,22 @@ class Grid(object):
             self.hosts = global_config['grid']['nodes']
             self.root_name = global_config['grid']['name']
             self.port = global_config['grid']['port']
+
+        #NOTE Remote file read ?
+        if path is None:
+            path = '/'.join((os.environ['QTRADE'], 'config/grid.json'))
+        # Config file is a json object with each process params
+        if remote:
+            remote_config = fab.load_remote_file(path, ip='192.168.0.12')
+            components = remote_config['components']
+        else:
+            with open(path, 'r') as fd:
+                components = json.load(fd)['components']
+
+        return components
+
+    def prepare_nodes(self, monitor_app=False, push_app=False, zeroconfig=False):
+        components = self.get_tasks(zeroconfig=zeroconfig)
 
         self.logio = LogIO(self.hosts)
 
@@ -79,16 +94,18 @@ class Grid(object):
         return components
 
     def _wakeup_nodes(self, nbr_to_deploy, monitor=False):
-        self.app_monitor = monitor
+        self.app_monitored = monitor
         #NOTE Repartition according available power ?
         engines_per_host = int(nbr_to_deploy / len(self.hosts))
 
         # Run local ipcontroller, remote monitoring, and remote ipengines
         fab.deploy_grid(engines_per_host, monitor=monitor)
 
-        #TODO Better Wait for controller and engines to be started
         # Create ipython.parallel interface
         self.nodes = Client()
+        self._wait_for_engines(nbr_to_deploy)
+
+    def _wait_for_engines(self, nbr_to_deploy):
         buffer_count = -1
         stuck_warning = 0
         while len(self.nodes.ids) < nbr_to_deploy:
@@ -100,79 +117,84 @@ class Grid(object):
                 log.warning('No new nodes...')
                 stuck_warning += 1
                 if stuck_warning == 7:
-                    log.error('** Could not run every engines')
                     #NOTE Running manually missing ones make it work...
-                    #import ipdb; ipdb.set_trace()
-                    #import sys
-                    #sys.exit(1)
+                    log.error('** Could not run every engines')
             buffer_count = len(self.nodes.ids)
         log.info(green('Nodes ready.'))
 
     def deploy(self, components, is_backtest=False):
-        # Useful dicts, see below
         remote_processes = {}
 
         # For each node:
-        for i, node in enumerate(self.nodes):
-            # Retrieve a common configuration template, modified by given dict
-            config = get_configuration(components[i], backtest=is_backtest)
-            name = '-'.join((str(i),
-                             self.root_name,
-                             config['configuration']['exchange'],
-                             config['configuration']['algorithm'],
-                             config['configuration']['manager']))
+        current_iteration = -1
+        for node in self.nodes:
+            # Use only idle engines
+            status = node.queue_status()
+            if (status['queue'] == 0) and (status['tasks'] == 0):
+                current_iteration += 1
+                remote_ip = node.apply_sync(get_ip)
 
-            remote_processes[name] = self._process_on_engine(node, name, config)
+                # Retrieve a common configuration template, modified by given dict
+                #TODO What if len(components) != available_engines
+                if 'ip' in components:
+                    #NOTE An engine could be done since with checked for new nodes
+                    assert remote_ip in components
+                    config = get_configuration(components[remote_ip].pop(), backtest=is_backtest)
+                else:
+                    config = get_configuration(components[current_iteration], backtest=is_backtest)
+                name = '-'.join((str(self.deployed),
+                                 self.root_name,
+                                 config['configuration']['exchange'],
+                                 config['configuration']['algorithm'],
+                                 config['configuration']['manager']))
+
+                remote_processes[name] = self._process_on_engine(node, name, config, remote_ip)
+                self.deployed += 1
 
         return remote_processes
 
-    def _process_on_engine(self, node, name, config):
+    def _process_on_engine(self, node, name, config, remote_ip):
         self.port += 1
         config['strategie']['manager']['name'] = name
         config['configuration']['logfile'] = name + '.log'
         config['configuration']['port'] = self.port
 
-        remote_ip = node.apply_sync(get_ip)
-
         self.dashboard.add_description(remote_ip=remote_ip, portfolio=name)
         self.logio.add_description(name, remote_ip=remote_ip)
 
         # Run remote process
-        #TODO get node id for i
-        i = 0
         log.info(blue('Running trade system on node %d::%s (%s)'
-                      % (i, remote_ip, name)))
+                      % (self.deployed, remote_ip, name)))
         return node.apply_async(trade, config)
 
     def set_monitoring(self,
-                       glances_server=False,
                        dashboard=False,
-                       completion_logserver=False):
-        if completion_logserver:
+                       logserver=False):
+        if logserver:
             self.logio.build()
             self.logio.run()
+            log.notice('Logs available at http://192.168.0.12:4000')
 
         if dashboard:
-            #TODO As logserver
             self.dashboard.build()
             self.dashboard.run(public_ip=False)
+            log.notice('Dasboard available at http://192.168.0.12:28778')
 
         log.info(blue('Done with remote deployement'))
 
-        #TODO Improve, and take care of provided flags
         # Monitoring servers and remote processes
         # API: https://github.com/nicolargo/glances/wiki/The-Glances-API-How-To
-        if glances_server and self.app_monitor:
-            glances_instances = {}
+        if self.app_monitored:
             for ip in self.hosts:
-                glances_instances[ip] = xmlrpclib.ServerProxy(
-                    'http://{}:{}'.format(ip, self.default_glances_port))
-                #msg = '{} cores available on remote host'
-                #FIXME Not supported: log.info(red(msg.format(monitor_server.getCore())))
+                if ip not in self.glances_instances:
+                    self.glances_instances[ip] = xmlrpclib.ServerProxy(
+                        'http://{}:{}'.format(ip, self.default_glances_port))
+                    #msg = '{} cores available on remote host'
+                    #FIXME Not supported: log.info(red(msg.format(monitor_server.getCore())))
         else:
-            glances_instances = {}
+            self.glances_instances = {}
 
-        return glances_instances
+        return self.glances_instances
 
     def on_end(self, id, process):
         try:
@@ -181,6 +203,25 @@ class Grid(object):
             log.error('Process {} ended with an exception: {}'.format(id, e))
             with open('.'.join((self.report_path, self.hosts[0], 'md')), "a") as f:
                 f.write('[{}] {} - {}\n'.format(datetime.now(), id, e))
+
+    def _check_new_nodes(self):
+        #NOTE Check for available workers ? or validate ?
+        #ipdb> self.nodes.queue_status()
+        #{0: {'queue': 0, 'completed': 0, 'tasks': 0}, 1: {'queue': 0, 'completed': 0, 'tasks': 0}, 'unassigned': 0}
+        return (len(self.nodes.ids) - self.deployed)
+
+    #NOTE Default behavior only for is_backtest and zeroconfig
+    def update(self, dashboard, logserver):
+        components = remote_processes = glances_instances = {}
+        if self._check_new_nodes():
+            log.info(blue('{} new nodes available'.format(
+                self._check_new_nodes())))
+            # If new engines are available, a new config is ready remotely
+            components = self.get_tasks(remote=True)
+            remote_processes = self.deploy(components)
+            glances_instances = self.set_monitoring(dashboard, logserver)
+
+        return components, remote_processes, glances_instances
 
     def __del__(self):
         log.info(blue('Shutting down grid computer'))

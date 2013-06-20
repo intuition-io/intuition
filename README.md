@@ -34,7 +34,7 @@ Features
 * Ressources to learn about quantitative finance (cleaning it, coming soon)
 * Neuronquant is also a financial library, with common used trading functions, graphics, ... used for example to solve Coursera econometrics assignments
 * MySQL and SQLite data management for optimized financial storage and access 
-* Advanced computations available: neural networks, natural language processing, genetic optimization, checkout playground directorie !
+* Advanced computations available: neural networks, natural language processing, genetic optimization, checkout playground directory !
 * Random fancy stuff as well in this directory
 
 
@@ -61,15 +61,15 @@ Getting started
 
 To run a backtest manually, configure ppQuanTrade/config/algorithms.json and ppQuanTrade/config/managers.json file, and then run
 
-```./backtest.py --initial cash --tickers random,6 --algorithm DualMA \
+```./backtest.py --initial cash --tickers random,6 --algorithm DualMA 
 	 	--manager OptimalFrontier --exchange paris --start 2005-01-10 --end 2010-07-03```
 
 Or in realtime mode:
 
-```./backtest.py --initialcash 100000 --tickers EUR/USD,EUR/GBP --algorithm StdBased \
+```./backtest.py --initialcash 100000 --tickers EUR/USD,EUR/GBP --algorithm StdBased 
 		--manager Equity --frequency minute --exchange forex --live```
 
-More examples available [root]/scripts/run_backtest.sh
+More examples available in scripts/run_app.sh
 
 As mentionned you can easily write your own algorithms. Here is the equity manager example, which allocates the same weight
 to all of your assets:
@@ -101,8 +101,9 @@ class Equity(PortfolioManager):
         return allocations, expected_return, expected_risk
 ```
 
-Strategies triggering buy or sell signals are used within the great zipline backtester engine and therefore use quite the same scheme,
-plus the manager, and some config parameters. Here is a classic momentum strategie:
+Strategies triggering buy or sell signals are used within zipline backtester
+engine and therefore use quite the same scheme, plus the manager, and some
+config parameters. Here is a classic momentum strategie:
 
 ```python
 class Momentum(TradingAlgorithm):

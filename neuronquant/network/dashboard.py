@@ -19,10 +19,11 @@ import os
 log = logbook.Logger('Dashboard')
 
 import neuronquant.utils.utils as utils
+from neuronquant.network.fabfile import is_running
 
 from fabric.api import (
     run, local, env, execute,
-    hide, parallel, roles)
+    hide, parallel, roles, settings)
 from fabric.colors import blue
 from fabric.context_managers import shell_env
 
@@ -32,7 +33,8 @@ import time
 
 
 #TODO Find a way to merge this replicate with fabfile
-global_config = json.load(open(os.path.expanduser('~/.quantrade/default.json'), 'r'))
+global_config = json.load(
+    open(os.path.expanduser('~/.quantrade/default.json'), 'r'))
 
 #http://docs.fabfile.org/en/1.4.3/usage/env.html#full-list-of-env-vars
 #env.forward_agent = True
@@ -206,6 +208,7 @@ class Dashboard(object):
         pass
 
     def build(self):
+        #NOTE Check quantlab for a generic version
         tpl_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(self.templates_path))
         template = tpl_env.get_template('dashboard_block.tpl')
@@ -217,6 +220,9 @@ class Dashboard(object):
 
     @roles('controller')
     def run(self, port=4000, public_ip=False):
+        # Make sure no dashboard is already running
+        self.shutdown()
+
         #NOTE run() in 'controller' role = local() ?
         #TODO with fabric.cd()
         with hide('output'):
@@ -225,8 +231,18 @@ class Dashboard(object):
             log.info(blue('Populating database'))
             local('cd {} && rake custom_populate'.format(self.dashboard_path))
             log.info(blue('Running server'))
-            local('cd {} && rails server -p 4000 -b {} &'.format(
-                self.dashboard_path, utils.get_ip(public=public_ip)))
+            local('cd {} && rails server -p {} -b {} &'.format(
+                self.dashboard_path, port, utils.get_ip(public=public_ip)))
+
+    @roles('controller')
+    def shutdown(self):
+        pid_path = '/'.join((self.dashboard_path, 'tmp/pids/server.pid'))
+        with settings(warn_only=True):
+            if local('ps -e | grep $(cat {})'.format(pid_path), capture=True):
+                log.info(blue('Killing deprecated process'))
+                local('kill -9 $(cat {})'.format(pid_path))
+            else:
+                log.info('No running dashboard found')
 
     def add_description(self, title=None, remote_ip='127.0.0.1', portfolio='ChuckNorris'):
         if title is None:
@@ -240,6 +256,9 @@ class Dashboard(object):
             }
         )
         return self.completion
+
+    def __del__(self):
+        self.shutdown()
 
 
 #NOTE Factorize Dashboard and LogIO ?
@@ -275,8 +294,12 @@ class LogIO(object):
     @parallel
     @roles('controller')
     def _run_server(self):
-        with shell_env(NODE_PATH=self.node_path):
-            local('log.io-server')
+        #try:
+            #pid = local('ps -C node | grep log.io-server | cut -d" " -f6', capture=True)
+        #except:
+        if not is_running(local, 'log.io-server'):
+            with shell_env(NODE_PATH=self.node_path):
+                local('log.io-server')
 
     @parallel
     @roles('nodes')
@@ -288,12 +311,24 @@ class LogIO(object):
             local('cp {}/{}-harvester.conf /home/{}/.log.io/harvester.conf'.format(
                 self.templates_path, env.host, env.user))
             #with hide('output'):
+            #try:
+                #harvester_pid = local('ps -C node | grep harvester | cut -d" " -f6', capture=True)
+                #if harvester_pid:
+                    #local('kill -9 {}'.format(harvester_pid))
+            #finally:
+            is_running(local, 'log.io-harvester', kill=True)
             with shell_env(NODE_PATH=self.node_path):
                 local('log.io-harvester')
         else:
             local('scp {}/{}-harvester.conf {}@{}:.log.io/harvester.conf'.format(
                 self.templates_path, env.host, env.user, env.host))
             #with hide('output'):
+            #try:
+                #harvester_pid = run('ps -C node | grep harvester | cut -d" " -f6', capture=True)
+                #if harvester_pid:
+                    #run('kill -9 {}'.format(harvester_pid))
+            #finally:
+            is_running(run, 'log.io-harvester', kill=True)
             with shell_env(NODE_PATH=self.node_path):
                 run('log.io-harvester')
 

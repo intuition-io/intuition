@@ -59,43 +59,34 @@ def parse_command_line():
     return parser.parse_args()
 
 
-if __name__ == '__main__':
-    os.system('clear')
-    args = parse_command_line()
-
+def main(args):
     grid = Grid()
 
-    components = grid.prepare_nodes(args.monitor, args.pushapp, args.zeroconfig)
+    components = grid.prepare_nodes(
+        args.monitor, args.pushapp, args.zeroconfig)
 
     remote_processes = grid.deploy(components, is_backtest=True)
 
-    glances_instances = grid.set_monitoring(
-        args.monitor,
-        args.dashboard,
-        args.logserver)
+    grid.set_monitoring(args.dashboard, args.logserver)
 
-    if args.logserver:
-        log.notice('Dasboard available at http://192.168.0.12:28778')
-    if args.dashboard:
-        log.notice('Logs available at http://192.168.0.12:4000')
-
+    # Those variables should be tracked by grid object
     processes_done = set()
     living_processes = set(remote_processes.keys())
-    while len(living_processes):
-        #TODO Check for new nodes (ie a new engine is ready)
-        #     if so, execute trade on it with configuration
-        #     and update everything else
+    while True:
+        _, new_processes, _ = grid.update(
+            args.dashboard, args.logserver)
+        remote_processes.update(new_processes)
+        living_processes = set(remote_processes.keys())
+
         print cyan('-' * 60)
         msg = 'Alive rate: {} / {}'
         log.info(red(msg.format(len(living_processes),
                                 len(remote_processes))))
         if args.monitor:
-            for ip, monitor in glances_instances.iteritems():
-                log.info('Inforamtions on {}'.format(ip))
-                cpu_infos = json.loads(monitor.getCpu())
-                #FIXME Not supported on thib laptop
-                #log.info(red('System cpu use: {}'.format(cpu_infos['system'])))
-                #log.info(red('User cpu use: {}'.format(cpu_infos['user'])))
+            for ip, monitor in grid.glances_instances.iteritems():
+                log.info(red('Informations on {}'.format(ip)))
+                #FIXME Not supported... use available methods
+                #cpu_infos = json.loads(monitor.getCpu())
                 log.info(red(json.loads(monitor.getLoad())))
 
         for id, process in remote_processes.iteritems():
@@ -111,5 +102,12 @@ if __name__ == '__main__':
             print cyan('--')
 
         time.sleep(args.heartbeat)
+
     #TODO Join and terminate Ran process
     log.notice(red('All processes finished'))
+
+
+if __name__ == '__main__':
+    os.system('clear')
+    args = parse_command_line()
+    main(args)

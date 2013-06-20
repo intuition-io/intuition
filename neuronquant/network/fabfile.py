@@ -19,9 +19,12 @@
 
 import neuronquant.utils.utils as utils
 
+import shutil
+
+from fabric.contrib.files import get, exists
 from fabric.api import (
     run, local, env, execute,
-    parallel, roles, hide, sudo)
+    parallel, roles, hide, sudo, settings)
 from fabric.colors import blue
 from fabric.context_managers import shell_env
 
@@ -33,9 +36,15 @@ import logbook
 log = logbook.Logger('Grid::Fabric')
 
 
+#FIXME local('ps') based method raise an exception when false
+
+
 #TODO A function to scan all of this ?
+#FIXME HARD CODED
 engines_path = '/home/xavier/.config/ipython/profile_default/security/ipcontroller-engine.json'
 node_path = "/home/xavier/.nvm/v0.10.7/lib/node_modules"
+node_config = "/home/xavier/.quantrade"
+restserver_path = '/home/xavier/dev/projects/ppQuanTrade/server/rest_server.js'
 
 global_config = json.load(open(os.path.expanduser('~/.quantrade/default.json'), 'r'))
 
@@ -46,6 +55,7 @@ env.user = global_config['grid']['name']
 env.password = global_config['grid']['password']
 env.hosts = global_config['grid']['nodes']
 env.roledefs = {
+    'local': ['127.0.0.1'],
     'controller': global_config['grid']['controller'],
     'nodes': global_config['grid']['nodes']
 }
@@ -53,15 +63,21 @@ env.roledefs = {
 
 @roles('controller')
 def activate_controller():
+    if is_running(local, 'ipcontroller'):
+        return
+
     log.info(blue('Running ipcontroller on local machine'))
     with hide('output'):
         #local('ipcontroller --reuse --ip={} &'.format(
         local('ipcontroller --ip={} &'.format(
-            utils.get_ip(public=False)))
+            utils.get_local_ip(public=False)))
         #FIXME env.host=localhost
         time.sleep(2)
         for target_ip in env.hosts:
-            local('scp {} {}@{}:dev/'.format(engines_path, env.user, target_ip))
+            if target_ip == utils.get_local_ip():
+                local('cp {} /home/{}/dev/'.format(engines_path, env.user))
+            else:
+                local('scp {} {}@{}:dev/'.format(engines_path, env.user, target_ip))
 
 
 @parallel
@@ -70,10 +86,10 @@ def activate_node():
     log.info(blue('Running an ipengine on node %(host)s' % env))
     #NOTE In local do something with ipcluster ?
     with hide('output'):
-        if env.host == utils.get_ip():
+        if env.host == utils.get_local_ip():
             local('ipengine --file=/home/{}/dev/ipcontroller-engine.json'.format(env.user))
         else:
-            run('ipengine --file=/home/{}/dev/ipcontroller-engine.json'.format(env.user))
+            run('ipengine --file=/home/{}/dev/ipcontroller-engine.json'.format(env.user), pty=False)
 
 
 #FIXME sudo in parallel
@@ -86,7 +102,7 @@ def update_git_repos():
     log.info(blue('Updating remote version of ppQuanTrade %(host)s' % env))
     run('cd /home/xavier/dev/projects/{} && \
             git pull xavier@{}:dev/projects/{}'.format(
-        project, utils.get_ip(public=False), project))
+        project, utils.get_local_ip(public=False), project))
     sudo('cp -r /home/xavier/dev/projects/ppQuanTrade/neuronquant/ \
             /usr/local/lib/python2.7/dist-packages/')
 
@@ -95,23 +111,74 @@ def update_git_repos():
 @roles('nodes')
 def activate_monitoring():
     log.info(blue('Running glances in server mode on %(host)s' % env))
-    if env.host == utils.get_ip():
-        local('glances -s')
+    if env.host == utils.get_local_ip():
+        if not is_running(local, 'glances'):
+            local('glances -s &')
     else:
-        run('glances -s')
+        if not is_running(run, 'glances'):
+            run('glances -s &', pty=False)
 
 
 @parallel
 @roles('nodes')
 def activate_restserver():
+    #print("Executing on %(host)s as %(user)s" % env)
+    #env.host_string = env.host
     log.info(blue('Waking up REST server on %(host)s' % env))
     #with hide('output'):
-    with shell_env(NODE_PATH=node_path, NODE_CONFIG_DIR='/home/xavier/.quantrade/'):
-        print env.host
-        if env.host == utils.get_ip():
-            local('node /home/xavier/dev/projects/ppQuanTrade/server/rest_server.js')
+    with shell_env(NODE_PATH=node_path, NODE_CONFIG_DIR=node_config):
+        if env.host == utils.get_local_ip():
+            if not is_running(local, 'rest_server'):
+                local('node {} &'.format(restserver_path))
         else:
-            run('node /home/xavier/dev/projects/ppQuanTrade/server/rest_server.js')
+            if not is_running(run, 'rest_server'):
+                run('node {} &'.format(restserver_path), pty=False)
+
+
+def is_running(execute, name, go_on=True, kill=False):
+    with settings(warn_only=go_on):
+        if execute.func_name == 'local':
+            output = execute('ps -eaf | grep {} | grep -v grep'.format(name), capture=True)
+        else:
+            output = execute('ps -eaf | grep {} | grep -v grep'.format(name))
+    if output.failed:
+        log.debug(blue('{} is not running'.format(name)))
+        pid = 0
+    else:
+        pid = output.split()[1]
+        log.debug(blue('{} is running with pid {}'.format(name, pid)))
+        if kill:
+            log.debug(blue('Killing process {}'.format(name)))
+            execute('kill -9 {}'.format(pid))
+
+    # Make sure process has been killed before new treatment
+    time.sleep(1)
+    return pid
+
+
+def load_remote_file(path):
+    content = {}
+    filename = path.split('/')[-1]
+    log.info('Remotely loading {} file'.format(filename))
+    if exists(path, verbose=True):
+        log.debug('Found remote file {}, downloading it'.format(path))
+        local_paths = get(path)
+        assert not len(local_paths.failed)
+
+        for path in local_paths:
+            if os.path.exists(path):
+                with open(path, 'r') as fd:
+                    content = json.load(fd)
+                shutil.rmtree(path[:path.rfind('/')])
+            else:
+                log.warning('! Could not find local file {}'.format(path))
+                content = {}
+    else:
+        log.warning('! Could not find remote file {}'.format(path))
+
+    log.debug(content)
+
+    return content
 
 
 def deploy_grid(engines_per_host=1, monitor=False):
