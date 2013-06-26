@@ -15,9 +15,9 @@
 # limitations under the License.
 
 
-from zipline.algorithm import TradingAlgorithm
+from neuronquant.zipline.algorithm import TradingAlgorithm
 import numpy as np
-from zipline.transforms import batch_transform
+from neuronquant.zipline.transforms import batch_transform
 import random
 
 

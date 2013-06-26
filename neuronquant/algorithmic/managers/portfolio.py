@@ -24,7 +24,8 @@ from neuronquant.utils import to_dict
 
 import zipline.protocol as zp
 
-from neuronquant.network.dashboard import Dashboard
+#TODO dashboard is now a compnent of the labo project
+#from neuronquant.network.dashboard import Dashboard
 
 from neuronquant.tmpdata.extractor import Extractor
 extractor = Extractor('mysql://xavier:quantrade@localhost/stock_data')
@@ -131,7 +132,7 @@ class PortfolioManager(object):
 
         # Web based dashboard where real time results are monitored
         #FIXME With dynamic generation, dashboad never exists at this point
-        self.dashboard = Dashboard(self.name)
+        #self.dashboard = Dashboard(self.name)
 
         # In case user optimization would need to retrieve more data
         self.remote = Remote()
@@ -166,8 +167,8 @@ class PortfolioManager(object):
                 save_metrics_snapshot(self.name, self.date, metrics)
 
         # Delete sold items and add new ones on dashboard
-        if widgets:
-            self.dashboard.update_position_widgets(self.portfolio.positions)
+        #if widgets:
+            #self.dashboard.update_position_widgets(self.portfolio.positions)
 
 
         # Send portfolio object to client

@@ -25,8 +25,8 @@ import neuronquant.utils.datautils as datautils
 from neuronquant.data.ziplinesources.loader import LiveBenchmark
 from neuronquant.gears.analyzes import Analyze
 
-from zipline.finance.trading import TradingEnvironment
-from zipline.utils.factory import create_simulation_parameters
+from neuronquant.zipline.finance.trading import TradingEnvironment
+from neuronquant.zipline.utils.factory import create_simulation_parameters
 
 import neuronquant.strateg_library as library
 

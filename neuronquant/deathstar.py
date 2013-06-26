@@ -56,7 +56,7 @@ def trade(mega_config):
         assert analyzes
 
 
-def get_configuration(changes={}, backtest=True):
+def complete_configuration(changes={}, backtest=True):
     # Reset to root_config (doesn't work)
     config = root_configuration.copy()
 

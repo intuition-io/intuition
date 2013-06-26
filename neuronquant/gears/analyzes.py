@@ -15,7 +15,9 @@
 
 
 from neuronquant.data.datafeed import DataFeed
-from neuronquant.network.dashboard import Dashboard
+#from neuronquant.network.dashboard import Dashboard
+#import neuronquant.network.fabfile as fab
+#from neuronquant.network.grid import Grid
 
 import pytz
 import pandas as pd
@@ -27,10 +29,7 @@ from finance import qstk_get_sharpe_ratio
 import logbook
 log = logbook.Logger('Analyze')
 
-from zipline.data.benchmarks import get_benchmark_returns
-
-#import neuronquant.network.fabfile as fab
-from neuronquant.network.grid import Grid
+from neuronquant.zipline.data.benchmarks import get_benchmark_returns
 
 
 #NOTE Methods names to review
@@ -163,6 +162,8 @@ class Analyze(object):
         values = [perfs[i][field] for i in range(len(perfs))]
         return pd.Series(values, index=index)
 
+    #TODO Dashboard is now a component of labo project
+    '''
     def run_dashboard(self, **kwargs):
         dashboard = Dashboard()
         log.info('Getting completion dictionnary')
@@ -171,3 +172,4 @@ class Analyze(object):
         dashboard.build()
         log.info('Running dashboard')
         dashboard.run()
+    '''

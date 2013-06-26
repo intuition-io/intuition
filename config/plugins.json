@@ -1,0 +1,46 @@
+{
+    "strategie":
+    {
+        "debug": 1,
+        "save": 0,
+        "rebalance_period": 15,
+        "refresh_period": 1,
+        "window_length": 60,
+        "stddev_window": 9,
+        "vwap_window": 5,
+        "long_window" : 30,
+        "short_window" : 25,
+        "threshold" : 0,
+        "ignored": ["volume", "pouet"],
+        "gradient_iterations": 5
+    },
+    "manager": {
+        "name": "xavier",
+        "load_backup": 0,
+        "connected": 0,
+        "android": 0,
+        "loopback": 60,
+        "source": "mysql",
+        "perc_sell": 1.0,
+        "max_weight": 0.3
+    },
+    {"components": [
+        {
+            "algorithm": "BuyAndHold",
+            "manager": "Fair",
+            "source": "CSVSource",
+            "tickers": "INDEX_FCHI",
+            "debug": 1,
+            "save": 1,
+            "loglevel": "INFO",
+            "start": "2011-05-10",
+            "clean": 0,
+            "max_weight": 0.5,
+            "buy_amount": 80,
+            "sell_amount": 70
+        },
+        {
+            "manager": "Constant"
+        }
+    ]}
+}

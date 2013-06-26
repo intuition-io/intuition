@@ -14,9 +14,9 @@
 # limitations under the License.
 
 
-from zipline.algorithm import TradingAlgorithm
+from neuronquant.zipline.algorithm import TradingAlgorithm
 import statsmodels.api as sm
-from zipline.transforms import batch_transform
+from neuronquant.zipline.transforms import batch_transform
 import numpy as np
 
 
@@ -57,7 +57,6 @@ class BuyAndHold(TradingAlgorithm):
                 signals[ticker] = data[ticker].price
 
         ''' ----------------------------------------------------------   Orders  --'''
-        import ipdb; ipdb.set_trace()
         if signals:
             orderBook = self.manager.trade_signals_handler(signals)
             for stock in orderBook:

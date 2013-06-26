@@ -19,9 +19,8 @@ Tools to generate data sources.
 """
 import pandas as pd
 
-from zipline.gens.utils import hash_args
-
-from zipline.sources.data_source import DataSource
+from neuronquant.zipline.gens.utils import hash_args
+from neuronquant.zipline.sources.data_source import DataSource
 
 from neuronquant.data.datafeed import DataFeed
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from zipline.algorithm import TradingAlgorithm
+from neuronquant.zipline.algorithm import TradingAlgorithm
 import numpy as np
 import copy
 

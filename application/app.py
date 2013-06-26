@@ -20,7 +20,8 @@
 import sys
 import os
 
-import pylab as plt
+#import pylab as plt
+import matplotlib.pyplot as plt
 
 from neuronquant.gears.engine import Simulation
 from neuronquant.utils.logger import log, get_nestedlog

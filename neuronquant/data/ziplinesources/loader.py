@@ -17,9 +17,9 @@
 from collections import OrderedDict
 from datetime import datetime
 
-from zipline.data.treasuries import get_treasury_data
-#from zipline.data.benchmarks import get_benchmark_returns
-from zipline.protocol import DailyReturn
+from neuronquant.zipline.data.treasuries import get_treasury_data
+#from neuronquant.zipline.data.benchmarks import get_benchmark_returns
+from neuronquant.zipline.protocol import DailyReturn
 
 import neuronquant.utils.datautils as datautils
 
