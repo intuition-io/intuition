@@ -58,6 +58,15 @@ def get_requirements():
             dependency_links.append(match.group('link'))
         else:
             install_requires.append(requirement)
+
+def get_dependencies():
+    with open('scripts/installation/requirements.txt') as requirements:
+        #FIXME Dpendencie issue: read 2 files and append the second array
+        # Ath the end of the first to manage order
+        dependencies = []
+        dependencies += ['numpy==1.7.1', 'pandas==0.11.0', 'scipy==0.12.0']
+        dependencies += requirements.read().split('\n')[:-1]
+        return dependencies
 # ___________________________________________________________________________________________________________________
 
 LONG_DESCRIPTION = None
@@ -78,9 +87,6 @@ except ImportError:
     # If pandoc isn't installed, e.g. when downloading from pip,
     # just use the regular README.
     LONG_DESCRIPTION = README_MARKDOWN
-
-with open('scripts/installation/requirements.txt') as requirements:
-    dependencies = requirements.read().split('\n')[:-1]
 
 setup(
     name='quantrade',
@@ -109,7 +115,7 @@ setup(
         'Topic :: Scientific/Engineering :: Information Analysis',
         'Topic :: System :: Distributed Computing'
     ],
-    install_requires=dependencies,
+    install_requires=get_dependencies(),
     #install_requires=[
         #'requests',
         #'scikits.learn',

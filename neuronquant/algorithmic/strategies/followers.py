@@ -14,9 +14,9 @@
 # limitations under the License.
 
 
-from neuronquant.zipline.algorithm import TradingAlgorithm
+from zipline.algorithm import TradingAlgorithm
 import statsmodels.api as sm
-from neuronquant.zipline.transforms import batch_transform
+from zipline.transforms import batch_transform
 import numpy as np
 
 
@@ -42,7 +42,7 @@ class BuyAndHold(TradingAlgorithm):
         if self.initialized:
             user_instruction = self.manager.update(
                     self.portfolio,
-                    self.datetime.to_pydatetime(),
+                    self.datetime,
                     self.perf_tracker.cumulative_risk_metrics.to_dict(),
                     save=self.save,
                     widgets=False)
@@ -125,7 +125,7 @@ class FollowTrend(TradingAlgorithm):
         if self.initialized:
             user_instruction = self.manager.update(
                     self.portfolio,
-                    self.datetime.to_pydatetime(), 
+                    self.datetime, 
                     self.perf_tracker.cumulative_risk_metrics.to_dict(),
                     save=self.save,
                     widgets=False)
@@ -197,7 +197,7 @@ class RegularRebalance(TradingAlgorithm):
         if self.initialized:
             user_instruction = self.manager.update(
                     self.portfolio,
-                    self.datetime.to_pydatetime(),
+                    self.datetime,
                     self.perf_tracker.cumulative_risk_metrics.to_dict(),
                     save=self.save,
                     widgets=False)

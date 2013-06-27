@@ -1,0 +1,3 @@
+[submodule "zipline"]
+	path = zipline
+	url = https://github.com/Gusabi/zipline.git

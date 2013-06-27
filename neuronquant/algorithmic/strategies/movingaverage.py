@@ -18,8 +18,8 @@ import pytz
 import datetime
 import numpy as np
 
-from neuronquant.zipline.algorithm import TradingAlgorithm
-from neuronquant.zipline.transforms import MovingAverage, MovingVWAP, batch_transform
+from zipline.algorithm import TradingAlgorithm
+from zipline.transforms import MovingAverage, MovingVWAP, batch_transform
 
 
 class DualMovingAverage(TradingAlgorithm):

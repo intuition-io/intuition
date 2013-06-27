@@ -29,7 +29,7 @@ from finance import qstk_get_sharpe_ratio
 import logbook
 log = logbook.Logger('Analyze')
 
-from neuronquant.zipline.data.benchmarks import get_benchmark_returns
+from zipline.data.benchmarks import get_benchmark_returns
 
 
 #NOTE Methods names to review

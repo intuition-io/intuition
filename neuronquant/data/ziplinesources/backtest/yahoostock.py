@@ -21,8 +21,8 @@ import pandas as pd
 
 from neuronquant.tmpdata.remote import Remote
 
-from neuronquant.zipline.gens.utils import hash_args
-from neuronquant.zipline.sources.data_source import DataSource
+from zipline.gens.utils import hash_args
+from zipline.sources.data_source import DataSource
 
 
 class YahooPriceSource(DataSource):
