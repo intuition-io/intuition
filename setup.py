@@ -79,6 +79,9 @@ except ImportError:
     # just use the regular README.
     LONG_DESCRIPTION = README_MARKDOWN
 
+with open('scripts/installation/requirements.txt') as requirements:
+    dependencies = requirements.read().split('\n')[:-1]
+
 setup(
     name='quantrade',
     version='0.1.3',
@@ -88,7 +91,6 @@ setup(
     packages=find_packages(),
     long_description=LONG_DESCRIPTION,
     license='Apache 2.0',
-    #TODO Update with .quantrade !
     #data_files=[
         #('scripts', ['scripts/ordered_pip.sh',
                      #'scripts/run_labo.py',
@@ -107,34 +109,31 @@ setup(
         'Topic :: Scientific/Engineering :: Information Analysis',
         'Topic :: System :: Distributed Computing'
     ],
-    install_requires=[
-        'requests',
-        'scikits.learn',
-        'blist',
-        'six',
-        'delorean',
-        'plac',
-        'SQLAlchemy',
-        'beautifulsoup4',
-        'scipy',
-        #FIXME 'matplotlib',
-        'rpy2',
-        'statsmodels',
-        'patsy',
-        'msgpack-python',
-        'mysql-python',
-        "python-dateutil",
-        'logbook',
-        'pytz',
-        'numpy',
-        'pandas',
-        "jinja2",
-        "quandl",
-        'pyzmq'
-    ],
-    #dependency_links=[
-        #'http://github.com/Gusabi/zipline',
-        #'http://github.com/quandl/Python'
+    install_requires=dependencies,
+    #install_requires=[
+        #'requests',
+        #'scikits.learn',
+        #'blist',
+        #'six',
+        #'delorean',
+        #'plac',
+        #'SQLAlchemy',
+        #'beautifulsoup4',
+        #'scipy',
+        ##FIXME 'matplotlib',
+        #'rpy2',
+        #'statsmodels',
+        #'patsy',
+        #'msgpack-python',
+        #'mysql-python',
+        #"python-dateutil",
+        #'logbook',
+        #'pytz',
+        #'numpy',
+        #'pandas',
+        #"jinja2",
+        #"quandl",
+        #'pyzmq'
     #],
     url="https://github.com/Gusabi/ppQuanTrade"
 )
