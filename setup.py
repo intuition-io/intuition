@@ -59,6 +59,7 @@ def get_requirements():
         else:
             install_requires.append(requirement)
 
+
 def get_dependencies():
     with open('scripts/installation/requirements.txt') as requirements:
         #FIXME Dpendencie issue: read 2 files and append the second array
@@ -66,7 +67,8 @@ def get_dependencies():
         dependencies = []
         dependencies += ['numpy', 'pandas', 'scipy']
         dependencies += requirements.read().split('\n')[:-1]
-        return dependencies.reverse()
+        dependencies.reverse()
+        return dependencies
 # ___________________________________________________________________________________________________________________
 
 LONG_DESCRIPTION = None
@@ -97,14 +99,6 @@ setup(
     packages=find_packages(),
     long_description=LONG_DESCRIPTION,
     license='Apache 2.0',
-    #data_files=[
-        #('scripts', ['scripts/ordered_pip.sh',
-                     #'scripts/run_labo.py',
-                     #'scripts/run_shiny.sh']),
-        #('config', ['config/local.sh',
-                    #'config/shiny-server.config',
-                    #'config/mysql.cfg'])
-    #],
     classifiers=[
         'Development Status :: 1 - Beta',
         'Natural Language :: English',
@@ -116,30 +110,5 @@ setup(
         'Topic :: System :: Distributed Computing'
     ],
     install_requires=get_dependencies(),
-    #install_requires=[
-        #'requests',
-        #'scikits.learn',
-        #'blist',
-        #'six',
-        #'delorean',
-        #'plac',
-        #'SQLAlchemy',
-        #'beautifulsoup4',
-        #'scipy',
-        ##FIXME 'matplotlib',
-        #'rpy2',
-        #'statsmodels',
-        #'patsy',
-        #'msgpack-python',
-        #'mysql-python',
-        #"python-dateutil",
-        #'logbook',
-        #'pytz',
-        #'numpy',
-        #'pandas',
-        #"jinja2",
-        #"quandl",
-        #'pyzmq'
-    #],
     url="https://github.com/Gusabi/ppQuanTrade"
 )
