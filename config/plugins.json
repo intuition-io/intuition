@@ -24,7 +24,7 @@
         "perc_sell": 1.0,
         "max_weight": 0.3
     },
-    {"components": [
+    "components": [
         {
             "algorithm": "BuyAndHold",
             "manager": "Fair",
@@ -42,5 +42,29 @@
         {
             "manager": "Constant"
         }
-    ]}
+    ],
+    "truefx": {
+        "user": "Gusabi",
+        "password": "quantrade"
+    },
+    "quandl": {
+        "apikey": "ABtfhTEZiGrgJ4F8xsDp"
+    },
+    "notifymyandroid": {
+        "url_notify": "http://www.notifymyandroid.com/publicapi/notify",
+        "url_check": "http://www.notifymyandroid.com/publicapi/verify",
+        "apikey": "95ea3f34f891fc3963047c70bdcdc01627cc120a46f06960"
+    },
+    "twitter": {
+        "user": "XavierBruhiere",
+        "password": "quantrade"
+    },
+    "rss": {
+        "rbloggers": "feeds.feedburner.com/RBloggers",
+        "quantopian": "https://www.quantopian.com/feed",
+        "unix": "http://www.unixgarden.com/index.php/feed",
+        "reuters": "http://feeds.reuters.com/reuters/financialsNews",
+        "news": "http://economie.trader-finance.fr/rss.php",
+        "example": "http://cyber.law.harvard.edu/rss/examples/rss2sample.xml"
+    }
 }

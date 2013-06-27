@@ -73,3 +73,6 @@ npm-debug.log
 
 # Quandl
 authtoken.p
+
+plugins.json
+logs

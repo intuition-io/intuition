@@ -70,7 +70,7 @@ if __name__ == '__main__':
                  #utils.color_setup)
     
     #FIXME Remote log broken here
-    log_setup = get_nestedlog(level=configuration['loglevel'], file=configuration['logfile'])
+    log_setup = get_nestedlog(level=configuration['loglevel'], filename=configuration['logfile'])
     with log_setup.applicationbound():
         '''
         TODO HUGE: Run multiple backtest with communication possibilities (ZMQ)

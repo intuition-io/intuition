@@ -6,7 +6,7 @@ import pytz
 import datetime
 from dateutil.parser import parse
 
-import neuronquant.network.transport as network
+import neuronquant.gryd.transport as gryd
 from neuronquant.data.datafeed import DataFeed
 
 log = logbook.Logger('Configuration')
@@ -30,11 +30,14 @@ class Setup(object):
         self.config_strategy    = {}
         self.config_environment = self._inspect_environment()
 
-    def _inspect_environment(self, local_file='~/.quantrade/default.json'):
+    def _inspect_environment(self, local_file=None):
         '''
         Read common user and project configuration files
         for usual environment parameters
         '''
+        if not local_file:
+            local_file = '/'.join((self.configuration_folder, 'default.json'))
+
         context = {}
         if os.path.exists(os.path.expanduser(local_file)):
             log.info('Found local configuration file, loading {}'.format(local_file))
@@ -42,7 +45,7 @@ class Setup(object):
         return context
 
     #NOTE More likely to be an utils function
-    def _read_structured_file(self, formatfile, config_folder=False, select_field=None, format='json'):
+    def _read_structured_file(self, filename, config_folder=False, select_field=None, format='json'):
         '''
         Map well structured, i.e. common file format like key-value storage, csv, ...,  file content into a dictionnary
         '''
@@ -50,9 +53,9 @@ class Setup(object):
             try:
                 # Read given file in specified format from default or given config directory
                 if config_folder:
-                    content = json.load(open('/'.join([self.configuration_folder, formatfile]), 'r'))
+                    content = json.load(open('/'.join([self.configuration_folder, filename]), 'r'))
                 else:
-                    content = json.load(open(formatfile, 'r'))
+                    content = json.load(open(filename, 'r'))
             except:
                 log.error('** loading json configuration.')
                 return dict()
@@ -171,14 +174,14 @@ class Setup(object):
         else:
             log.info('Reading strategie configuration from json files')
             self.config_strategy['manager'] = \
-                    self._read_structured_file('managers.json',
+                    self._read_structured_file('plugins.json',
                                                config_folder=True,
-                                               select_field=self.config_backtest['manager'])
+                                               select_field='manager')
             #NOTE Algorithm should be strategie, to be consistent
             self.config_strategy['algorithm'] = \
-                    self._read_structured_file('strategies.json',
+                    self._read_structured_file('plugins.json',
                                                config_folder=True,
-                                               select_field=self.config_backtest['algorithm'])
+                                               select_field='strategie')
 
         log.info('Configuration is Done.')
 
@@ -192,7 +195,7 @@ class Setup(object):
         '''
         # ZMQ Server makes the entire simulator able to receive configuration
         # and send informations to remote users and other processes like web frontend
-        server = network.ZMQ_Dealer(id='Engine server')
+        server = gryd.ZMQ_Dealer(id='Engine server')
 
         server.run(host=host, port=port)
 

@@ -13,8 +13,6 @@ import data
 import utils
 import os
 
-os.system('. $HOME/.quantrade/local.sh')
-
 __all__ = [
         'algorithmic',
         'gears',
