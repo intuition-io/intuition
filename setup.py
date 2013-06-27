@@ -117,7 +117,7 @@ setup(
         'statsmodels',
         'patsy',
         'msgpack-python',
-        'mysql-python'
+        'mysql-python',
         'logbook',
         'pytz',
         'numpy',
@@ -126,9 +126,9 @@ setup(
         "quandl",
         'pyzmq'
     ],
-    dependency_links=[
-        'http://github.com/Gusabi/zipline',
-        'http://github.com/quandl/Python'
-    ],
+    #dependency_links=[
+        #'http://github.com/Gusabi/zipline',
+        #'http://github.com/quandl/Python'
+    #],
     url="https://github.com/Gusabi/ppQuanTrade"
 )
