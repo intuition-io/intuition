@@ -118,6 +118,7 @@ setup(
         'patsy',
         'msgpack-python',
         'mysql-python',
+        "python-dateutil",
         'logbook',
         'pytz',
         'numpy',
