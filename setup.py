@@ -108,6 +108,11 @@ setup(
         'Topic :: System :: Distributed Computing'
     ],
     install_requires=[
+        'requests',
+        'scikits.learn',
+        'blist',
+        'six',
+        'delorean',
         'plac',
         'SQLAlchemy',
         'beautifulsoup4',
