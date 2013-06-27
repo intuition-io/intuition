@@ -64,9 +64,9 @@ def get_dependencies():
         #FIXME Dpendencie issue: read 2 files and append the second array
         # Ath the end of the first to manage order
         dependencies = []
-        dependencies += ['numpy==1.7.1', 'pandas==0.11.0', 'scipy==0.12.0']
+        dependencies += ['numpy', 'pandas', 'scipy']
         dependencies += requirements.read().split('\n')[:-1]
-        return dependencies
+        return dependencies.reverse()
 # ___________________________________________________________________________________________________________________
 
 LONG_DESCRIPTION = None
