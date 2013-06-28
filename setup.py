@@ -62,13 +62,8 @@ def get_requirements():
 
 def get_dependencies():
     with open('scripts/installation/requirements.txt') as requirements:
-        #FIXME Dpendencie issue: read 2 files and append the second array
-        # Ath the end of the first to manage order
-        dependencies = []
-        dependencies += ['numpy', 'pandas', 'scipy']
-        dependencies += requirements.read().split('\n')[:-1]
-        dependencies.reverse()
-        return dependencies
+        #FIXME does not garantee correct dependencie order resolutioin
+        return requirements.read().split('\n')[:-1]
 # ___________________________________________________________________________________________________________________
 
 LONG_DESCRIPTION = None
