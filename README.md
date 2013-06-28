@@ -1,6 +1,8 @@
 QuanTrade: Automated quantitative trading system
 ==================================================
 
+**Super Attention!** I'm testing a lot of new things the system will be difficult to run for a few days (but for the best !)
+
 **Attention!** Project is under early development, use for your own risk.
 
 Overview

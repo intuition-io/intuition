@@ -15,7 +15,7 @@
 
 
 from zipline.algorithm import TradingAlgorithm
-import statsmodels.api as sm
+#import statsmodels.api as sm
 from zipline.transforms import batch_transform
 import numpy as np
 
@@ -96,8 +96,11 @@ def ols_transform(data):
     for sid in data.price:
         prices = data.price[sid].values
         x = np.arange(1, len(prices) + 1)
-        x = sm.add_constant(x, prepend=True)
-        regression[sid] = sm.OLS(prices, x).fit().params
+        #NOTE Dev stuff: Without statsmodels, no scipy and without those two libs,
+        #container is much more quick to build
+        #x = sm.add_constant(x, prepend=True)
+        #regression[sid] = sm.OLS(prices, x).fit().params
+        regression[sid] = 0.0
     return regression
 
 
