@@ -28,7 +28,13 @@ import zipline.protocol as zp
 #from neuronquant.network.dashboard import Dashboard
 
 from neuronquant.tmpdata.extractor import Extractor
-extractor = Extractor('mysql://xavier:quantrade@localhost/stock_data')
+
+import os
+CREDENTIALS_PATH = '/'.join((os.environ['QTRADE'], 'config', 'default.json'))
+sql = json.load(open(CREDENTIALS_PATH, 'r'))['mysql']
+extractor = Extractor('mysql://{}:{}@{}/{}'.format(
+    sql['user'], sql['password'], sql['hostname'], sql['database']))
+#extractor = Extractor('mysql://xavier:quantrade@localhost/stock_data')
 metrics_fields = ['Information', 'Returns', 'MaxDrawdown', 'SortinoRatio', 'Period', 'Volatility', 'BenchmarkVolatility', 'Beta', 'ExcessReturn', 'TreasuryReturns', 'SharpeRatio', 'Date', 'Alpha', 'BenchmarkReturns', 'Name']
 
 
