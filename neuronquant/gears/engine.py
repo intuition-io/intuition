@@ -107,7 +107,6 @@ class Simulation(object):
                                     start_time = self.configuration['start'],
                                     end_time   = self.configuration['end'],
                                     freq       = self.configuration['frequency'],
-                                    #source     = self.configuration['source'],
                                     exchange   = self.configuration['exchange'],
                                     live       = self.configuration['live'])
 
@@ -124,7 +123,7 @@ class Simulation(object):
 
         if live:
             # Check that start_time is now or later
-            assert start_time > pd.datetime.now() - pd.datetools.Second(5)
+            assert start_time > pd.datetime.now(pytz.utc) - pd.datetools.Second(5)
             # Default end_date is now, not suitable for live trading
             self.load_market_data = LiveBenchmark(end_time, frequency=freq).load_market_data
             #TODO ...hard coded, later for exemple: --frequency daily,3
