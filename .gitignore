@@ -12,7 +12,6 @@ dist
 QSData
 CSV
 node_modules/*
-data
 *.bkp
 
 # R

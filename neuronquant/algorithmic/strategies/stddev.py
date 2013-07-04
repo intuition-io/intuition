@@ -14,8 +14,8 @@
 # limitations under the License.
 
 
-from neuronquant.zipline.algorithm import TradingAlgorithm
-from neuronquant.zipline.transforms import MovingVWAP, MovingStandardDev
+from zipline.algorithm import TradingAlgorithm
+from zipline.transforms import MovingVWAP, MovingStandardDev
 
 
 #TODO The portfolio management is included here, make it a stand alone manager

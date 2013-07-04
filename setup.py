@@ -58,6 +58,12 @@ def get_requirements():
             dependency_links.append(match.group('link'))
         else:
             install_requires.append(requirement)
+
+
+def get_dependencies():
+    with open('scripts/installation/requirements.txt') as requirements:
+        #FIXME does not garantee correct dependencie order resolutioin
+        return requirements.read().split('\n')[:-1]
 # ___________________________________________________________________________________________________________________
 
 LONG_DESCRIPTION = None
@@ -88,15 +94,6 @@ setup(
     packages=find_packages(),
     long_description=LONG_DESCRIPTION,
     license='Apache 2.0',
-    #TODO Update with .quantrade !
-    #data_files=[
-        #('scripts', ['scripts/ordered_pip.sh',
-                     #'scripts/run_labo.py',
-                     #'scripts/run_shiny.sh']),
-        #('config', ['config/local.sh',
-                    #'config/shiny-server.config',
-                    #'config/mysql.cfg'])
-    #],
     classifiers=[
         'Development Status :: 1 - Beta',
         'Natural Language :: English',
@@ -107,34 +104,6 @@ setup(
         'Topic :: Scientific/Engineering :: Information Analysis',
         'Topic :: System :: Distributed Computing'
     ],
-    install_requires=[
-        'requests',
-        'scikits.learn',
-        'blist',
-        'six',
-        'delorean',
-        'plac',
-        'SQLAlchemy',
-        'beautifulsoup4',
-        'scipy',
-        #FIXME 'matplotlib',
-        'rpy2',
-        'statsmodels',
-        'patsy',
-        'msgpack-python',
-        'mysql-python',
-        "python-dateutil",
-        'logbook',
-        'pytz',
-        'numpy',
-        'pandas',
-        "jinja2",
-        "quandl",
-        'pyzmq'
-    ],
-    #dependency_links=[
-        #'http://github.com/Gusabi/zipline',
-        #'http://github.com/quandl/Python'
-    #],
+    install_requires=get_dependencies(),
     url="https://github.com/Gusabi/ppQuanTrade"
 )

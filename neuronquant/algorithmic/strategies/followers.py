@@ -14,9 +14,9 @@
 # limitations under the License.
 
 
-from neuronquant.zipline.algorithm import TradingAlgorithm
-import statsmodels.api as sm
-from neuronquant.zipline.transforms import batch_transform
+from zipline.algorithm import TradingAlgorithm
+#import statsmodels.api as sm
+from zipline.transforms import batch_transform
 import numpy as np
 
 
@@ -42,7 +42,7 @@ class BuyAndHold(TradingAlgorithm):
         if self.initialized:
             user_instruction = self.manager.update(
                     self.portfolio,
-                    self.datetime.to_pydatetime(),
+                    self.datetime,
                     self.perf_tracker.cumulative_risk_metrics.to_dict(),
                     save=self.save,
                     widgets=False)
@@ -96,8 +96,11 @@ def ols_transform(data):
     for sid in data.price:
         prices = data.price[sid].values
         x = np.arange(1, len(prices) + 1)
-        x = sm.add_constant(x, prepend=True)
-        regression[sid] = sm.OLS(prices, x).fit().params
+        #NOTE Dev stuff: Without statsmodels, no scipy and without those two libs,
+        #container is much more quick to build
+        #x = sm.add_constant(x, prepend=True)
+        #regression[sid] = sm.OLS(prices, x).fit().params
+        regression[sid] = 0.0
     return regression
 
 
@@ -125,7 +128,7 @@ class FollowTrend(TradingAlgorithm):
         if self.initialized:
             user_instruction = self.manager.update(
                     self.portfolio,
-                    self.datetime.to_pydatetime(), 
+                    self.datetime, 
                     self.perf_tracker.cumulative_risk_metrics.to_dict(),
                     save=self.save,
                     widgets=False)
@@ -197,7 +200,7 @@ class RegularRebalance(TradingAlgorithm):
         if self.initialized:
             user_instruction = self.manager.update(
                     self.portfolio,
-                    self.datetime.to_pydatetime(),
+                    self.datetime,
                     self.perf_tracker.cumulative_risk_metrics.to_dict(),
                     save=self.save,
                     widgets=False)

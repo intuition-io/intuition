@@ -31,21 +31,21 @@ echo "C'est parti..."
 
 # Equitie backtest 
 if [ $choice == 1 ]; then
-    time $QTRADE/application/app.py --initialcash 50000 --tickers INDEX_FCHI \
+    time $QTRADE/application/app.py --initialcash 50000 --tickers random,10 \
         --loglevel CRITICAL --algorithm BuyAndHold --manager Constant --start 2011-05-10 \
-        --frequency daily --database backtest --exchange paris --source CSVSource
+        --frequency daily --database backtest --exchange paris --source DBPriceSource
 
 # Forex live test !
 elif [ $choice == 2 ]; then
     time $QTRADE/application/app.py --initialcash 10000 --tickers EUR/USD,EUR/GBP,GBP/USD,USD/CHF,EUR/JPY,EUR/CHF,USD/CAD,AUD/USD,GBP/JPY \
-        --algorithm BuyAndHold --manager Constant --end 23h --logleve WARNING \
-        --database liveforex --exchange forex --frequency minute --live
+        --algorithm BuyAndHold --manager Constant --end 23h --logleve CRITICAL \
+        --database liveforex --exchange forex --frequency minute --live --source ForexLiveSource
 
 # Equitie live test !
 elif [ $choice == 3 ]; then
-    time $QTRADE/application/app.py --initialcash 50000 --tickers random,20 \
-        --algorithm BuyAndHold --manager Fair --end 22h --loglevel DEBUG \
-        --database live-equities --exchange nasdaq --frequency minute --live
+    time $QTRADE/application/app.py --initialcash 50000 --tickers random,10 \
+        --algorithm BuyAndHold --manager Constant --end 17h --loglevel CRITICAL \
+        --database live-equities --exchange paris --frequency minute --source EquitiesLiveSource --live
 
 else
     echo '** Error: invalid simulation number provided: ' $choice

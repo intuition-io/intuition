@@ -25,8 +25,8 @@ import neuronquant.utils.datautils as datautils
 from neuronquant.data.ziplinesources.loader import LiveBenchmark
 from neuronquant.gears.analyzes import Analyze
 
-from neuronquant.zipline.finance.trading import TradingEnvironment
-from neuronquant.zipline.utils.factory import create_simulation_parameters
+from zipline.finance.trading import TradingEnvironment
+from zipline.utils.factory import create_simulation_parameters
 
 import neuronquant.strateg_library as library
 
@@ -107,7 +107,6 @@ class Simulation(object):
                                     start_time = self.configuration['start'],
                                     end_time   = self.configuration['end'],
                                     freq       = self.configuration['frequency'],
-                                    #source     = self.configuration['source'],
                                     exchange   = self.configuration['exchange'],
                                     live       = self.configuration['live'])
 
@@ -124,11 +123,14 @@ class Simulation(object):
 
         if live:
             # Check that start_time is now or later
-            assert start_time > pd.datetime.now() - pd.datetools.Second(5)
+            if (start_time < (pd.datetime.now(pytz.utc) - pd.datetools.Second(5))):
+                log.warning('! Invalid start time, setting it now')
+                start_time = pd.datetime.now(pytz.utc)
             # Default end_date is now, not suitable for live trading
             self.load_market_data = LiveBenchmark(end_time, frequency=freq).load_market_data
             #TODO ...hard coded, later for exemple: --frequency daily,3
             data_freq = '1min'
+
         else:
             # Use default zipline load_market_data, i.e. data from msgpack files in ~/.zipline/data/
             self.load_market_data = None

@@ -12,7 +12,7 @@ shinyUI(pageWithSidebar(
 
             textInput("ticker", "Action", value="starbucks"),    
 
-            textInput("dataTable", "Dataset", value="ChuckNorris"),    
+            textInput("dataTable", "Dataset", value="backtest"),
 
             sliderInput(inputId = 'dateSlider', label = 'Period to trade',
                         min = 2000, max= 2012, value = c(2002, 2010))

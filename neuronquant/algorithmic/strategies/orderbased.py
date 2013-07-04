@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-from neuronquant.zipline.algorithm import TradingAlgorithm
+from zipline.algorithm import TradingAlgorithm
 
 
 # https://www.quantopian.com/posts/auto-adjusting-stop-loss

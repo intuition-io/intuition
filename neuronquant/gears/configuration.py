@@ -268,4 +268,5 @@ def _detect_timezone():
     '''
     import locale
     locale_code = locale.getdefaultlocale()[0]
-    return str(pytz.country_timezones[locale_code[:2]][0])
+    #return str(pytz.country_timezones[locale_code[:2]][0])
+    return str(pytz.country_timezones[locale_code[-2:]][0])

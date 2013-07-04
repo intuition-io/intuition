@@ -150,6 +150,7 @@ function install_dependancies() {
 
 
 function install_team_dashboard() {
+    apt-get install libxslt1-dev libxml2-dev
     gem install bundler
     if [ ! -d "../team_dashboard" ]; then
         log "Cloning and installing team dashboard project"
