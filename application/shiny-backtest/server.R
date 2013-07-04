@@ -51,7 +51,7 @@ shinyServer(function(input, output)
         if ( input$done )
         {
             #remoteNodeWorker(request, port=5555, debug=F)
-            zmqSend(request, config='default.json', debug=TRUE)
+            #zmqSend(request, config='default.json', debug=TRUE)
         } 
         getTradeData(dataId=input$dataTable, config='default.json', source='mysql')
     })
@@ -78,12 +78,12 @@ shinyServer(function(input, output)
 
     output$rollregression <- renderPlot(function() 
     {
-        charts.RollingRegression(compute()[, 'Returns', drop=FALSE], compute()[, 'BenchmarkReturns', drop=FALSE])
+        charts.RollingRegression(compute()[, 'Returns'], compute()[, 'BenchmarkReturns'])
     })
 
     output$regression <- renderPlot(function() 
     {
-        chart.Regression(compute()[, 'Returns', drop=F], compute()[, 'BenchmarkReturns', drop=F], Rf=riskfree, excess.returns=T, fit=c('loess', 'linear'), legend.loc='topleft')
+        chart.Regression(compute()[, 'Returns'], compute()[, 'BenchmarkReturns'], Rf=riskfree, excess.returns=T, fit=c('loess', 'linear'), legend.loc='topleft')
     })
 
     output$snailtrail <- renderPlot(function() 

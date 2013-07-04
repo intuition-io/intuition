@@ -111,7 +111,7 @@ getMetricsFromMySQL <- function(dataId,                   # Table the backtest s
                                 debug   = FALSE)
 {
     # Getting database user settings
-    config <- fromJSON(file(paste(Sys.getenv('HOME'), '.quantrade', dbfile, sep='/'), 'r'))['mysql'][[1]]
+    config <- fromJSON(file(paste(Sys.getenv('QTRADE'), 'config', dbfile, sep='/'), 'r'))['mysql'][[1]]
 
     db = dbConnect(MySQL(),
                    user     = config['user'][[1]],
@@ -139,8 +139,8 @@ getMetricsFromMySQL <- function(dataId,                   # Table the backtest s
         summary(input)
     }
     # monthly perfs are time series, casting it in suitable type data: xts
-	if ( !overall && length(input) != 0)
-    	input =  xts(subset(input, select=-c(Name, Period, Id)), order.by=as.Date(input$Period))
+    if ( !overall && length(input) != 0)
+        input =  xts(subset(input, select=-c(Name, Period, Id)), order.by=as.Date(input$Period))
 
 	return(input)
 }
@@ -228,5 +228,8 @@ test <- function()
 # It has to match the returns period
 #riskfree <- .04/12  # My bank CD
 #data <- NULL
-data <- getTradeData(dataId='backtest', source='mysql')
-riskfree <- mean(data[, 'TreasuryReturns'])
+data <- getTradeData(dataId='backtest', source='mysql', debug=TRUE)
+
+#FIXME: NA
+#riskfree <- mean(data[, 'TreasuryReturns'])
+riskfree <- 0.4
