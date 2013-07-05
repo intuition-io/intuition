@@ -22,12 +22,12 @@ from unittest import TestCase
 from nose.tools import timed
 
 from neuronquant.utils.test_utils import (
-        setup_logger,
-        teardown_logger
+    setup_logger,
+    teardown_logger
 )
 
 from neuronquant.data.forex import ConnectTrueFX
-from neuronquant.utils.db_utils import FX_PAIRS
+#from neuronquant.utils.datautils import FX_PAIRS
 
 DEFAULT_TIMEOUT = 15
 EXTENDED_TIMEOUT = 90
@@ -46,24 +46,34 @@ class TestForex(TestCase):
         teardown_logger(self)
 
     def test_connection_credentials(self):
-        ''' Use explicit TrueFx username and password account for authentification '''
+        '''
+        Use explicit TrueFx username and password account for
+        authentification
+        '''
         client = ConnectTrueFX(user='Gusabi', password='quantrade')
-        ### If succeeded, an authentification for further use was returned by truefx server
+        # If succeeded, an authentification for further use was returned by
+        # truefx server
         assert client
         assert client._code
         assert client._code.find('Gusabi') == 0
 
     def test_connection_default_auth_file(self):
-        ''' If no credentials, the constructor tries to find it reading config/default.json '''
-        ### It's default behavior, nothing to specifie
+        '''
+        If no credentials, the constructor tries to find it
+        reading config/default.json
+        '''
+        # It's default behavior, nothing to specifie
         client = ConnectTrueFX()
         assert client
         assert client._code
         assert client._code.find('Gusabi') == 0
 
     def test_connection_custom_auth_file(self):
-        ''' If no credentials, the constructor tries to find it reading given json file '''
-        client = ConnectTrueFX(auth_file='test.json')
+        '''
+        If no credentials, the constructor tries to find it
+        reading given json file
+        '''
+        client = ConnectTrueFX(auth_file='plugins.json')
         assert client
         assert client._code
         assert client._code.find('Gusabi') == 0
@@ -78,7 +88,7 @@ class TestForex(TestCase):
         pairs = ['EUR/USD', 'USD/JPY']
         client = ConnectTrueFX(pairs=pairs)
         ### Default call use pairs given during connection
-        dataframe = client.QueryTrueFx()
+        dataframe = client.QueryTrueFX()
         for p in pairs:
             assert p in dataframe.columns
 

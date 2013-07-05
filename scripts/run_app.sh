@@ -44,8 +44,8 @@ elif [ $choice == 2 ]; then
 # Equitie live test !
 elif [ $choice == 3 ]; then
     time $QTRADE/application/app.py --initialcash 50000 --tickers random,10 \
-        --algorithm BuyAndHold --manager Constant --end 17h --loglevel CRITICAL \
-        --database live-equities --exchange paris --frequency minute --source EquitiesLiveSource --live
+        --algorithm BuyAndHold --manager Constant --end 22h --loglevel CRITICAL \
+        --database live-equities --exchange nasdaq --frequency minute --source EquitiesLiveSource --live
 
 else
     echo '** Error: invalid simulation number provided: ' $choice

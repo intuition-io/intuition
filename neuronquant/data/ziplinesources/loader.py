@@ -29,7 +29,8 @@ import pytz
 import pandas as pd
 
 
-#TODO A class: the constructor could set from run_backtest the parameters, and only the function will be sent
+#TODO A class: the constructor could set from run_backtest the parameters, and
+#only the function will be sent
 
 class LiveBenchmark(object):
     def __init__(self, end, frequency='daily', loopback=4):
@@ -44,7 +45,8 @@ class LiveBenchmark(object):
 
     def load_market_data(self, bm_symbol='^GSPC'):
         #TODO Parametric
-        event_dt = datetime.today().replace(tzinfo=pytz.utc)
+        #event_dt = datetime.today().replace(tzinfo=pytz.utc)
+        event_dt = datetime.now(pytz.utc)
 
         # Getting today benchmark return
         #NOTE Seems shit but later, previous days could be used to compute indicators
@@ -52,9 +54,8 @@ class LiveBenchmark(object):
         #last_bench_return = last_bench_return[-1]
         #print('Benchmark on {}: {}'.format(last_bench_return.date, last_bench_return.returns))
 
-        #TODO More efficient way to navigate in a dit
-        for exchange in datautils.Exchange:
-            if datautils.Exchange[exchange]['index'] == bm_symbol:
+        for exchange, infos in datautils.Exchange.iteritems():
+            if infos['index'] == bm_symbol:
                 code = datautils.Exchange[exchange]['code']
                 break
 
@@ -77,7 +78,8 @@ class LiveBenchmark(object):
                 break
 
         tr_curves = {}
-        tr_dt = datetime.today().replace(tzinfo=pytz.utc)
+        #tr_dt = datetime.today().replace(tzinfo=pytz.utc)
+        tr_dt = datetime.now(pytz.utc)
         while tr_dt < self.last_trading_day:
             #tr_dt = tr_dt.replace(hour=0, minute=0, second=0, tzinfo=pytz.utc)
             tr_curves[tr_dt] = last_tr

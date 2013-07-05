@@ -15,7 +15,7 @@ fi
 
 function install_packages() {
     echo "Installation of debian packages..."
-    apt-get install git libzmq-dev r-base python2.7 mysql-server libmysqlclient-dev python-pip planner python-dev curl ruby1.9.3
+    apt-get install git libzmq-dev r-base python2.7 mysql-server libmysqlclient-dev python-pip python-dev curl ruby1.9.3
     pip install pip-tools
 }
 

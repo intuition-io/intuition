@@ -9,7 +9,7 @@
         "encoding": "utf-8"
     },
     "mysql": {
-        "hostname": "192.168.0.17",
+        "hostname": "localhost",
         "user": "xavier",
         "password": "quantrade",
         "database": "stock_data",

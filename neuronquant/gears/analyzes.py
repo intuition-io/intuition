@@ -70,7 +70,7 @@ class Analyze(object):
             index  = self._get_index(self.metrics[timestamp])
             perfs['Name']                 = np.array([db_id] * len(self.metrics[timestamp]))
             #perfs['Period']               = np.array([self.metrics[timestamp][i]['period_label'] for i in length])
-            perfs['Period']               = np.array([pd.datetime.date(date)                                      for date in index])
+            perfs['Period']               = np.array([pd.datetime.date(date)                                for date in index])
             perfs['Sharpe.Ratio']         = np.array([self.metrics[timestamp][i]['sharpe']                  for i in length])
             perfs['Sortino.Ratio']        = np.array([self.metrics[timestamp][i]['sortino']                 for i in length])
             perfs['Information']          = np.array([self.metrics[timestamp][i]['information']             for i in length])

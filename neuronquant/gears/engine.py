@@ -26,7 +26,7 @@ from neuronquant.data.ziplinesources.loader import LiveBenchmark
 from neuronquant.gears.analyzes import Analyze
 
 from zipline.finance.trading import TradingEnvironment
-from zipline.utils.factory import create_simulation_parameters
+from neuronquant.zipline.factory import create_simulation_parameters
 
 import neuronquant.strateg_library as library
 
@@ -124,7 +124,7 @@ class Simulation(object):
         if live:
             # Check that start_time is now or later
             if (start_time < (pd.datetime.now(pytz.utc) - pd.datetools.Second(5))):
-                log.warning('! Invalid start time, setting it now')
+                log.warning('! Invalid start time, setting it to now')
                 start_time = pd.datetime.now(pytz.utc)
             # Default end_date is now, not suitable for live trading
             self.load_market_data = LiveBenchmark(end_time, frequency=freq).load_market_data
@@ -217,15 +217,16 @@ class Simulation(object):
         #NOTE This method does not change anything
         #backtester.set_sources([DataLiveSource(data_tmp)])
         #TODO A new command line parameter ? only minutely and daily (and hourly normally) Use filter parameter of datasource ?
-        backtester.set_data_frequency(configuration['frequency'])
+        #backtester.set_data_frequency(configuration['frequency'])
 
         # Running simulation with it
         with context:
             sim_params = create_simulation_parameters(capital_base = configuration['cash'],
-                                                      start = configuration['start'],
-                                                      end   = configuration['end'])
+                                                      start=configuration['start'],
+                                                      end=configuration['end'],
+                                                      emission_rate=configuration['frequency'],
+                                                      data_frequency=configuration['frequency'])
 
-            results, monthly_perfs = backtester.run(data,
+            daily_stats, monthly_perfs = backtester.go(data,
                                                     sim_params=sim_params)
-
-        return Analyze(results=results, metrics=monthly_perfs, datafeed=self.datafeed, configuration=configuration)
+        return Analyze(results=daily_stats, metrics=monthly_perfs, datafeed=self.datafeed, configuration=configuration)

@@ -22,8 +22,8 @@ from unittest import TestCase
 from nose.tools import timed
 
 from neuronquant.utils.test_utils import (
-        setup_logger,
-        teardown_logger
+    setup_logger,
+    teardown_logger
 )
 
 import neuronquant.gears.configuration as configuration

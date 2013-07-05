@@ -15,6 +15,7 @@
 
 
 from zipline.algorithm import TradingAlgorithm
+from neuronquant.zipline.algorithm import QuantitativeTrading
 #import statsmodels.api as sm
 from zipline.transforms import batch_transform
 import numpy as np
@@ -22,7 +23,8 @@ import numpy as np
 
 #TODO Should handle in parameter all of the set_*
 #TODO stop_trading or process_instruction are common methods
-class BuyAndHold(TradingAlgorithm):
+#class BuyAndHold(TradingAlgorithm):
+class BuyAndHold(QuantitativeTrading):
     '''Simpliest algorithm ever, just buy a stock at the first frame'''
     #NOTE test of a new configuration passing
     def initialize(self, properties):
