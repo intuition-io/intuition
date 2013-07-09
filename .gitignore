@@ -1,7 +1,6 @@
 *.py[coxd]
 
 # General and C++
-.*
 !.gitignore
 *~
 res
@@ -73,3 +72,6 @@ npm-debug.log
 authtoken.p
 config/plugins.json
 management/
+
+.vagrant
+.env
