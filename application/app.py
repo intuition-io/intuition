@@ -21,7 +21,7 @@ import sys
 import os
 
 #import pylab as plt
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 from neuronquant.gears.engine import Simulation
 from neuronquant.utils.logger import log, get_nestedlog
@@ -29,6 +29,7 @@ import neuronquant.utils.datautils as datautils
 from neuronquant.gears.configuration import Setup
 
 
+'''
 def plot_results(analyzes):
     # Plot portfolio
     fig = plt.figure()
@@ -51,6 +52,7 @@ def plot_results(analyzes):
              'v', markersize=10, color='k')
     plt.legend()
     plt.savefig('results.png', dpi=144)
+'''
 
 
 #TODO profiling with http://docs.python.org/2/library/profile.html, http://pycallgraph.slowchop.com/
@@ -152,7 +154,7 @@ if __name__ == '__main__':
         if not configuration['remote']:
             data = returns_df.drop(['Returns', 'Benchmark.Returns'], axis=1)
             data.plot()
-            plt.show()
+            #plt.show()
 
             # R statistical analyzes
             #TODO Wrap it in Analyze object using rpy or rest server

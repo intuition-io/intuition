@@ -15,12 +15,8 @@
 
 
 """Genetic Algorithmn Implementation """
-import sys
-import os
-
-sys.path.append(os.environ['QTRADE'])
 from neuronquant.utils import LogSubsystem
-from neuronquant.ai.genetic import Genetic, GeneticAlgorithm
+from neuronquant.algorithmic.optimizations.genetic import Genetic, GeneticAlgorithm
 
 
 def testGenetic(genes):

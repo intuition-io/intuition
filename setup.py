@@ -105,5 +105,6 @@ setup(
         'Topic :: System :: Distributed Computing'
     ],
     install_requires=get_dependencies(),
+    dependency_links=['https://github.com/quantopian/zipline'],
     url="https://github.com/Gusabi/ppQuanTrade"
 )

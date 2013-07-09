@@ -20,9 +20,8 @@ import argparse
 
 import matplotlib.pyplot as plt
 
-sys.path.append(str(os.environ['QTRADE']))
 from neuronquant.data.DataAgent import DataAgent
-from neuronquant.calculus.Algorithms import Backtester
+from neuronquant.gears.engine import Backtester
 import pytz
 import pandas as pd
 
