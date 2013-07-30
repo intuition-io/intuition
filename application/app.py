@@ -70,7 +70,7 @@ if __name__ == '__main__':
     #TODO Parametric log handler and level
     #log_setup = (utils.remote_setup if configuration['remote'] else
                  #utils.color_setup)
-    
+
     #FIXME Remote log broken here
     log_setup = get_nestedlog(level=configuration['loglevel'], filename=configuration['logfile'])
     with log_setup.applicationbound():
@@ -78,6 +78,7 @@ if __name__ == '__main__':
         TODO HUGE: Run multiple backtest with communication possibilities (ZMQ)
              for sophisticated multiple strategies strategy
                  - Available capital allocation
+                 import ipdb; ipdb.set_trace()  # XXX BREAKPOINT
                  - Strategies repartition
                  - Use of each-other signals behavior
                  - Global monitoring and evaluation
@@ -97,7 +98,7 @@ if __name__ == '__main__':
         # _configure_context() you can use directly for better understanding
         data, trading_context = engine.configure()
 
-        # See neuronquant/gears/engine.py for details of results 
+        # See neuronquant/gears/engine.py for details of results
         #which is an Analyzes object
         analyzes = engine.run(data, configuration, strategie, trading_context)
 

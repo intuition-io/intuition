@@ -30,7 +30,7 @@ import zipline.protocol as zp
 from neuronquant.tmpdata.extractor import Extractor
 
 import os
-CREDENTIALS_PATH = '/'.join((os.environ['QTRADE'], 'config', 'default.json'))
+CREDENTIALS_PATH = os.path.expanduser('~/.quantrade/config/default.json')
 sql = json.load(open(CREDENTIALS_PATH, 'r'))['mysql']
 extractor = Extractor('mysql://{}:{}@{}/{}'.format(
     sql['user'], sql['password'], sql['hostname'], sql['database']))

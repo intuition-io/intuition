@@ -63,7 +63,8 @@ def get_requirements():
 def get_dependencies():
     with open('scripts/installation/requirements.txt') as requirements:
         #FIXME does not garantee correct dependencie order resolutioin
-        return requirements.read().split('\n')[:-1]
+        # Avoid zipline line
+        return requirements.read().split('\n')[:-2]
 # ___________________________________________________________________________________________________________________
 
 LONG_DESCRIPTION = None

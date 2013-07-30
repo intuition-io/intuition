@@ -1,39 +1,41 @@
 #!/bin/bash
+#NOTE With QUANTRADE_REPO set before installation this script could be generic
 
-# This script will be run by Vagrant to
-# set up everything necessary to use Zipline.
+set -e
+export DEBIAN_FRONTEND=noninteractive
+export QUANTRADE_REPO=${QUANTRADE_REPO:-"https://github.com/Gusabi/ppQuanTrade.git"}
 
-# Because this is intended be a disposable dev VM setup,
-# no effort is made to use virtualenv/virtualenvwrapper
+#TODO project=https://.../[].git
 
-# It is assumed that you have "vagrant up"
-# from the root of the zipline github checkout.
-# This will put the zipline code in the
-# /vagrant folder in the system.
+# A hack try for generic use, especially vagrant and docker compliant
+if [[ "$HOME" == "/root" ]]; then
+    ## We are in a vagrant box, at bootstrap
+    export HOME="/home/vagrant"
+    export USER="vagrant"
+elif [[ "$HOME" == "/" ]]; then
+    # We are in a docker (lxc ?) container
+    export HOME="/root"
+    export USER=$(whoami)
+fi
 
-LOGS="$HOME/quantrade.log"
-script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+LOGS="/tmp/quantrade.log"
+echo "[bootstrap] logs stored in $LOGS"
 
 # Run a full apt-get update first.
-echo "Updating apt-get caches..."
-apt-get -y update 2>&1 >> "$LOGS"
+echo "[bootstrap] Updating apt-get caches..."
+apt-get update 2>&1 >> "$LOGS"
 
 # Install required packages
-echo "Installing required packages..."
-apt-get -y install git r-base python-pip python-dev g++ make gfortran libzmq-dev mysql-client libmysqlclient-dev curl 2>&1 >> "$LOGS"
+echo "[bootstrap] Installing git and make..."
+apt-get -y --force-yes install git make 2>&1 >> "$LOGS"
 
-echo "Installing python package dependencies..."
-# Ubuntu 12.04 relative hack, i guess...
-pip install --upgrade distribute 2>&1 >> "$LOGS"
+# We assume if you are in a git repository this is probably this very project one
+cd $HOME 
+# The test makes it vagrant compliant (synced folders)
+test -d ppQuanTrade || git clone $QUANTRADE_REPO
+cd ppQuanTrade
+#fi
+make all
 
-pip install --use-mirrors -r $script_dir/scripts/installation/requirements.txt 2>&1 >> "$LOGS"
-# Add scipy next (if it's not done now, breaks installing of statsmodels for some reason ??)
-#echo "Installing zipline"
-#pip install scipy==0.12.0 2>&1 >> "$LOGS"
-
-# Setup mysql
-
-echo "Configuring environment"
-echo "export QTRADE=$script_dir" >> $HOME/.bashrc
-echo "export PYTHONPATH=$PYTHONPATH:$QTRADE" >> $HOME/.bashrc
-echo "Done !"
+echo
+echo "[bootstrap] Done ! Tune the configuration in $HOME/.quantrade"

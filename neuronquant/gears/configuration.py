@@ -23,7 +23,9 @@ class Setup(object):
         #NOTE timezone as parameter
         super(Setup, self).__init__()
 
-        self.configuration_folder = config_dir if config_dir else '/'.join((os.environ['QTRADE'], 'config'))
+        #FIXME This is not reflected on database.py and portfolio.py, neither logger.py
+        default_config_dir = '/'.join([os.environ['HOME'], '.quantrade'])
+        self.configuration_folder = config_dir if config_dir else default_config_dir
 
         # Config data structures
         self.config_backtest    = {}

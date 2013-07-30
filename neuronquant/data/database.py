@@ -49,7 +49,7 @@ class Database(object):
         log.info('Reading QuanTrade MySQL configuration...')
         #NOTE Make it global
         try:
-            CREDENTIALS_PATH = '/'.join((os.environ['QTRADE'], 'config', 'default.json'))
+            CREDENTIALS_PATH = os.path.expanduser('~/.quantrade/config/default.json')
             sql = json.load(open(CREDENTIALS_PATH, 'r'))['mysql']
         except ValueError, e:
             log.error('** Loading mysql configuration: {}'.format(e))

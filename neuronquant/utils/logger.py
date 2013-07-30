@@ -27,13 +27,14 @@ from logbook import Logger, NestedSetup, FileHandler, Processor, StderrHandler, 
 
 from utils import get_local_ip
 
-
 def inject_information(record):
     record.extra['ip'] = get_local_ip()
 
 #log_format = u'[{record.time:%Y-%m-%d %H:%M}] {record.channel} - {record.level_name}: {record.message} \t({record.extra[ip]})'
-log_format = u'[{record.time:%Y-%m-%d %H:%M}] {record.channel}::{record.level_name} - {record.message}'
+log_format = u'[{record.time:%m-%d %H:%M}] {record.channel}::{record.level_name} - {record.message}'
 
+default_log_destination = os.path.expanduser('~/.quantrade/logs')
+log_destination = default_log_destination if os.path.exists(default_log_destination) else '/tmp'
 
 def get_nestedlog(level='DEBUG', filename='quantrade.log', uri=None):
     # Default uri: tcp://127.0.0.1:5540
@@ -46,7 +47,7 @@ def get_nestedlog(level='DEBUG', filename='quantrade.log', uri=None):
             logbook.NullHandler(level=logbook.DEBUG, bubble=True),
             logbook.StreamHandler(sys.stdout, level=logbook.INFO, format_string=log_format),
             logbook.StreamHandler(sys.stderr, level=logbook.ERROR, format_string=log_format),
-            logbook.FileHandler('{}/logs/{}'.format(os.environ['QTRADE'], filename), level=level),
+            logbook.FileHandler('{}/{}'.format(log_destination, filename), level=level),
         ])
 
     return log_setup
@@ -58,7 +59,7 @@ setup = NestedSetup([
     logbook.StreamHandler(sys.stdout, format_string=log_format),
     # then write messages that are at least warnings to to a logfile
     #FIXME FileHandler(os.environ['QTRADE_LOG'], level='WARNING'),
-    logbook.FileHandler('{}/logs/quantrade.log'.format(os.environ['QTRADE']), level='WARNING'),
+    logbook.FileHandler('{}/{}'.format(log_destination, 'quantrade.log'), level='WARNING'),
     #Processor(inject_information)
 ])
 

@@ -31,7 +31,7 @@ echo "C'est parti..."
 
 # Equitie backtest 
 if [ $choice == 1 ]; then
-    time $QTRADE/application/app.py --initialcash 50000 --tickers random,10 \
+    time /vagrant/application/app.py --initialcash 50000 --tickers random,10 \
         --loglevel CRITICAL --algorithm BuyAndHold --manager Constant --start 2011-05-10 \
         --frequency daily --database backtest --exchange paris --source DBPriceSource
 

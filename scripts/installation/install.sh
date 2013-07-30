@@ -137,7 +137,7 @@ function setup_mysql() {
 }
 
 
-function install_dependancies() {
+function install_dependencies() {
     install_packages
     install_zipline
 
@@ -171,7 +171,7 @@ function install_team_dashboard() {
 
 if [ $# -eq 0 ]; then
     setup_env
-    install_dependancies
+    install_dependencies
     #TODO Optional installation ?
     install_team_dashboard
     echo "Now edit ~/.quantrade/local.sh and ~/.quantrade/default.json to suit your environment"

@@ -1,17 +1,22 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+#FIXME It creates a .quantrade in this directory
 #FIXME Wait forever the machine to boot
 #BOX_NAME = ENV["BOX_NAME"] || "raring64"
 #BOX_URI = ENV["BOX_URI"] || "https://cloud-images.ubuntu.com/vagrant/raring/current/raring-server-cloudimg-amd64-vagrant-disk1.box"
-BOX_NAME = ENV["BOX_NAME"] || "precise64"
-BOX_URI = ENV["BOX_URI"] || "http://files.vagrantup.com/precise64.box"
+BOX_NAME = ENV["BOX_NAME"] || "quantal64"
+BOX_URI = ENV["BOX_URI"] || "http://dl.dropbox.com/u/13510779/lxc-quantal-amd64-2013-07-12.box"
 
 Vagrant.configure("2") do |config|
   config.vm.box = BOX_NAME
   config.vm.box_url = BOX_URI
-  config.vm.provider :virtualbox do |vb|
-    vb.customize ["modifyvm", :id, "--memory", 2048, "--cpus", 2]
+
+  config.vm.synced_folder File.dirname(__FILE__), "/home/vagrant/ppQuanTrade"
+
+  config.vm.provider :lxc do |lxc|
+    lxc.customize 'cgroup.memory.limit_in_bytes', '1024M'
   end
-  config.vm.provision "shell", path: "bootstrap.sh"
+
+  config.vm.provision :shell, :inline => "/home/vagrant/ppQuanTrade/bootstrap.sh"
 end

@@ -5,11 +5,10 @@
 *~
 res
 *.o
-*.pyc
-deprecated/
 dist
 QSData
 CSV
+deprecated/
 node_modules/*
 *.bkp
 
@@ -23,9 +22,6 @@ Rplots.pdf
 
 # Logs
 quantrade.log
-
-# C extensions
-*.so
 
 # Packages
 *.egg
@@ -75,3 +71,7 @@ management/
 
 .vagrant
 .env
+
+# Temporary
+.quantrade
+.ropeproject

@@ -1,1 +1,0 @@
-scripts/installation/install.sh
