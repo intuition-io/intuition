@@ -10,7 +10,7 @@ QuanTrade: Automated quantitative trading system
 Overview
 --------
 
-**QuanTrade** is a set of tools and an engine meant to let you easily and intuitively build your own **automated quantitative trading system**.
+**QuanTrade** is an engine and a set of tools meant to let you easily and intuitively build your own **automated quantitative trading system**.
 It is designed to let financial, developer and scientist dudes (together sounds great) explore, test and deploy market technical hacks.
 
 While the project is still at an early age, you can already write, or use, **signal detection algorithms, and portfolio allocation strategies**.
@@ -21,13 +21,13 @@ tools to mix languages like Python, node.js and R and a financial library.
 You will find some goodies like machine learning forecast, markowitz portfolio optimization, genetic optimization, sentiment analysis from twitter, ...
 
 
-![Dashboard](https://raw.github.com/Gusabi/ppQuanTrade/develop/management/QuantDashboard.png)
+![Dashboard](https://raw.github.com/Gusabi/ppQuanTrade/master/QuantDashboard.png)
 
 
 Features
 --------
 
-* Highly configurable trading backtest environment, powered by zipline project
+* Highly configurable trading backtest environment, powered by zipline
 * Made to let you write easily algorithms, portfolio manager, parameters optimization and add data sources
 * Already includes many
 * R integration (and soon other languages) in your algorithms
@@ -47,56 +47,94 @@ Installation
 
 You are just a few steps away from algoritmic trading:
 
-- ```$ > sudo ./install.sh```
+- Plateform independant with Vagrant  and VMs/containers (http://www.vagrantup.com/):
 
-- Edit your username and password in ./scripts/installation/createdb.sql
-- Edit as well ~/.quantrade/default.json and ~/.quantrade/local.sh to suit your environment
+```
+$ git clone https://github.com/Gusabi/ppQuanTrade.git
+$ vagrant plugin install vagrant-lxc
+$ cd ppQuanTrade && vagrant up --provder=lxc
+```
 
-- ```$ > sudo ./install.sh database```
+You can use an other provider but edit eventually the Vagrantfile for fine
+customization.  You can also change default base image by setting env variables BOX_NAME (and
+optionnaly BOX_URI if you don't have it already on your system)
 
-- QuanTrade is able to send to your android device(s) notifications, using NotifyMyAndroid. However you will need an API key,
-available for free with the trial version of the application. Super simple to setup, check their website and then edit ~/.quantrade/local.sh
+- Classic style:
 
-- Congrats you're Done ! If you encountered any issue, check into install.sh, there is nothing that exotic, or mail me at xavier.bruhiere@gmail.com.
+```
+$ git clone https://github.com/Gusabi/ppQuanTrade.git
+$ cd ppQuanTrade && sudo make all
+```
+
+- Or one liner style (with more installation options, only the frist one is required):
+
+```
+$ export PROJECT_URL=Gusabi/ppQuanTrade
+$ export INSTALL_PATH=/some/where
+$ export MAKE_TARGET=all
+$ export VIRTUALIZE=true
+$ export PROVIDER=lxc
+```
+
+And shoot:
+
+```
+$ wget -qO- https://raw.github.com/Gusabi/Dotfiles/master/utils/apt-git | sudo -E bash
+```
+
+- In any case you have to setup a mysql database:
+
+Edit the script in scripts/installation/createdb.sql and your preferences in
+~/.quantrade/config/default.json, the symbols you want to trade in
+ppQuanTrade/data/symbols.csv and run:
+
+```
+$ sudo chown -r $USER $HOME/.quantrade   # Fixes weird issue
+$ make database
+```
+
+At any moment you can change or edit symbols files and run it again for update.
+
+- QuanTrade is able to send to your android device(s) notifications, using
+  NotifyMyAndroid. However you will need an API key, available for free with
+  the trial version of the application. Super simple to setup, check their
+  website.
+
+- You're done !
 
 
 Getting started
 ---------------
 
-To run a backtest manually, configure ppQuanTrade/config/algorithms.json and ppQuanTrade/config/managers.json file, and then run
+You can configure the soft trough default.json and plugins.json in
+~/.quantrade. Then run:
 
-```./backtest.py --initial cash --tickers random,6 --algorithm DualMA 
-	 	--manager OptimalFrontier --exchange paris --start 2005-01-10 --end 2010-07-03```
+```./backtest.py --initialcash 10000 --tickers random,6 --algorithm DualMA 
+	 	--manager Fair --exchange paris --start 2005-01-10 --end 2010-07-03```
 
-Or in realtime mode:
+Or in realtime mode (Broken, I am improving it):
 
 ```./backtest.py --initialcash 100000 --tickers EUR/USD,EUR/GBP --algorithm StdBased 
 		--manager Equity --frequency minute --exchange forex --live```
 
 More examples available in scripts/run_app.sh
 
-As mentionned you can easily write your own algorithms. Here is the equity manager example, which allocates the same weight
-to all of your assets:
+As mentionned you can easily write your own algorithms. Here is the equity
+manager example, which allocates the same weight to all of your assets:
 
 ```python
-from neuronquant.ai.portfolio import PortfolioManager
+from portfolio import PortfolioManager
 
-class Equity(PortfolioManager):
-    """"
-    dispatch equal weigths
-    """
+class Fair(PortfolioManager):
+    '''
+    dispatch equals weigths
+    '''
     def optimize(self, date, to_buy, to_sell, parameters):
-        # allocations will store stocks weigths, used to process orders later
-        # negative amounts will be sold, positive will be bought
         allocations = dict()
-
-        # Split stocks to buy in equal weigths
         if to_buy:
             fraction = round(1.0 / float(len(to_buy)), 2)
             for s in to_buy:
                 allocations[s] = fraction
-
-        # Simply sell current hold amount per stock
         for s in to_sell:
             allocations[s] = - self.portfolio.positions[s].amount
 
@@ -110,60 +148,44 @@ engine and therefore use quite the same scheme, plus the manager, and some
 config parameters. Here is a classic momentum strategie:
 
 ```python
-class Momentum(TradingAlgorithm):
-    '''
-    https://www.quantopian.com/posts/this-is-amazing
-    '''
-    def initialize(self, properties):
-        self.max_notional = 100000.1
-        self.min_notional = -100000.0
+from neuronquant.zipline.algorithm import QuantitativeTrading
 
-        self.add_transform(MovingAverage, 'mavg', ['price'], window_length=properties.get('window_length', 3))
+class BuyAndHold(QuantitativeTrading):
+    '''Simpliest algorithm ever, just buy a stock at the first frame'''
+    def initialize(self, properties):
+        self.debug = properties.get('debug', False)
+        self.save = properties.get('save', False)
+
+        self.loops = 0
 
     def handle_data(self, data):
-        ''' __________________________________________________________    Init   __'''
-        # Update the portfolio manager with current simulation universe
-        self.manager.update(self.portfolio, self.datetime.to_pydatetime())
-        signals = dict()
-        notional = 0
+        self.loops += 1
+        signals = {}
+        ''' ----------------------------------------------------------    Init   --'''
+        if self.initialized:
+            self.manager.update(
+                self.portfolio,
+                self.datetime,
+                self.perf_tracker.cumulative_risk_metrics.to_dict(),
+                save=self.save)
+        else:
+            # Perf_tracker need at least a turn to have an index
+            self.initialized = True
 
-        ''' __________________________________________________________    Scan   __'''
-        # Check every stock in the specified universe and apply the algorithm on it
-        for ticker in data:
-            sma          = data[ticker].mavg.price
-            price        = data[ticker].price
-            cash         = self.portfolio.cash
-            notional     = self.portfolio.positions[ticker].amount * price
-            capital_used = self.portfolio.capital_used
+        if self.loops == 2:
+            ''' ------------------------------------------------------    Scan   --'''
+            for ticker in data:
+                signals[ticker] = data[ticker].price
 
-            # Check for sell signal
-            if sma > price and notional > -0.2 * (capital_used * cash):
-                signals[ticker] = - price
-
-            # Check for buy signal
-            elif sma < price and notional < 0.2 * (capital_used * cash):
-                signals[ticker] = price
-
-        ''' __________________________________________________________   Orders  __'''
-        # If signals detected, re-compute portfolio allocation and process orders
+        ''' ----------------------------------------------------------   Orders  --'''
         if signals:
-            order_book = self.manager.trade_signals_handler(signals)
-
-            for ticker in order_book:
-                self.order(ticker, order_book[ticker])
+            orderBook = self.manager.trade_signals_handler(signals)
+            for stock in orderBook:
                 if self.debug:
-                    self.logger.info('{}: Ordering {} {} stocks'.format(self.datetime, ticker, order_book[ticker]))
-                    self.logger.info('{}:  {} / {}'.format(self.datetime, sma, price))
+                    self.logger.notice('{}: Ordering {} {} stocks'.format(
+                        self.datetime, stock, orderBook[stock]))
+                self.order(stock, orderBook[stock])
 ```
-
-Rememeber that managers and algorithms should be configured in their own \*.json files or through the webapp.
-
-You can setup your trading environment by running from the root directory::
-    ./scripts/run_labo.py
-and access to the shiny frontend page. From there configure the backtest, run it and explore detailed results.
-
-Checkout the wiki for more details about web labo front end, remote console use, algorithm optimization,
-neural network forecasting, ...
 
 
 Resources for Newcomers

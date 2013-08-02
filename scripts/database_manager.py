@@ -17,7 +17,7 @@
 #NOTE plac is cool but is an other dependency, should replace by optparse
 import plac
 import logbook
-log = logbook.Logger('Database')
+log = logbook.Logger('Database::Manager')
 
 from neuronquant.data.database import Manager
 

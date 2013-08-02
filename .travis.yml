@@ -2,7 +2,7 @@ language: python
 python:
   - "2.7"
 install:
-  - apt-get -y install git r-base python-pip python-dev g++ make gfortran libzmq-dev mysql-client libmysqlclient-dev curl
+  - sudo apt-get -y install git r-base python-pip python-dev g++ make gfortran libzmq-dev mysql-client libmysqlclient-dev curl
   - pip install -r scripts/installation/requirements.txt --use-mirrors
 before_script:
   - "flake8 neuronquant tests"

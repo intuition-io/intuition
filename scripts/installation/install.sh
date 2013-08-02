@@ -131,7 +131,7 @@ function setup_mysql() {
     #NOTE Generate the script from a template ? (user and password field)
     ./scripts/database_manager.py -c
     log "Feeding database with US stocks"
-    ./scripts/database_manager.py -a ./data/dump_sql.csv
+    ./scripts/database_manager.py -a ./data/symbols.csv
     log "Feeding database with cac40 stocks"
     ./scripts/database_manager.py -a ./data/cac40.csv
 }
