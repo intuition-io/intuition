@@ -45,19 +45,23 @@ Features
 Installation
 ------------
 
-You are just a few steps away from algoritmic trading:
+You are just a few steps away from algoritmic trading. Follow one of those 3 methods:
 
 - Plateform independant with Vagrant  and VMs/containers (http://www.vagrantup.com/):
 
 ```
 $ git clone https://github.com/Gusabi/ppQuanTrade.git
+$ sudo apt-get install lxc redir
+$ sudo apt-get update && apt-get dist-upgrade
 $ vagrant plugin install vagrant-lxc
-$ cd ppQuanTrade && vagrant up --provder=lxc
+$ cd ppQuanTrade && vagrant up --provider=lxc
 ```
 
-You can use an other provider but edit eventually the Vagrantfile for fine
-customization.  You can also change default base image by setting env variables BOX_NAME (and
-optionnaly BOX_URI if you don't have it already on your system)
+Default is lxc because it is much more lightweight than plain VM and
+performances are of importance for trading. Anyway, you can use an other
+provider but edit eventually the Vagrantfile for fine
+customization.  You can also change default base image by setting env variables ```BOX_NAME``` (and
+optionnaly ```BOX_URI``` if you don't have it already on your system)
 
 - Classic style:
 
@@ -66,13 +70,13 @@ $ git clone https://github.com/Gusabi/ppQuanTrade.git
 $ cd ppQuanTrade && sudo make all
 ```
 
-- Or one liner style (with more installation options, only the frist one is required):
+- Or one liner style (with more installation options, only the first one is required):
 
 ```
 $ export PROJECT_URL=Gusabi/ppQuanTrade
 $ export INSTALL_PATH=/some/where
 $ export MAKE_TARGET=all
-$ export VIRTUALIZE=true
+$ export VIRTUALIZE=false
 $ export PROVIDER=lxc
 ```
 
@@ -82,7 +86,7 @@ And shoot:
 $ wget -qO- https://raw.github.com/Gusabi/Dotfiles/master/utils/apt-git | sudo -E bash
 ```
 
-- In any case you have to setup a mysql database:
+- Then, in any case, you have to setup a mysql database:
 
 Edit the script in scripts/installation/createdb.sql and your preferences in
 ~/.quantrade/config/default.json, the symbols you want to trade in
@@ -90,6 +94,7 @@ ppQuanTrade/data/symbols.csv and run:
 
 ```
 $ sudo chown -r $USER $HOME/.quantrade   # Fixes weird issue
+$ sudo chown -r $USER ppQuanTrade/   # Fixes weird issue
 $ make database
 ```
 

@@ -20,6 +20,10 @@ import re
 from setuptools import setup, find_packages
 
 
+import sys
+sys.exit('This script is currently broken, use instead "sudo make all"')
+
+
 # ___________________________________________  smart requirement detector ___
 #NOTE not that smart, does not work for now
 def which(program):

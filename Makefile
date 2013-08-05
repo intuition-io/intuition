@@ -19,6 +19,7 @@ install:
 	cp config/templates/default.tpl ${HOME}/.quantrade/config/default.json
 	cp config/templates/plugins.tpl ${HOME}/.quantrade/config/plugins.json
 	chown -R ${USER} ${HOME}/.quantrade
+	chown -R ${USER} .
 
 dependencies:
 	@echo "[make] Updating cache..."
@@ -28,6 +29,8 @@ dependencies:
 	@echo "[make] Installing python modules"
 	pip install --upgrade distribute 2>&1 >> ${LOGS}
 	pip install --upgrade -r ./scripts/installation/requirements.txt 2>&1 >> ${LOGS}
+	@echo "[make] Installing R dependencies"
+	./scripts/installation/install_r_packages.R
 
 database:
 	@echo "Setting up mysql quantrade database"

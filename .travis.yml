@@ -3,7 +3,7 @@ python:
   - "2.7"
 install:
   - sudo apt-get -y install git r-base python-pip python-dev g++ make gfortran libzmq-dev mysql-client libmysqlclient-dev curl
-  - pip install -r scripts/installation/requirements.txt --use-mirrors
+  - pip install --upgrade -r scripts/installation/requirements.txt
 before_script:
   - "flake8 neuronquant tests"
 script:
