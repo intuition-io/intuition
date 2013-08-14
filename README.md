@@ -94,7 +94,7 @@ ppQuanTrade/data/symbols.csv and run:
 
 ```
 $ sudo chown -r $USER $HOME/.quantrade   # Fixes weird issue
-$ sudo chown -r $USER ppQuanTrade/   # Fixes weird issue
+$ sudo chown -r $USER ppQuanTrade/       # Idem 
 $ make database
 ```
 
@@ -114,13 +114,16 @@ Getting started
 You can configure the soft trough default.json and plugins.json in
 ~/.quantrade. Then run:
 
-```./backtest.py --initialcash 10000 --tickers random,6 --algorithm DualMA 
-	 	--manager Fair --exchange paris --start 2005-01-10 --end 2010-07-03```
+```
+./application/app.py --initialcash 50000 --tickers random,10 \
+        --loglevel CRITICAL --algorithm BuyAndHold --manager Constant --start 2011-05-10 \
+        --frequency daily --database backtest --exchange paris --source DBPriceSource
+```
 
 Or in realtime mode (Broken, I am improving it):
 
-```./backtest.py --initialcash 100000 --tickers EUR/USD,EUR/GBP --algorithm StdBased 
-		--manager Equity --frequency minute --exchange forex --live```
+```./application/app.py --initialcash 100000 --tickers EUR/USD,EUR/GBP --algorithm StdBased 
+		--manager Equity --frequency minute --exchange forex --live --source EquitiesLiveSource ```
 
 More examples available in scripts/run_app.sh
 

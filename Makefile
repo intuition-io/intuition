@@ -3,6 +3,7 @@
 # xavier, 2013-07-30 07:56
 #
 # vim:ft=make
+#
 
 LOGS?=/tmp/quantrade.logs
 
@@ -18,8 +19,8 @@ install:
 	cp -r config/templates ${HOME}/.quantrade
 	cp config/templates/default.tpl ${HOME}/.quantrade/config/default.json
 	cp config/templates/plugins.tpl ${HOME}/.quantrade/config/plugins.json
-	chown -R ${USER} ${HOME}/.quantrade
-	chown -R ${USER} .
+	chmod -R ugo+rwx ${HOME}/.quantrade
+	chmod -R ugo+rwx ${PWD}
 
 dependencies:
 	@echo "[make] Updating cache..."
@@ -30,7 +31,7 @@ dependencies:
 	pip install --upgrade distribute 2>&1 >> ${LOGS}
 	pip install --upgrade -r ./scripts/installation/requirements.txt 2>&1 >> ${LOGS}
 	@echo "[make] Installing R dependencies"
-	./scripts/installation/install_r_packages.R
+	./scripts/installation/install_r_packages.R 2>&1 >> ${LOGS}
 
 database:
 	@echo "Setting up mysql quantrade database"
@@ -51,5 +52,21 @@ node:
 R-3.0:
 	@echo "Coming!"
 
-tests:
-	nose tests
+tags:
+	@ctags --python-kinds=-iv -R neuronquant
+
+etags:
+	@ctags -e --python-kinds=-iv -R neuronquant
+
+tests: warn_missing_linters
+	@flake8 tests
+	@nose tests
+
+present_pep8=$(shell which pep8)
+present_pyflakes=$(shell which pyflakes)
+warn_missing_linters:
+	@test -n "$(present_pep8)" || echo "WARNING: pep8 not installed."
+	@test -n "$(present_pyflakes)" || echo "WARNING: pyflakes not installed."
+
+
+.PHONY: tags dependencies install warn_missing_linters database tests
