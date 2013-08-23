@@ -21,11 +21,6 @@ Tests for the forex datasource
 from unittest import TestCase
 from nose.tools import timed
 
-from neuronquant.utils.test_utils import (
-    setup_logger,
-    teardown_logger
-)
-
 import neuronquant.gears.configuration as configuration
 
 DEFAULT_TIMEOUT = 15
@@ -39,11 +34,11 @@ class TestSetup(TestCase):
     if currencies were not updated since last call
     '''
     def setUp(self):
-        setup_logger(self)
+        pass
         self.config = configuration.Setup()
 
     def tearDown(self):
-        teardown_logger(self)
+        pass
 
     def test_get_local_strategie_configuration(self):
         ''' Fill a strategie dictionnary with manager and alogrithm fields

@@ -37,7 +37,7 @@ Features
 * Message architecture for interprocess communication and distributed computing, with a central remote console controling everything
 * Ressources to learn about quantitative finance (cleaning it, coming soon)
 * Neuronquant is also a financial library, with common used trading functions, graphics, ... used for example to solve Coursera econometrics assignments
-* MySQL and SQLite data management for optimized financial storage and access 
+* Easy to use data management, powered by mysql 
 * Advanced computations available: neural networks, natural language processing, genetic optimization, checkout playground directory !
 * Random fancy stuff as well in this directory
 
@@ -93,8 +93,8 @@ Edit the script in scripts/installation/createdb.sql and your preferences in
 ppQuanTrade/data/symbols.csv and run:
 
 ```
-$ sudo chown -r $USER $HOME/.quantrade   # Fixes weird issue
-$ sudo chown -r $USER ppQuanTrade/       # Idem 
+$ sudo chown -R $USER $HOME/.quantrade   # Fixes weird issue
+$ sudo chown -R $USER ppQuanTrade/       # Idem 
 $ make database
 ```
 

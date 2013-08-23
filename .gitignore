@@ -76,3 +76,7 @@ management/
 .quantrade
 .ropeproject
 src
+
+# Temporary precaution
+neuronquant/algorithmic/strategies/*
+neuronquant/algorithmic/managers/*

@@ -28,6 +28,7 @@ class QuantitativeTrading(TradingAlgorithm):
 
         return self.run(source, sim_params, benchmark_return_source)
 
+    #TODO Ok to be removed, cum_perfs are now available with self.risk_report
     def _create_daily_stats(self, perfs):
         # create daily and cumulative stats dataframe
         daily_perfs = []

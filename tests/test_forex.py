@@ -21,11 +21,6 @@ Tests for the forex datasource
 from unittest import TestCase
 from nose.tools import timed
 
-from neuronquant.utils.test_utils import (
-    setup_logger,
-    teardown_logger
-)
-
 from neuronquant.data.forex import ConnectTrueFX
 #from neuronquant.utils.datautils import FX_PAIRS
 
@@ -40,10 +35,10 @@ class TestForex(TestCase):
     if currencies were not updated since last call
     '''
     def setUp(self):
-        setup_logger(self)
+        pass
 
     def tearDown(self):
-        teardown_logger(self)
+        pass
 
     def test_connection_credentials(self):
         '''

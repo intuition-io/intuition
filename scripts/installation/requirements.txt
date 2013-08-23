@@ -7,11 +7,13 @@ argparse==1.2.1
 beautifulsoup4==4.2.1
 blist==1.3.4
 iso8601==0.1.4
+matplotlib==1.2.1
 msgpack-python==0.3.0
 nose==1.3.0
 numpy==1.7.1
 pandas==0.11.0
 patsy==0.1.0
+plac==0.9.1
 python-dateutil==2.1
 pytz==2013b
 pyzmq==13.1.0
@@ -19,4 +21,4 @@ requests==1.2.3
 rpy2==2.3.6
 six==1.3.0
 wsgiref==0.1.2
--e git+https://github.com/quantopian/zipline.git@ab0d07d8d0eaaf9256a55a64970a81dea9367a3c#egg=zipline-dev
+-e git+https://github.com/quantopian/zipline.git@ddcddc93515b38240df2ff1d9fd050e448f4c229#egg=zipline-dev
