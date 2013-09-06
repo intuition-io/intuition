@@ -39,7 +39,8 @@ zmqSend <- function(request,                  # Json request to remote or local 
                     debug=FALSE)
 {
     # Configuration is stored in ./config/default.json, used by node.js broker
-    config <- fromJSON(file(paste(Sys.getenv('NODE_CONFIG_DIR'), config, sep='/'), 'r')) 
+    #config <- fromJSON(file(paste(Sys.getenv('NODE_CONFIG_DIR'), config, sep='/'), 'r')) 
+    config <- fromJSON(file(paste(Sys.getenv('HOME'), '.quantrade/config', config, sep='/'), 'r')) 
 
     # Connects to broker (frontport) and sends request
     context = init.context()

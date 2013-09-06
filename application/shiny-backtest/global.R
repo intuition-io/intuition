@@ -111,7 +111,8 @@ getMetricsFromMySQL <- function(dataId,                   # Table the backtest s
                                 debug   = FALSE)
 {
     # Getting database user settings
-    config <- fromJSON(file(paste(Sys.getenv('QTRADE'), 'config', dbfile, sep='/'), 'r'))['mysql'][[1]]
+    #config <- fromJSON(file(paste(Sys.getenv('QTRADE'), 'config', dbfile, sep='/'), 'r'))['mysql'][[1]]
+    config <- fromJSON(file(paste(Sys.getenv('HOME'),'.quantrade', 'config', dbfile, sep='/'), 'r'))['mysql'][[1]]
 
     db = dbConnect(MySQL(),
                    user     = config['user'][[1]],

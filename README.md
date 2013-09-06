@@ -3,7 +3,7 @@ QuanTrade: Automated quantitative trading system
 
 [![Build Status](https://travis-ci.org/Gusabi/ppQuanTrade.png?branch=master)](https://travis-ci.org/Gusabi/ppQuanTrade)
 
-**Super Attention!** I'm testing a lot of new things the system will be difficult to run for a few days (but for the best !)
+**Super Attention!** Since I am currently involved on other ambitious IT projects, I paused this one for a few months. However development should retake by the end of september, hopefully with new tools and skills!
 
 **Attention!** Project is under early development, use for your own risk.
 
