@@ -15,7 +15,7 @@ node_modules/*
 # R
 # History files
 .Rhistory
-Rplots.pdf
+*.pdf
 
 # Example code in package build process
 *-Ex.R
@@ -76,7 +76,3 @@ management/
 .quantrade
 .ropeproject
 src
-
-# Temporary precaution
-neuronquant/algorithmic/strategies/*
-neuronquant/algorithmic/managers/*

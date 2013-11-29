@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 #
-# Copyright © 2013 xavier <xavier@laptop-300E5A>
+# Copyright © 2013 xavier
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,44 +20,15 @@
 import sys
 import os
 
-#import pylab as plt
-#import matplotlib.pyplot as plt
-
-from neuronquant.gears.engine import Simulation
-from neuronquant.utils.logger import log, get_nestedlog
-import neuronquant.utils.datautils as datautils
-from neuronquant.gears.configuration import Setup
-
-
-'''
-def plot_results(analyzes):
-    # Plot portfolio
-    fig = plt.figure()
-    ax1 = fig.add_subplot(311)
-    analyzes.results.portfolio_value.plot(ax=ax1)
-    plt.legend()
-
-    # Plot prices
-    ax2 = fig.add_subplot(312)
-    for sid in data:
-        data[sid].plot(ax=ax2)
-    plt.legend()
-
-    # Plot slope and buy/sell orders
-    ax3 = fig.add_subplot(313)
-    analyzes.results.slope.plot(ax=ax3)
-    ax3.plot(analyzes.results.ix[analyzes.results.buy].index, analyzes.results.slope[analyzes.results.buy],
-             '^', markersize=10, color='m')
-    ax3.plot(analyzes.results.ix[analyzes.results.sell].index, analyzes.results.slope[analyzes.results.sell],
-             'v', markersize=10, color='k')
-    plt.legend()
-    plt.savefig('results.png', dpi=144)
-'''
+from intuition.gears.engine import Simulation
+from intuition.utils.logger import log, get_nestedlog
+import intuition.utils.datautils as datautils
+from intuition.gears.configuration import Setup
 
 
 #TODO profiling with http://docs.python.org/2/library/profile.html, http://pycallgraph.slowchop.com/
 if __name__ == '__main__':
-    '''__________________________________________________________________    Setup    ____'''
+    '''________________________________________________    Setup    ____'''
     # Dedicated object for configuration setup
     setup = Setup()
 
@@ -86,10 +57,10 @@ if __name__ == '__main__':
 
         # Fill strategie and manager parameters
         # Localy, reading configuration file
-        # Remotely, listening gor messages through zmq socket
+        # Remotely, listening for messages through zmq socket
         strategie = setup.get_strategie_configuration(remote=configuration['remote'])
 
-        '''_________________________________________________________    Backtest    ____'''
+        '''_______________________________________________    Backtest    ____'''
         # Backtest or live engine
         engine = Simulation(configuration)
 
@@ -98,7 +69,7 @@ if __name__ == '__main__':
         # _configure_context() you can use directly for better understanding
         data, trading_context = engine.configure()
 
-        # See neuronquant/gears/engine.py for details of results
+        # See intuition/gears/engine.py for details of results
         #which is an Analyzes object
         analyzes = engine.run(data, configuration, strategie, trading_context)
 
@@ -106,7 +77,7 @@ if __name__ == '__main__':
             log.error('** Backtest failed.')
             sys.exit(1)
 
-        '''___________________________________________________________    Results   ____'''
+        '''_________________________________________________    Results   ____'''
         #analyzes.run_dashboard(portfolio=strategie['manager']['name'])
 
         log.info('Portfolio returns: \

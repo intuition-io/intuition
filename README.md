@@ -1,29 +1,43 @@
-QuanTrade: Automated quantitative trading system
-==================================================
+Intuition
+=========
+
+> Automated quantitative trading system
+
+
+![Dashboard](https://raw.github.com/hivetech/hivetech.github.io/master/images/QuantDashboard.png)
+
+
+Status
+------
 
 [![Build Status](https://travis-ci.org/hackliff/ppQuanTrade.png?branch=master)](https://travis-ci.org/hackliff/ppQuanTrade)
 
 **Super Attention!** Since I am currently involved on other [ambitious IT
-projects](https://github.com/hivetech), I paused this one for a few months. However development should retake
-by the end of --september-- november, hopefully with new tools and skills!
+projects](https://github.com/hivetech), I paused this one for a few months.
+However development should retake by the end of --september-- november,
+hopefully with new tools and skills!
 
 **Attention!** Project is under early development, use for your own risk.
 
 Overview
 --------
 
-**Intuition** is an engine and a set of tools meant to let you easily and intuitively build your own **automated quantitative trading system**.
-It is designed to let financial, developer and scientist dudes (together sounds great) explore, test and deploy market technical hacks.
+**Intuition** is an engine and a set of tools meant to let you easily and
+intuitively build your own **automated quantitative trading system**.  It is
+designed to let financial, developer and scientist dudes (together sounds
+great) explore, test and deploy market technical hacks.
 
-While the project is still at an early age, you can already write, or use, **signal detection algorithms, and portfolio allocation strategies**.
-Then just plug it in the system and watch it from your dev-console or the web app run on **backtest** or **live** mode.
+While the project is still at an early age, you can already write, or use,
+**signal detection algorithms, and portfolio allocation strategies**.  Then
+just plug it in the system and watch it from your dev-console or the web app
+run on **backtest** or **live** mode.
 
-In addition the project proposes facilities to build a distributed system and 21st century application (big data, fat computations, d3.js and other html5 stuff),
-tools to mix languages like Python, node.js and R and a financial library.
-You will find some goodies like machine learning forecast, markowitz portfolio optimization, genetic optimization, sentiment analysis from twitter, ...
-
-
-![Dashboard](https://raw.github.com/hivetech/hivetech.github.io/master/images/QuantDashboard.png)
+In addition the project proposes facilities to build a distributed system and
+21st century application (big data, fat computations, d3.js and other html5
+stuff), tools to mix languages like Python, node.js and R and a financial
+library.  You will find some goodies like machine learning forecast, markowitz
+portfolio optimization, genetic optimization, sentiment analysis from twitter,
+...
 
 
 Features
@@ -61,8 +75,8 @@ $ cd ppQuanTrade && vagrant up --provider=lxc
 
 Default is lxc because it is much more lightweight than plain VM and
 performances are of importance for trading. Anyway, you can use an other
-provider but edit eventually the Vagrantfile for fine
-customization.  You can also change default base image by setting env variables ```BOX_NAME``` (and
+provider but edit eventually the Vagrantfile for fine customization.  You can
+also change default base image by setting env variables ```BOX_NAME``` (and
 optionnaly ```BOX_URI``` if you don't have it already on your system)
 
 - Classic style:
