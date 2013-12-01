@@ -1,40 +1,39 @@
-#
 # Makefile
 # xavier, 2013-07-30 07:56
 #
 # vim:ft=make
-#
 
-LOGS?=/tmp/quantrade.logs
+LOGS?=/tmp/intuition.logs
 
 all: dependencies install
 
 install:
 	@echo "[make] Copying library"
-	cp -r neuronquant /usr/local/lib/python2.7/dist-packages
+	cp -r intuition /usr/local/lib/python2.7/dist-packages
 	@echo "[make] Creating logs directory"
-	test -d ${HOME}/.quantrade || mkdir -p ${HOME}/.quantrade/logs
-	mkdir -p ${HOME}/.quantrade/config
+	test -d ${HOME}/.intuition || mkdir -p ${HOME}/.intuition/logs
+	mkdir -p ${HOME}/.intuition/config
 	@echo "[make] Copying default configuration"
-	cp -r config/templates ${HOME}/.quantrade
-	cp config/templates/default.tpl ${HOME}/.quantrade/config/default.json
-	cp config/templates/plugins.tpl ${HOME}/.quantrade/config/plugins.json
-	chmod -R ugo+rwx ${HOME}/.quantrade
+	cp -r config/templates ${HOME}/.intuition
+	cp config/templates/default.tpl ${HOME}/.intuition/config/default.json
+	cp config/templates/plugins.tpl ${HOME}/.intuition/config/plugins.json
+	chmod -R ugo+rwx ${HOME}/.intuition
 	chmod -R ugo+rwx ${PWD}
 
 dependencies:
 	@echo "[make] Updating cache..."
 	apt-get update 2>&1 >> ${LOGS}
 	@echo "[make] Installing packages"
-	apt-get -y --force-yes install git r-base python-pip python-dev g++ make gfortran libzmq-dev mysql-client libmysqlclient-dev curl 2>&1 >> ${LOGS}
+	sudo apt-get -y --force-yes install git-core r-base python-pip python-dev g++ make gfortran libzmq-dev mysql-client libmysqlclient-dev curl 2>&1 >> ${LOGS}
 	@echo "[make] Installing python modules"
 	pip install --upgrade distribute 2>&1 >> ${LOGS}
+	pip install --upgrade numpy 2>&1 >> ${LOGS}
 	pip install --upgrade -r ./scripts/installation/requirements.txt 2>&1 >> ${LOGS}
 	@echo "[make] Installing R dependencies"
 	./scripts/installation/install_r_packages.R 2>&1 >> ${LOGS}
 
 database:
-	@echo "Setting up mysql quantrade database"
+	@echo "Setting up mysql Intuition database"
 	mysql -u root -p < ./scripts/installation/createdb.sql
 	@echo "Creating database schema"
 	./scripts/database_manager.py -c
@@ -43,20 +42,11 @@ database:
 	@echo "Synchronizing..."
 	./scripts/database_manager.py -s
 
-team_dashboard:
-	@echo "Coming!"
-
-node:
-	@echo "Coming!"
-
-R-3.0:
-	@echo "Coming!"
-
 tags:
-	@ctags --python-kinds=-iv -R neuronquant
+	@ctags --python-kinds=-iv -R intuition
 
 etags:
-	@ctags -e --python-kinds=-iv -R neuronquant
+	@ctags -e --python-kinds=-iv -R intuition
 
 tests: warn_missing_linters
 	@flake8 tests
