@@ -20,16 +20,23 @@
 import sys
 import os
 
-from intuition.gears.engine import Simulation
+from intuition.core.engine import Simulation
 from intuition.utils.logger import log, get_nestedlog
 import intuition.utils.datautils as datautils
-from intuition.gears.configuration import Setup
+from intuition.core.configuration import Setup
 
 
 #TODO profiling with http://docs.python.org/2/library/profile.html, http://pycallgraph.slowchop.com/
 if __name__ == '__main__':
-    '''________________________________________________    Setup    ____'''
+    '''________________________________________________    Setup    ____
+    Setup's goal is to fill 3 dictionnaries :
+      - Backtest behavior
+      - Strategy parameters (algo(, source) and manager)
+      - Environment (global informations like database access)
+    '''
+
     # Dedicated object for configuration setup
+    # Searchs and reads ~/.intuition/default.json
     setup = Setup()
 
     # General simulation behavior is defined using command line arguments
@@ -43,42 +50,43 @@ if __name__ == '__main__':
                  #utils.color_setup)
 
     #FIXME Remote log broken here
-    log_setup = get_nestedlog(level=configuration['loglevel'], filename=configuration['logfile'])
+    log_setup = get_nestedlog(level=configuration['loglevel'],
+        filename=configuration['logfile'])
     with log_setup.applicationbound():
         '''
         TODO HUGE: Run multiple backtest with communication possibilities (ZMQ)
              for sophisticated multiple strategies strategy
                  - Available capital allocation
-                 import ipdb; ipdb.set_trace()  # XXX BREAKPOINT
                  - Strategies repartition
                  - Use of each-other signals behavior
                  - Global monitoring and evaluation
         '''
 
-        # Fill strategie and manager parameters
+        # Fill strategy and manager parameters
         # Localy, reading configuration file
         # Remotely, listening for messages through zmq socket
-        strategie = setup.get_strategie_configuration(remote=configuration['remote'])
+        strategy = setup.get_strategy_configuration(remote=configuration['remote'])
 
-        '''_______________________________________________    Backtest    ____'''
-        # Backtest or live engine
+        '''___________________________________________    Backtest    ____'''
+        # Backtest or live engine.
+        # Registers configuration and setups data client
         engine = Simulation(configuration)
 
         # Setup quotes data and financial context (location, market, ...)
-        # simulation from user parameters Wrap _configure_data() and
+        # simulation from user parameters. Wraps _configure_data() and
         # _configure_context() you can use directly for better understanding
-        data, trading_context = engine.configure()
+        data = engine.configure()
 
         # See intuition/gears/engine.py for details of results
-        #which is an Analyzes object
-        analyzes = engine.run(data, configuration, strategie, trading_context)
+        # which is an Analyzes object
+        analyzes = engine.run(data, strategy)
 
         if analyzes is None:
             log.error('** Backtest failed.')
             sys.exit(1)
 
-        '''_________________________________________________    Results   ____'''
-        #analyzes.run_dashboard(portfolio=strategie['manager']['name'])
+        '''____________________________________________    Results   ____'''
+        #analyzes.run_dashboard(portfolio=strategy['manager']['name'])
 
         log.info('Portfolio returns: \
                 {}'.format(analyzes.results.portfolio_value[-1]))
@@ -133,14 +141,3 @@ if __name__ == '__main__':
             os.system('{}/application/analysis.R --source mysql --table {} --verbose'
                     .format(os.environ['QTRADE'], configuration['database']))
             os.system('evince ./Rplots.pdf')
-
-
-''' Notes
-Strategies to swich strategies =)
-Backtest the strategy on many datasets, and check correlations to test algorithm efficiecy
-Cross validation
-
-Manager hint
-1.  a. Choose m stocks according to their best momentum or sharpe ratio for example
-    b. Select n stocks from m according to portfolio optimization
-'''

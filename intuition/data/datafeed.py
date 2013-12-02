@@ -27,7 +27,7 @@ import Quandl
 import json
 
 import logbook
-from neuronquant.data.database import Client
+from intuition.data.database import Client
 
 log = logbook.Logger('DataFeed')
 

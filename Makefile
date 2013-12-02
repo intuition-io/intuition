@@ -4,6 +4,8 @@
 # vim:ft=make
 
 LOGS?=/tmp/intuition.logs
+MODULES?=https://github.com/hackliff/intuition-modules
+PLUGINS?=https://github.com/hackliff/intuition-plugins
 
 all: dependencies install
 
@@ -19,6 +21,10 @@ install:
 	cp config/templates/plugins.tpl ${HOME}/.intuition/config/plugins.json
 	chmod -R ugo+rwx ${HOME}/.intuition
 	chmod -R ugo+rwx ${PWD}
+
+modules:
+	git clone ${MODULES} intuition/modules
+	git clone ${PLUGINS} intuition/plugins
 
 dependencies:
 	@echo "[make] Updating cache..."

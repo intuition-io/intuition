@@ -40,7 +40,8 @@ def trade(mega_config):
 
     # Remote: ZMQ based messaging, route logs on the network
     # (catched by server's broker)
-    log_setup = get_nestedlog(level=configuration['loglevel'], file=configuration['logfile'])
+    log_setup = get_nestedlog(level=configuration['loglevel'],
+        file=configuration['logfile'])
     with log_setup.applicationbound():
         # Backtest or live engine
         engine = Simulation(configuration)

@@ -18,26 +18,29 @@ import sys
 import pytz
 import pandas as pd
 import logbook
-log = logbook.Logger('Engine')
 
-from neuronquant.data.datafeed import DataFeed
-import neuronquant.utils.datautils as datautils
-from neuronquant.data.ziplinesources.loader import LiveBenchmark
-from neuronquant.gears.analyzes import Analyze
+from intuition.data.datafeed import DataFeed
+import intuition.utils.datautils as datautils
+from intuition.data.ziplinesources.loader import LiveBenchmark
+from intuition.gears.analyzes import Analyze
 
 from zipline.finance.trading import TradingEnvironment
-from neuronquant.zipline.factory import create_simulation_parameters
+from intuition.zipline.factory import create_simulation_parameters
 
-import neuronquant.strateg_library as library
+import intuition.strateg_library as library
 
 
 BASE_CONFIG = {'algorithm': {}, 'manager': {}}
+DEFAULT_PORTFOLIO_NAME = 'ChuckNorris'
+log = logbook.Logger('intuition.engine')
 
 
-class BacktesterEngine(object):
-    ''' Factory class wrapping zipline Backtester, returns the requested algo ready for use '''
+class TradingEngine(object):
+    ''' Factory class wrapping zipline Backtester, returns the requested algo
+    ready for use '''
 
-    def __new__(self, algo, manager=None, source=None, strategie_configuration=BASE_CONFIG):
+    def __new__(self, algo, manager=None, source=None,
+                strategy_configuration=BASE_CONFIG):
         '''
         Reads the user configuration and returns
         '''
@@ -45,26 +48,26 @@ class BacktesterEngine(object):
 
         #NOTE Other params: annualizer (default is cool), capital_base, sim_params (both are set in run function)
         trading_algorithm = library.algorithms[algo](
-            properties=strategie_configuration['algorithm'])
+            properties=strategy_configuration['algorithm'])
             #capital_base=10000.0, data_frequency='minute')
 
-        portfolio_name = strategie_configuration['manager'].get('name', 'ChuckNorris')
-        trading_algorithm.set_logger(logbook.Logger('Algo::' + portfolio_name))
+        portfolio_name = strategy_configuration['manager'].get('name', DEFAULT_PORTFOLIO_NAME)
+        trading_algorithm.set_logger(logbook.Logger('algo.' + portfolio_name))
 
         if source:
             trading_algorithm.set_data_generator(library.data_sources[source])
 
         # Use of a portfolio manager
         if manager:
-            log.info('Initializing Manager')
+            log.info('initializing Manager')
             # Linking to the algorithm the configured portfolio manager
             trading_algorithm.manager = library.portfolio_managers[manager](
-                strategie_configuration['manager'])
+                strategy_configuration['manager'])
 
             # If requested and possible, load the named portfolio to start trading with it
             #FIXME Works, but every new event resets the portfolio
 
-            if strategie_configuration['manager'].get('load_backup', False) and portfolio_name:
+            if strategy_configuration['manager'].get('load_backup', False) and portfolio_name:
                 log.info('Re-loading last {} portfolio from database'.format(portfolio_name))
                 # Retrieving a zipline portfolio object. str() is needed as the parameter is of type unicode
                 backup_portfolio = trading_algorithm.manager.load_portfolio(str(portfolio_name))
@@ -76,20 +79,23 @@ class BacktesterEngine(object):
                     log.info('Portfolio setup successful')
         else:
             trading_algorithm.manager = None
-            log.info('No portfolio manager used')
+            log.info('no portfolio manager used')
 
         return trading_algorithm
 
 
 #NOTE engine.feed_data(tickers, start, end, freq) ? using set_source()
 class Simulation(object):
-    ''' Take a trading strategie and evalute its results '''
+    ''' Take a trading strategy and evalute its results '''
+
     def __init__(self, configuration):
         #NOTE Allowing different data access ?
         #self.metrics = None
         #self.server        = ZMQ_Dealer(id=self.__class__.__name__)
         self.configuration = configuration
+        self.context = None
         if 'quandl' in configuration['env']:
+            # A quandl api key was registered
             self.datafeed = DataFeed(configuration['env']['quandl'])
         else:
             self.datafeed = DataFeed()
@@ -98,10 +104,6 @@ class Simulation(object):
     def configure(self):
         '''
         Prepare dates, data, trading environment for simulation
-        _______________________________________________________
-        Parameters
-            configuration: dict()
-                Structure with previously defined backtest behavior
         '''
         data = self._configure_data(tickers    = self.configuration['tickers'],
                                     start_time = self.configuration['start'],
@@ -110,9 +112,9 @@ class Simulation(object):
                                     exchange   = self.configuration['exchange'],
                                     live       = self.configuration['live'])
 
-        context = self._configure_context(self.configuration['exchange'])
+        self.context = self._configure_context(self.configuration['exchange'])
 
-        return data, context
+        return data
 
     #NOTE Should the data be loaded in zipline sourcedata class ?
     #FIXME data default not suitable for live mode
@@ -127,13 +129,15 @@ class Simulation(object):
                 log.warning('! Invalid start time, setting it to now')
                 start_time = pd.datetime.now(pytz.utc)
             # Default end_date is now, not suitable for live trading
-            self.load_market_data = LiveBenchmark(end_time, frequency=freq).load_market_data
+            #self.load_market_data = LiveBenchmark(end_time, frequency=freq).load_market_data
+            self.set_benchmark_loader(LiveBenchmark(end_time, frequency=freq).load_market_data)
             #TODO ...hard coded, later for exemple: --frequency daily,3
             data_freq = '1min'
 
         else:
             # Use default zipline load_market_data, i.e. data from msgpack files in ~/.zipline/data/
-            self.load_market_data = None
+            #self.load_market_data = None
+            self.set_benchmark_loader(None)
             data_freq = 'D'
 
             # Use datafeed object to retrieve data
@@ -181,7 +185,7 @@ class Simulation(object):
         return data
     '''
 
-    def set_becnhmark_loader(self, load_function):
+    def set_benchmark_loader(self, load_function):
         self.load_market_data = load_function
 
     #TODO Use of futur localisation database criteria
@@ -196,37 +200,43 @@ class Simulation(object):
         '''
         # Environment configuration
         if exchange in datautils.Exchange:
-            trading_context = TradingEnvironment(bm_symbol   = datautils.Exchange[exchange]['index'],
-                                                 exchange_tz = datautils.Exchange[exchange]['timezone'],
-                                                 load        = self.load_market_data)
+            trading_context = TradingEnvironment(
+                bm_symbol   = datautils.Exchange[exchange]['index'],
+                exchange_tz = datautils.Exchange[exchange]['timezone'],
+                load        = self.load_market_data)
         else:
             raise NotImplementedError('Because of computation limitation, \
                 trading worldwide not permitted currently')
 
         return trading_context
 
-    def run(self, data, configuration, strategie, context):
-        log.info('\n-- Running backetester...\nUsing algorithm: {}\n'.format(configuration['algorithm']))
-        log.info('\n-- Using portfolio manager: {}\n'.format(configuration['manager']))
+    def run(self, data, strategy):
+        log.info('\n-- Running backetester...\nUsing algorithm: {}\n'.format(self.configuration['algorithm']))
+        log.info('\n-- Using portfolio manager: {}\n'.format(self.configuration['manager']))
 
-        backtester = BacktesterEngine(configuration['algorithm'],
-                                      configuration['manager'],
-                                      configuration['source'],
-                                      strategie)
+        engine = TradingEngine(self.configuration['algorithm'],
+                               self.configuration['manager'],
+                               self.configuration['source'],
+                               strategy)
 
         #NOTE This method does not change anything
-        #backtester.set_sources([DataLiveSource(data_tmp)])
+        #engine.set_sources([DataLiveSource(data_tmp)])
         #TODO A new command line parameter ? only minutely and daily (and hourly normally) Use filter parameter of datasource ?
-        #backtester.set_data_frequency(configuration['frequency'])
+        #engine.set_data_frequency(self.configuration['frequency'])
 
         # Running simulation with it
-        with context:
-            sim_params = create_simulation_parameters(capital_base = configuration['cash'],
-                                                      start=configuration['start'],
-                                                      end=configuration['end'],
-                                                      emission_rate=configuration['frequency'],
-                                                      data_frequency=configuration['frequency'])
+        with self.context:
+            sim_params = create_simulation_parameters(
+                capital_base   = self.configuration['cash'],
+                start          = self.configuration['start'],
+                end            = self.configuration['end'],
+                emission_rate  = self.configuration['frequency'],
+                data_frequency = self.configuration['frequency'])
 
-            daily_stats, monthly_perfs = backtester.go(data,
-                                                    sim_params=sim_params)
-        return Analyze(results=daily_stats, metrics=monthly_perfs, datafeed=self.datafeed, configuration=configuration)
+            daily_stats, monthly_perfs = engine.go(data, sim_params=sim_params)
+
+        return Analyze(
+            results       = daily_stats,
+            metrics       = monthly_perfs,
+            datafeed      = self.datafeed,
+            configuration = self.configuration)

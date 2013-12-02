@@ -22,10 +22,12 @@ import pytz
 import datetime
 from dateutil.parser import parse
 
-import neuronquant.gryd.transport as gryd
-from neuronquant.data.datafeed import DataFeed
+#FIXME gryd is no longer part of intuition
+import intuition.gryd.transport as gryd
+from intuition.data.datafeed import DataFeed
 
-log = logbook.Logger('Configuration')
+
+log = logbook.Logger('intuition.configuration')
 
 
 class Setup(object):
@@ -40,7 +42,7 @@ class Setup(object):
         super(Setup, self).__init__()
 
         #FIXME This is not reflected on database.py and portfolio.py, neither logger.py
-        default_config_dir = '/'.join([os.environ['HOME'], '.quantrade'])
+        default_config_dir = '/'.join([os.environ['HOME'], '.intuition'])
         self.configuration_folder = config_dir if config_dir else default_config_dir
 
         # Config data structures
@@ -63,13 +65,17 @@ class Setup(object):
         return context
 
     #NOTE More likely to be an utils function
-    def _read_structured_file(self, filename, config_folder=False, select_field=None, format='json'):
+    def _read_structured_file(self, filename, config_folder=False,
+                              select_field=None, format='json'):
         '''
-        Map well structured, i.e. common file format like key-value storage, csv, ...,  file content into a dictionnary
+        Map well structured, i.e. common file format like key-value storage,
+        csv, ...,  file content into a dictionnary
         '''
+        #TODO Extract format from file name
         if format == 'json':
             try:
-                # Read given file in specified format from default or given config directory
+                # Read given file in specified format from default or given
+                # config directory
                 if config_folder:
                     content = json.load(open('/'.join([self.configuration_folder, filename]), 'r'))
                 else:
@@ -174,7 +180,7 @@ class Setup(object):
 
         return self.config_backtest
 
-    def get_strategie_configuration(self, *args, **kwargs):
+    def get_strategy_configuration(self, *args, **kwargs):
         '''
         Read localy or receive remotely strategie's parameters
         '''
@@ -187,10 +193,11 @@ class Setup(object):
 
         if kwargs.get('remote', self.config_backtest['remote']):
             # Get configuration through ZMQ socket
-            self.config_strategy = self._get_remote_data(port=kwargs.get('port', self.config_backtest['port']))
+            self.config_strategy = self._get_remote_data(
+                port=kwargs.get('port', self.config_backtest['port']))
 
         else:
-            log.info('Reading strategie configuration from json files')
+            log.info('Reading strategy configuration from json files')
             self.config_strategy['manager'] = \
                     self._read_structured_file('plugins.json',
                                                config_folder=True,
@@ -212,7 +219,8 @@ class Setup(object):
         Listen on backend ZMQ socket configuration data
         '''
         # ZMQ Server makes the entire simulator able to receive configuration
-        # and send informations to remote users and other processes like web frontend
+        # and send informations to remote users and other processes like web
+        # frontend
         server = gryd.ZMQ_Dealer(id='Engine server')
 
         server.run(host=host, port=port)
@@ -227,7 +235,8 @@ class Setup(object):
         assert 'algorithm' in msg
         assert 'manager' in msg
 
-        # The manager can use the same socket during simulation to emit portfolio informations
+        # The manager can use the same socket during simulation to emit
+        # portfolio informations
         msg['manager']['server'] = server
 
         return msg
