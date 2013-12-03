@@ -15,7 +15,7 @@
 
 
 import logbook
-from neuronquant.utils.utils import reIndexDF
+from intuition.utils.utils import reIndexDF
 
 import pandas as pd
 from pandas.core.datetools import BDay

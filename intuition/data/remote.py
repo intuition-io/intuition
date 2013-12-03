@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# encoding: utf-8
 #
 # Copyright 2013 Xavier Bruhiere
 #
@@ -14,191 +16,212 @@
 # limitations under the License.
 
 
-import urllib2
-import re
-import pytz
+from zipline.utils.factory import load_from_yahoo, load_bars_from_yahoo
+from pandas.rpy.common import convert_to_r_matrix
 
-from pandas import Index, Series, DataFrame
-from pandas.io.data import DataReader
+import requests
+from pandas.io.data import DataReader, get_quote_yahoo
 import pandas as pd
-
 import numpy as np
-
-from xml.dom import minidom, Node
 import json
+from xml.dom import minidom, Node
+import urllib2
 
-from logbook import Logger
-log = Logger('Remote')
+import logbook
+log = logbook.Logger('Remote')
 
-import neuronquant.utils.datautils as datautils
-from neuronquant.utils.dates import epochToDate
-import neuronquant.utils.utils as utils
-
-
-class Alias (object):
-    #TODO: Uniform Quote dict structure to implement (and fill in different methods)
-    #tmp
-    SYMBOL = 't'
-    MARKET = 'e'
-    VALUE = 'l'
-    DATE = 'lt'
-    VARIATION = 'c'
-    VAR_PER_CENT = 'cp'
+from intuition.utils.decorators import (
+    use_google_symbol, invert_dataframe_axis)
+from intuition.utils import apply_mapping
+#from intuition.data.datafeed import DataFeed
 
 
-#TODO 1. Every fetcher should take an index object, construct mostly with date_range
-#TODO Use requests module to fetch remote data, cleaner http://docs.python-requests.org/en/latest/
-class Fetcher(object):
-    ''' Web access to data '''
-    def __init__(self, timezone=pytz.utc):
-        self.tz = timezone
+finance_urls = {
+    'yahoo_hist': 'http://ichart.yahoo.com/table.csv',
+    'yahoo_infos': 'http://finance.yahoo/q/pr',
+    'google_prices': 'http://www.google.com/finance/getprices',
+    'snapshot_google_light': 'http://www.google.com/finance/info',
+    'snapshot_google_heavy': 'http://www.google.com/ig/api'
+}
 
-    def getMinutelyQuotes(self, symbol, market, index):
-        days = abs((index[index.shape[0] - 1] - index[0]).days)
-        freq = int(index.freqstr[0])
-        if index.freqstr[1] == 'S':
-            freq += 1
-        elif index.freqstr[1] == 'T':
-            freq *= 61
-        elif index.freqstr[1] == 'H':
-            freq *= 3601
-        else:
-            log.error('** No suitable time frequency: {}'.format(index.freqstr))
-            return None
-        url = 'http://www.google.com/finance/getprices?q=%s&x=%s&p=%sd&i=%s' \
-                % (symbol, market, str(days), str(freq + 1))
-        log.info('On %d days with a precision of %d secs' % (days, freq))
-        try:
-            page = urllib2.urlopen(url)
-        except urllib2.HTTPError:
-            log.error('** Unable to fetch data for stock: %s'.format(symbol))
-            return None
-        except urllib2.URLError:
-            log.error('** URL error for stock: %s'.format(symbol))
-            return None
-        feed = ''
-        data = []
-        while (re.search('^a', feed) is None):
-            feed = page.readline()
-        while (feed != ''):
-            data.append(np.array(map(float, feed[:-1].replace('a', '').split(','))))
-            feed = page.readline()
-        dates, open, close, high, low, volume = zip(*data)
-        adj_close = np.empty(len(close))
-        adj_close.fill(np.NaN)
-        data = {
-                'open'      : open,
-                'close'     : close,
-                'high'      : high,
-                'low'       : low,
-                'volume'    : volume,
-                'adj_close' : adj_close  # for compatibility with Fields.QUOTES
-        }
-        #NOTE use here index ?
-        dates = Index(epochToDate(d) for d in dates)
-        return DataFrame(data, index=dates.tz_localize(self.tz))
 
-    def getHistoricalQuotes(self, symbol, index, market=None):
-        assert (isinstance(index, pd.Index))
-        source = 'yahoo'
-        try:
-            quotes = DataReader(symbol, source, index[0], index[-1])
-        except:
-            log.error('** Could not get {} quotes'.format(symbol))
+#TODO A decorator for symbol harmonisation ?
+class Remote(object):
+    '''
+    Entry point to remote access to data
+    Mainly offer a simpler interface and a dataaccess harmonisation
+    Plus symbol check and complete, timezone, currency conversion
+    Plus reindexage ?
+    '''
+    def __init__(self, country_code=None):
+        '''
+        Parameters
+            country_code: str
+                This information is used to setup International object
+                and get the right local conventions for lang,
+                dates and currencies. None will stand for 'fr'
+        '''
+        #self.locatioon = world.International(country_code)
+        #self.datafeed = DataFeed()
+
+    #NOTE with args and kwargs ?
+    '''
+    def fetch_equities_daily(self, equities, ohlc=False,
+                             r_type=False, returns=False, **kwargs):
+        if len(equities) == 0:
             return pd.DataFrame()
-        if index.freq != pd.datetools.BDay() or index.freq != pd.datetools.Day():
-            #NOTE reIndexDF has a column arg but here not provided
-            quotes = utils.reIndexDF(quotes, delta=index.freq, reset_hour=False)
-        if not quotes.index.tzinfo:
-            quotes.index = quotes.index.tz_localize(self.tz)
-        quotes.columns = utils.Fields.QUOTES
-        return quotes
+        if isinstance(equities, str):
+            equities = equities.split(',')
+        symbols = [self.datafeed.guess_name(equity) for equity in equities]
 
-    def get_stock_snapshot(self, symbols, markets=None, light=True):
-        # Removing yahoo code for exchange market at th end of the symbol, google doesn't need it
-        #FIXME As no market is specified, there are mistakes, like with Schneider
-        backup_symbols = list(symbols)
-        snapshot = dict()
-        for i, s in enumerate(symbols):
-            if s.find('.pa') > 0:
-                symbols[i] = s[:-3]
-        if isinstance(symbols, str):
-            #snapshot = {symbols: dict()}
-            symbols = [symbols]
-        #elif isinstance(symbols, list):
-            #snapshot = {q: dict() for q in symbols}
-        if light:
-            assert markets
-            data = self._lightSummary(symbols, markets)
+        if ohlc:
+            data = load_bars_from_yahoo(stocks=symbols, **kwargs)
+            data.items = equities
         else:
-            data = self._heavySummary(symbols)
-        if not data:
-            log.error('** No stock informations')
-            return None
-        for i, item in enumerate(backup_symbols):
-            snapshot[item] = data[i]
+            data = load_from_yahoo(stocks=symbols, **kwargs)
+            data.columns = equities
+
+            #NOTE Would it work with a pandas panel ?
+            if returns:
+                data = ((data - data.shift(1)) / data).fillna(method='bfill')
+            if r_type:
+                data = convert_to_r_matrix(data)
+
+        return data
+
+    def fetch_equities_snapshot(self, *args, **kwargs):
+
+        Use Yahoo and google finance service to fetch
+        current infromations about given equitiy names
+        ______________________________________________
+        Parameters
+            args: tuple
+                company names to consider
+            kwargs['level']: int
+                Quantity of information level
+        ______________________________________________
+        Return
+            snapshot: pandas.DataFrame
+                with names as columns and informations as index
+
+        equities = args
+        if not equities:
+            equities = kwargs.get('symbols', [])
+        level = kwargs.get('level', 0)
+        #TODO Symbols are usualy reused, cach them
+        symbols = [self.datafeed.guess_name(equity) for equity in equities]
+
+        if not level:
+            # default level, the lightest
+            snapshot = snapshot_yahoo_pandas(symbols)
+        elif level == 1:
+            snapshot = snapshot_google_light(symbols)
+        elif level == 2:
+            snapshot = snapshot_google_heavy(symbols)
+        else:
+            raise ValueError('Invalid level of information requested')
+
+        # Give columns back equities names requested
+        snapshot.columns = equities
         return snapshot
+    '''
 
-    def _lightSummary(self, symbols, markets):
-        #TODO map dict keys and understand every field
-        url = 'http://finance.google.com/finance/info?client=ig&q=%s:%s' \
-                % (symbols[0], markets[0])
-        for i in range(1, len(symbols)):
-            url = url + ',%s:%s' % (symbols[i], markets[i])
-        log.info('Retrieving light Snapshot from %s' % url)
-        return json.loads(urllib2.urlopen(url).read()[3:], encoding='latin-1')
+    def _localize_data(self, data):
+        '''
+        Inspect data and applie localisation
+        on date and monnaie values
+        '''
+        assert isinstance(data, pd.Dataframe) or isinstance(data, dict)
 
-    def _heavySummary(self, symbols):
-        url = 'http://www.google.com/ig/api?stock=' + '&stock='.join(symbols)
-        log.info('Retrieving heavy Snapshot from %s' % url)
-        try:
-            url_fd = urllib2.urlopen(url)
-        except IOError:
-            log.error('** Bad url: %s' % url)
-            return None
-        try:
-            xml_doc = minidom.parse(url_fd)
-            root_node = xml_doc.documentElement
-        except:
-            log.error('** Parsing xml google response')
-            return None
-        i = 0
-        #snapshot = {q : dict() for q in symbols}
-        snapshot = list()
-        ticker_data = dict()
-        for node in root_node.childNodes:
-            if (node.nodeName != 'finance'):
+
+#NOTE check zipline.utils.factory, use DataReader as well
+def historical_pandas_yahoo(symbol, source='yahoo', start=None, end=None):
+    '''
+    Fetch from yahoo! finance historical quotes
+    '''
+    #NOTE Panel for multiple symbols ?
+    #NOTE Adj Close column  name not cool (a space)
+    return DataReader(symbol, source, start=start, end=end)
+
+
+#NOTE From here every methods has the same signature:
+#     pandas.DataFrame = fct(yahoo_symbol(s))
+# Index symbol ex: ^fchi
+@invert_dataframe_axis
+def snapshot_yahoo_pandas(symbols):
+    '''
+    Get a simple snapshot from yahoo, return dataframe
+    __________________________________________________
+    Return
+        pandas.DataFrame with symbols as index
+        and columns = [change_pct, time, last, short_ratio, PE]
+    '''
+    if isinstance(symbols, str):
+        symbols = [symbols]
+    return get_quote_yahoo(symbols)
+
+
+#NOTE Can use symbol with market: 'goog:nasdaq', any difference ?
+@use_google_symbol
+# Index symbol ex: PX1
+def snapshot_google_light(symbols):
+    payload = {'client': 'ig', 'q': ','.join(symbols)}
+    response = requests.get(finance_urls['snapshot_google_light'],
+                            params=payload)
+    #TODO In utils.errors my first error module that handle errors codes
+    #TODO check return code (200)
+    #TODO remapping
+    json_infos = json.loads(response.text[3:], encoding='utf-8')
+
+    snapshot = {}
+    for i, quote in enumerate(json_infos):
+        snapshot[symbols[i]] = apply_mapping(quote, google_light_mapping)
+
+    return pd.DataFrame(snapshot)
+
+
+#TODO all values are string, make them floats (with a mapping)
+@use_google_symbol
+def snapshot_google_heavy(symbols):
+    url = finance_urls['snapshot_google_heavy'] + '?stock=' + '&stock='.join(symbols)
+    log.info('Retrieving heavy Snapshot from %s' % url)
+    try:
+        url_fd = urllib2.urlopen(url)
+    except IOError:
+        log.error('** Bad url: %s' % url)
+        return pd.DataFrame()
+
+    try:
+        xml_doc = minidom.parse(url_fd)
+        root_node = xml_doc.documentElement
+    except:
+        log.error('** Parsing xml google response')
+        return pd.DataFrame()
+    i = 0
+    snapshot = {q: {} for q in symbols}
+    for i, node in enumerate(root_node.childNodes):
+        if (node.nodeName != 'finance'):
+            continue
+        for item_node in node.childNodes:
+            if (item_node.nodeType != Node.ELEMENT_NODE):
                 continue
-            ticker_data.clear()
-            for item_node in node.childNodes:
-                if (item_node.nodeType != Node.ELEMENT_NODE):
-                    continue
-                ticker_data[item_node.nodeName] = item_node.getAttribute('data')
-            i += 1
-            snapshot.append(ticker_data)
-        return snapshot
+            snapshot[symbols[i]][item_node.nodeName] = item_node.getAttribute('data')
 
-    #TODO: a separate class with functions per categories of data
-    #NOTE: The YQL can fetch this data (http://www.yqlblog.net/blog/2009/06/02/getting-stock-information-with-%60yql%60-and-open-data-tables/)
-    def getStockInfo(self, symbols, fields):
-        for f in fields:
-            #NOTE could just remove field and continue
-            if f not in datautils.yahooCode:
-                log.error('** Invalid stock information request.')
-                #return None
-                fields.pop(f)
-                if len(fields) == 0:
-                    return DataFrame()
-        #TODO: remove " from results
-        #TODO A wrapper interface to have this document through ticker names
-        #symbols, markets = self.db.getTickersCodes(index, quotes)
-        fields.append('error')
-        url = 'http://finance.yahoo.com/d/quotes.csv?s='
-        url = url + '+'.join(symbols) + '&f='
-        url += ''.join([datautils.yahooCode[item.lower()] for item in fields])
-        data = urllib2.urlopen(url)
-        df = dict()
-        for item in symbols:
-            #FIXME: ask size return different length arrays !
-            df[item] = Series(data.readline().strip().strip('"').split(','), index=fields)
-        return DataFrame(df)
+    return pd.DataFrame(snapshot)
+
+
+@property
+def google_light_mapping():
+    return {
+        'change': (str, 'c'),
+        'change_str': (str, 'ccol'),
+        'change_perc': (float, 'cp'),
+        'exchange': (str, 'e'),
+        'id': (int, 'id'),
+        'price': (str, 'l'),
+        'last_price': (lambda x: x, 'l_cur'),
+        'date': (str, 'lt'),
+        'time': (str, 'ltt'),
+        's': (int, 's'),
+        'symbol': (str, 't'),
+    }

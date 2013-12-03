@@ -14,10 +14,10 @@
 # limitations under the License.
 
 
-from neuronquant.data.datafeed import DataFeed
-#from neuronquant.network.dashboard import Dashboard
-#import neuronquant.network.fabfile as fab
-#from neuronquant.network.grid import Grid
+#from intuition.data.datafeed import DataFeed
+#from intuition.network.dashboard import Dashboard
+#import intuition.network.fabfile as fab
+#from intuition.network.grid import Grid
 
 import pytz
 import pandas as pd
@@ -39,7 +39,8 @@ class Analyze(object):
         super(Analyze, self).__init__()
 
         # MySQL Database client
-        self.datafeed = kwargs.pop('datafeed') if 'datafeed' in kwargs else DataFeed()
+        #self.datafeed = kwargs.pop('datafeed') if 'datafeed' in kwargs else DataFeed()
+        self.datafeed = kwargs.pop('datafeed', None)
 
         # R analysis file only need portfolio returns
         self.returns = kwargs.pop('returns') if 'returns' in kwargs else None

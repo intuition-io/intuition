@@ -15,8 +15,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import neuronquant.utils.world as world
-import neuronquant.tmpdata.remote as remote
+import intuition.utils.world as world
+import intuition.data.remote as remote
 
 
 class DataBot(object):

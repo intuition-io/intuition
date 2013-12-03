@@ -23,8 +23,8 @@ import datetime
 from dateutil.parser import parse
 
 #FIXME gryd is no longer part of intuition
-import intuition.gryd.transport as gryd
-from intuition.data.datafeed import DataFeed
+#import intuition.gryd.transport as gryd
+#from intuition.data.datafeed import DataFeed
 
 
 log = logbook.Logger('intuition.configuration')
@@ -206,7 +206,7 @@ class Setup(object):
             self.config_strategy['algorithm'] = \
                     self._read_structured_file('plugins.json',
                                                config_folder=True,
-                                               select_field='strategie')
+                                               select_field='strategy')
 
         log.info('Configuration is Done.')
 
@@ -221,13 +221,13 @@ class Setup(object):
         # ZMQ Server makes the entire simulator able to receive configuration
         # and send informations to remote users and other processes like web
         # frontend
-        server = gryd.ZMQ_Dealer(id='Engine server')
+        #server = gryd.ZMQ_Dealer(id='Engine server')
 
-        server.run(host=host, port=port)
+        #server.run(host=host, port=port)
 
         # In remote mode, client sends missing configuration through zmq socket
         log.info('Fetching backtest configuration from client')
-        msg = server.receive(json=True)
+        #msg = server.receive(json=True)
         log.debug('Got it !')
 
         # Check message format and fields
@@ -237,7 +237,7 @@ class Setup(object):
 
         # The manager can use the same socket during simulation to emit
         # portfolio informations
-        msg['manager']['server'] = server
+        #msg['manager']['server'] = server
 
         return msg
 
@@ -257,7 +257,8 @@ def smart_tickers_select(tickers_description, exchange=''):
         assert int(tickers_description[1])
 
         # Pick up stocks on specified (or not) market exchange
-        tickers_description = DataFeed().random_stocks(int(tickers_description[1]), exchange=exchange.split(','))
+        #tickers_description = DataFeed().random_stocks(int(tickers_description[1]), exchange=exchange.split(','))
+
 
     return tickers_description
 

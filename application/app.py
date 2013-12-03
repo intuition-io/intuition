@@ -91,6 +91,7 @@ if __name__ == '__main__':
         log.info('Portfolio returns: \
                 {}'.format(analyzes.results.portfolio_value[-1]))
 
+        sys.exit(0)
         if configuration['live'] or analyzes.results.portfolio_value[-1] == configuration['cash']:
             # Currently, live tests don't last more than 20min; analyzes is not
             # relevant, neither backtest without orders

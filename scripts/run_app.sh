@@ -29,11 +29,11 @@ fi
 echo $(date) " [Debug] Choice: " $choice
 echo "C'est parti..."
 
-# Equitie backtest 
+# Equitie backtest
 if [ $choice == 1 ]; then
-    time application/app.py --initialcash 50000 --tickers random,10 \
+    time application/app.py --initialcash 50000 --tickers GOOG/NASDAQ_GOOG \
         --loglevel CRITICAL --algorithm BuyAndHold --manager Constant --start 2011-05-10 \
-        --frequency daily --database backtest --exchange paris --source DBPriceSource
+        --frequency daily --database backtest --exchange nasdaq --source QuandlSource
 
 # Forex live test !
 elif [ $choice == 2 ]; then

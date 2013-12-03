@@ -79,7 +79,7 @@ def getOffset(values):
     return offset
 
 
-def dateToIndex(dates, tz=pytz.tz):
+def dateToIndex(dates, tz=pytz.utc):
     assert (len(dates) > 1)
     assert (isinstance(dates[0], dt.datetime))
     index = pd.date_range(dates[0], dates[-1], freq=getOffset(dates))

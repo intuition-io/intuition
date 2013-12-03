@@ -19,15 +19,15 @@ import pytz
 import pandas as pd
 import logbook
 
-from intuition.data.datafeed import DataFeed
+#from intuition.data.datafeed import DataFeed
 import intuition.utils.datautils as datautils
-from intuition.data.ziplinesources.loader import LiveBenchmark
-from intuition.gears.analyzes import Analyze
+from intuition.modules.sources.loader import LiveBenchmark
+from intuition.core.analyzes import Analyze
 
 from zipline.finance.trading import TradingEnvironment
 from intuition.zipline.factory import create_simulation_parameters
 
-import intuition.strateg_library as library
+import intuition.modules.library as library
 
 
 BASE_CONFIG = {'algorithm': {}, 'manager': {}}
@@ -46,12 +46,13 @@ class TradingEngine(object):
         '''
         library.check_availability(algo, manager, source)
 
-        #NOTE Other params: annualizer (default is cool), capital_base, sim_params (both are set in run function)
+        #NOTE Other params: annualizer (default is cool), capital_base,
+        #     data_frequency, sim_params (both are set in run function)
         trading_algorithm = library.algorithms[algo](
             properties=strategy_configuration['algorithm'])
-            #capital_base=10000.0, data_frequency='minute')
 
-        portfolio_name = strategy_configuration['manager'].get('name', DEFAULT_PORTFOLIO_NAME)
+        portfolio_name = strategy_configuration['manager'].get(
+            'name', DEFAULT_PORTFOLIO_NAME)
         trading_algorithm.set_logger(logbook.Logger('algo.' + portfolio_name))
 
         if source:
@@ -94,11 +95,11 @@ class Simulation(object):
         #self.server        = ZMQ_Dealer(id=self.__class__.__name__)
         self.configuration = configuration
         self.context = None
-        if 'quandl' in configuration['env']:
+        #if 'quandl' in configuration['env']:
             # A quandl api key was registered
-            self.datafeed = DataFeed(configuration['env']['quandl'])
-        else:
-            self.datafeed = DataFeed()
+            #self.datafeed = DataFeed(configuration['env']['quandl'])
+        #else:
+            #self.datafeed = DataFeed()
 
     #TODO For both, timezone configuration
     def configure(self):
@@ -233,10 +234,11 @@ class Simulation(object):
                 emission_rate  = self.configuration['frequency'],
                 data_frequency = self.configuration['frequency'])
 
-            daily_stats, monthly_perfs = engine.go(data, sim_params=sim_params)
+            daily_stats = engine.go(data, sim_params=sim_params)
 
         return Analyze(
             results       = daily_stats,
-            metrics       = monthly_perfs,
-            datafeed      = self.datafeed,
+            metrics       = engine.risk_report,
+            #datafeed      = self.datafeed,
+            datafeed      = None,
             configuration = self.configuration)
