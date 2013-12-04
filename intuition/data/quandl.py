@@ -29,7 +29,7 @@ import logbook
 log = logbook.Logger('intuition.data.quandl')
 
 
-class DataFeed(object):
+class DataQuandl(object):
     """
     Quandl as datasource
     """

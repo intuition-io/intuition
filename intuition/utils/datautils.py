@@ -13,7 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 import pandas as pd
+
 
 #TODO Same for google json and xml retrievig
 googleCode = dict()

@@ -33,7 +33,6 @@ log = logbook.Logger('Remote')
 from intuition.utils.decorators import (
     use_google_symbol, invert_dataframe_axis)
 from intuition.utils import apply_mapping
-#from intuition.data.datafeed import DataFeed
 
 
 finance_urls = {
@@ -41,7 +40,8 @@ finance_urls = {
     'yahoo_infos': 'http://finance.yahoo/q/pr',
     'google_prices': 'http://www.google.com/finance/getprices',
     'snapshot_google_light': 'http://www.google.com/finance/info',
-    'snapshot_google_heavy': 'http://www.google.com/ig/api'
+    'snapshot_google_heavy': 'http://www.google.com/ig/api',
+    'info_lookup': 'http://d.yimg.com/autoc.finance.yahoo.com/autoc?query={}&callback=YAHOO.Finance.SymbolSuggest.ssCallback'
 }
 
 
@@ -49,7 +49,7 @@ finance_urls = {
 class Remote(object):
     '''
     Entry point to remote access to data
-    Mainly offer a simpler interface and a dataaccess harmonisation
+    Mainly offer a simpler interface and a data access harmonisation
     Plus symbol check and complete, timezone, currency conversion
     Plus reindexage ?
     '''
@@ -62,24 +62,20 @@ class Remote(object):
                 dates and currencies. None will stand for 'fr'
         '''
         #self.locatioon = world.International(country_code)
-        #self.datafeed = DataFeed()
 
-    #NOTE with args and kwargs ?
-    '''
-    def fetch_equities_daily(self, equities, ohlc=False,
+    def fetch_equities_daily(self, symbols, ohlc=False,
                              r_type=False, returns=False, **kwargs):
-        if len(equities) == 0:
+        if len(symbols) == 0:
             return pd.DataFrame()
-        if isinstance(equities, str):
-            equities = equities.split(',')
-        symbols = [self.datafeed.guess_name(equity) for equity in equities]
+        if isinstance(symbols, str):
+            symbols = symbols.split(',')
 
         if ohlc:
             data = load_bars_from_yahoo(stocks=symbols, **kwargs)
-            data.items = equities
+            #data.items = symbols
         else:
             data = load_from_yahoo(stocks=symbols, **kwargs)
-            data.columns = equities
+            #data.columns = symbols
 
             #NOTE Would it work with a pandas panel ?
             if returns:
@@ -90,26 +86,25 @@ class Remote(object):
         return data
 
     def fetch_equities_snapshot(self, *args, **kwargs):
-
+        '''
         Use Yahoo and google finance service to fetch
         current infromations about given equitiy names
         ______________________________________________
         Parameters
             args: tuple
-                company names to consider
+                company symbols to consider
             kwargs['level']: int
                 Quantity of information level
         ______________________________________________
         Return
             snapshot: pandas.DataFrame
                 with names as columns and informations as index
-
-        equities = args
-        if not equities:
-            equities = kwargs.get('symbols', [])
+        '''
+        symbols = args
+        if not symbols:
+            symbols = kwargs.get('symbols', [])
         level = kwargs.get('level', 0)
         #TODO Symbols are usualy reused, cach them
-        symbols = [self.datafeed.guess_name(equity) for equity in equities]
 
         if not level:
             # default level, the lightest
@@ -122,14 +117,12 @@ class Remote(object):
             raise ValueError('Invalid level of information requested')
 
         # Give columns back equities names requested
-        snapshot.columns = equities
+        #snapshot.columns = equities
         return snapshot
-    '''
 
     def _localize_data(self, data):
         '''
-        Inspect data and applie localisation
-        on date and monnaie values
+        Inspect data and apply localization on dates and monnaie values
         '''
         assert isinstance(data, pd.Dataframe) or isinstance(data, dict)
 
@@ -140,7 +133,7 @@ def historical_pandas_yahoo(symbol, source='yahoo', start=None, end=None):
     Fetch from yahoo! finance historical quotes
     '''
     #NOTE Panel for multiple symbols ?
-    #NOTE Adj Close column  name not cool (a space)
+    #NOTE Adj Close column name not cool (a space)
     return DataReader(symbol, source, start=start, end=end)
 
 
@@ -225,3 +218,22 @@ def google_light_mapping():
         's': (int, 's'),
         'symbol': (str, 't'),
     }
+
+
+def lookup_symbol(company):
+  ''' Fetch company info
+  >>> lookup_symbol("Apple Inc.")
+      {u'exch': u'NMS',
+       u'market': u'NASDAQ',
+       u'name': u'Apple Inc.',
+       u'symbol': u'AAPL',
+       u'type': u'Equity'}
+  '''
+  infos = {}
+  request = requests.get(finance_urls['info_lookup'].format(company))
+  if request.ok:
+    infos = json.loads(request.text[39:-1])["ResultSet"]["Result"][0]
+    infos["market"] = infos.pop("exchDisp")
+    infos["type"] = infos.pop("typeDisp")
+
+  return infos

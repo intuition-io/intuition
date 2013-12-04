@@ -40,7 +40,7 @@ class TestSetup(TestCase):
     def tearDown(self):
         pass
 
-    def test_get_local_strategie_configuration(self):
-        ''' Fill a strategie dictionnary with manager and alogrithm fields
+    def test_get_local_strategy_configuration(self):
+        ''' Fill a strategy dictionnary with manager and alogrithm fields
         from local configuration file'''
         pass

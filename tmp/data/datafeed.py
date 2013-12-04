@@ -14,9 +14,6 @@
 # limitations under the License.
 
 
-""" datafeed.py
-Data sources
-"""
 import pandas as pd
 import pytz
 import random
@@ -53,7 +50,7 @@ class DataFeed(object):
             A Portfolio database model if name was found,
             None otherwize
         '''
-        #FIXME Should now provide a date as well, an complete history is now stored
+        #FIXME Should now provide a date as well
         lonely = False
         if isinstance(names, str):
             names = [names]
@@ -92,7 +89,8 @@ class DataFeed(object):
         for ticker in tickers:
             symbol = self.guess_name(ticker)
             log.info('Retrieving {} quotes from database'.format(ticker))
-            data = self.stock_db.get_quotes(symbol, start_date=start_date, end_date=end_date, dl=download)
+            data = self.stock_db.get_quotes(
+                symbol, start_date=start_date, end_date=end_date, dl=download)
             if data is None:
                 continue
             index = pd.DatetimeIndex([data[i].Date for i in range(len(data))])
@@ -138,7 +136,8 @@ class DataFeed(object):
         return self.random_stocks(n=limit, exhange=exchange)
 
     def guess_name(self, partial_input):
-        ''' Find the closest math of partial_input in stocks database, and return its symbol '''
+        ''' Find the closest math of partial_input in stocks database, and
+        return its symbol '''
         match = [name for name in self.stock_db.available_equities(key='name') if re.match(partial_input, name, re.IGNORECASE) is not None]
         if not match:
             log.debug('No matching name, trying symbol list...')
@@ -158,7 +157,7 @@ class DataFeed(object):
         _____________________________________
         Parameters
             code: str
-                quandl data code 
+                quandl data code
             kwargs: dict
                 keyword args passed to quandl call
         _____________________________________
@@ -167,8 +166,8 @@ class DataFeed(object):
                  returned from quandl call
         '''
         log.debug('Fetching QuanDL data (%s)' % code)
-        # This way you can use your credentials even if 
-        # you didn't provide them to the constructor 
+        # This way you can use your credentials even if
+        # you didn't provide them to the constructor
         if 'authtoken' in kwargs:
             self.quandl_key = kwargs.pop('authtoken')
 

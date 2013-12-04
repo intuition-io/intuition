@@ -19,6 +19,8 @@
 
 import sys
 import os
+import matplotlib.pyplot as plt
+import traceback
 
 from intuition.core.engine import Simulation
 from intuition.utils.logger import log, get_nestedlog
@@ -26,8 +28,7 @@ import intuition.utils.datautils as datautils
 from intuition.core.configuration import Setup
 
 
-#TODO profiling with http://docs.python.org/2/library/profile.html, http://pycallgraph.slowchop.com/
-if __name__ == '__main__':
+def main():
     '''________________________________________________    Setup    ____
     Setup's goal is to fill 3 dictionnaries :
       - Backtest behavior
@@ -86,59 +87,37 @@ if __name__ == '__main__':
             sys.exit(1)
 
         '''____________________________________________    Results   ____'''
-        #analyzes.run_dashboard(portfolio=strategy['manager']['name'])
-
         log.info('Portfolio returns: \
                 {}'.format(analyzes.results.portfolio_value[-1]))
 
-        sys.exit(0)
         if configuration['live'] or analyzes.results.portfolio_value[-1] == configuration['cash']:
             # Currently, live tests don't last more than 20min; analyzes is not
             # relevant, neither backtest without orders
             sys.exit(0)
 
-        #TODO A simple test of recorded vars (zipline feature), works only for Follower algo
+        #TODO A simple test of recorded vars (zipline feature), works only for
+        #     Follower algo
         #plot_results(analyzes)
+        #TODO Would be cool : analyzes.plot('returns')
 
-        #NOTE Save only if database id provided, probably temporary solution
-        should_save = bool(configuration['database'])
-
-        #TODO Implement in datafeed a generic save method
-        # (which could call the correct database save method)
-        # Get a portfolio monthly risk analyzis
-        perf_series  = analyzes.rolling_performances(timestamp='one_month',
-                                                     save=should_save,
-                                                     db_id=configuration['database'])
-
-        #TODO save returns not ready yet, don't try to save #TODO Becnhmark was
         # Get daily, cumulative and not, returns of portfolio and benchmark
         returns_df = analyzes.get_returns(
-                benchmark=datautils.Exchange[configuration['exchange']]['index'],
-                save=False)
-
-        risk_metrics = analyzes.overall_metrics(metrics=perf_series,
-                                                save=should_save,
-                                                db_id=configuration['database'])
-
-        #FIXME irrelevant results if no transactions were ordered
-        log.info('\n\nReturns: {}% / {}%\nVolatility: {} \
-                \nSharpe:\t\t{}\nMax drawdown:\t{}\n\n'.format(
-                round(risk_metrics['Returns'] * 100.0, 2),
-                round(risk_metrics['Benchmark.Returns'] * 100.0, 2),
-                round(risk_metrics['Volatility'], 2),
-                round(risk_metrics['Sharpe.Ratio'], 2),
-                round(risk_metrics['Max.Drawdown'], 2)))
+                benchmark=datautils.Exchange[configuration['exchange']]['index'])
 
         # If we work in local, draw a quick summary plot
-        #FIXME R 3.0.0 apprently broke the script
-        sys.exit()
         if not configuration['remote']:
             data = returns_df.drop(['Returns', 'Benchmark.Returns'], axis=1)
+            plt.figure()
             data.plot()
-            #plt.show()
+            plt.legend(loc='best')
 
-            # R statistical analyzes
-            #TODO Wrap it in Analyze object using rpy or rest server
-            os.system('{}/application/analysis.R --source mysql --table {} --verbose'
-                    .format(os.environ['QTRADE'], configuration['database']))
-            os.system('evince ./Rplots.pdf')
+
+#TODO profiling with http://docs.python.org/2/library/profile.html, http://pycallgraph.slowchop.com/
+if __name__ == '__main__':
+  try:
+    main()
+  except Exception as e:
+    log.error("An exception occured : {} ({})".format(e, type(e)))
+    print '\n' + 79 * '-'
+    traceback.print_exc(file=sys.stdout)
+    print 79 * '-' + '\n'

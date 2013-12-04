@@ -22,9 +22,8 @@ import pytz
 import datetime
 from dateutil.parser import parse
 
-#FIXME gryd is no longer part of intuition
+#FIXME gryd is (for now) no longer part of intuition
 #import intuition.gryd.transport as gryd
-#from intuition.data.datafeed import DataFeed
 
 
 log = logbook.Logger('intuition.configuration')
@@ -115,7 +114,7 @@ class Setup(object):
                             required=True, help='Trading algorithm to be used')
         parser.add_argument('-m', '--manager',
                             action='store', default='',
-                            required=False, help='Portfolio strategie to be used')
+                            required=False, help='Portfolio strategy to be used')
         parser.add_argument('-so', '--source',
                             action='store',
                             required=True, help='Data generator')
@@ -154,17 +153,20 @@ class Setup(object):
                             required=False, help='Activates the diffusion of the universe on the network, on the port provided')
         args = parser.parse_args()
 
-        #TODO Same as zipline in datasource, a mapping function with type and conversion function tuple
+        #TODO Same as zipline in datasource, a mapping function with type and
+        #     conversion function tuple
         #NOTE self.config_backtest = args.__dict__
-        #NOTE Algorithm should be strategie, to be consistent
-        # For generic use, future modules will need a dictionnary of parameters, not the namespace provided by argparse
+        #NOTE Algorithm should be strategy, to be consistent
+        #TODO More filters and checkers here
+        # For generic use, future modules will need a dictionnary of
+        # parameters, not the namespace provided by argparse
         log.debug('Mapping arguments to backtest parameters dictionnary')
         self.config_backtest = {'algorithm': args.algorithm,
                                 'frequency': args.frequency,
                                 'manager'  : args.manager,
                                 'source'   : args.source,
                                 'database' : args.database,
-                                'tickers'  : smart_tickers_select(args.tickers, exchange=args.exchange),
+                                'tickers'  : args.tickers.split(','),
                                 'start'    : normalize_date_format(args.start),
                                 'end'      : normalize_date_format(args.end),
                                 'live'     : args.live,
@@ -182,7 +184,7 @@ class Setup(object):
 
     def get_strategy_configuration(self, *args, **kwargs):
         '''
-        Read localy or receive remotely strategie's parameters
+        Read localy or receive remotely strategy's parameters
         '''
         # If no command line was parsed you can use manually a dict
         # for config_backtest or must specifie it outside
@@ -202,7 +204,7 @@ class Setup(object):
                     self._read_structured_file('plugins.json',
                                                config_folder=True,
                                                select_field='manager')
-            #NOTE Algorithm should be strategie, to be consistent
+            #NOTE Algorithm should be strategy, to be consistent
             self.config_strategy['algorithm'] = \
                     self._read_structured_file('plugins.json',
                                                config_folder=True,
@@ -240,27 +242,6 @@ class Setup(object):
         #msg['manager']['server'] = server
 
         return msg
-
-
-def smart_tickers_select(tickers_description, exchange=''):
-    '''
-    Take tickers string description and return
-    an array of explicit and usuable symbols
-    '''
-    # Informations are coma separated within the string
-    tickers_description = tickers_description.split(',')
-
-    # Useful way of stocks selection in order to test algorithm strength
-    if tickers_description[0] == 'random':
-        # Basic check: the second argument is the the number, integer, of stocks to pick up randomly
-        assert len(tickers_description) == 2
-        assert int(tickers_description[1])
-
-        # Pick up stocks on specified (or not) market exchange
-        #tickers_description = DataFeed().random_stocks(int(tickers_description[1]), exchange=exchange.split(','))
-
-
-    return tickers_description
 
 
 #TODO Handle in-day dates, with hours and minutes

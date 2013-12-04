@@ -22,40 +22,41 @@ import sys
 #NOTE Database: http://pythonhosted.org/Logbook/api/ticketing.html#module-logbook.ticketing
 import logbook
 from logbook.queues import ZeroMQHandler
-from logbook.more import ColorizingStreamHandlerMixin, ColorizedStderrHandler
-from logbook import Logger, NestedSetup, FileHandler, Processor, StderrHandler, StreamHandler
+from logbook.more import ColorizedStderrHandler
 
 from utils import get_local_ip
 
 def inject_information(record):
     record.extra['ip'] = get_local_ip()
 
-#log_format = u'[{record.time:%Y-%m-%d %H:%M}] {record.channel} - {record.level_name}: {record.message} \t({record.extra[ip]})'
-log_format = u'[{record.time:%m-%d %H:%M}] {record.channel}::{record.level_name} - {record.message}'
+log_format = u'{record.extra["ip"]} [{record.time:%m-%d %H:%M}] {record.channel}::{record.level_name} - {record.message}'
 
-default_log_destination = os.path.expanduser('~/.quantrade/logs')
+default_log_destination = os.path.expanduser('~/.intuition/logs')
 log_destination = default_log_destination if os.path.exists(default_log_destination) else '/tmp'
 
-def get_nestedlog(level='DEBUG', filename='quantrade.log', uri=None):
+def get_nestedlog(level='DEBUG', filename='intuition.log', uri=None):
     # Default uri: tcp://127.0.0.1:5540
     if uri is not None:
-        log_setup = NestedSetup([
+        log_setup = logbook.NestedSetup([
             ZeroMQHandler(uri),
         ])
     else:
-        log_setup = NestedSetup([
-            logbook.NullHandler(level=logbook.DEBUG, bubble=True),
-            logbook.StreamHandler(sys.stdout, level=logbook.INFO, format_string=log_format),
-            logbook.StreamHandler(sys.stderr, level=logbook.ERROR, format_string=log_format),
+        log_setup = logbook.NestedSetup([
+            logbook.NullHandler(),
+            #logbook.NullHandler(level=logbook.DEBUG, bubble=True),
+            ColorizedStderrHandler(format_string=log_format, level='ERROR'),
+            logbook.StreamHandler(sys.stdout, format_string=log_format),
             logbook.FileHandler('{}/{}'.format(log_destination, filename), level=level),
+            #FIXME Doesn't show anything
+            logbook.Processor(inject_information)
         ])
 
     return log_setup
 
 
 # a nested handler setup can be used to configure more complex setups
-setup = NestedSetup([
-    #StderrHandler(format_string=u'[{record.time:%Y-%m-%d %H:%M}] {record.channel} - {record.level_name}: {record.message} \t({record.extra[ip]})'),
+setup = logbook.NestedSetup([
+    #logbook.StderrHandler(format_string=u'[{record.time:%Y-%m-%d %H:%M}] {record.channel} - {record.level_name}: {record.message} \t({record.extra[ip]})'),
     logbook.StreamHandler(sys.stdout, format_string=log_format),
     # then write messages that are at least warnings to to a logfile
     #FIXME FileHandler(os.environ['QTRADE_LOG'], level='WARNING'),
@@ -63,79 +64,15 @@ setup = NestedSetup([
     #Processor(inject_information)
 ])
 
-color_setup = NestedSetup([
-    StreamHandler(sys.stdout, format_string=log_format),
+color_setup = logbook.NestedSetup([
+    logbook.StreamHandler(sys.stdout, format_string=log_format),
     ColorizedStderrHandler(format_string=log_format, level='NOTICE'),
     #Processor(inject_information)
 ])
 
-#remote_setup = NestedSetup([
+#remote_setup = logbook.NestedSetup([
     #ZeroMQHandler('tcp://127.0.0.1:56540'),
     ##Processor(inject_information)
 #])
 
-log = Logger('Trade Labo')
-
-
-#TODO: reimplement fatal function with (colors ?) exit
-'''---------------------------------------------------------------------------------------
-Logger class
----------------------------------------------------------------------------------------'''
-
-
-class LogSubsystem(object):
-    ''' Trade logging version '''
-    def __init__(self, name='default', lvl='debug', file_channel=False):
-        if lvl == "debug":
-            lvl = logging.DEBUG
-        elif lvl == "info":
-            lvl = logging.INFO
-        elif lvl == 'error':
-            lvl = logging.ERROR
-        elif lvl == 'warning':
-            lvl = logging.WARNING
-        elif lvl == "critical":
-            lvl = logging.CRITICAL
-        else:
-            print '[DEBUG] __LogSubSystem__ : Unsupported mode, setting default logger level: debug'
-            lvl = logging.DEBUG
-        if name == '':
-            self.logger = logging.getLogger()
-        else:
-            self.logger = logging.getLogger(name)
-        self.logger.setLevel(lvl)
-        self.setup(lvl)
-
-    def setup(self, lvl = logging.DEBUG):
-        self.formatter = logging.Formatter('[%(levelname)s] %(name)s :  %(message)s')
-
-        ch = logging.StreamHandler()
-        ch.setLevel(lvl)
-        ch.setFormatter(self.formatter)
-        self.logger.addHandler(ch)
-
-        print('[DEBUG] __LogSubSystem__ : Logging initialized.')
-
-    def addFileHandler(self, lvl = logging.DEBUG, file_store = 'pyTrade.log'):
-        fh = logging.FileHandler(file_store)
-        fh.setLevel(lvl)
-        fh.setFormatter(self.formatter)
-        self.logger.addHandler(fh)
-        print('[DEBUG] __LogSubSystem__ : Logging file handler initialized.')
-
-    def getLog(self):
-        return self.logger
-
-
-'''---------------------------------------------------------------------------------------
-Usage Exemple
----------------------------------------------------------------------------------------'''
-'''
-if __name__ == '__main__':
-  logSys = LogSubSystem(__name__, "debug")
-  #logSys.addFileHandler()
-  log = logSys.getLog()
-
-  # 'application' code
-  log.debug('SQLite fork wrapper test')
-'''
+log = logbook.Logger('intuition.default.logger')

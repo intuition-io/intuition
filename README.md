@@ -169,7 +169,7 @@ class Fair(PortfolioManager):
 
 Strategies triggering buy or sell signals are used within zipline backtester
 engine and therefore use quite the same scheme, plus the manager, and some
-config parameters. Here is a classic momentum strategie:
+config parameters. Here is a classic momentum strategy:
 
 ```python
 from neuronquant.zipline.algorithm import QuantitativeTrading

@@ -14,11 +14,6 @@
 # limitations under the License.
 
 
-#from intuition.data.datafeed import DataFeed
-#from intuition.network.dashboard import Dashboard
-#import intuition.network.fabfile as fab
-#from intuition.network.grid import Grid
-
 import pytz
 import pandas as pd
 import numpy as np
@@ -27,9 +22,11 @@ import numpy as np
 from finance import qstk_get_sharpe_ratio
 
 import logbook
-log = logbook.Logger('Analyze')
 
 from zipline.data.benchmarks import get_benchmark_returns
+
+
+log = logbook.Logger('Analyze')
 
 
 #NOTE Methods names to review
@@ -37,10 +34,6 @@ class Analyze(object):
     ''' Handle backtest results and performances measurments '''
     def __init__(self, *args, **kwargs):
         super(Analyze, self).__init__()
-
-        # MySQL Database client
-        #self.datafeed = kwargs.pop('datafeed') if 'datafeed' in kwargs else DataFeed()
-        self.datafeed = kwargs.pop('datafeed', None)
 
         # R analysis file only need portfolio returns
         self.returns = kwargs.pop('returns') if 'returns' in kwargs else None
@@ -90,13 +83,11 @@ class Analyze(object):
 
         data = pd.DataFrame(perfs, index=index)
 
-        if save:
-            self.datafeed.stock_db.save_metrics(data)
         return data
 
-    def overall_metrics(self, timestamp='one_month', metrics=None, save=False, db_id=None):
+    def overall_metrics(self, timestamp='one_month', metrics=None, db_id=None):
         '''
-        Use zipline results to compute some performance indicators and store it in database
+        Use zipline results to compute some performance indicators
         '''
         perfs = dict()
 
@@ -117,12 +108,10 @@ class Analyze(object):
         perfs['Alpha']             = np.mean(metrics['Alpha'])
         perfs['Benchmark.Returns'] = (((metrics['Benchmark.Returns'] + 1).cumprod()) - 1)[-1]
 
-        if save:
-            self.datafeed.stock_db.save_performances(perfs)
         return perfs
 
     #TODO Save returns
-    def get_returns(self, benchmark='', timestamp='one_month', save=False, db_id=None):
+    def get_returns(self, benchmark='', timestamp='one_month'):
         returns = dict()
 
         if benchmark:
@@ -139,14 +128,10 @@ class Analyze(object):
 
         returns['Benchmark.Returns']  = pd.Series([d.returns for d in benchmark_data], index=dates)
         returns['Benchmark.CReturns'] = ((returns['Benchmark.Returns'] + 1).cumprod()) - 1
-        returns['Returns']            = pd.Series(self.results.returns, index=dates)
-        returns['CReturns']           = pd.Series(((self.results.returns + 1).cumprod()) - 1, index=dates)
+        returns['Returns']            = pd.Series(self.results.returns.values, index=dates)
+        returns['CReturns']           = pd.Series(((self.results.returns.values + 1).cumprod()) - 1, index=dates)
 
         df = pd.DataFrame(returns, index=dates)
-
-        if save:
-            raise NotImplementedError()
-            self.datafeed.stock_db.saveDFToDB(df, table=db_id)
 
         if benchmark is None:
             df = df.drop(['Benchmark.Returns', 'Benchmark.CReturns'], axis=1)
@@ -162,15 +147,3 @@ class Analyze(object):
         index = self._get_index(perfs)
         values = [perfs[i][field] for i in range(len(perfs))]
         return pd.Series(values, index=index)
-
-    #TODO Dashboard is now a component of labo project
-    '''
-    def run_dashboard(self, **kwargs):
-        dashboard = Dashboard()
-        log.info('Getting completion dictionnary')
-        dashboard.add_description(**kwargs)
-        log.info('Building dashboard database')
-        dashboard.build()
-        log.info('Running dashboard')
-        dashboard.run()
-    '''

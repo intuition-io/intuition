@@ -19,7 +19,6 @@ import pytz
 import pandas as pd
 import logbook
 
-#from intuition.data.datafeed import DataFeed
 import intuition.utils.datautils as datautils
 from intuition.modules.sources.loader import LiveBenchmark
 from intuition.core.analyzes import Analyze
@@ -90,16 +89,9 @@ class Simulation(object):
     ''' Take a trading strategy and evalute its results '''
 
     def __init__(self, configuration):
-        #NOTE Allowing different data access ?
-        #self.metrics = None
         #self.server        = ZMQ_Dealer(id=self.__class__.__name__)
         self.configuration = configuration
         self.context = None
-        #if 'quandl' in configuration['env']:
-            # A quandl api key was registered
-            #self.datafeed = DataFeed(configuration['env']['quandl'])
-        #else:
-            #self.datafeed = DataFeed()
 
     #TODO For both, timezone configuration
     def configure(self):
@@ -141,9 +133,6 @@ class Simulation(object):
             self.set_benchmark_loader(None)
             data_freq = 'D'
 
-            # Use datafeed object to retrieve data
-            #data = self._get_data(tickers, start_time, end_time)
-
         dates = datautils.filter_market_hours(pd.date_range(start_time,
                                                             end_time,
                                                             freq=data_freq),
@@ -158,33 +147,6 @@ class Simulation(object):
                 'index'        : dates}
 
         return data
-
-    '''
-    def _get_data(self, tickers, start_date, end_date):
-        self.implemented_sources = ['mysql', 'quandl', 'csv']
-        for source in self.implemented_sources:
-            data = self._try(source, tickers, start_date=start_date, end_date=end_date)
-            if data.empty:
-                log.warning('Got nothing from {}'.format(source))
-                data = pd.DataFrame()
-            else:
-                assert isinstance(data, pd.DataFrame)
-                assert data.index.tzinfo
-                break
-
-        return data
-
-    def _try(self, source, tickers, **kwargs):
-        if source == 'mysql':
-            data = self.datafeed.quotes(tickers, **kwargs)
-        elif source == 'csv':
-            raise NotImplementedError()
-        elif source == 'quandl':
-            data = self.datafeed.fetch_quandl(tickers, returns='pandas', **kwargs)
-        else:
-            raise NotImplementedError()
-        return data
-    '''
 
     def set_benchmark_loader(self, load_function):
         self.load_market_data = load_function

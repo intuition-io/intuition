@@ -68,10 +68,12 @@ def to_dict(obj):
 def get_local_ip(public=False):
     if public:
         data = str(urlopen('http://checkip.dyndns.com/').read())
-        return re.compile(r'Address: (\d+\.\d+\.\d+\.\d+)').search(data).group(1)
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.connect(('google.com', 0))
-    return s.getsockname()[0]
+        ip = re.compile(r'Address: (\d+\.\d+\.\d+\.\d+)').search(data).group(1)
+    else:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('google.com', 0))
+        ip = s.getsockname()[0]
+    return ip
 
 
 def BIndexGenerator(start, end, delta=pd.datetools.bday, market=''):

@@ -16,21 +16,21 @@
 # limitations under the License.
 
 import intuition.utils.world as world
-import intuition.data.remote as remote
+#import intuition.data.remote as remote
 
 
 class DataBot(object):
-    '''
-    Main interface for financial data, doesn't care about sources.  Sub-class
-    work with UTC configuration, here are handle suitable conversions
-    and pretty presentations.
-    '''
-    def __init__(self, country_code=None):
-        '''
-        Parameters
-            country_code: str
-                This information is used to setup International object
-                and get the right local conventions for lang, dates and currencies
-                None will stand for 'fr'
-        '''
-        self.location = world.International(country_code)
+  '''
+  Main interface for financial data, doesn't care about sources. Sub-class
+  work with UTC configuration, here are handle suitable conversions and
+  pretty presentations.
+  '''
+  def __init__(self, country_code=None):
+      '''
+      Parameters
+          country_code: str
+              This information is used to setup International object and get
+              the right local conventions for lang, dates and currencies None
+              will stand for 'fr'
+      '''
+      self.location = world.International(country_code)

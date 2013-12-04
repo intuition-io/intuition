@@ -20,7 +20,8 @@ import json
 import os
 from pandas import DataFrame, Series
 
-log = logbook.Logger('Forex')
+
+log = logbook.Logger('intuition.data.forex')
 
 
 def forex_rates(user, password, pairs='', fmt='csv'):
@@ -36,6 +37,9 @@ def forex_rates(user, password, pairs='', fmt='csv'):
 
 #FIXME 'Not authorized' mode works weird
 class ConnectTrueFX(object):
+    auth_url = 'http://webrates.truefx.com/rates/connect.html?u={}&p={}&q=ozrates&c={}&f={}'
+    query_url = 'http://webrates.truefx.com/rates/connect.html?id={}&f={}&c={}'
+
     def __init__(self, user=None, password=None, auth_file='plugins.json', pairs=[], fmt='csv'):
         #NOTE Without authentification you still can acess some data
         #FIXME Not authorized response prevent from downloading quotes.
@@ -44,7 +48,7 @@ class ConnectTrueFX(object):
         if (user is None) or (password is None):
             log.info('No credentials provided, trying to read configuration file')
             try:
-                config   = json.load(open('/'.join([os.environ['QTRADE'], 'config', auth_file]), 'r'))['truefx']
+                config   = json.load(open('/'.join([os.environ['QTRADE'], auth_file]), 'r'))['truefx']
                 user     = config['user']
                 password = config['password']
                 log.info('Found configuration: {}'.format(config))
@@ -52,8 +56,7 @@ class ConnectTrueFX(object):
                 log.error('** Loading configuration file, no authentification will be used')
                 user = password = ''
 
-        auth = requests.get('http://webrates.truefx.com/rates/connect.html?u={}&p={}&q=ozrates&c={}&f={}'
-                            .format(user, password, ','.join(pairs), fmt))
+        auth = requests.get(self.auth_url.format(user, password, ','.join(pairs), fmt))
         if auth.ok:
             log.debug('[{}] Authentification successful {}:{}'.format(auth.headers['date'], auth.reason, auth.status_code))
             log.debug('Got: {}'.format(auth.content))
@@ -64,8 +67,7 @@ class ConnectTrueFX(object):
     def QueryTrueFX(self, pairs='', fmt='csv'):
         if isinstance(pairs, str):
             pairs = [pairs]
-        response = requests.get('http://webrates.truefx.com/rates/connect.html?id={}&f={}&c={}'
-                                .format(self._code, fmt, ','.join(pairs)))
+        response = requests.get(self.query_url.format(self._code, fmt, ','.join(pairs)))
 
         mapped_data = self._fx_mapping(response.content.split('\n')[:-2])
         if len(mapped_data) == 1:

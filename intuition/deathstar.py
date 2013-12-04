@@ -36,7 +36,7 @@ def trade(mega_config):
     #NOTE Portfolio server setup in Setup() object,
     #if needed, create it manually here
     configuration = mega_config['configuration']
-    strategie = mega_config['strategie']
+    strategy = mega_config['strategy']
 
     # Remote: ZMQ based messaging, route logs on the network
     # (catched by server's broker)
@@ -53,7 +53,7 @@ def trade(mega_config):
 
         # See neuronquant/gears/engine.py for details of results which is an
         # analyzes object
-        analyzes = engine.run(data, configuration, strategie, trading_context)
+        analyzes = engine.run(data, configuration, strategy, trading_context)
         assert analyzes
 
 
@@ -71,8 +71,8 @@ def complete_configuration(changes={}, backtest=True):
         if item in config['configuration']:
             config['configuration'][item] = value
         for category in ['algorithm', 'manager']:
-            if item in config['strategie'][category]:
-                config['strategie'][category][item] = value
+            if item in config['strategy'][category]:
+                config['strategy'][category][item] = value
 
     # Check for normalzation
     if isinstance(config['configuration']['start'], unicode) or isinstance(config['configuration']['start'], str):
@@ -103,7 +103,7 @@ root_configuration = {
         'source': 'DBPriceSource',
         'env': {}
     },
-    'strategie': {
+    'strategy': {
         'algorithm': {
             'debug': 0,
             'long_window': 30,
