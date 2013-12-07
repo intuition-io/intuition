@@ -12,12 +12,12 @@ Vagrant.configure("2") do |config|
   config.vm.box = BOX_NAME
   config.vm.box_url = BOX_URI
 
-  config.vm.synced_folder File.dirname(__FILE__), "/home/vagrant/ppQuanTrade"
+  config.vm.synced_folder File.dirname(__FILE__), "/home/vagrant/intuition"
 
   config.vm.provider :lxc do |lxc|
     lxc.customize 'cgroup.memory.limit_in_bytes', '1024M'
   end
 
-  config.vm.provision :shell, :inline => "export PROJECT_URL=Gusabi/ppQuanTrade && wget -qO- https://raw.github.com/Gusabi/Dotfiles/master/utils/apt-git | bash"
-  #config.vm.provision :shell, :inline => "cd /home/vagrant/ppQuanTrade && apt-get install make && make all"
+  #config.vm.provision :shell, :inline => "export PROJECT_URL=Gusabi/ppQuanTrade && wget -qO- https://raw.github.com/Gusabi/Dotfiles/master/utils/apt-git | bash"
+  config.vm.provision :shell, :inline => "cd /home/vagrant/intuition && apt-get install make && make all"
 end

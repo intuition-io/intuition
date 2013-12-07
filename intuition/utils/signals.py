@@ -56,12 +56,3 @@ class SignalManager(object):
 
     def __del__(self):
         log.info('Current signal handler deleted')
-
-
-''' Usage: Set the signal handler and a 5-second alarm
-sh = SignalHandler('Test', 'Error !!!')
-signal.alarm(5)
-while True:
-    continue
-signal.alarm(0)          # Disable the alarm
-'''

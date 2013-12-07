@@ -19,7 +19,6 @@ import os
 import re
 from setuptools import setup, find_packages
 
-
 import sys
 sys.exit('This script is currently broken, use instead "sudo make all"')
 
@@ -91,8 +90,8 @@ except ImportError:
     LONG_DESCRIPTION = README_MARKDOWN
 
 setup(
-    name='quantrade',
-    version='0.1.3',
+    name='intuition',
+    version='0.2.3',
     description='Engine and tools for quantitative trading.',
     author='Xavier Bruhiere',
     author_email='xavier.bruhiere@gmail.com',
@@ -111,5 +110,5 @@ setup(
     ],
     install_requires=get_dependencies(),
     dependency_links=['https://github.com/quantopian/zipline'],
-    url="https://github.com/Gusabi/ppQuanTrade"
+    url="https://github.com/hackliff/intuition"
 )

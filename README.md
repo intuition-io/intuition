@@ -10,7 +10,7 @@ Intuition
 Status
 ------
 
-[![Build Status](https://travis-ci.org/hackliff/ppQuanTrade.png?branch=master)](https://travis-ci.org/hackliff/ppQuanTrade)
+[![Build Status](https://travis-ci.org/hackliff/intuition.png?branch=master)](https://travis-ci.org/hackliff/intuition)
 
 **Super Attention!** Since I am currently involved on other [ambitious IT
 projects](https://github.com/hivetech), I paused this one for a few months.
@@ -70,7 +70,7 @@ $ git clone https://github.com/hackliff/intuition.git
 $ sudo apt-get install lxc redir
 $ sudo apt-get update && apt-get dist-upgrade
 $ vagrant plugin install vagrant-lxc
-$ cd ppQuanTrade && vagrant up --provider=lxc
+$ cd intuition && vagrant up --provider=lxc
 ```
 
 Default is lxc because it is much more lightweight than plain VM and
@@ -83,7 +83,7 @@ optionnaly ```BOX_URI``` if you don't have it already on your system)
 
 ```
 $ git clone https://github.com/hackliff/intuition.git
-$ cd ppQuanTrade && sudo make all
+$ cd intuition && sudo make all
 ```
 
 - Or one liner style (with more installation options, only the first one is required):
@@ -106,11 +106,11 @@ $ wget -qO- https://raw.github.com/hackliff/Dotfiles/master/utils/apt-git | sudo
 
 Edit the script in scripts/installation/createdb.sql and your preferences in
 ~/.quantrade/config/default.json, the symbols you want to trade in
-ppQuanTrade/data/symbols.csv and run:
+intuition/data/symbols.csv and run:
 
 ```
-$ sudo chown -R $USER $HOME/.quantrade   # Fixes weird issue
-$ sudo chown -R $USER ppQuanTrade/       # Idem 
+$ sudo chown -R $USER $HOME/.intuition   # Fixes weird issue
+$ sudo chown -R $USER intuition/       # Idem
 $ make database
 ```
 

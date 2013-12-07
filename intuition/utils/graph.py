@@ -18,9 +18,7 @@ import sys
 import os
 
 sys.path.append(os.environ['QTRADE'])
-from neuronquant.utils.logger import LogSubsystem
-from neuronquant.data.QuantDB import SQLiteWrapper
-from neuronquant.calculus.finance import *
+from intuition.core.finance import *
 
 # For mathematical stuff, data manipulation...
 from pandas import Index, DataFrame
@@ -45,8 +43,6 @@ import matplotlib.font_manager as font_manager
 #TODO: a setProperty method which update the graph configuration dictionnary
 class Graph(object):
     def __init__(self, bg='white'):
-        self._logger = LogSubsystem(Graph.__name__, "debug").getLog()
-
         plt.rc('axes', grid=True)
         plt.rc('grid', color='0.75', linestyle='-', linewidth=0.5)
         self.axes = list()

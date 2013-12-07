@@ -118,7 +118,7 @@ def perf(fct):
 
 
 def deprecated(fct):
-    ''' raise an exception on decorated finctions '''
+    ''' raise an exception on decorated functions '''
     def prevent(*args, **kwargs):
         raise RuntimeError('Function {0} deprecated, stopping.'.format(fct))
     return prevent

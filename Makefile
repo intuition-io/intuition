@@ -7,46 +7,36 @@ LOGS?=/tmp/intuition.logs
 MODULES?=https://github.com/hackliff/intuition-modules
 PLUGINS?=https://github.com/hackliff/intuition-plugins
 
-all: dependencies install
+all: dependencies modules install
 
 install:
 	@echo "[make] Copying library"
-	cp -r intuition /usr/local/lib/python2.7/dist-packages
+	sudo cp -r intuition /usr/local/lib/python2.7/dist-packages
 	@echo "[make] Creating logs directory"
 	test -d ${HOME}/.intuition || mkdir -p ${HOME}/.intuition/logs
-	mkdir -p ${HOME}/.intuition/config
 	@echo "[make] Copying default configuration"
-	cp -r config/templates ${HOME}/.intuition
-	cp config/templates/default.tpl ${HOME}/.intuition/config/default.json
-	cp config/templates/plugins.tpl ${HOME}/.intuition/config/plugins.json
-	chmod -R ugo+rwx ${HOME}/.intuition
-	chmod -R ugo+rwx ${PWD}
+	cp config/default.tpl ${HOME}/.intuition/default.json
+	cp config/plugins.tpl ${HOME}/.intuition/plugins.json
+	@echo "Now edit your preferences in ~/.intuition"
 
 modules:
-	git clone ${MODULES} intuition/modules
-	git clone ${PLUGINS} intuition/plugins
+	@echo "Downloading submodules"
+	git submodule init
+	git submodule update
 
 dependencies:
 	@echo "[make] Updating cache..."
-	apt-get update 2>&1 >> ${LOGS}
+	sudo apt-get update 2>&1 >> ${LOGS}
 	@echo "[make] Installing packages"
-	sudo apt-get -y --force-yes install git-core r-base python-pip python-dev g++ make gfortran libzmq-dev mysql-client libmysqlclient-dev curl 2>&1 >> ${LOGS}
+	#sudo apt-get -y --force-yes install git-core r-base python-pip python-dev g++ make gfortran libzmq-dev mysql-client libmysqlclient-dev curl 2>&1 >> ${LOGS}
+	sudo apt-get -y --force-yes install git-core r-base python-pip python-dev g++ make gfortran 2>&1 >> ${LOGS}
 	@echo "[make] Installing python modules"
 	pip install --upgrade distribute 2>&1 >> ${LOGS}
 	pip install --upgrade numpy 2>&1 >> ${LOGS}
 	pip install --upgrade -r ./scripts/installation/requirements.txt 2>&1 >> ${LOGS}
+	#FIXME First installation needs to specify lib parameter
 	@echo "[make] Installing R dependencies"
 	./scripts/installation/install_r_packages.R 2>&1 >> ${LOGS}
-
-database:
-	@echo "Setting up mysql Intuition database"
-	mysql -u root -p < ./scripts/installation/createdb.sql
-	@echo "Creating database schema"
-	./scripts/database_manager.py -c
-	@echo "Feeding database with US stocks"
-	./scripts/database_manager.py -a ./data/symbols.csv
-	@echo "Synchronizing..."
-	./scripts/database_manager.py -s
 
 tags:
 	@ctags --python-kinds=-iv -R intuition

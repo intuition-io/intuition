@@ -15,7 +15,7 @@
 
 
 import logbook
-from intuition.utils.utils import reIndexDF
+#from intuition.utils.utils import reIndexDF
 
 import pandas as pd
 from pandas.core.datetools import BDay
@@ -31,7 +31,7 @@ import datetime as dt
 Quant
 -----------------------------------------------------------'''
 
-log = logbook.Logger('Finance')
+log = logbook.Logger('intuition.core.finance')
 
 
 #NOTE This is temporary copied from QSTK library
@@ -138,9 +138,10 @@ def average_returns(ts, **kwargs):
     period = kwargs.get('period', None)
     if isinstance(period, int):
         pass
-    else:
-        ts = reIndexDF(ts, start=start, end=end, delta=delta)
-        period = 1
+    #else:
+        #FIXME reIndexDF is deprecated
+        #ts = reIndexDF(ts, start=start, end=end, delta=delta)
+        #period = 1
     avg_ret = 1
     for idx in range(len(ts.index)):
         if idx % period == 0:
@@ -185,10 +186,11 @@ def returns(ts, **kwargs):
     if isinstance(start, dt.datetime):
         log.debug('{} / {} -1'.format(ts[end], ts[start]))
         return ts[end] / ts[start] - 1 + relative
-    elif isinstance(delta, pd.DateOffset) or isinstance(delta, dt.timedelta):
+    #elif isinstance(delta, pd.DateOffset) or isinstance(delta, dt.timedelta):
         #FIXME timezone problem
-        ts = reIndexDF(ts, delta=delta)
-        period = 1
+        #FIXME reIndexDF is deprecated
+        #ts = reIndexDF(ts, delta=delta)
+        #period = 1
     rets_df = ts / ts.shift(period) - 1 + relative
     if cumulative:
         return rets_df.cumprod()
@@ -228,6 +230,3 @@ def high_low_spread(df, offset):
     # subIndex = df.index[conditions]
     # df = df.reindex(subIndex)
     return df['high'] - df['low']
-
-#TODO: updateDB, every class has this method, factorisation ?
-#      shared memory map to synchronize

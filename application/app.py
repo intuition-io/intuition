@@ -18,7 +18,6 @@
 
 
 import sys
-import os
 import matplotlib.pyplot as plt
 import traceback
 
@@ -52,7 +51,7 @@ def main():
 
     #FIXME Remote log broken here
     log_setup = get_nestedlog(level=configuration['loglevel'],
-        filename=configuration['logfile'])
+                              filename=configuration['logfile'])
     with log_setup.applicationbound():
         '''
         TODO HUGE: Run multiple backtest with communication possibilities (ZMQ)
@@ -66,7 +65,8 @@ def main():
         # Fill strategy and manager parameters
         # Localy, reading configuration file
         # Remotely, listening for messages through zmq socket
-        strategy = setup.get_strategy_configuration(remote=configuration['remote'])
+        strategy = setup.get_strategy_configuration(
+            remote=configuration['remote'])
 
         '''___________________________________________    Backtest    ____'''
         # Backtest or live engine.
@@ -90,7 +90,8 @@ def main():
         log.info('Portfolio returns: \
                 {}'.format(analyzes.results.portfolio_value[-1]))
 
-        if configuration['live'] or analyzes.results.portfolio_value[-1] == configuration['cash']:
+        if configuration['live'] or \
+                analyzes.results.portfolio_value[-1] == configuration['cash']:
             # Currently, live tests don't last more than 20min; analyzes is not
             # relevant, neither backtest without orders
             sys.exit(0)
@@ -102,7 +103,7 @@ def main():
 
         # Get daily, cumulative and not, returns of portfolio and benchmark
         returns_df = analyzes.get_returns(
-                benchmark=datautils.Exchange[configuration['exchange']]['index'])
+            benchmark=datautils.Exchange[configuration['exchange']]['index'])
 
         # If we work in local, draw a quick summary plot
         if not configuration['remote']:
@@ -112,12 +113,16 @@ def main():
             plt.legend(loc='best')
 
 
-#TODO profiling with http://docs.python.org/2/library/profile.html, http://pycallgraph.slowchop.com/
+#TODO profiling with http://docs.python.org/2/library/profile.html,
+#                    http://pycallgraph.slowchop.com/
 if __name__ == '__main__':
-  try:
-    main()
-  except Exception as e:
-    log.error("An exception occured : {} ({})".format(e, type(e)))
-    print '\n' + 79 * '-'
-    traceback.print_exc(file=sys.stdout)
-    print 79 * '-' + '\n'
+    try:
+        main()
+    except KeyboardInterrupt:
+        log.info('Received SIGINT, cleaning...')
+        sys.exit(0)
+    except Exception as e:
+        log.error("An exception occured : {} ({})".format(e, type(e)))
+        print '\n' + 79 * '=' + '\n'
+        traceback.print_exc(file=sys.stdout)
+        print '\n' + 79 * '=' + '\n'

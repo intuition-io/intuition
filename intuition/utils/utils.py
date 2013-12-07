@@ -76,13 +76,25 @@ def get_local_ip(public=False):
     return ip
 
 
+def apply_mapping(raw_row, mapping):
+    """
+    Override this to hand craft conversion of row.
+    """
+    row = {target: mapping_func(raw_row[source_key])
+           for target, (mapping_func, source_key)
+           in mapping.fget().items()}
+    return row
+
+
+#TODO Those 2 next ugly functions should be removed
+'''
 def BIndexGenerator(start, end, delta=pd.datetools.bday, market=''):
-    '''
+
     @summary generate a business index, avoiding closed market days and hours
     @param start, end, delta: dates informations
     @param market: the concerned market, t guess hours
     @return: a formatted pandas index
-    '''
+
     if delta >= pd.datetools.BDay():
         start += dt.timedelta(hours=23 - start.hour)
     #Business date_range doesn't seem to work
@@ -98,11 +110,11 @@ def BIndexGenerator(start, end, delta=pd.datetools.bday, market=''):
 
 
 def reIndexDF(df, **kwargs):
-    '''
+
     @summary take a pandas dataframe and reformat
     it according to delta, start and end,
     contrained by closed market days and hours
-    '''
+
     how = kwargs.get('how', np.mean)
     start = kwargs.get('start', df.index[0])
     end = kwargs.get('end', df.index[-1])
@@ -153,13 +165,4 @@ def reIndexDF(df, **kwargs):
     if not df.index.tzinfo:
         df.index = df.index.tz_localize(tz)
     return df
-
-
-def apply_mapping(raw_row, mapping):
-    """
-    Override this to hand craft conversion of row.
-    """
-    row = {target: mapping_func(raw_row[source_key])
-           for target, (mapping_func, source_key)
-           in mapping.fget().items()}
-    return row
+'''

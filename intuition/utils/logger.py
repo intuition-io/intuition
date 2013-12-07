@@ -14,25 +14,26 @@
 # limitations under the License.
 
 
-import logging
-
 import os
 import sys
 
-#NOTE Database: http://pythonhosted.org/Logbook/api/ticketing.html#module-logbook.ticketing
+#NOTE Database:
+# http://pythonhosted.org/Logbook/api/ticketing.html#module-logbook.ticketing
 import logbook
 from logbook.queues import ZeroMQHandler
 from logbook.more import ColorizedStderrHandler
 
 from utils import get_local_ip
 
-def inject_information(record):
-    record.extra['ip'] = get_local_ip()
-
 log_format = u'{record.extra["ip"]} [{record.time:%m-%d %H:%M}] {record.channel}::{record.level_name} - {record.message}'
 
 default_log_destination = os.path.expanduser('~/.intuition/logs')
 log_destination = default_log_destination if os.path.exists(default_log_destination) else '/tmp'
+
+
+def inject_information(record):
+    record.extra['ip'] = get_local_ip()
+
 
 def get_nestedlog(level='DEBUG', filename='intuition.log', uri=None):
     # Default uri: tcp://127.0.0.1:5540
@@ -46,9 +47,9 @@ def get_nestedlog(level='DEBUG', filename='intuition.log', uri=None):
             #logbook.NullHandler(level=logbook.DEBUG, bubble=True),
             ColorizedStderrHandler(format_string=log_format, level='ERROR'),
             logbook.StreamHandler(sys.stdout, format_string=log_format),
-            logbook.FileHandler('{}/{}'.format(log_destination, filename), level=level),
+            logbook.FileHandler('{}/{}'.format(log_destination, filename), level=level)
             #FIXME Doesn't show anything
-            logbook.Processor(inject_information)
+            #logbook.Processor(inject_information)
         ])
 
     return log_setup

@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-class QuantradeError(Exception):
+class IntuitionError(Exception):
     msg = None
 
     def __init__(self, *args, **kwargs):
@@ -31,7 +31,7 @@ class QuantradeError(Exception):
 
 
 #http://www.siteduzero.com/informatique/tutoriels/les-exceptions-9/liste-des-exceptions-built-in
-class Example(QuantradeError):
+class Example(IntuitionError):
     '''
     Temporary example
     '''

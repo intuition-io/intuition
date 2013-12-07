@@ -32,25 +32,27 @@ echo "C'est parti..."
 
 # Equitie backtest
 if [ $choice == 1 ]; then
-  #time application/app.py --initialcash 50000 --tickers GOOG/NASDAQ_GOOG \
   #time application/app.py --initialcash 50000 --tickers INDEX_FCHI \
+  #time application/app.py --initialcash 50000 --tickers GOOG/NASDAQ_GOOG \
   time application/app.py --initialcash 50000 --tickers goog,aapl \
     --loglevel CRITICAL --algorithm BuyAndHold --manager Constant --start 2011-05-10 \
     --frequency daily --database backtest --exchange nasdaq --source YahooPriceSource
-    #--frequency daily --database backtest --exchange nasdaq --source CSVSource
+    #--frequency daily --database backtest --exchange nasdaq --source YahooOHLCSource
     #--frequency daily --database backtest --exchange nasdaq --source QuandlSource
+    #--frequency daily --database backtest --exchange nasdaq --source CSVSource
 
   # Forex live test !
 elif [ $choice == 2 ]; then
-  time application/app.py --initialcash 10000 --tickers EUR/USD,EUR/GBP,GBP/USD,USD/CHF,EUR/JPY,EUR/CHF,USD/CAD,AUD/USD,GBP/JPY \
+  #time application/app.py --initialcash 10000 --tickers EUR/USD,EUR/GBP,GBP/USD,USD/CHF,EUR/JPY,EUR/CHF,USD/CAD,AUD/USD,GBP/JPY \
+  time application/app.py --initialcash 10000 --tickers EUR/USD,EUR/GBP,GBP/USD \
     --algorithm BuyAndHold --manager Constant --end 23h --logleve CRITICAL \
     --database liveforex --exchange forex --frequency minute --live --source ForexLiveSource
 
   # Equitie live test !
 elif [ $choice == 3 ]; then
-  time application/app.py --initialcash 50000 --tickers random,10 \
-    --algorithm BuyAndHold --manager Constant --end 22h --loglevel CRITICAL \
-    --database live-equities --exchange nasdaq --frequency minute --source EquitiesLiveSource --live
+  time application/app.py --initialcash 50000 --tickers jxr,su \
+    --algorithm BuyAndHold --manager Constant --end 12h --loglevel CRITICAL \
+    --database live-equities --exchange paris --frequency minute --source EquitiesLiveSource --live
 
 else
   echo '** Error: invalid simulation number provided: ' $choice

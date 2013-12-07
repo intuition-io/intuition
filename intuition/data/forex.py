@@ -41,20 +41,19 @@ class ConnectTrueFX(object):
     query_url = 'http://webrates.truefx.com/rates/connect.html?id={}&f={}&c={}'
 
     def __init__(self, user=None, password=None, auth_file='plugins.json', pairs=[], fmt='csv'):
-        #NOTE Without authentification you still can acess some data
+        #NOTE Without authentification you still can access some data
         #FIXME Not authorized response prevent from downloading quotes.
         #      However later you indeed retrieve 10 defaults
         self._code = None
         if (user is None) or (password is None):
-            log.info('No credentials provided, trying to read configuration file')
-            try:
-                config   = json.load(open('/'.join([os.environ['QTRADE'], auth_file]), 'r'))['truefx']
-                user     = config['user']
-                password = config['password']
-                log.info('Found configuration: {}'.format(config))
-            except:
-                log.error('** Loading configuration file, no authentification will be used')
-                user = password = ''
+            log.info('No credentials provided, inspecting environment')
+            user = os.environ['TRUEFX_USERNAME']
+            password = os.environ['TRUEFX_PASSWORD']
+            if user and password:
+              log.info('Found credentials for user {}'.format(user))
+            else:
+              log.warning('** Credentials not found, no authentification will be used')
+              user = password = ''
 
         auth = requests.get(self.auth_url.format(user, password, ','.join(pairs), fmt))
         if auth.ok:

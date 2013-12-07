@@ -22,7 +22,6 @@ from pandas.rpy.common import convert_to_r_matrix
 import requests
 from pandas.io.data import DataReader, get_quote_yahoo
 import pandas as pd
-import numpy as np
 import json
 from xml.dom import minidom, Node
 import urllib2
@@ -32,7 +31,7 @@ log = logbook.Logger('Remote')
 
 from intuition.utils.decorators import (
     use_google_symbol, invert_dataframe_axis)
-from intuition.utils import apply_mapping
+import intuition.utils as utils
 
 
 finance_urls = {
@@ -161,19 +160,20 @@ def snapshot_google_light(symbols):
     payload = {'client': 'ig', 'q': ','.join(symbols)}
     response = requests.get(finance_urls['snapshot_google_light'],
                             params=payload)
-    #TODO In utils.errors my first error module that handle errors codes
+    #TODO In utils.errors the first error module that handle errors codes
     #TODO check return code (200)
     #TODO remapping
     json_infos = json.loads(response.text[3:], encoding='utf-8')
 
     snapshot = {}
     for i, quote in enumerate(json_infos):
-        snapshot[symbols[i]] = apply_mapping(quote, google_light_mapping)
+        snapshot[symbols[i]] = utils.apply_mapping(quote, google_light_mapping)
 
     return pd.DataFrame(snapshot)
 
 
 #TODO all values are string, make them floats (with a mapping)
+#FIXME It seems this is deprecated Oo
 @use_google_symbol
 def snapshot_google_heavy(symbols):
     url = finance_urls['snapshot_google_heavy'] + '?stock=' + '&stock='.join(symbols)
@@ -207,8 +207,8 @@ def snapshot_google_heavy(symbols):
 def google_light_mapping():
     return {
         'change': (str, 'c'),
-        'change_str': (str, 'ccol'),
-        'change_perc': (float, 'cp'),
+        'str_change': (str, 'ccol'),
+        'perc_change': (float, 'cp'),
         'exchange': (str, 'e'),
         'id': (int, 'id'),
         'price': (str, 'l'),

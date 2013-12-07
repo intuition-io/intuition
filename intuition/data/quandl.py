@@ -14,16 +14,12 @@
 # limitations under the License.
 
 
-""" datafeed.py
-Data sources
-"""
 import pandas as pd
 import pytz
 import os
+import logbook
 
 import Quandl
-
-import logbook
 
 
 log = logbook.Logger('intuition.data.quandl')
@@ -31,7 +27,7 @@ log = logbook.Logger('intuition.data.quandl')
 
 class DataQuandl(object):
     """
-    Quandl as datasource
+    Quandl.com as datasource
     """
     def __init__(self, quandl_key=''):
         self.quandl_key = quandl_key if quandl_key != '' \

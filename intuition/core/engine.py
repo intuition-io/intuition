@@ -24,14 +24,14 @@ from intuition.modules.sources.loader import LiveBenchmark
 from intuition.core.analyzes import Analyze
 
 from zipline.finance.trading import TradingEnvironment
-from intuition.zipline.factory import create_simulation_parameters
+from zipline.utils.factory import create_simulation_parameters
 
 import intuition.modules.library as library
 
 
 BASE_CONFIG = {'algorithm': {}, 'manager': {}}
 DEFAULT_PORTFOLIO_NAME = 'ChuckNorris'
-log = logbook.Logger('intuition.engine')
+log = logbook.Logger('intuition.core.engine')
 
 
 class TradingEngine(object):
@@ -64,16 +64,23 @@ class TradingEngine(object):
             trading_algorithm.manager = library.portfolio_managers[manager](
                 strategy_configuration['manager'])
 
-            # If requested and possible, load the named portfolio to start trading with it
+            # If requested and possible, loads the named portfolio to start
+            # trading with it
             #FIXME Works, but every new event resets the portfolio
 
-            if strategy_configuration['manager'].get('load_backup', False) and portfolio_name:
-                log.info('Re-loading last {} portfolio from database'.format(portfolio_name))
-                # Retrieving a zipline portfolio object. str() is needed as the parameter is of type unicode
-                backup_portfolio = trading_algorithm.manager.load_portfolio(str(portfolio_name))
+            if strategy_configuration['manager'].get('load_backup', False) \
+                    and portfolio_name:
+
+                log.info('Re-loading last {} portfolio from database'
+                         .format(portfolio_name))
+                # Retrieving a zipline portfolio object. str() is needed as the
+                # parameter is of type unicode
+                backup_portfolio = trading_algorithm.manager.load_portfolio(
+                    str(portfolio_name))
 
                 if backup_portfolio is None:
-                    log.warning('! Unable to set {} portfolio: not found'.format(portfolio_name))
+                    log.warning('! Unable to set {} portfolio: not found'
+                                .format(portfolio_name))
                 else:
                     trading_algorithm.set_portfolio(backup_portfolio)
                     log.info('Portfolio setup successful')
@@ -98,12 +105,12 @@ class Simulation(object):
         '''
         Prepare dates, data, trading environment for simulation
         '''
-        data = self._configure_data(tickers    = self.configuration['tickers'],
-                                    start_time = self.configuration['start'],
-                                    end_time   = self.configuration['end'],
-                                    freq       = self.configuration['frequency'],
-                                    exchange   = self.configuration['exchange'],
-                                    live       = self.configuration['live'])
+        data = self._configure_data(tickers=self.configuration['tickers'],
+                                    start_time=self.configuration['start'],
+                                    end_time=self.configuration['end'],
+                                    freq=self.configuration['frequency'],
+                                    exchange=self.configuration['exchange'],
+                                    live=self.configuration['live'])
 
         self.context = self._configure_context(self.configuration['exchange'])
 
@@ -111,25 +118,26 @@ class Simulation(object):
 
     #NOTE Should the data be loaded in zipline sourcedata class ?
     #FIXME data default not suitable for live mode
-    def _configure_data(self, tickers, start_time = pd.datetime.now(pytz.utc),
-                                       end_time   = pd.datetime.now(pytz.utc),
-                                       freq='daily', exchange='', live=False):
+    def _configure_data(self, tickers, start_time=pd.datetime.now(pytz.utc),
+                        end_time=pd.datetime.now(pytz.utc),
+                        freq='daily', exchange='', live=False):
         assert start_time != end_time
 
         if live:
             # Check that start_time is now or later
-            if (start_time < (pd.datetime.now(pytz.utc) - pd.datetools.Second(5))):
+            tolerance = pd.datetools.Second(5)
+            if (start_time < (pd.datetime.now(pytz.utc) - tolerance)):
                 log.warning('! Invalid start time, setting it to now')
                 start_time = pd.datetime.now(pytz.utc)
             # Default end_date is now, not suitable for live trading
-            #self.load_market_data = LiveBenchmark(end_time, frequency=freq).load_market_data
-            self.set_benchmark_loader(LiveBenchmark(end_time, frequency=freq).load_market_data)
+            self.set_benchmark_loader(None)
+                #LiveBenchmark(end_time, frequency=freq).surcharge_market_data)
             #TODO ...hard coded, later for exemple: --frequency daily,3
             data_freq = '1min'
 
         else:
-            # Use default zipline load_market_data, i.e. data from msgpack files in ~/.zipline/data/
-            #self.load_market_data = None
+            # Use default zipline load_market_data, i.e. data from msgpack
+            # files in ~/.zipline/data/
             self.set_benchmark_loader(None)
             data_freq = 'D'
 
@@ -143,8 +151,8 @@ class Simulation(object):
             sys.exit(0)
 
         data = {'stream_source': exchange,
-                'tickers'      : tickers,
-                'index'        : dates}
+                'tickers': tickers,
+                'index': dates}
 
         return data
 
@@ -164,9 +172,9 @@ class Simulation(object):
         # Environment configuration
         if exchange in datautils.Exchange:
             trading_context = TradingEnvironment(
-                bm_symbol   = datautils.Exchange[exchange]['index'],
-                exchange_tz = datautils.Exchange[exchange]['timezone'],
-                load        = self.load_market_data)
+                bm_symbol=datautils.Exchange[exchange]['index'],
+                exchange_tz=datautils.Exchange[exchange]['timezone'],
+                load=self.load_market_data)
         else:
             raise NotImplementedError('Because of computation limitation, \
                 trading worldwide not permitted currently')
@@ -174,8 +182,10 @@ class Simulation(object):
         return trading_context
 
     def run(self, data, strategy):
-        log.info('\n-- Running backetester...\nUsing algorithm: {}\n'.format(self.configuration['algorithm']))
-        log.info('\n-- Using portfolio manager: {}\n'.format(self.configuration['manager']))
+        log.info('\n-- Running backetester...\nUsing algorithm: {}\n'
+                 .format(self.configuration['algorithm']))
+        log.info('\n-- Using portfolio manager: {}\n'
+                 .format(self.configuration['manager']))
 
         engine = TradingEngine(self.configuration['algorithm'],
                                self.configuration['manager'],
@@ -184,23 +194,24 @@ class Simulation(object):
 
         #NOTE This method does not change anything
         #engine.set_sources([DataLiveSource(data_tmp)])
-        #TODO A new command line parameter ? only minutely and daily (and hourly normally) Use filter parameter of datasource ?
+        #TODO A new command line parameter ? only minutely and daily
+        #     (and hourly normally) Use filter parameter of datasource ?
         #engine.set_data_frequency(self.configuration['frequency'])
+        engine.is_live = self.configuration['live']
 
         # Running simulation with it
+        #FIXME crash if trading one day that is not a trading day
         with self.context:
             sim_params = create_simulation_parameters(
-                capital_base   = self.configuration['cash'],
-                start          = self.configuration['start'],
-                end            = self.configuration['end'],
-                emission_rate  = self.configuration['frequency'],
-                data_frequency = self.configuration['frequency'])
+                capital_base=self.configuration['cash'],
+                start=self.configuration['start'],
+                end=self.configuration['end'])
 
             daily_stats = engine.go(data, sim_params=sim_params)
 
         return Analyze(
-            results       = daily_stats,
-            metrics       = engine.risk_report,
-            #datafeed      = self.datafeed,
-            datafeed      = None,
-            configuration = self.configuration)
+            results=daily_stats,
+            metrics=engine.risk_report,
+            #datafeed=self.datafeed,
+            datafeed=None,
+            configuration=self.configuration)
