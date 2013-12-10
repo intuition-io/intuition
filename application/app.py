@@ -23,7 +23,7 @@ import traceback
 
 from intuition.core.engine import Simulation
 from intuition.utils.logger import log, get_nestedlog
-import intuition.utils.datautils as datautils
+import intuition.data.utils as datautils
 from intuition.core.configuration import Setup
 
 

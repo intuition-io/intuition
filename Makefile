@@ -55,4 +55,4 @@ warn_missing_linters:
 	@test -n "$(present_pyflakes)" || echo "WARNING: pyflakes not installed."
 
 
-.PHONY: tags dependencies install warn_missing_linters database tests
+.PHONY: tags dependencies install warn_missing_linters tests

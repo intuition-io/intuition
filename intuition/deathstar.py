@@ -16,21 +16,21 @@
 # limitations under the License.
 
 
-from neuronquant.gears.configuration import (
+from intuition.core.gears.configuration import (
     normalize_date_format, smart_tickers_select
 )
 
 
 #from IPython.parallel import require
-#from neuronquant.gears.engine import Simulation
-#from neuronquant.utils.logger import get_nestedlog
+#from intuition.core.engine import Simulation
+#from intuition.utils.logger import get_nestedlog
 #@require(Simulation, get_nestedlog)
 def trade(mega_config):
     '''
     One function to rule them all
     '''
-    from neuronquant.gears.engine import Simulation
-    from neuronquant.utils.logger import get_nestedlog
+    from intuition.core.engine import Simulation
+    from intuition.utils.logger import get_nestedlog
 
     # General simulation behavior
     #NOTE Portfolio server setup in Setup() object,
@@ -41,7 +41,7 @@ def trade(mega_config):
     # Remote: ZMQ based messaging, route logs on the network
     # (catched by server's broker)
     log_setup = get_nestedlog(level=configuration['loglevel'],
-        file=configuration['logfile'])
+                              file=configuration['logfile'])
     with log_setup.applicationbound():
         # Backtest or live engine
         engine = Simulation(configuration)
@@ -51,7 +51,7 @@ def trade(mega_config):
         # _configure_context() you can use directly for better understanding
         data, trading_context = engine.configure()
 
-        # See neuronquant/gears/engine.py for details of results which is an
+        # See intuition/core/engine.py for details of results which is an
         # analyzes object
         analyzes = engine.run(data, configuration, strategy, trading_context)
         assert analyzes
@@ -79,8 +79,8 @@ def complete_configuration(changes={}, backtest=True):
         config['configuration']['start'] = normalize_date_format(config['configuration']['start'])
     if isinstance(config['configuration']['end'], unicode) or isinstance(config['configuration']['end'], str):
         config['configuration']['end'] = normalize_date_format(config['configuration']['end'])
-    if isinstance(config['configuration']['tickers'], unicode) or isinstance(config['configuration']['tickers'], str):
-        config['configuration']['tickers'] = smart_tickers_select(config['configuration']['tickers'])
+    if isinstance(config['configuration']['universe'], unicode) or isinstance(config['configuration']['universe'], str):
+        config['configuration']['universe'] = smart_tickers_select(config['configuration']['universe'])
     return config
 
 
@@ -88,8 +88,8 @@ root_configuration = {
     'configuration': {
         'cash': 50000,
         'loglevel': 'INFO',
-        'logfile': 'quantrade.log',
-        'tickers': 'random,4',
+        'logfile': 'intuition.log',
+        'universe': 'random,4',
         'port': 5555,
         'exchange': 'paris',
         'db': 'test',

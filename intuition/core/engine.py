@@ -19,9 +19,10 @@ import pytz
 import pandas as pd
 import logbook
 
-import intuition.utils.datautils as datautils
+import intuition.data.utils as datautils
 from intuition.modules.sources.loader import LiveBenchmark
 from intuition.core.analyzes import Analyze
+from intuition.data.utils import filter_market_hours
 
 from zipline.finance.trading import TradingEnvironment
 from zipline.utils.factory import create_simulation_parameters
@@ -91,7 +92,7 @@ class TradingEngine(object):
         return trading_algorithm
 
 
-#NOTE engine.feed_data(tickers, start, end, freq) ? using set_source()
+#NOTE engine.feed_data(universe, start, end, freq) ? using set_source()
 class Simulation(object):
     ''' Take a trading strategy and evalute its results '''
 
@@ -105,7 +106,7 @@ class Simulation(object):
         '''
         Prepare dates, data, trading environment for simulation
         '''
-        data = self._configure_data(tickers=self.configuration['tickers'],
+        data = self._configure_data(universe=self.configuration['universe'],
                                     start_time=self.configuration['start'],
                                     end_time=self.configuration['end'],
                                     freq=self.configuration['frequency'],
@@ -118,7 +119,7 @@ class Simulation(object):
 
     #NOTE Should the data be loaded in zipline sourcedata class ?
     #FIXME data default not suitable for live mode
-    def _configure_data(self, tickers, start_time=pd.datetime.now(pytz.utc),
+    def _configure_data(self, universe, start_time=pd.datetime.now(pytz.utc),
                         end_time=pd.datetime.now(pytz.utc),
                         freq='daily', exchange='', live=False):
         assert start_time != end_time
@@ -130,8 +131,9 @@ class Simulation(object):
                 log.warning('! Invalid start time, setting it to now')
                 start_time = pd.datetime.now(pytz.utc)
             # Default end_date is now, not suitable for live trading
-            self.set_benchmark_loader(None)
-                #LiveBenchmark(end_time, frequency=freq).surcharge_market_data)
+            #self.set_benchmark_loader(None)
+            self.set_benchmark_loader(
+                LiveBenchmark(end_time, frequency=freq).surcharge_market_data)
             #TODO ...hard coded, later for exemple: --frequency daily,3
             data_freq = '1min'
 
@@ -141,17 +143,17 @@ class Simulation(object):
             self.set_benchmark_loader(None)
             data_freq = 'D'
 
-        dates = datautils.filter_market_hours(pd.date_range(start_time,
-                                                            end_time,
-                                                            freq=data_freq),
-                                              exchange)
+        dates = filter_market_hours(pd.date_range(start_time,
+                                                  end_time,
+                                                  freq=data_freq),
+                                    exchange)
 
         if len(dates) == 0:
             log.warning('! Market closed.')
             sys.exit(0)
 
         data = {'stream_source': exchange,
-                'tickers': tickers,
+                'universe': universe,
                 'index': dates}
 
         return data

@@ -25,17 +25,17 @@ from logbook.more import ColorizedStderrHandler
 
 from utils import get_local_ip
 
-log_format = u'{record.extra["ip"]} [{record.time:%m-%d %H:%M}] {record.channel}::{record.level_name} - {record.message}'
+log_format = u'{record.extra["ip"]} [{record.time:%m-%d %H:%M}] {record.level_name}::{record.channel} - {record.message}'
 
 default_log_destination = os.path.expanduser('~/.intuition/logs')
 log_destination = default_log_destination if os.path.exists(default_log_destination) else '/tmp'
-
+default_file_log = 'intuition.log'
 
 def inject_information(record):
     record.extra['ip'] = get_local_ip()
 
 
-def get_nestedlog(level='DEBUG', filename='intuition.log', uri=None):
+def get_nestedlog(level='DEBUG', filename=default_file_log, uri=None):
     # Default uri: tcp://127.0.0.1:5540
     if uri is not None:
         log_setup = logbook.NestedSetup([
@@ -61,7 +61,7 @@ setup = logbook.NestedSetup([
     logbook.StreamHandler(sys.stdout, format_string=log_format),
     # then write messages that are at least warnings to to a logfile
     #FIXME FileHandler(os.environ['QTRADE_LOG'], level='WARNING'),
-    logbook.FileHandler('{}/{}'.format(log_destination, 'quantrade.log'), level='WARNING'),
+    logbook.FileHandler('{}/{}'.format(log_destination, default_file_log), level='WARNING'),
     #Processor(inject_information)
 ])
 

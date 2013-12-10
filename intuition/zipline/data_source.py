@@ -25,8 +25,9 @@ import datetime
 from zipline.sources.data_source import DataSource
 from zipline.gens.utils import hash_args
 
+from intuition.data.utils import smart_selector
 
-#TODO Mapping and raw_data_gen could be generic and set here
+
 class DataFactory(DataSource):
     '''
     Intuition surcharge of DataSource zipline class
@@ -34,6 +35,8 @@ class DataFactory(DataSource):
     Configuration options:
 
     sids   : list of values representing simulated internal sids
+             It can be an explicit list of symbols, or a universe like nyse,20
+             (that will pick up 20 random symbols from nyse exchange)
     start  : start date
     delta  : timedelta between internal events
     filter : filter to remove the sids
@@ -44,7 +47,8 @@ class DataFactory(DataSource):
 
         #self.data_descriptor = data_descriptor
         # Unpack config dictionary with default values.
-        self.sids = kwargs.get('sids', data_descriptor['tickers'])
+        self.sids = smart_selector(kwargs.get('sids',
+                                              data_descriptor['universe']))
         self.start = kwargs.get('start', data_descriptor['index'][0])
         self.end = kwargs.get('end', data_descriptor['index'][-1])
         self.index = data_descriptor['index']
@@ -56,6 +60,10 @@ class DataFactory(DataSource):
         assert isinstance(self.sids, list)
 
         self._raw_data = None
+        self.initialize(data_descriptor, **kwargs)
+
+    def initialize(self, data_descriptor, **kwargs):
+        pass
 
     @property
     def instance_hash(self):
@@ -69,7 +77,7 @@ class DataFactory(DataSource):
 
     def get_data(self):
         ''' This method must be over written by the user custom data source '''
-        return pd.DataFrame()
+        pass
 
     def build_event(self, dt, sid, series):
         event = {
@@ -81,7 +89,7 @@ class DataFactory(DataSource):
                               'volume': 1000})
             else:
                 event.update(series.to_dict())
-        elif isinstance(series, pd.Dataframe):
+        elif isinstance(series, pd.DataFrame):
             event.update(series[sid].to_dict())
 
         return event
@@ -90,36 +98,43 @@ class DataFactory(DataSource):
         self.data = self.get_data()
 
         if isinstance(self.data, pd.DataFrame):
-            for sid in self.sids:
-                for dt, series in self.data.iterrows():
+            for dt, series in self.data.iterrows():
+                for sid in self.sids:
                     yield self.build_event(dt, sid, series)
 
         elif isinstance(self.data, pd.Panel):
-            for sid, df in self.data.iteritems():
-                for dt, series in df.iterrows():
+            for dt in self.data.major_axis:
+                df = self.data.major_xs(dt)
+                for sid, series in df.iterkv():
                     yield self.build_event(dt, sid, series)
 
         else:
             raise TypeError("Invalid data source type")
 
-    # ========================== Live oriented funcitons ===== #
+
+class LiveDataFactory(DataFactory):
+    '''
+    Surcharge of DataFactory for live stream sources
+    '''
+    wait_interval = 15
+
     def _wait_for_dt(self, dt):
         '''
         Only return when we reach given datetime
         '''
-        # QuanTrade works with utc dates, conversion
+        # Intuition works with utc dates, conversion
         # are made for I/O
         now = datetime.datetime.now(pytz.utc)
         while now < dt:
             print('Waiting for {} / {}'.format(now, dt))
-            time.sleep(15)
+            time.sleep(self.wait_interval)
             now = datetime.datetime.now(pytz.utc)
 
     def _get_updated_index(self):
         '''
         truncate past dates in index
         '''
-        late_index = self.data['index']
+        late_index = self.index
         current_dt = datetime.datetime.now(pytz.utc)
         selector = (late_index.day > current_dt.day) \
             | ((late_index.day == current_dt.day)
@@ -127,4 +142,14 @@ class DataFactory(DataSource):
             | ((late_index.day == current_dt.day)
                 & (late_index.hour == current_dt.hour)
                 & (late_index.minute >= current_dt.minute))
-        return self.data['index'][selector]
+
+        return self.index[selector]
+
+    def raw_data_gen(self):
+        index = self._get_updated_index()
+        for dt in index:
+            self._wait_for_dt(dt)
+            snapshot = self.get_data()
+
+            for sid, series in snapshot.iterkv():
+                yield self.build_event(dt, sid, series)

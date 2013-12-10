@@ -40,3 +40,4 @@ management/
 .intuition
 src
 intuition.log
+tmp/*

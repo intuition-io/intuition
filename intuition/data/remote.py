@@ -16,23 +16,23 @@
 # limitations under the License.
 
 
-from zipline.utils.factory import load_from_yahoo, load_bars_from_yahoo
 from pandas.rpy.common import convert_to_r_matrix
-
 import requests
 from pandas.io.data import DataReader, get_quote_yahoo
 import pandas as pd
 import json
 from xml.dom import minidom, Node
 import urllib2
-
 import logbook
-log = logbook.Logger('Remote')
+
+from zipline.utils.factory import load_from_yahoo, load_bars_from_yahoo
 
 from intuition.utils.decorators import (
     use_google_symbol, invert_dataframe_axis)
 import intuition.utils as utils
 
+
+log = logbook.Logger('intuition.data.remote')
 
 finance_urls = {
     'yahoo_hist': 'http://ichart.yahoo.com/table.csv',
@@ -167,7 +167,13 @@ def snapshot_google_light(symbols):
 
     snapshot = {}
     for i, quote in enumerate(json_infos):
-        snapshot[symbols[i]] = utils.apply_mapping(quote, google_light_mapping)
+        # Fix a weird bug
+            if quote['t'].lower() in symbols:
+                snapshot[symbols[i] + '.pa'] = utils.apply_mapping(
+                    quote, google_light_mapping)
+            else:
+                log.warning('Unknown symbol {}, ignoring...'.format(
+                    quote['t']))
 
     return pd.DataFrame(snapshot)
 

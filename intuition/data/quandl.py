@@ -25,15 +25,40 @@ import Quandl
 log = logbook.Logger('intuition.data.quandl')
 
 
+def multi_codes(fct):
+    '''
+    Decorator that allows to use Data.Quandl.fetch with multi codes and get a
+    panel of it
+    '''
+    def build_panel(self, codes, **kwargs):
+        if isinstance(codes, str):
+            # One code, do nothing special
+            data = fct(self, codes, **kwargs)
+        elif isinstance(codes, list):
+            # Multi codes, build a panel
+            tmp_data = {}
+            for code in codes:
+                tmp_data[code] = fct(self, code, **kwargs)
+            data = pd.Panel(tmp_data)
+        else:
+            raise TypeError('quandl codes must be one string or a list')
+
+        #NOTE The algorithm can't detect missing values this way...
+        #NOTE An interpolate() method could be more powerful
+        return data.fillna(method='pad')
+    return build_panel
+
+
 class DataQuandl(object):
-    """
+    '''
     Quandl.com as datasource
-    """
+    '''
     def __init__(self, quandl_key=''):
         self.quandl_key = quandl_key if quandl_key != '' \
             else os.environ["QUANDL_API_KEY"]
 
     #TODO Use of search feature for more powerfull and flexible use
+    @multi_codes
     def fetch(self, code, **kwargs):
         '''
         Quandl entry point in datafeed object

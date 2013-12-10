@@ -40,13 +40,15 @@ class Setup(object):
         #NOTE timezone as parameter
         super(Setup, self).__init__()
 
-        #FIXME This is not reflected on database.py and portfolio.py, neither logger.py
+        #FIXME This is not reflected on database.py and portfolio.py, neither
+        #      logger.py
         default_config_dir = '/'.join([os.environ['HOME'], '.intuition'])
-        self.configuration_folder = config_dir if config_dir else default_config_dir
+        self.configuration_folder = config_dir if config_dir \
+            else default_config_dir
 
         # Config data structures
-        self.config_backtest    = {}
-        self.config_strategy    = {}
+        self.config_backtest = {}
+        self.config_strategy = {}
         self.config_environment = self._inspect_environment()
 
     def _inspect_environment(self, local_file=None):
@@ -59,8 +61,10 @@ class Setup(object):
 
         context = {}
         if os.path.exists(os.path.expanduser(local_file)):
-            log.info('Found local configuration file, loading {}'.format(local_file))
-            context = self._read_structured_file(os.path.expanduser(local_file))
+            log.info('Found local configuration file, loading {}'
+                     .format(local_file))
+            context = self._read_structured_file(
+                os.path.expanduser(local_file))
         return context
 
     #NOTE More likely to be an utils function
@@ -76,7 +80,8 @@ class Setup(object):
                 # Read given file in specified format from default or given
                 # config directory
                 if config_folder:
-                    content = json.load(open('/'.join([self.configuration_folder, filename]), 'r'))
+                    content = json.load(open('/'.join(
+                        [self.configuration_folder, filename]), 'r'))
                 else:
                     content = json.load(open(filename, 'r'))
             except:
@@ -91,7 +96,6 @@ class Setup(object):
         return content[select_field] if select_field else content
 
     def parse_commandline(self):
-        #NOTE Use instead: https://github.com/docopt/docopt (no dictionnary transformation needed)
         '''
         Read command lines arguments and map them
         to a more usuable dictionnary
@@ -102,55 +106,61 @@ class Setup(object):
         '''
         log.debug('Reading commandline arguments')
 
-        parser = argparse.ArgumentParser(description='Backtester module, the terrific financial simukation')
+        parser = argparse.ArgumentParser(
+            description='Intuition, the terrific trading system')
         parser.add_argument('-v', '--version',
                             action='version',
-                            version='%(prog)s v0.1.3 Licence Apache 2.0', help='Print program version')
+                            version='%(prog)s v0.1.3 Licence Apache 2.0',
+                            help='Print program version')
         parser.add_argument('-f', '--frequency',
                             type=str, action='store', default='daily',
-                            required=False, help='(pandas) frequency in days betweend two quotes fetch')
+                            required=False,
+                            help='(pandas) events frequency')
         parser.add_argument('-a', '--algorithm',
                             action='store',
                             required=True, help='Trading algorithm to be used')
         parser.add_argument('-m', '--manager',
                             action='store', default='',
-                            required=False, help='Portfolio strategy to be used')
+                            required=False,
+                            help='Portfolio strategy to be used')
         parser.add_argument('-so', '--source',
                             action='store',
                             required=True, help='Data generator')
-        parser.add_argument('-d', '--database',
-                            action='store', default='',
-                            required=False, help='Table to considere in database')
         parser.add_argument('-i', '--initialcash',
                             type=float, action='store', default=100000.0,
-                            required=False, help='Initial cash portfolio value')
-        parser.add_argument('-t', '--tickers',
+                            required=False, help='Initial portfolio value')
+        parser.add_argument('-u', '--universe',
                             action='store', default='random',
                             required=False, help='target names to process')
         parser.add_argument('-s', '--start',
                             action='store', default='2006-01-01',
-                            required=False, help='Start date of the backtester')
+                            required=False, help='Start date of the engine')
         parser.add_argument('-e', '--end',
-                            action='store', default=datetime.date.strftime(datetime.date.today(), format='%Y-%m-%d'),
+                            action='store',
+                            default=datetime.date.strftime(
+                                datetime.date.today(), format='%Y-%m-%d'),
                             required=False, help='Stop date of the backtester')
         parser.add_argument('-ex', '--exchange',
                             action='store', default='',
-                            required=False, help='list of markets where trade, separated with a coma')
+                            required=False,
+                            help='Coma separated markets to trade')
         parser.add_argument('-ll', '--loglevel',
                             action='store', default='WARNING',
                             required=False, help='File stream log level')
         parser.add_argument('-lf', '--logfile',
-                            action='store', default='quantrade.log',
+                            action='store', default='intuition.log',
                             required=False, help='File where store logs')
         parser.add_argument('-r', '--remote',
                             action='store_true',
-                            help='Indicates if the program was ran manually or not')
+                            help='Indicates if the program was ran remotely')
         parser.add_argument('-l', '--live',
                             action='store_true',
                             help='makes the engine work in real-time !')
         parser.add_argument('-p', '--port',
                             action='store', default=5570,
-                            required=False, help='Activates the diffusion of the universe on the network, on the port provided')
+                            required=False,
+                            help='Activates the diffusion of the state \
+                                on the network, on the port provided')
         args = parser.parse_args()
 
         #TODO Same as zipline in datasource, a mapping function with type and
@@ -163,19 +173,18 @@ class Setup(object):
         log.debug('Mapping arguments to backtest parameters dictionnary')
         self.config_backtest = {'algorithm': args.algorithm,
                                 'frequency': args.frequency,
-                                'manager'  : args.manager,
-                                'source'   : args.source,
-                                'database' : args.database,
-                                'tickers'  : args.tickers.split(','),
-                                'start'    : normalize_date_format(args.start),
-                                'end'      : normalize_date_format(args.end),
-                                'live'     : args.live,
-                                'port'     : args.port,
-                                'exchange' : args.exchange,
-                                'cash'     : args.initialcash,
-                                'loglevel' : args.loglevel,
-                                'logfile'  : args.logfile,
-                                'remote'   : args.remote}
+                                'manager': args.manager,
+                                'source': args.source,
+                                'universe': args.universe.split(','),
+                                'start': normalize_date_format(args.start),
+                                'end': normalize_date_format(args.end),
+                                'live': args.live,
+                                'port': args.port,
+                                'exchange': args.exchange,
+                                'cash': args.initialcash,
+                                'loglevel': args.loglevel,
+                                'logfile': args.logfile,
+                                'remote': args.remote}
 
         # We add local configuration (found or not in the constructor)
         self.config_backtest['env'] = self.config_environment
@@ -201,14 +210,14 @@ class Setup(object):
         else:
             log.info('Reading strategy configuration from json files')
             self.config_strategy['manager'] = \
-                    self._read_structured_file('plugins.json',
-                                               config_folder=True,
-                                               select_field='manager')
+                self._read_structured_file('plugins.json',
+                                           config_folder=True,
+                                           select_field='manager')
             #NOTE Algorithm should be strategy, to be consistent
             self.config_strategy['algorithm'] = \
-                    self._read_structured_file('plugins.json',
-                                               config_folder=True,
-                                               select_field='strategy')
+                self._read_structured_file('plugins.json',
+                                           config_folder=True,
+                                           select_field='strategy')
 
         log.info('Configuration is Done.')
 
@@ -230,6 +239,7 @@ class Setup(object):
         # In remote mode, client sends missing configuration through zmq socket
         log.info('Fetching backtest configuration from client')
         #msg = server.receive(json=True)
+        msg = ''
         log.debug('Got it !')
 
         # Check message format and fields
@@ -261,12 +271,14 @@ def normalize_date_format(date):
     assert isinstance(date, str) or isinstance(date, unicode)
     local_tz = pytz.timezone(_detect_timezone())
     local_dt = local_tz.localize(parse(date), is_dst=None)
-    return local_dt.astimezone (pytz.utc)
+    return local_dt.astimezone(pytz.utc)
 
     #locale_date = parse(date)
     #if locale_date.tzinfo is None:
-        #locale_date = locale_date.replace(tzinfo=pytz.timezone(_detect_timezone()))
-    ##FIXME astimezone() retieve 8 minutes from Paris timezone Oo 20 from Amsterdam WTF
+        #locale_date = locale_date.replace(
+            #tzinfo=pytz.timezone(_detect_timezone()))
+    ##FIXME astimezone() retieve 8 minutes from Paris timezone Oo 20 from
+    ##      Amsterdam WTF
     #return locale_date.astimezone(pytz.utc)
 
 
