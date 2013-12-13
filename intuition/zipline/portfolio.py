@@ -17,62 +17,14 @@
 import abc
 import logbook
 import json
-import os
 
-#from neuronquant.data.datafeed import DataFeed
 from intuition.data.remote import Remote
 from intuition.utils import to_dict
 
-import zipline.protocol as zp
-
-#TODO dashboard is now a component of the labo project
-#from neuronquant.network.dashboard import Dashboard
-
-#from intuition.data.extractor import Extractor
 
 DEFAULT_NAME = 'ChuckNorris'
-CREDENTIALS_PATH = '/'.join((os.environ['QTRADE'], 'config', 'default.json'))
-sql = json.load(open(CREDENTIALS_PATH, 'r'))['mysql']
-#extractor = Extractor('mysql://{}:{}@{}/{}'.format(
-    #sql['user'], sql['password'], sql['hostname'], sql['database']))
-#extractor = Extractor('mysql://xavier:quantrade@localhost/stock_data')
-metrics_fields = ['Information', 'Returns', 'MaxDrawdown', 'SortinoRatio',
-                  'Period', 'Volatility', 'BenchmarkVolatility', 'Beta',
-                  'ExcessReturn', 'TreasuryReturns', 'SharpeRatio', 'Date',
-                  'Alpha', 'BenchmarkReturns', 'Name']
 
 
-'''
-def save_metrics_snapshot(name, dt, cmr):
-    #TODO Save Transactions
-    #data = extractor('INSERT INTO Transactions () VALUES ()')
-    #TODO Save Orders
-    #data = extractor('INSERT INTO Orders () VALUES ()')
-    # Save Cumulative risk metrics
-    #NOTE Simple self.datetime enough ?
-    cmr['date'] = "'{}'".format(dt.strftime(format='%Y-%m-%d %H:%M'))
-    cmr['period_label'] = "'{}-30'".format(cmr['period_label'])
-    cmr['name'] = "'" + name + "'"
-    cmr.pop('trading_days')
-    for key in cmr:
-        #NOTE if isinstance(type(cmr[key]), float): cmr[key] = round(cmr[key], 4)
-        if cmr[key] is None:
-            cmr[key] = 0
-    query = 'INSERT INTO Metrics ({}) VALUES ({})'
-    extractor(query.format(', '.join(metrics_fields), ', '.join(map(str, cmr.values()))))
-'''
-
-
-'''
-def clean_previous_trades(portfolio_name):
-    #extractor('DELETE FROM Positions WHERE PortfolioName=\'{}\''.format(portfolio_name))
-    extractor('DELETE FROM Portfolios where Name=\'{}\''.format(portfolio_name))
-    extractor('DELETE FROM Metrics where Name=\'{}\''.format(portfolio_name))
-    #TODO Clean previous widgets
-'''
-
-
-#FIXME Extractor is for test purpose, data module will change
 class PortfolioFactory():
     '''
     Manages portfolio during simulation, and stays aware of the situation
@@ -99,6 +51,10 @@ class PortfolioFactory():
 
     __metaclass__ = abc.ABCMeta
 
+    # Zipline portfolio object, updated during simulation with self.date
+    portfolio = None
+    date = None
+
     #TODO Add in the constructor or setup parameters some general settings like
     #     maximum weights, positions, frequency, ...
     #TODO Better to return 0 stocks to trade: remove the field
@@ -114,15 +70,6 @@ class PortfolioFactory():
                 Named parameters used either for general portfolio settings
                 (server and constraints), and for user optimizer function
         '''
-        #super(PortfolioFactory, self).__init__()
-
-        # Easy mysql access
-        #self.datafeed  = DataFeed()
-
-        # Zipline portfolio object, updated during simulation with self.date
-        self.portfolio = None
-        self.date = None
-
         # Portfolio owner, mainly used for database saving and client
         # communication
         self.name = configuration.get('name', DEFAULT_NAME)
@@ -164,7 +111,7 @@ class PortfolioFactory():
         ''' Users should overwrite this method '''
         pass
 
-    def update(self, portfolio, date, metrics=None, save=False, widgets=False):
+    def update(self, portfolio, date, metrics=None):
         '''
         Actualizes the portfolio universe
         and if connected, sends it through the wires
@@ -174,33 +121,24 @@ class PortfolioFactory():
                 ndict object storing portfolio values at the given date
             date: datetime.datetime
                 Current date in zipline simulation
-            save: boolean
-                If true, save the portfolio in database under self.name key
         '''
         # Make the manager aware of current simulation portfolio and date
         self.portfolio = portfolio
-        self.date      = date
-
-        if save:
-            self.save_portfolio(portfolio)
-            #if metrics is not None:
-                #save_metrics_snapshot(self.name, self.date, metrics)
-
-        # Delete sold items and add new ones on dashboard
-        #if widgets:
-            #self.dashboard.update_position_widgets(self.portfolio.positions)
-
+        self.date = date
 
         # Send portfolio object to client
         if self.connected:
             #NOTE Something smarter ?
-            # We need to translate zipline portfolio and position objects into json data (i.e. dict)
+            #NOTE Merge the dict method with the inplementation in rethinkdb
+            # We need to translate zipline portfolio and position objects into
+            # json data (i.e. dict)
             packet_portfolio = to_dict(portfolio)
             for pos in packet_portfolio['positions']:
-                packet_portfolio['positions'][pos] = to_dict(packet_portfolio['positions'][pos])
+                packet_portfolio['positions'][pos] = to_dict(
+                    packet_portfolio['positions'][pos])
 
             self.server.send(packet_portfolio,
-                             type   ='portfolio',
+                             type='portfolio',
                              channel='dashboard')
 
             # Check user remote messages and return it
@@ -213,7 +151,7 @@ class PortfolioFactory():
         ___________________________________________________________
         Parameters
             signals: dict
-                hold stocks of interest, format like {"google": 0.8, "apple": -0.2}
+                hold stocks of interest, format: {"google": 0.8, "apple": -0.2}
                 If the value is negative -> sell signal, otherwize buy one
                 Values are ranged between [-1 1] regarding signal confidence
             extras: whatever
@@ -227,8 +165,10 @@ class PortfolioFactory():
         orderBook = dict()
 
         # If value < 0, it's a sell signal on the key, else buy signal
-        to_buy = dict(filter(lambda (sid, strength): strength > 0, signals.iteritems()))
-        to_sell = dict(filter(lambda (sid, strength): strength < 0, signals.iteritems()))
+        to_buy = dict(filter(lambda (sid, strength):
+                             strength > 0, signals.iteritems()))
+        to_sell = dict(filter(lambda (sid, strength):
+                              strength < 0, signals.iteritems()))
         #to_buy    = [t for t in signals if signals[t] > 0]
         #NOTE With this line we can't go short
         #to_sell   = set(self.portfolio.positions.keys()).intersection(
@@ -239,13 +179,16 @@ class PortfolioFactory():
             return dict()
 
         # Compute the optimal portfolio allocation, using user defined function
-        alloc, e_ret, e_risk = self.optimize(self.date, to_buy, to_sell, self._optimizer_parameters)
+        alloc, e_ret, e_risk = self.optimize(
+            self.date, to_buy, to_sell, self._optimizer_parameters)
 
-        #TODO Check about selling in available money and handle 250 stocks limit
+        #TODO Check about selling within available money
+        #     and handle 250 stocks limit
         #TODO Handle max_* as well, ! already actif stocks
 
         ## Building orders for zipline
-        #NOTE The follonwing in a separate function that could be used when catching message from user
+        #NOTE The follonwing in a separate function that could be used when
+        #     catching message from user
         for t in alloc:
             ## Handle allocation returned as number of stocks to order
             if isinstance(alloc[t], int):
@@ -255,15 +198,18 @@ class PortfolioFactory():
             elif isinstance(alloc[t], float):
                 # Sell orders
                 if alloc[t] <= 0:
-                    orderBook[t] = int(alloc[t] * self.portfolio.positions[t].amount)
+                    orderBook[t] = int(alloc[t] *
+                                       self.portfolio.positions[t].amount)
                 ## Buy orders
                 else:
-                    ## If we already trade this ticker, substract owned amount before computing number of stock to buy
+                    # If we already trade this ticker, substract owned amount
+                    # before computing number of stock to buy
                     if self.portfolio.positions[t].amount:
                         price = self.portfolio.positions[t].last_sale_price
                     else:
                         price = signals[t]
-                    orderBook[t] = (int(alloc[t] * self.portfolio.portfolio_value / price)
+                    orderBook[t] = (int(alloc[t] *
+                                    self.portfolio.portfolio_value / price)
                                     - self.portfolio.positions[t].amount)
 
         if self.android and orderBook:
@@ -271,16 +217,17 @@ class PortfolioFactory():
             # Ok... kind of fancy method
             ords = {'-1': 'sell', '1': 'buy'}
             msg = 'Intuition suggests you to '
-            msg += ', '.join(['{} {} stocks of {}'
-                .format(ords[str(amount / abs(amount))], amount, ticker) for
-                ticker, amount in orderBook.iteritems()])
-            self.server.send_to_android({'title': 'Portfolio manager notification',
-                                         'priority': 1,
-                                         'description': msg})
+            msg += ', '.join(['{} {} stocks of {}'.format(
+                ords[str(amount / abs(amount))], amount, ticker)
+                for ticker, amount in orderBook.iteritems()])
+            self.server.send_to_android(
+                {'title': 'Portfolio manager notification',
+                 'priority': 1,
+                 'description': msg})
 
         return orderBook
 
-    def setup_strategy(self, parameters):
+    def advise(self, **kwargs):
         '''
         General parameters or user settings
         (maw_weigth, max_assets, max_frequency, commission cost)
@@ -290,75 +237,8 @@ class PortfolioFactory():
                 Arbitrary values to change general constraints,
                 or for user algorithm settings
         '''
-        assert isinstance(parameters, dict)
-        for name, value in parameters.iteritems():
+        for name, value in kwargs.iteritems():
             self._optimizer_parameters[name] = value
-
-    def save_portfolio(self, portfolio):
-        '''
-        Store in database given portfolio,
-        for reuse later or further analysis puropose
-        ____________________________________________
-        Parameters
-            portfolio: zipline.protocol.Portfolio(1)
-                ndict portfolio object to store
-        ___________________________________________
-        '''
-        self.log.debug('Saving portfolio in database')
-        #self.datafeed.stock_db.save_portfolio(portfolio, self.name, self.date)
-
-    def load_portfolio(self, name):
-        '''
-        Load a complete portfolio object from database
-        ______________________________________________
-        Parameters
-            name: str(...)
-                name used as primary key in db for the portfolio
-        ______________________________________________
-        Return
-            The portfolio with the given name if found,
-            None otherwize
-        '''
-        self.log.info('Loading portfolio {} from database'.foramt(name))
-        # Get the portfolio as a pandas Serie
-        #db_pf = self.datafeed.saved_portfolios(name)
-        db_pf = []
-
-        # Create empty Portfolio object to be filled
-        portfolio = zp.Portfolio()
-
-        # The function returns an empty dataframe if it didn't find a portfolio with id 'name' in db
-        if len(db_pf):
-            # Fill new portfolio data structure
-            portfolio.capital_used    = db_pf['Capital']
-            portfolio.starting_cash   = db_pf['StartingCash']
-            portfolio.portfolio_value = db_pf['PortfolioValue']
-            portfolio.pnl             = db_pf['PNL']
-            portfolio.returns         = db_pf['Returns']
-            portfolio.cash            = db_pf['Cash']
-            portfolio.start_date      = db_pf['StartDate']
-            portfolio.positions       = self._adapt_positions_type(db_pf['Positions'])
-            portfolio.positions_value = db_pf['PositionsValue']
-
-        return portfolio
-
-    def _adapt_positions_type(self, db_pos):
-        '''
-        From array of sql Positions data model
-        To Zipline Positions object
-        '''
-        # Create empty Positions object to be filled
-        positions = zp.Positions()
-
-        for pos in db_pos:
-            if pos.Ticker not in positions:
-                positions[pos.Ticker] = zp.Position(pos.Ticker)
-            position = positions[pos.Ticker]
-            position.amount = pos.Amount
-            position.cost_basis = pos.CostBasis
-            position.last_sale_price = pos.LastSalePrice
-
-        return positions
 
     def catch_messages(self, timeout=1):
         '''

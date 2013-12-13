@@ -26,7 +26,7 @@ EXCHANGES = ['cac40', 'nyse', 'nasdaq']
 
 def market_sids_list(exchange, n=-1):
     csv_file = '{}.csv'.format(
-        os.path.join(os.environ['QTRADE'], 'data', exchange.lower()))
+        os.path.join(os.environ['HOME'], '.intuition/data', exchange.lower()))
     df = pd.read_csv(csv_file)
     sids_list = df['Symbol'].tolist()
     shuffle(sids_list)

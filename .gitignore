@@ -41,3 +41,5 @@ management/
 src
 intuition.log
 tmp/*
+
+.envrc

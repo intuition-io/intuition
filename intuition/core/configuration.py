@@ -213,11 +213,11 @@ class Setup(object):
                 self._read_structured_file('plugins.json',
                                            config_folder=True,
                                            select_field='manager')
-            #NOTE Algorithm should be strategy, to be consistent
+
             self.config_strategy['algorithm'] = \
                 self._read_structured_file('plugins.json',
                                            config_folder=True,
-                                           select_field='strategy')
+                                           select_field='algorithm')
 
         log.info('Configuration is Done.')
 

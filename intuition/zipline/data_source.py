@@ -21,6 +21,7 @@ import pandas as pd
 import time
 import pytz
 import datetime
+import abc
 
 from zipline.sources.data_source import DataSource
 from zipline.gens.utils import hash_args
@@ -41,6 +42,9 @@ class DataFactory(DataSource):
     delta  : timedelta between internal events
     filter : filter to remove the sids
     '''
+
+    __metaclass__ = abc.ABCMeta
+
     def __init__(self, data_descriptor, **kwargs):
         assert isinstance(data_descriptor['index'],
                           pd.tseries.index.DatetimeIndex)
@@ -75,8 +79,12 @@ class DataFactory(DataSource):
             self._raw_data = self.raw_data_gen()
         return self._raw_data
 
-    def get_data(self):
         ''' This method must be over written by the user custom data source '''
+        pass
+
+    @abc.abstractmethod
+    def get_data(self):
+        ''' Users should overwrite this method '''
         pass
 
     def build_event(self, dt, sid, series):
@@ -116,6 +124,9 @@ class LiveDataFactory(DataFactory):
     '''
     Surcharge of DataFactory for live stream sources
     '''
+
+    __metaclass__ = abc.ABCMeta
+
     wait_interval = 15
 
     def _wait_for_dt(self, dt):

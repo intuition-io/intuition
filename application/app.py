@@ -18,13 +18,42 @@
 
 
 import sys
-import matplotlib.pyplot as plt
 import traceback
 
 from intuition.core.engine import Simulation
 from intuition.utils.logger import log, get_nestedlog
 import intuition.data.utils as datautils
 from intuition.core.configuration import Setup
+
+
+def show_perfs(config, analyzes):
+    # Get daily, cumulative and not, returns of portfolio and benchmark
+    returns_df = analyzes.get_returns(
+        benchmark=datautils.Exchange[config['exchange']]['index'])
+
+    perfs = analyzes.overall_metrics('one_month')
+
+    orders = 0
+    for order in analyzes.results.orders:
+        orders += len(order)
+
+    final_value = analyzes.results.portfolio_value[-1]
+    gain = final_value - config['cash']
+    pf_gain_perc = returns_df['CReturns'][-1] * 100.0
+    bm_gain_perc = returns_df['Benchmark.CReturns'][-1] * 100.0
+    pnl_mean = analyzes.results.pnl.mean()
+    pnl_std = analyzes.results.pnl.std()
+
+    print('\n ======================  Results  ==\n')
+    log.info('Final value: {} $'.format(final_value))
+    log.info('Processed {} orders'.format(orders))
+    log.info('Perf: {:.2f}% / {:.2f}%\tGain: {} $'
+             .format(pf_gain_perc, bm_gain_perc, gain))
+    log.info('Achieved on average a pnl of {} with {} of deviation'
+             .format(pnl_mean, pnl_std))
+    for k, v in perfs.iteritems():
+        log.info('{}: {}'.format(k, v))
+    print('\n ===================================\n')
 
 
 def main():
@@ -82,13 +111,10 @@ def main():
         # which is an Analyzes object
         analyzes = engine.run(data, strategy)
 
+        '''____________________________________________    Results   ____'''
         if analyzes is None:
             log.error('** Backtest failed.')
             sys.exit(1)
-
-        '''____________________________________________    Results   ____'''
-        log.info('Portfolio returns: \
-                {}'.format(analyzes.results.portfolio_value[-1]))
 
         if configuration['live'] or \
                 analyzes.results.portfolio_value[-1] == configuration['cash']:
@@ -96,21 +122,7 @@ def main():
             # relevant, neither backtest without orders
             sys.exit(0)
 
-        #TODO A simple test of recorded vars (zipline feature), works only for
-        #     Follower algo
-        #plot_results(analyzes)
-        #TODO Would be cool : analyzes.plot('returns')
-
-        # Get daily, cumulative and not, returns of portfolio and benchmark
-        returns_df = analyzes.get_returns(
-            benchmark=datautils.Exchange[configuration['exchange']]['index'])
-
-        # If we work in local, draw a quick summary plot
-        if not configuration['remote']:
-            data = returns_df.drop(['Returns', 'Benchmark.Returns'], axis=1)
-            plt.figure()
-            data.plot()
-            plt.legend(loc='best')
+        show_perfs(configuration, analyzes)
 
 
 #TODO profiling with http://docs.python.org/2/library/profile.html,

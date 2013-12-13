@@ -214,6 +214,5 @@ class Simulation(object):
         return Analyze(
             results=daily_stats,
             metrics=engine.risk_report,
-            #datafeed=self.datafeed,
             datafeed=None,
             configuration=self.configuration)

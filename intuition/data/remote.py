@@ -163,7 +163,11 @@ def snapshot_google_light(symbols):
     #TODO In utils.errors the first error module that handle errors codes
     #TODO check return code (200)
     #TODO remapping
-    json_infos = json.loads(response.text[3:], encoding='utf-8')
+    try:
+        json_infos = json.loads(response.text[3:], encoding='utf-8')
+    except ValueError:
+        log.error("no reliable data found")
+        return pd.DataFrame()
 
     snapshot = {}
     for i, quote in enumerate(json_infos):

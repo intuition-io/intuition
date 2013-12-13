@@ -14,6 +14,8 @@ install:
 	sudo cp -r intuition /usr/local/lib/python2.7/dist-packages
 	@echo "[make] Creating logs directory"
 	test -d ${HOME}/.intuition || mkdir -p ${HOME}/.intuition/logs
+	@echo "[make] Copying data"
+	cp -r data ${HOME}/.intuition
 	@echo "[make] Copying default configuration"
 	cp config/default.tpl ${HOME}/.intuition/default.json
 	cp config/plugins.tpl ${HOME}/.intuition/plugins.json
@@ -25,18 +27,15 @@ modules:
 	git submodule update
 
 dependencies:
-	@echo "[make] Updating cache..."
-	sudo apt-get update 2>&1 >> ${LOGS}
 	@echo "[make] Installing packages"
-	#sudo apt-get -y --force-yes install git-core r-base python-pip python-dev g++ make gfortran libzmq-dev mysql-client libmysqlclient-dev curl 2>&1 >> ${LOGS}
 	sudo apt-get -y --force-yes install git-core r-base python-pip python-dev g++ make gfortran 2>&1 >> ${LOGS}
 	@echo "[make] Installing python modules"
-	pip install --upgrade distribute 2>&1 >> ${LOGS}
-	pip install --upgrade numpy 2>&1 >> ${LOGS}
-	pip install --upgrade -r ./scripts/installation/requirements.txt 2>&1 >> ${LOGS}
+	pip install --use-mirrors distribute 2>&1 >> ${LOGS}
+	pip install --use-mirrors numpy 2>&1 >> ${LOGS}
+	pip install --use-mirrors -r ./scripts/installation/requirements.txt 2>&1 >> ${LOGS}
 	#FIXME First installation needs to specify lib parameter
-	@echo "[make] Installing R dependencies"
-	./scripts/installation/install_r_packages.R 2>&1 >> ${LOGS}
+	#@echo "[make] Installing R dependencies"
+	#./scripts/installation/install_r_packages.R 2>&1 >> ${LOGS}
 
 tags:
 	@ctags --python-kinds=-iv -R intuition

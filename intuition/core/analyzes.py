@@ -18,7 +18,6 @@ import pytz
 import pandas as pd
 import numpy as np
 
-#from qstkutil import tsutil as tsu
 from finance import qstk_get_sharpe_ratio
 
 import logbook
@@ -26,7 +25,7 @@ import logbook
 from zipline.data.benchmarks import get_benchmark_returns
 
 
-log = logbook.Logger('Analyze')
+log = logbook.Logger('intuition.core.analyze')
 
 
 #NOTE Methods names to review
@@ -111,25 +110,33 @@ class Analyze(object):
         return perfs
 
     #TODO Save returns
-    def get_returns(self, benchmark='', timestamp='one_month'):
+    def get_returns(self, benchmark=''):
         returns = dict()
 
         if benchmark:
             try:
-                benchmark_data  = get_benchmark_returns(benchmark, self.configuration['start'], self.configuration['end'])
+                benchmark_data = (
+                    get_benchmark_returns(benchmark,
+                                          self.configuration['start'],
+                                          self.configuration['end']))
             except:
                 raise KeyError()
         else:
             #TODO Automatic detection given exchange market (on command line) ?
             raise NotImplementedError()
 
-        #NOTE Could be more efficient. But len(benchmark_data.date) != len(self.results.returns.index). Maybe because of different markets
+        #NOTE Could be more efficient. But len(benchmark_data.date) !=
+        # len(self.results.returns.index). Maybe because of different markets
         dates = pd.DatetimeIndex([d.date for d in benchmark_data])
 
-        returns['Benchmark.Returns']  = pd.Series([d.returns for d in benchmark_data], index=dates)
-        returns['Benchmark.CReturns'] = ((returns['Benchmark.Returns'] + 1).cumprod()) - 1
-        returns['Returns']            = pd.Series(self.results.returns.values, index=dates)
-        returns['CReturns']           = pd.Series(((self.results.returns.values + 1).cumprod()) - 1, index=dates)
+        returns['Benchmark.Returns'] = pd.Series(
+            [d.returns for d in benchmark_data], index=dates)
+        returns['Benchmark.CReturns'] = (
+            (returns['Benchmark.Returns'] + 1).cumprod()) - 1
+        returns['Returns'] = pd.Series(
+            self.results.returns.values, index=dates)
+        returns['CReturns'] = pd.Series(
+            ((self.results.returns.values + 1).cumprod()) - 1, index=dates)
 
         df = pd.DataFrame(returns, index=dates)
 
