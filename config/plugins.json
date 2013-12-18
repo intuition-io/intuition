@@ -32,21 +32,10 @@
     "source": "CSVSource",
     "manager": "Constant"
   }],
-  "truefx": {
-    "user": "",
-    "password": ""
-  },
-  "quandl": {
-    "apikey": ""
-  },
   "notifymyandroid": {
     "url_notify": "http://www.notifymyandroid.com/publicapi/notify",
     "url_check": "http://www.notifymyandroid.com/publicapi/verify",
     "apikey": ""
-  },
-  "twitter": {
-    "user": "",
-    "password": ""
   },
   "rss": {
     "rbloggers": "feeds.feedburner.com/RBloggers",

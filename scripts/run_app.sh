@@ -45,7 +45,7 @@ if [ $choice == 1 ]; then
   # Forex live test !
 elif [ $choice == 2 ]; then
   time application/app.py --initialcash 10000 --universe EUR/USD,EUR/GBP,GBP/USD,USD/CHF,EUR/JPY,EUR/CHF,USD/CAD,AUD/USD,GBP/JPY \
-    --algorithm MovingAverageCrossover --manager Constant --end 23h --loglevel CRITICAL \
+    --algorithm DualMovingAverage --manager Constant --end 23h --loglevel CRITICAL \
     --exchange forex --frequency minute --live --source ForexLiveSource
 
   # Equitie live test !

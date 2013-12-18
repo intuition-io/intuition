@@ -34,4 +34,4 @@ wsgiref==0.1.2
 xlrd==0.9.2
 rpy2==2.3.8
 rethinkdb
--e git://github.com/quantopian/zipline.git@master
+-e git://github.com/quantopian/zipline.git@master#egg=zipline-dev

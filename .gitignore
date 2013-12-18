@@ -43,3 +43,4 @@ intuition.log
 tmp/*
 
 .envrc
+.travis.yml

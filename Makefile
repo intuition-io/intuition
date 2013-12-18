@@ -12,13 +12,10 @@ all: dependencies modules install
 install:
 	@echo "[make] Copying library"
 	sudo cp -r intuition /usr/local/lib/python2.7/dist-packages
-	@echo "[make] Creating logs directory"
-	test -d ${HOME}/.intuition || mkdir -p ${HOME}/.intuition/logs
+	@echo "[make] Copying default configuration"
+	cp -r config ${HOME}/.intuition
 	@echo "[make] Copying data"
 	cp -r data ${HOME}/.intuition
-	@echo "[make] Copying default configuration"
-	cp config/default.tpl ${HOME}/.intuition/default.json
-	cp config/plugins.tpl ${HOME}/.intuition/plugins.json
 	@echo "Now edit your preferences in ~/.intuition"
 
 modules:
@@ -45,7 +42,7 @@ etags:
 
 tests: warn_missing_linters
 	@flake8 tests
-	@nose tests
+	@nosetests tests
 
 present_pep8=$(shell which pep8)
 present_pyflakes=$(shell which pyflakes)

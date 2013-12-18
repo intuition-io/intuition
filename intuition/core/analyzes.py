@@ -29,11 +29,9 @@ log = logbook.Logger('intuition.core.analyze')
 
 
 #NOTE Methods names to review
-class Analyze(object):
+class Analyze():
     ''' Handle backtest results and performances measurments '''
     def __init__(self, *args, **kwargs):
-        super(Analyze, self).__init__()
-
         # R analysis file only need portfolio returns
         self.returns = kwargs.pop('returns') if 'returns' in kwargs else None
 

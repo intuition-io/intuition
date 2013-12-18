@@ -19,7 +19,6 @@ Tests for the forex datasource
 '''
 
 from unittest import TestCase
-from nose.tools import timed
 
 import neuronquant.gears.configuration as configuration
 

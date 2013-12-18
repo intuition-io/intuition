@@ -2,8 +2,8 @@ language: python
 python:
   - "2.7"
 before_install: echo "install"
-install: "make"
-script: nosetests
+install: make
+script: nosetests tests
 notifications:
-  email:
+  mail:
     xavier.bruhiere@gmail.com
