@@ -1,0 +1,3 @@
+[submodule "intuition/modules"]
+	path = intuition/modules
+	url = git://github.com/hackliff/intuition-modules

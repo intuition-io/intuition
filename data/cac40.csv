@@ -1,35 +1,39 @@
-saf.pa
-rno.pa
-sgo.pa
-san.pa
-ml.pa
-mc.pa
-ri.pa
-pub.pa
-pp.pa
-vk.pa
-ul.pa
-viv.pa
-dg.pa
-solb.pa
-gle.pa
-stm.pa
-fp.pa
-tec.pa
-en.pa
-bnp.pa
-cap.pa
-aca.pa
-ca.pa
-ac.pa
-alo.pa
-cs.pa
-mt.pa
-gto.pa
-gsz.pa
-lg.pa
-lr.pa
-ead.pa
-bn.pa
-edf.pa
-ei.pa
+Symbol,Name
+"ac.pa","Accor"
+"ai.pa","Air Liquide"
+"alo.pa","Alstom"
+"cs.pa","AXA"
+"bnp.pa","BNP Paribas"
+"en.pa","Bouygues"
+"cap.pa","Cap Gemini"
+"ca.pa","Carrefour"
+"aca.pa","Credit Agricole"
+"bn.pa","Danone"
+"ead.pa","EADS"
+"edf.pa","EDF"
+"ei.pa","Essilor INTL"
+"gsz.pa","GDF Suez"
+"gto.pa","Gemalto"
+"ker.pa","Kering"
+"or.pa","L'Oreal"
+"lg.pa","Lafarge"
+"lr.pa","Legrand"
+"mc.pa","LVMH"
+"ml.pa","Michelin"
+"ora.pa","Orange"
+"ri.pa","Pernod Ricard"
+"pub.pa","Publicis Groupe"
+"rno.pa","Renault"
+"saf.pa","Safran"
+"sgo.pa","Saint Gobain"
+"san.pa","Sanofi"
+"su.pa","Schneider Electric"
+"gle.pa","Societe Generale"
+"stm.pa","STMicroelectronics"
+"tec.pa","Technip"
+"fp.pa","Total"
+"ul.pa","Unibail"
+"vk.pa","Vallourec"
+"vie.pa","Veolia Environ."
+"dg.pa","Vinci"
+"viv.pa","Vivendi"

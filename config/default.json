@@ -8,11 +8,15 @@
         "lang": "en",
         "encoding": "utf-8"
     },
+    "truefx": {
+        "user": "user",
+        "password": "secret"
+    },
     "mysql": {
-        "hostname": "192.168.0.14",
-        "user": "xavier",
-        "password": "quantrade",
-        "database": "stock_data",
+        "hostname": "localhost",
+        "user": "user",
+        "password": "chut",
+        "database": "dbname",
         "data_start": "2000-01-03"
     },
     "grid": {
@@ -20,7 +24,7 @@
         "nodes": ["192.168.0.12"],
         "name": "xavier",
         "password": "",
-        "report_path": "~/.quantrade/report",
+        "report_path": "~/.intuition/report",
         "port": 5555,
         "monitored": 1,
         "restful": 1,
