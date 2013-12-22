@@ -52,7 +52,7 @@ class Analyze():
 
         #NOTE Script args define default database table name (test), make it consistent
         if db_id is None:
-            db_id = self.configuration['algorithm'] + pd.datetime.strftime(pd.datetime.now(), format='%Y%m%d')
+            db_id = self.configuration['modules']['algorithm'] + pd.datetime.strftime(pd.datetime.now(), format='%Y%m%d')
 
         if self.metrics:
             #TODO New fields from zipline: information, sortino
@@ -95,7 +95,7 @@ class Analyze():
 
         #NOTE Script args define default database table name (test), make it consistent
         if db_id is None:
-            db_id = self.configuration['algorithm'] + pd.datetime.strftime(pd.datetime.now(), format='%Y%m%d')
+            db_id = self.configuration['modules']['algorithm'] + pd.datetime.strftime(pd.datetime.now(), format='%Y%m%d')
         perfs['Name']              = db_id
         perfs['Sharpe.Ratio']      = qstk_get_sharpe_ratio(metrics['Returns'].values, risk_free=riskfree)
         perfs['Returns']           = (((metrics['Returns'] + 1).cumprod()) - 1)[-1]

@@ -1,14 +1,25 @@
+
 {
-  "strategy": {
-    "debug": 1,
-    "save": 0,
+  "universe": "nasdaq,5",
+  "start": "2011-05-10",
+  "end": "2013-11-10",
+  "frequency": "day",
+  "modules": {
+    "context": "File",
+    "manager": "Constant",
+    "algorithm": "BuyAndHold",
+    "data": "YahooPriceSource"
+  },
+  "algorithm": {
+    "debug": true,
+    "save": false,
     "rebalance_period": 15,
     "refresh_period": 1,
     "window_length": 60,
     "stddev_window": 9,
     "vwap_window": 5,
-    "long_window" : 30,
-    "short_window" : 25,
+    "long_window" : 25,
+    "short_window" : 5,
     "threshold" : 0,
     "ignored": ["volume", "pouet"],
     "gradient_iterations": 5,
@@ -16,7 +27,8 @@
     "decision_frontier": 0.5
   },
   "manager": {
-    "name": "xav-constant",
+    "cash": 10000,
+    "name": "dev",
     "load_backup": 0,
     "connected": 0,
     "android": 0,
@@ -26,22 +38,5 @@
     "max_weight": 0.3,
     "sell_scale": 100,
     "buy_scale": 150
-  },
-  "components": [{
-    "algorithm": "BuyAndHold",
-    "source": "CSVSource",
-    "manager": "Constant"
-  }],
-  "notifymyandroid": {
-    "url_notify": "http://www.notifymyandroid.com/publicapi/notify",
-    "url_check": "http://www.notifymyandroid.com/publicapi/verify",
-    "apikey": ""
-  },
-  "rss": {
-    "rbloggers": "feeds.feedburner.com/RBloggers",
-    "quantopian": "https://www.quantopian.com/feed",
-    "unix": "http://www.unixgarden.com/index.php/feed",
-    "reuters": "http://feeds.reuters.com/reuters/financialsNews",
-    "news": "http://economie.trader-finance.fr/rss.php",
   }
 }

@@ -78,15 +78,3 @@ def apply_mapping(raw_row, mapping):
            for target, (mapping_func, source_key)
            in mapping.fget().items()}
     return row
-
-
-def load_json_file(filename, select_field=None):
-    try:
-        content = json.load(open(filename, 'r'))
-    except:
-        print('** loading json configuration.')
-        return {}
-
-    # Configuration fields are likely to have several parameter categories
-    # If specified, return only 'select_field' one
-    return content[select_field] if select_field else content

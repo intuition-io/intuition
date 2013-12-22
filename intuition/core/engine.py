@@ -140,14 +140,9 @@ class Simulation(object):
         return trading_context
 
     def run(self, data, strategy):
-        log.info('\n-- Running backetester...\nUsing algorithm: {}\n'
-                 .format(self.configuration['algorithm']))
-        log.info('\n-- Using portfolio manager: {}\n'
-                 .format(self.configuration['manager']))
-
-        engine = TradingEngine(self.configuration['algorithm'],
-                               self.configuration['manager'],
-                               self.configuration['source'],
+        engine = TradingEngine(self.configuration['modules']['algorithm'],
+                               self.configuration['modules']['manager'],
+                               self.configuration['modules']['data'],
                                strategy)
 
         #NOTE This method does not change anything

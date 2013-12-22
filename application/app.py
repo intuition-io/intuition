@@ -18,6 +18,7 @@
 
 
 import sys
+import os
 import traceback
 
 from intuition.core.engine import Simulation
@@ -26,10 +27,9 @@ import intuition.data.utils as datautils
 from intuition.core.configuration import Setup
 
 
-def show_perfs(config, analyzes):
+def show_perfs(cash, bm_symbol, analyzes):
     # Get daily, cumulative and not, returns of portfolio and benchmark
-    returns_df = analyzes.get_returns(
-        benchmark=datautils.Exchanges[config['exchange']]['symbol'])
+    returns_df = analyzes.get_returns(benchmark=bm_symbol)
 
     perfs = analyzes.overall_metrics('one_month')
 
@@ -38,7 +38,7 @@ def show_perfs(config, analyzes):
         orders += len(order)
 
     final_value = analyzes.results.portfolio_value[-1]
-    gain = final_value - config['cash']
+    gain = final_value - cash
     pf_gain_perc = returns_df['CReturns'][-1] * 100.0
     bm_gain_perc = returns_df['Benchmark.CReturns'][-1] * 100.0
     pnl_mean = analyzes.results.pnl.mean()
@@ -65,15 +65,14 @@ def main():
     '''
 
     # Dedicated object for configuration setup
-    # Searchs and reads ~/.intuition/default.json
     setup = Setup()
 
     # General simulation behavior is defined using command line arguments
-    configuration = setup.parse_commandline()
-    level = os.environ['LOG'] if log in os.environ else 'warning'
+    verbose, ctx = setup.parse_commandline()
+    level = os.environ['LOG'] if 'LOG' in os.environ else 'warning'
 
     log_setup = get_nestedlog(level=level,
-                              show_log=configuration['showlog'])
+                              show_log=verbose)
     with log_setup.applicationbound():
         '''
         TODO HUGE: Run multiple backtest with communication possibilities
@@ -86,7 +85,8 @@ def main():
 
         # Fill strategy and manager parameters
         # Localy, reading ~/.intuition/plugins.json
-        strategy = setup.get_strategy_configuration()
+        configuration, algo, manager = setup.context(ctx)
+        strategy = {'algorithm': algo, 'manager': manager}
 
         '''___________________________________________    Backtest    ____'''
         # Backtest or live engine.
@@ -110,12 +110,13 @@ def main():
             sys.exit(1)
 
         if configuration['live'] or \
-                analyzes.results.portfolio_value[-1] == configuration['cash']:
+                analyzes.results.portfolio_value[-1] == manager['cash']:
             # Currently, live tests don't last more than 20min; analyzes is not
             # relevant, neither backtest without orders
             sys.exit(0)
 
-        show_perfs(configuration, analyzes)
+        bm_symbol = datautils.Exchanges[configuration['exchange']]['symbol']
+        show_perfs(manager['cash'], bm_symbol, analyzes)
 
 
 if __name__ == '__main__':
