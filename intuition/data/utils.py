@@ -21,7 +21,20 @@ import os
 import pandas as pd
 
 
-EXCHANGES = ['cac40', 'nyse', 'nasdaq']
+def detect_exchange(universe):
+    if not isinstance(universe, list):
+        universe = universe.split(',')
+    if universe[0] in Exchanges:
+        exchange = universe[0]
+    else:
+        #TODO This is quick and dirty
+        if universe[0].find('/') > 0:
+            exchange = 'forex'
+        elif universe[0].find('.pa') > 0:
+            exchange = 'paris'
+        else:
+            exchange = 'nasdaq'
+    return exchange
 
 
 def market_sids_list(exchange, n=-1):
@@ -38,7 +51,7 @@ def market_sids_list(exchange, n=-1):
 def smart_selector(sids):
     if not isinstance(sids, list):
         sids = sids.split(',')
-    if sids[0] in EXCHANGES:
+    if sids[0] in Exchanges:
         if len(sids) == 2:
             n = int(sids[1])
         else:
@@ -84,26 +97,25 @@ FX_PAIRS = ['EUR/USD', 'USD/JPY', 'GBP/USD',
 
 
 # World exchanges caracteristics
-Exchange = {
-    # Market code, from yahoo stock code (store in database) to google market
-    # code (needed for reliable download)
-    #Later Londres = LON
-    'paris': {'index': '^FTSE',
+Exchanges = {
+    # Market code, from yahoo stock code to google market code (needed for
+    # reliable download)
+    # Later Londres = LON
+    #FIXME Forex is temporary
+    'cac40': {'symbol': '^FCHI',
               'timezone': 'Europe/Paris',
               'code': 1001,
               'google_market': 'EPA'},
-    'london': {'index': '^FCHI',
-               'timezone': 'Europe/London',
-               'code': 1001,
-               'google_market': 'EPA'},
-    'forex': {'index': '^FCHI',
+    'forex': {'symbol': '^FCHI',
               'timezone': 'Europe/London',
+              'indexes': [],
               'code': 1002},
-    'nasdaq': {'index': '^GSPC',
+    'nasdaq': {'symbol': '^GSPC',
                'timezone': 'US/Eastern',
                'code': 1003,
+               'indexes': ['nasdaq', 'nyse'],
                'google_market': 'NASDAQ'},
-    'nyse': {'index': '^GSPC',
+    'nyse': {'symbol': '^GSPC',
              'timezone': 'US/Eastern',
              'code': 1004,
              'google_market': 'NYSE'}

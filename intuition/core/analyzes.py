@@ -115,8 +115,8 @@ class Analyze():
             try:
                 benchmark_data = (
                     get_benchmark_returns(benchmark,
-                                          self.configuration['start'],
-                                          self.configuration['end']))
+                                          self.configuration['index'][0],
+                                          self.configuration['index'][-1]))
             except:
                 raise KeyError()
         else:

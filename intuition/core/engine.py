@@ -14,15 +14,13 @@
 # limitations under the License.
 
 
-import sys
 import pytz
 import pandas as pd
 import logbook
 
-import intuition.data.utils as datautils
+from intuition.data.utils import Exchanges
 from intuition.modules.sources.loader import LiveBenchmark
 from intuition.core.analyzes import Analyze
-from intuition.data.utils import filter_market_hours
 
 from zipline.finance.trading import TradingEnvironment
 from zipline.utils.factory import create_simulation_parameters
@@ -106,57 +104,15 @@ class Simulation(object):
         '''
         Prepare dates, data, trading environment for simulation
         '''
-        data = self._configure_data(universe=self.configuration['universe'],
-                                    start_time=self.configuration['start'],
-                                    end_time=self.configuration['end'],
-                                    freq=self.configuration['frequency'],
-                                    exchange=self.configuration['exchange'],
-                                    live=self.configuration['live'])
+        last_trade = self.configuration['index'][-1]
+        if last_trade > pd.datetime.now(pytz.utc):
+            # This is live trading
+            self.set_benchmark_loader(LiveBenchmark(
+                last_trade, frequency='minute').surcharge_market_data)
+        else:
+            self.set_benchmark_loader(None)
 
         self.context = self._configure_context(self.configuration['exchange'])
-
-        return data
-
-    #NOTE Should the data be loaded in zipline sourcedata class ?
-    #FIXME data default not suitable for live mode
-    def _configure_data(self, universe, start_time=pd.datetime.now(pytz.utc),
-                        end_time=pd.datetime.now(pytz.utc),
-                        freq='daily', exchange='', live=False):
-        assert start_time != end_time
-
-        if live:
-            # Check that start_time is now or later
-            tolerance = pd.datetools.Second(5)
-            if (start_time < (pd.datetime.now(pytz.utc) - tolerance)):
-                log.warning('! Invalid start time, setting it to now')
-                start_time = pd.datetime.now(pytz.utc)
-            # Default end_date is now, not suitable for live trading
-            #self.set_benchmark_loader(None)
-            self.set_benchmark_loader(
-                LiveBenchmark(end_time, frequency=freq).surcharge_market_data)
-            #TODO ...hard coded, later for exemple: --frequency daily,3
-            data_freq = '1min'
-
-        else:
-            # Use default zipline load_market_data, i.e. data from msgpack
-            # files in ~/.zipline/data/
-            self.set_benchmark_loader(None)
-            data_freq = 'D'
-
-        dates = filter_market_hours(pd.date_range(start_time,
-                                                  end_time,
-                                                  freq=data_freq),
-                                    exchange)
-
-        if len(dates) == 0:
-            log.warning('! Market closed.')
-            sys.exit(0)
-
-        data = {'stream_source': exchange,
-                'universe': universe,
-                'index': dates}
-
-        return data
 
     def set_benchmark_loader(self, load_function):
         self.load_market_data = load_function
@@ -172,10 +128,10 @@ class Simulation(object):
                 Trading exchange market
         '''
         # Environment configuration
-        if exchange in datautils.Exchange:
+        if exchange in Exchanges:
             trading_context = TradingEnvironment(
-                bm_symbol=datautils.Exchange[exchange]['index'],
-                exchange_tz=datautils.Exchange[exchange]['timezone'],
+                bm_symbol=Exchanges[exchange]['symbol'],
+                exchange_tz=Exchanges[exchange]['timezone'],
                 load=self.load_market_data)
         else:
             raise NotImplementedError('Because of computation limitation, \
@@ -197,7 +153,7 @@ class Simulation(object):
         #NOTE This method does not change anything
         #engine.set_sources([DataLiveSource(data_tmp)])
         #TODO A new command line parameter ? only minutely and daily
-        #     (and hourly normally) Use filter parameter of datasource ?
+        #     (and hourly normaly) Use filter parameter of datasource ?
         #engine.set_data_frequency(self.configuration['frequency'])
         engine.is_live = self.configuration['live']
 
@@ -205,9 +161,9 @@ class Simulation(object):
         #FIXME crash if trading one day that is not a trading day
         with self.context:
             sim_params = create_simulation_parameters(
-                capital_base=self.configuration['cash'],
-                start=self.configuration['start'],
-                end=self.configuration['end'])
+                capital_base=strategy['manager']['cash'],
+                start=self.configuration['index'][0],
+                end=self.configuration['index'][-1])
 
             daily_stats = engine.go(data, sim_params=sim_params)
 

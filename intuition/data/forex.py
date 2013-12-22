@@ -16,7 +16,6 @@
 
 import requests
 import logbook
-import json
 import os
 from pandas import DataFrame, Series
 
@@ -25,12 +24,14 @@ log = logbook.Logger('intuition.data.forex')
 
 
 def forex_rates(user, password, pairs='', fmt='csv'):
-    auth = requests.get('http://webrates.truefx.com/rates/connect.html?&q=ozrates&c={}&f={}&s=n'
-                        .format(','.join(pairs), fmt),
+    url = 'http://webrates.truefx.com/rates/connect.html'
+    params = '?&q=ozrates&c={}&f={}&s=n'.format(','.join(pairs), fmt)
+    auth = requests.get(url + params,
                         auth=(user, password))
 
     if auth.ok:
-        log.debug('[{}] Request successful {}:{}'.format(auth.headers['date'], auth.reason, auth.status_code))
+        log.debug('[{}] Request successful {}:{}'
+                  .format(auth.headers['date'], auth.reason, auth.status_code))
     #return auth.content.split('\n')[:-2]
     return auth.content.split('\n')
 
@@ -40,20 +41,23 @@ class ConnectTrueFX(object):
     auth_url = 'http://webrates.truefx.com/rates/connect.html?u={}&p={}&q=ozrates&c={}&f={}'
     query_url = 'http://webrates.truefx.com/rates/connect.html?id={}&f={}&c={}'
 
-    def __init__(self, user=None, password=None, auth_file='plugins.json', pairs=[], fmt='csv'):
+    def __init__(self, user='', password='', auth_file='plugins.json', pairs=[], fmt='csv'):
         #NOTE Without authentification you still can access some data
         #FIXME Not authorized response prevent from downloading quotes.
         #      However later you indeed retrieve 10 defaults
         self._code = None
-        if (user is None) or (password is None):
+        if (not user) or (not password):
             log.info('No credentials provided, inspecting environment')
-            user = os.environ['TRUEFX_USERNAME']
-            password = os.environ['TRUEFX_PASSWORD']
-            if user and password:
-              log.info('Found credentials for user {}'.format(user))
+            if 'TRUEFX_API' in os.environ:
+                credentials = os.environ['TRUEFX_API'].split(':')
+                if len(credentials) == 2:
+                    user = credentials[0]
+                    password = credentials[1]
+                    log.info('Found credentials for user {}'.format(user))
+                else:
+                    log.warning('** Bad formated credentials, no authentification will be used')
             else:
-              log.warning('** Credentials not found, no authentification will be used')
-              user = password = ''
+                log.warning('** Credentials not found, no authentification will be used')
 
         auth = requests.get(self.auth_url.format(user, password, ','.join(pairs), fmt))
         if auth.ok:

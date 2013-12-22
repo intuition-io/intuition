@@ -29,7 +29,7 @@ from intuition.core.configuration import Setup
 def show_perfs(config, analyzes):
     # Get daily, cumulative and not, returns of portfolio and benchmark
     returns_df = analyzes.get_returns(
-        benchmark=datautils.Exchange[config['exchange']]['index'])
+        benchmark=datautils.Exchanges[config['exchange']]['symbol'])
 
     perfs = analyzes.overall_metrics('one_month')
 
@@ -49,7 +49,7 @@ def show_perfs(config, analyzes):
     log.info('Processed {} orders'.format(orders))
     log.info('Perf: {:.2f}% / {:.2f}%\tGain: {} $'
              .format(pf_gain_perc, bm_gain_perc, gain))
-    log.info('Achieved on average a pnl of {} with {} of deviation'
+    log.info('Achieved on average a pnl of {:.2f} with {:.2f} of deviation'
              .format(pnl_mean, pnl_std))
     for k, v in perfs.iteritems():
         log.info('{}: {}'.format(k, v))
@@ -70,20 +70,13 @@ def main():
 
     # General simulation behavior is defined using command line arguments
     configuration = setup.parse_commandline()
+    level = os.environ['LOG'] if log in os.environ else 'warning'
 
-    # Color_setup : Pretty print of errors, warning, and so on
-    # Remote_setup: ZMQ based messaging, route logs on the network
-    # (catched by server's broker)
-    #TODO Parametric log handler and level
-    #log_setup = (utils.remote_setup if configuration['remote'] else
-                 #utils.color_setup)
-
-    #FIXME Remote log broken here
-    log_setup = get_nestedlog(level=configuration['loglevel'],
-                              filename=configuration['logfile'])
+    log_setup = get_nestedlog(level=level,
+                              show_log=configuration['showlog'])
     with log_setup.applicationbound():
         '''
-        TODO HUGE: Run multiple backtest with communication possibilities (ZMQ)
+        TODO HUGE: Run multiple backtest with communication possibilities
              for sophisticated multiple strategies strategy
                  - Available capital allocation
                  - Strategies repartition
@@ -92,10 +85,8 @@ def main():
         '''
 
         # Fill strategy and manager parameters
-        # Localy, reading configuration file
-        # Remotely, listening for messages through zmq socket
-        strategy = setup.get_strategy_configuration(
-            remote=configuration['remote'])
+        # Localy, reading ~/.intuition/plugins.json
+        strategy = setup.get_strategy_configuration()
 
         '''___________________________________________    Backtest    ____'''
         # Backtest or live engine.
@@ -103,10 +94,12 @@ def main():
         engine = Simulation(configuration)
 
         # Setup quotes data and financial context (location, market, ...)
-        # simulation from user parameters. Wraps _configure_data() and
-        # _configure_context() you can use directly for better understanding
-        data = engine.configure()
+        # from user parameters. Wraps _configure_context() you can use directly
+        # for better understanding
+        engine.configure()
 
+        data = {'universe': configuration['universe'],
+                'index': configuration['index']}
         # See intuition/gears/engine.py for details of results
         # which is an Analyzes object
         analyzes = engine.run(data, strategy)
@@ -125,8 +118,6 @@ def main():
         show_perfs(configuration, analyzes)
 
 
-#TODO profiling with http://docs.python.org/2/library/profile.html,
-#                    http://pycallgraph.slowchop.com/
 if __name__ == '__main__':
     try:
         main()

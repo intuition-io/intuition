@@ -105,9 +105,9 @@ Going Further
 
 As mentionned you can easily write your own strategies, head out to :
 
-* [Algorithm API](https://github.com/hackliff/intuition-modules/blob/develop/algorithms/doc.markdown)
-* [Portfolio API](https://github.com/hackliff/intuition-modules/blob/develop/managers/doc.markdown)
-* [Data API](https://github.com/hackliff/intuition-modules/blob/develop/sources/doc.markdown)
+* [Algorithm API](https://github.com/hackliff/intuition-modules/blob/develop/algorithms/readme.md)
+* [Portfolio API](https://github.com/hackliff/intuition-modules/blob/develop/managers/readme.md)
+* [Data API](https://github.com/hackliff/intuition-modules/blob/develop/sources/readme.md)
 
 Here is the Fair manager example, which allocates the same weight to all of your assets:
 

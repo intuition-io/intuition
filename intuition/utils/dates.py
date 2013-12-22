@@ -18,12 +18,84 @@ import time
 import datetime as dt
 import pytz
 import calendar
+from dateutil.parser import parse
 
 import pandas as pd
 from pandas.core.datetools import BMonthEnd
 
 #import babel.numbers
 #import decimal
+
+
+#TODO Handle in-day dates, with hours and minutes
+def normalize_date_format(date):
+    '''
+    Dates can be defined in many ways, but zipline use
+    aware datetime objects only. Plus, the software work
+    with utc timezone so we convert it.
+    __________________________________________________
+    Parameters
+        date: str
+            String date, see dateutils module for precisions
+    __________________________________________________
+    Return
+        datetime.datetime utc tz aware object
+    '''
+    assert isinstance(date, str) or isinstance(date, unicode)
+    local_tz = pytz.timezone(_detect_timezone())
+    local_dt = local_tz.localize(parse(date), is_dst=None)
+    return local_dt.astimezone(pytz.utc)
+
+    #locale_date = parse(date)
+    #if locale_date.tzinfo is None:
+        #locale_date = locale_date.replace(
+            #tzinfo=pytz.timezone(_detect_timezone()))
+    ##FIXME astimezone() retieve 8 minutes from Paris timezone Oo 20 from
+    ##      Amsterdam WTF
+    #return locale_date.astimezone(pytz.utc)
+
+
+def _detect_timezone():
+    '''
+    Experimental and temporary (since there is a world module)
+    get timezone as set by the system
+    '''
+    import locale
+    locale_code = locale.getdefaultlocale()[0]
+    #return str(pytz.country_timezones[locale_code[:2]][0])
+    return str(pytz.country_timezones[locale_code[-2:]][0])
+
+
+def build_date_index(start='', end='', freq='D'):
+    #TODO Only 'D' for backtest and '1min' for live are supported
+    now = dt.datetime.now(tz=pytz.utc)
+    if not start:
+        if not end:
+            # Live trading until the end of the day
+            start = now
+            end = now.replace(hour=23, minute=59, second=0)
+            freq = '1min'
+        else:
+            end = normalize_date_format(end)
+            if end > now:
+                # Live trading from now to end
+                start = now
+                freq = '1min'
+            else:
+                # Backtest for a year
+                start = end - 360 * pd.datetools.day
+    else:
+        # Only backtests support start information
+        start = normalize_date_format(start)
+        if not end:
+            # Backtest for a year or until now
+            end = start + 360 * pd.datetools.day
+            if end > now:
+                end = now
+        else:
+            end = normalize_date_format(end)
+            assert start < end
+    return pd.date_range(start, end, freq=freq)
 
 
 def UTCdateToEpoch(utc_date):

@@ -17,53 +17,49 @@
 import os
 import sys
 
-#NOTE Database:
-# http://pythonhosted.org/Logbook/api/ticketing.html#module-logbook.ticketing
 import logbook
 from logbook.queues import ZeroMQHandler
 from logbook.more import ColorizedStderrHandler
 
 from utils import get_local_ip
 
+
+log = logbook.Logger('intuition.default.logger')
+
 log_format = u'{record.extra["ip"]} [{record.time:%m-%d %H:%M}] {record.level_name}::{record.channel} - {record.message}'
 
 default_log_destination = os.path.expanduser('~/.intuition/logs')
-log_destination = default_log_destination if os.path.exists(default_log_destination) else '/tmp'
+log_destination = default_log_destination \
+    if os.path.exists(default_log_destination) else '/tmp'
 default_file_log = 'intuition.log'
+
 
 def inject_information(record):
     record.extra['ip'] = get_local_ip()
 
 
-def get_nestedlog(level='DEBUG', filename=default_file_log, uri=None):
+def get_nestedlog(level='debug', show_log=False, filename=default_file_log, uri=None):
+    level = level.upper()
     # Default uri: tcp://127.0.0.1:5540
     if uri is not None:
-        log_setup = logbook.NestedSetup([
-            ZeroMQHandler(uri),
-        ])
+        handlers = [ZeroMQHandler(uri)]
     else:
-        log_setup = logbook.NestedSetup([
+        handlers = [
             logbook.NullHandler(),
             #logbook.NullHandler(level=logbook.DEBUG, bubble=True),
-            ColorizedStderrHandler(format_string=log_format, level='ERROR'),
-            logbook.StreamHandler(sys.stdout, format_string=log_format),
+            #ColorizedStderrHandler(format_string=log_format, level='ERROR'),
             logbook.FileHandler('{}/{}'.format(log_destination, filename), level=level)
             #FIXME Doesn't show anything
             #logbook.Processor(inject_information)
-        ])
+        ]
+        if show_log:
+            handlers.append(
+                logbook.StreamHandler(sys.stdout,
+                                      format_string=log_format,
+                                      level=level))
 
-    return log_setup
+    return logbook.NestedSetup(handlers)
 
-
-# a nested handler setup can be used to configure more complex setups
-setup = logbook.NestedSetup([
-    #logbook.StderrHandler(format_string=u'[{record.time:%Y-%m-%d %H:%M}] {record.channel} - {record.level_name}: {record.message} \t({record.extra[ip]})'),
-    logbook.StreamHandler(sys.stdout, format_string=log_format),
-    # then write messages that are at least warnings to to a logfile
-    #FIXME FileHandler(os.environ['QTRADE_LOG'], level='WARNING'),
-    logbook.FileHandler('{}/{}'.format(log_destination, default_file_log), level='WARNING'),
-    #Processor(inject_information)
-])
 
 color_setup = logbook.NestedSetup([
     logbook.StreamHandler(sys.stdout, format_string=log_format),
@@ -75,5 +71,3 @@ color_setup = logbook.NestedSetup([
     #ZeroMQHandler('tcp://127.0.0.1:56540'),
     ##Processor(inject_information)
 #])
-
-log = logbook.Logger('intuition.default.logger')

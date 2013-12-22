@@ -35,25 +35,26 @@ if [ $choice == 1 ]; then
   #time application/app.py --initialcash 50000 --universe goog,aapl \
   #time application/app.py --initialcash 50000 --universe GOOG/NASDAQ_GOOG,GOOG/NASDAQ_AAPL \
   #time application/app.py --initialcash 50000 --universe quotes_fchi \
-  time application/app.py --initialcash 10000 --universe nasdaq,5 \
-    --loglevel CRITICAL --algorithm DualMovingAverage --manager Constant --start 2011-05-10 \
-    --end 2013-11-10 --frequency daily --exchange nasdaq --source YahooPriceSource
+  time application/app.py --universe nasdaq,5 --start 2011-05-10 --end 2013-11-10
+    --algorithm DualMovingAverage --manager Constant --source YahooPriceSource \
+    --showlog
     #--frequency daily --exchange nasdaq --source CSVSource
     #--frequency daily --exchange nasdaq --source QuandlSource
     #--frequency daily --exchange nasdaq --source YahooOHLCSource
 
-  # Forex live test !
+  #
 elif [ $choice == 2 ]; then
   time application/app.py --initialcash 10000 --universe EUR/USD,EUR/GBP,GBP/USD,USD/CHF,EUR/JPY,EUR/CHF,USD/CAD,AUD/USD,GBP/JPY \
-    --algorithm DualMovingAverage --manager Constant --end 23h --loglevel CRITICAL \
-    --exchange forex --frequency minute --live --source ForexLiveSource
+    --algorithm DualMovingAverage --manager Constant --loglevel DEBUG \
+     --frequency minute --source FakeLiveSource --showlog
+    #--exchange forex --frequency minute --source ForexLiveSource --live
 
   # Equitie live test !
 elif [ $choice == 3 ]; then
   #time application/app.py --initialcash 50000 --universe jxr,su \
   time application/app.py --initialcash 10000 --universe cac40 \
-    --algorithm DualMovingAverage --manager OptimalFrontier --end 16h --loglevel CRITICAL \
-    --exchange paris --frequency minute --source EquitiesLiveSource --live
+    --algorithm DualMovingAverage --manager OptimalFrontier --loglevel DEBUG \
+    --frequency minute --source FakeLiveSource --showlog
 
 else
   echo '** Error: invalid simulation number provided: ' $choice
