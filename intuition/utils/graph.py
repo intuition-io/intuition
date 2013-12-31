@@ -14,28 +14,18 @@
 # limitations under the License.
 
 
-import sys
-import os
-
-sys.path.append(os.environ['QTRADE'])
-from intuition.core.finance import *
-
-# For mathematical stuff, data manipulation...
-from pandas import Index, DataFrame
-
 import datetime
-
 # Graphing stuff
 import numpy as np
-import matplotlib.colors as colors
 import matplotlib.finance as finance
 import matplotlib.dates as mdates
-import matplotlib.ticker as mticker
 import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as font_manager
 
-#TODO: recarrayToDataframe structure !
+from intuition.core.finance import *
+
+#TODO: rec arrayToDataframe structure !
 # df = DataFrame(quotes) works !
 # then, type(df.values) = numpy.ndarray
 

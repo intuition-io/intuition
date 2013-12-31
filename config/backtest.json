@@ -4,6 +4,7 @@
   "start": "2011-05-10",
   "end": "2013-11-10",
   "frequency": "day",
+  "id": "liveDevelopment",
   "modules": {
     "context": "File",
     "manager": "Constant",
@@ -28,7 +29,6 @@
   },
   "manager": {
     "cash": 10000,
-    "name": "dev",
     "load_backup": 0,
     "connected": 0,
     "android": 0,

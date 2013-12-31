@@ -6,6 +6,7 @@ intuition-pkgs:
       - r-base
       - python-pip
       - python-dev
+      - gcc
       - g++
       - make
       - gfortran

@@ -24,7 +24,7 @@ import traceback
 from intuition.core.engine import Simulation
 from intuition.utils.logger import log, get_nestedlog
 import intuition.data.utils as datautils
-from intuition.core.configuration import Setup
+import intuition.core.configuration as setup
 
 
 def show_perfs(cash, bm_symbol, analyzes):
@@ -64,31 +64,21 @@ def main():
       - Environment (global informations like database access)
     '''
 
-    # Dedicated object for configuration setup
-    setup = Setup()
-
     # General simulation behavior is defined using command line arguments
-    verbose, ctx = setup.parse_commandline()
+    ctx, verbose = setup.parse_commandline()
     level = os.environ['LOG'] if 'LOG' in os.environ else 'warning'
 
     log_setup = get_nestedlog(level=level,
                               show_log=verbose)
     with log_setup.applicationbound():
-        '''
-        TODO HUGE: Run multiple backtest with communication possibilities
-             for sophisticated multiple strategies strategy
-                 - Available capital allocation
-                 - Strategies repartition
-                 - Use of each-other signals behavior
-                 - Global monitoring and evaluation
-        '''
 
-        # Fill strategy and manager parameters
-        # Localy, reading ~/.intuition/plugins.json
-        configuration, algo, manager = setup.context(ctx)
-        strategy = {'algorithm': algo, 'manager': manager}
+        # Use the provided conext builder to fill the config dicts
+        configuration, strategy = setup.context(ctx)
+        if not configuration:
+            log.error('unable to build context, aborting...')
+            sys.exit(1)
 
-        '''___________________________________________    Backtest    ____'''
+        '''__________________________________________    Backtest    ____'''
         # Backtest or live engine.
         # Registers configuration and setups data client
         engine = Simulation(configuration)
@@ -100,7 +90,7 @@ def main():
 
         data = {'universe': configuration['universe'],
                 'index': configuration['index']}
-        # See intuition/gears/engine.py for details of results
+        # See intuition/core/analyze.py for details of analyzes
         # which is an Analyzes object
         analyzes = engine.run(data, strategy)
 
@@ -109,14 +99,8 @@ def main():
             log.error('** Backtest failed.')
             sys.exit(1)
 
-        if configuration['live'] or \
-                analyzes.results.portfolio_value[-1] == manager['cash']:
-            # Currently, live tests don't last more than 20min; analyzes is not
-            # relevant, neither backtest without orders
-            sys.exit(0)
-
         bm_symbol = datautils.Exchanges[configuration['exchange']]['symbol']
-        show_perfs(manager['cash'], bm_symbol, analyzes)
+        show_perfs(strategy['manager']['cash'], bm_symbol, analyzes)
 
 
 if __name__ == '__main__':

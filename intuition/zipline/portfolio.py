@@ -20,9 +20,7 @@ import json
 
 from intuition.data.remote import Remote
 from intuition.utils import to_dict
-
-
-DEFAULT_NAME = 'ChuckNorris'
+import intuition.modules.plugins.mobile as mobile
 
 
 class PortfolioFactory():
@@ -54,6 +52,7 @@ class PortfolioFactory():
     # Zipline portfolio object, updated during simulation with self.date
     portfolio = None
     date = None
+    bullet = None
 
     #TODO Add in the constructor or setup parameters some general settings like
     #     maximum weights, positions, frequency, ...
@@ -72,8 +71,7 @@ class PortfolioFactory():
         '''
         # Portfolio owner, mainly used for database saving and client
         # communication
-        self.name = configuration.get('name', DEFAULT_NAME)
-        self.log = logbook.Logger('intuition.portfolio.' + self.name)
+        self.log = logbook.Logger('intuition.portfolio')
 
         # Other parameters are used in user's optimize() method
         self._optimizer_parameters = configuration
@@ -82,21 +80,15 @@ class PortfolioFactory():
         self.connected = configuration.get('connected', False)
         # Send android notifications when orders are processed
         # It's only possible with a running server
-        self.android = configuration.get('android', False) & self.connected
-
-        # Delete from database data with the same portfolio name
-        #if configuration.get('clean', True):
-            #self.log.info('Cleaning previous trades.')
-            #clean_previous_trades(self.name)
+        #self.android = configuration.get('android', False) & self.connected
+        device = configuration.get('device', '')
+        if device:
+            self.bullet = mobile.AndroidPush(device)
 
         # Run the server if the engine didn't, while it is asked for
         if 'server' in configuration and self.connected:
             # Getting server object instanciated anyway before
             self.server = configuration.pop('server')
-
-        # Web based dashboard where real time results are monitored
-        #FIXME With dynamic generation, dashboad never exists at this point
-        #self.dashboard = Dashboard(self.name)
 
         # In case user optimization would need to retrieve more data
         self.remote = Remote()
@@ -212,10 +204,21 @@ class PortfolioFactory():
                                     self.portfolio.portfolio_value / price)
                                     - self.portfolio.positions[t].amount)
 
-        if self.android and orderBook:
+        if self.bullet and orderBook:
             # Alert user of the orders about to be processed
             # Ok... kind of fancy method
-            ords = {'-1': 'sell', '1': 'buy'}
+            ords = {'-1': 'You should sell', '1': 'You should buy'}
+            items = ['{} {} stocks of {}'.format(
+                ords[str(amount / abs(amount))], amount, ticker)
+                for ticker, amount in orderBook.iteritems()]
+            payload = {
+                'title': 'Portfolio manager notification',
+                'items': items,
+            }
+            req = self.bullet.push(payload)
+            self.log.debug(req)
+
+            '''
             msg = 'Intuition suggests you to '
             msg += ', '.join(['{} {} stocks of {}'.format(
                 ords[str(amount / abs(amount))], amount, ticker)
@@ -224,6 +227,7 @@ class PortfolioFactory():
                 {'title': 'Portfolio manager notification',
                  'priority': 1,
                  'description': msg})
+          '''
 
         return orderBook
 

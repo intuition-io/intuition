@@ -48,6 +48,7 @@ Status
 ------
 
 [![Build Status](https://travis-ci.org/hackliff/intuition.png?branch=master)](https://travis-ci.org/hackliff/intuition)
+[![Code Health](https://landscape.io/github/hackliff/intuition/master/landscape.png)](https://landscape.io/github/hackliff/intuition/master)
 
 **Attention!** Project is under early development. The new version (december
 2013) revises a lot of code :

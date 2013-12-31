@@ -29,7 +29,6 @@ import intuition.modules.library as library
 
 
 BASE_CONFIG = {'algorithm': {}, 'manager': {}}
-DEFAULT_PORTFOLIO_NAME = 'ChuckNorris'
 log = logbook.Logger('intuition.core.engine')
 
 
@@ -37,10 +36,10 @@ class TradingEngine(object):
     ''' Factory class wrapping zipline Backtester, returns the requested algo
     ready for use '''
 
-    def __new__(self, algo, manager=None, source=None,
+    def __new__(self, identity, algo, manager=None, source=None,
                 strategy_configuration=BASE_CONFIG):
         '''
-        Reads the user configuration and returns
+        Reads the user configuration and returns a trading algorithm configured
         '''
         library.check_availability(algo, manager, source)
 
@@ -49,40 +48,18 @@ class TradingEngine(object):
         trading_algorithm = library.algorithms[algo](
             properties=strategy_configuration['algorithm'])
 
-        portfolio_name = strategy_configuration['manager'].get(
-            'name', DEFAULT_PORTFOLIO_NAME)
-        trading_algorithm.set_logger(logbook.Logger('algo.' + portfolio_name))
+        trading_algorithm.set_logger(logbook.Logger('algo.' + identity))
+        trading_algorithm.identity = identity
 
         if source:
             trading_algorithm.set_data_generator(library.data_sources[source])
 
-        # Use of a portfolio manager
+        # Use a portfolio manager
         if manager:
             log.info('initializing Manager')
             # Linking to the algorithm the configured portfolio manager
             trading_algorithm.manager = library.portfolio_managers[manager](
                 strategy_configuration['manager'])
-
-            # If requested and possible, loads the named portfolio to start
-            # trading with it
-            #FIXME Works, but every new event resets the portfolio
-
-            if strategy_configuration['manager'].get('load_backup', False) \
-                    and portfolio_name:
-
-                log.info('Re-loading last {} portfolio from database'
-                         .format(portfolio_name))
-                # Retrieving a zipline portfolio object. str() is needed as the
-                # parameter is of type unicode
-                backup_portfolio = trading_algorithm.manager.load_portfolio(
-                    str(portfolio_name))
-
-                if backup_portfolio is None:
-                    log.warning('! Unable to set {} portfolio: not found'
-                                .format(portfolio_name))
-                else:
-                    trading_algorithm.set_portfolio(backup_portfolio)
-                    log.info('Portfolio setup successful')
         else:
             trading_algorithm.manager = None
             log.info('no portfolio manager used')
@@ -140,10 +117,12 @@ class Simulation(object):
         return trading_context
 
     def run(self, data, strategy):
-        engine = TradingEngine(self.configuration['modules']['algorithm'],
-                               self.configuration['modules']['manager'],
-                               self.configuration['modules']['data'],
-                               strategy)
+        engine = TradingEngine(
+            self.configuration['id'],
+            self.configuration['modules']['algorithm'],
+            self.configuration['modules']['manager'],
+            self.configuration['modules']['data'],
+            strategy)
 
         #NOTE This method does not change anything
         #engine.set_sources([DataLiveSource(data_tmp)])

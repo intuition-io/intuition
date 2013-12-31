@@ -44,3 +44,4 @@ tmp/*
 
 .envrc
 .travis.yml
+dist
