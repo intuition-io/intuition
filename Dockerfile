@@ -25,14 +25,9 @@ RUN dpkg-reconfigure locales
 RUN dpkg-divert --local --rename --add /sbin/initctl
 RUN ln -s /bin/true /sbin/initctl
 
-# Common needed stuff for an efficient ansible-ready machine
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y python python-apt \
-  python-pip python-dev g++ make libfreetype6-dev libpng-dev \
-  libopenblas-dev liblapack-dev gfortran r-base
+# Finally install intuition itself
+# Activate full installation, i.e. with modules dependencies
+ENV FULL_INTUITION 1
+RUN wget -qO- https://raw.github.com/hackliff/intuition/develop/scripts/installation/bootstrap.sh | bash
 
-# Create a normal default user (vagrant / docker images have just vagrant / root)
-# #TODO I'm pretty sure there is a smarter way to do that
-RUN pip install setuptools numpy
-RUN pip install intuition
-
-ENTRYPOINT ["/usr/local/bin/intuition", "--verbose"]
+ENTRYPOINT ["/usr/local/bin/intuition", "--showlog"]

@@ -30,15 +30,18 @@ def parse_commandline():
                         action='version',
                         version='%(prog)s v0.1.3 Licence Apache 2.0',
                         help='Print program version')
-    parser.add_argument('-v', '--verbose',
+    parser.add_argument('-v', '--showlog',
                         action='store_true',
                         help='Print logs on stdout')
     parser.add_argument('-c', '--context',
                         action='store', default='file::conf.yaml',
                         help='Provides the way to build context')
+    parser.add_argument('-i', '--id',
+                        action='store', default='gekko',
+                        help='Customize the session id')
     args = parser.parse_args()
 
-    return args.context, args.verbose
+    return args.id, args.context, args.showlog
 
 
 def _module(name):

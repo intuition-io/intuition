@@ -153,13 +153,14 @@ def get_name(symbol):
 
 def get_sector(symbol):
     '''
-    Uses BeautifulSoup to scrape the stock sector from the Yahoo! Finance website
+    Uses BeautifulSoup to scrape stock sector from Yahoo! Finance website
     '''
     url = 'http://finance.yahoo.com/q/pr?s=%s+Profile' % symbol
     soup = BeautifulSoup(urllib.urlopen(url).read())
     sector = ''
     try:
-        sector = soup.find('td', text='Sector:').find_next_sibling().string.encode('utf-8')
+        sector = soup.find('td', text='Sector:').\
+            find_next_sibling().string.encode('utf-8')
     except:
         pass
     return sector
@@ -167,13 +168,14 @@ def get_sector(symbol):
 
 def get_industry(symbol):
     '''
-    Uses BeautifulSoup to scrape the stock industry from the Yahoo! Finance website
+    Uses BeautifulSoup to scrape stock industry from Yahoo! Finance website
     '''
     url = 'http://finance.yahoo.com/q/pr?s=%s+Profile' % symbol
     soup = BeautifulSoup(urllib.urlopen(url).read())
     industry = ''
     try:
-        industry = soup.find('td', text='Industry:').find_next_sibling().string.encode('utf-8')
+        industry = soup.find('td', text='Industry:').\
+            find_next_sibling().string.encode('utf-8')
     except:
         pass
     return industry
@@ -181,7 +183,7 @@ def get_industry(symbol):
 
 def get_type(symbol):
     '''
-    Uses BeautifulSoup to scrape the symbol category from the Yahoo! Finance website
+    Uses BeautifulSoup to scrape symbol category from Yahoo! Finance website
     '''
     url = 'http://finance.yahoo.com/q/pr?s=%s+Profile' % symbol
     soup = BeautifulSoup(urllib.urlopen(url).read())
@@ -201,7 +203,8 @@ def get_indices(symbol):
     soup = BeautifulSoup(urllib.urlopen(url).read())
     indices = []
     try:
-        tmp_idx = soup.find('td', text='Index Membership:').find_next_sibling().findAll('a')
+        tmp_idx = soup.find('td', text='Index Membership:').\
+            find_next_sibling().findAll('a')
         for idx in tmp_idx:
             indices.append(idx.text)
     except:
@@ -219,7 +222,6 @@ def get_historical_prices(symbol, start_date, end_date):
     """
     if isinstance(start_date, str):
         # Months are zero-based
-        import ipdb; ipdb.set_trace()
         start_m = str(int(start_date[4:6]) - 1)
         start_d = str(int(start_date[6:8]))
         start_y = str(int(start_date[0:4]))

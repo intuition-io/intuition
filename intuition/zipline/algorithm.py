@@ -46,7 +46,7 @@ class TradingFactory(TradingAlgorithm):
         self.data_generator = DataFrameSource
         TradingAlgorithm.__init__(self, *args, **kwargs)
 
-    def go(self, source, sim_params=None, benchmark_return_source=None):
+    def go(self, source, sim_params=None):
         '''
         if self.is_live:
             benchmark_return_source = [
@@ -69,8 +69,8 @@ class TradingFactory(TradingAlgorithm):
     def set_data_generator(self, generator_class):
         self.data_generator = generator_class
 
-    #NOTE I'm not superfan of initialize + preamble
-    def preamble(self, data):
+    #NOTE I'm not superfan of initialize + warming
+    def warming(self, data):
         ''' Called at the first handle_data frame '''
         pass
 
@@ -84,9 +84,9 @@ class TradingFactory(TradingAlgorithm):
         signals = {}
 
         #NOTE Temporary
-        print('\n' + 79 * '=')
-        print self.portfolio
-        print(79 * '=' + '\n')
+        self.logger.debug('\n' + 79 * '=')
+        self.logger.debug(self.portfolio)
+        self.logger.debug(79 * '=' + '\n')
 
         if self.initialized:
             user_instruction = self.manager.update(
@@ -96,7 +96,7 @@ class TradingFactory(TradingAlgorithm):
             self.process_instruction(user_instruction)
         else:
             # Perf_tracker needs at least a turn to have an index
-            self.preamble(data)
+            self.warming(data)
             self.initialized = True
 
         signals = self.event(data)

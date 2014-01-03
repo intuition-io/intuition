@@ -10,13 +10,7 @@ PLUGINS?=https://github.com/hackliff/intuition-plugins
 all: dependencies modules install
 
 install:
-	@echo "[make] Copying library"
-	sudo cp -r intuition /usr/local/lib/python2.7/dist-packages
-	@echo "[make] Copying default configuration"
-	cp -r config ${HOME}/.intuition
-	@echo "[make] Copying data"
-	cp -r data ${HOME}/.intuition
-	@echo "Now edit your preferences in ~/.intuition"
+	python setup.py install
 
 modules:
 	@echo "Downloading submodules"
@@ -25,23 +19,17 @@ modules:
 
 dependencies:
 	@echo "[make] Installing packages"
-	sudo apt-get -y --force-yes install git-core r-base python-pip python-dev g++ make gfortran 2>&1 >> ${LOGS}
+	apt-get -y --force-yes install git-core python-pip python-dev g++ make gfortran 2>&1 >> ${LOGS}
 	@echo "[make] Installing python modules"
-	pip install --use-mirrors distribute 2>&1 >> ${LOGS}
+	pip install --use-mirrors distribute nosetests flake8 2>&1 >> ${LOGS}
 	pip install --use-mirrors numpy 2>&1 >> ${LOGS}
-	pip install --use-mirrors -r ./scripts/installation/requirements.txt 2>&1 >> ${LOGS}
-	#FIXME First installation needs to specify lib parameter
-	#@echo "[make] Installing R dependencies"
-	#./scripts/installation/install_r_packages.R 2>&1 >> ${LOGS}
 
-tags:
-	@ctags --python-kinds=-iv -R intuition
-
-etags:
-	@ctags -e --python-kinds=-iv -R intuition
+package:
+	python setup.py sdist
+	python setup.py sdist upload
 
 tests: warn_missing_linters
-	@flake8 tests
+	@flake8 intuition
 	@nosetests tests
 
 present_pep8=$(shell which pep8)
@@ -51,4 +39,4 @@ warn_missing_linters:
 	@test -n "$(present_pyflakes)" || echo "WARNING: pyflakes not installed."
 
 
-.PHONY: tags dependencies install warn_missing_linters tests
+.PHONY: dependencies install warn_missing_linters tests

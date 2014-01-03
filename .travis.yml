@@ -1,0 +1,12 @@
+language: python
+python:
+  - "2.7"
+before_install:
+  - apt-get -y install python-pip python-dev g++ make gfortran
+install:
+  - pip install --upgrade --use-mirrors numpy nosetests flake8
+  - pip install --upgrade --use-mirrors -r requirements.txt
+before_script:
+  - "flake8 zipline tests"
+script:
+    - nosetests tests

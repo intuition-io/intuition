@@ -29,7 +29,8 @@ import intuition.core.configuration as setup
 
 def show_perfs(cash, bm_symbol, analyzes):
     # Get daily, cumulative and not, returns of portfolio and benchmark
-    returns_df = analyzes.get_returns(benchmark=bm_symbol)
+    #FIXME Can't find benchmark data
+    #returns_df = analyzes.get_returns(benchmark=bm_symbol)
 
     perfs = analyzes.overall_metrics('one_month')
 
@@ -38,17 +39,17 @@ def show_perfs(cash, bm_symbol, analyzes):
         orders += len(order)
 
     final_value = analyzes.results.portfolio_value[-1]
-    gain = final_value - cash
-    pf_gain_perc = returns_df['CReturns'][-1] * 100.0
-    bm_gain_perc = returns_df['Benchmark.CReturns'][-1] * 100.0
+    #gain = final_value - cash
+    #pf_gain_perc = returns_df['algo_c_return'][-1] * 100.0
+    #bm_gain_perc = returns_df['benchmark_c_return'][-1] * 100.0
     pnl_mean = analyzes.results.pnl.mean()
     pnl_std = analyzes.results.pnl.std()
 
     print('\n ======================  Results  ==\n')
     log.info('Final value: {} $'.format(final_value))
     log.info('Processed {} orders'.format(orders))
-    log.info('Perf: {:.2f}% / {:.2f}%\tGain: {} $'
-             .format(pf_gain_perc, bm_gain_perc, gain))
+    #log.info('Perf: {:.2f}% / {:.2f}%\tGain: {} $'
+             #.format(pf_gain_perc, bm_gain_perc, gain))
     log.info('Achieved on average a pnl of {:.2f} with {:.2f} of deviation'
              .format(pnl_mean, pnl_std))
     for k, v in perfs.iteritems():
@@ -65,11 +66,11 @@ def main():
     '''
 
     # General simulation behavior is defined using command line arguments
-    ctx, verbose = setup.parse_commandline()
-    level = os.environ['LOG'] if 'LOG' in os.environ else 'warning'
+    session, ctx, showlog = setup.parse_commandline()
+    level = os.environ.get('LOG', 'warning')
 
     log_setup = get_nestedlog(level=level,
-                              show_log=verbose)
+                              show_log=showlog)
     with log_setup.applicationbound():
 
         # Use the provided conext builder to fill the config dicts
@@ -92,7 +93,7 @@ def main():
                 'index': configuration['index']}
         # See intuition/core/analyze.py for details of analyzes
         # which is an Analyzes object
-        analyzes = engine.run(data, strategy)
+        analyzes = engine.run(session, data, strategy)
 
         '''____________________________________________    Results   ____'''
         if analyzes is None:

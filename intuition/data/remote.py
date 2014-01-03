@@ -40,12 +40,12 @@ finance_urls = {
     'google_prices': 'http://www.google.com/finance/getprices',
     'snapshot_google_light': 'http://www.google.com/finance/info',
     'snapshot_google_heavy': 'http://www.google.com/ig/api',
-    'info_lookup': 'http://d.yimg.com/autoc.finance.yahoo.com/autoc?query={}&callback=YAHOO.Finance.SymbolSuggest.ssCallback'
+    'info_lookup': ('http://d.yimg.com/autoc.finance.yahoo.com/autoc?' +
+                    'query={}&callback=YAHOO.Finance.SymbolSuggest.ssCallback')
 }
 
 
-#TODO A decorator for symbol harmonisation ?
-class Remote(object):
+class Data(object):
     '''
     Entry point to remote access to data
     Mainly offer a simpler interface and a data access harmonisation
@@ -186,7 +186,8 @@ def snapshot_google_light(symbols):
 #FIXME It seems this is deprecated Oo
 @use_google_symbol
 def snapshot_google_heavy(symbols):
-    url = finance_urls['snapshot_google_heavy'] + '?stock=' + '&stock='.join(symbols)
+    url = (finance_urls['snapshot_google_heavy'] +
+           '?stock=' + '&stock='.join(symbols))
     log.info('Retrieving heavy Snapshot from %s' % url)
     try:
         url_fd = urllib2.urlopen(url)
@@ -208,7 +209,8 @@ def snapshot_google_heavy(symbols):
         for item_node in node.childNodes:
             if (item_node.nodeType != Node.ELEMENT_NODE):
                 continue
-            snapshot[symbols[i]][item_node.nodeName] = item_node.getAttribute('data')
+            snapshot[symbols[i]][item_node.nodeName] = \
+                item_node.getAttribute('data')
 
     return pd.DataFrame(snapshot)
 
@@ -231,19 +233,19 @@ def google_light_mapping():
 
 
 def lookup_symbol(company):
-  ''' Fetch company info
-  >>> lookup_symbol("Apple Inc.")
-      {u'exch': u'NMS',
-       u'market': u'NASDAQ',
-       u'name': u'Apple Inc.',
-       u'symbol': u'AAPL',
-       u'type': u'Equity'}
-  '''
-  infos = {}
-  request = requests.get(finance_urls['info_lookup'].format(company))
-  if request.ok:
-    infos = json.loads(request.text[39:-1])["ResultSet"]["Result"][0]
-    infos["market"] = infos.pop("exchDisp")
-    infos["type"] = infos.pop("typeDisp")
+    ''' Fetch company info
+    >>> lookup_symbol("Apple Inc.")
+          {u'exch': u'NMS',
+           u'market': u'NASDAQ',
+           u'name': u'Apple Inc.',
+           u'symbol': u'AAPL',
+           u'type': u'Equity'}
+    '''
+    infos = {}
+    request = requests.get(finance_urls['info_lookup'].format(company))
+    if request.ok:
+        infos = json.loads(request.text[39:-1])["ResultSet"]["Result"][0]
+        infos["market"] = infos.pop("exchDisp")
+        infos["type"] = infos.pop("typeDisp")
 
-  return infos
+    return infos

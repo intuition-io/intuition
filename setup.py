@@ -16,6 +16,7 @@
 import sys
 import os
 from glob import glob
+
 from setuptools import setup, find_packages
 
 from intuition import __version__, __author__, __licence__

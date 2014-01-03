@@ -18,7 +18,7 @@ import sys
 import signal
 import logbook
 
-log = logbook.Logger('Signal_Manager')
+log = logbook.Logger('intuition.utils.signals')
 
 
 class SignalManager(object):
@@ -35,7 +35,8 @@ class SignalManager(object):
         self.alarmed = False
 
     def catcher(self, signal, frame):
-        log.info('Signal code {} catched ({}), calling user method'.format(signal, frame))
+        log.info('Signal code {} catched ({}), calling user method'
+                 .format(signal, frame))
         if signal == 2:
             self.shutdown('Shutting down the application...', signal)
         elif signal == 14:
@@ -49,7 +50,8 @@ class SignalManager(object):
         sys.exit(signal)
 
     def __repr__(self):
-        return '\n'.join(['Signal manager for handling code {}'.format(code) for code in self.signals])
+        return '\n'.join(['Signal manager for handling code {}'.format(code)
+                          for code in self.signals])
 
     def __str__(self):
         return self.__repr__()

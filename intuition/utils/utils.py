@@ -14,15 +14,25 @@
 # limitations under the License.
 
 
-import json
+import sys
 import os
-
-#import babel.numbers
-#import decimal
-
+import json
 import re
 import socket
 from urllib2 import urlopen
+#import babel.numbers
+#import decimal
+
+
+def dynamic_import(mod_path, obj_name):
+    module = __import__(mod_path, fromlist=['whatever'])
+    if hasattr(module, obj_name):
+        obj = getattr(module, obj_name)
+    else:
+        print('module {} has no attribute {}'.
+              format(module.__name__, obj_name))
+        sys.exit(1)
+    return obj
 
 
 def activate_pdb_hook():

@@ -18,8 +18,8 @@ import abc
 import logbook
 import json
 
-from intuition.data.remote import Remote
-from intuition.utils import to_dict
+import intuition.data.remote as remote
+import intuition.utils.utils as utils
 import intuition.modules.plugins.mobile as mobile
 
 
@@ -91,7 +91,7 @@ class PortfolioFactory():
             self.server = configuration.pop('server')
 
         # In case user optimization would need to retrieve more data
-        self.remote = Remote()
+        self.data = remote.Data()
         self.initialize(configuration)
 
     def initialize(self, configuration):
@@ -124,9 +124,9 @@ class PortfolioFactory():
             #NOTE Merge the dict method with the inplementation in rethinkdb
             # We need to translate zipline portfolio and position objects into
             # json data (i.e. dict)
-            packet_portfolio = to_dict(portfolio)
+            packet_portfolio = utils.to_dict(portfolio)
             for pos in packet_portfolio['positions']:
-                packet_portfolio['positions'][pos] = to_dict(
+                packet_portfolio['positions'][pos] = utils.to_dict(
                     packet_portfolio['positions'][pos])
 
             self.server.send(packet_portfolio,

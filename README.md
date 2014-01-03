@@ -47,33 +47,62 @@ Features
 Status
 ------
 
-[![Build Status](https://travis-ci.org/hackliff/intuition.png?branch=master)](https://travis-ci.org/hackliff/intuition)
-[![Code Health](https://landscape.io/github/hackliff/intuition/master/landscape.png)](https://landscape.io/github/hackliff/intuition/master)
+[![License](https://pypip.in/license/intuition/badge.png)](https://pypi.python.org/pypi/intuition/)
+[![Build Status](https://travis-ci.org/hackliff/intuition.png?branch=develop)](https://travis-ci.org/hackliff/intuition)
+[![Code Health](https://landscape.io/github/hackliff/intuition/develop/landscape.png)](https://landscape.io/github/hackliff/intuition/develop)
 
-**Attention!** Project is under early development. The new version (december
-2013) revises a lot of code :
+Branch   | Version
+-------- | -----
+Master   | 0.0.9
+Develop  | 0.2.9
+Pypi     | [![Latest Version](https://pypip.in/v/intuition/badge.png)](https://pypi.python.org/pypi/intuition/)
+
+**Attention** Project is in an *early alpha*, and under heavy development.
+ The new version (december 2013) revises a lot of code :
 
 * Algoithms, managers and data sources have their [own repository](https://github.com/hackliff/intuition-modules)
 * More powerful API to build custom versions of them
+* The context module now handles configuration
 * [Shiny]() interface, [Dashboard]() and clustering will have their intuition-plugins repository (soon)
-* ZeroMQ messaging is for now broken (but no longer necessary)
+* ZeroMQ messaging is for now removed but might be back for inter-algo communication
 * Neither MySQL, that has been removed and will be re-implemented as a [data plugin](https://github.com/hackliff/intuition-modules/tree/develop/plugins)
 * But currently it has been replaced by [Rethinkdb](rethinkdb.com)
-* Installation is much more powerful and a docker image is available for development and deployment
-* More intuitive configuration splitted between a file, command line argument and environment variables
+* Installation is much simpler and a docker image is available for development and deployment
+* More intuitive configuration splitted between the context mentioned, command line argument and environment variables
 * And a lot of house keeping and code desgin stuff
 
 
 Installation
 ------------
 
-You are just a few steps away from algoritmic trading.
+You are just a few steps away from algoritmic trading. Choose one of the
+following installation method
 
+* The usual way
+
+```console
+$ pip install intuition
 ```
+
+* The full installation (i.e. with buit-in [modules](https://github.com/hackliff/intuition-modules))
+
+```console
+$ export FULL_INTUITION=1
+$ wget -qO- https://raw.github.com/hackliff/intuition/develop/scripts/installation/bootstrap.sh | sudo -E bash
+```
+
+* From source
+
+```console
 $ git clone --recursive https://github.com/hackliff/intuition.git
-$ cd intuition && sudo make all
+$ cd intuition && sudo make
 ```
 
+* Sexy, cutting edge style
+
+```console
+$ docker pull hivetech/intuition
+```
 
 Getting started
 ---------------
@@ -83,32 +112,33 @@ optionnaly use a portfolio manager to compute assets allocation.
 
 You can configure the algorithm and the portfolio manager in
 ~/.intuition/plugins.json. Third party services use environment variable, take
-a look in config/local.env. Then trigger a backtest
+a look in config/local.env.
 
 ```console
-./application/app.py --initialcash 50000 --universe nasdaq,20 \
-    --loglevel CRITICAL --algorithm BuyAndHold --manager Constant --start 2011-05-10 \
-    --frequency daily --exchange paris --source YahooPriceSource
+$ docker run \
+  -e PUSHBULLET_API_KEY=$PUSHBULLET_API_KEY \
+  -e QUANDL_API_KEY=$QUANDL_API_KEY \
+  -e MAILGUN_API_KEY=$MAILGUN_API_KEY \
+  -e TRUEFX_API=$TRUEFX_API \
+  -e DB_HOST=$DB_HOST \
+  -e DB_PORT=$DB_PORT \
+  -e DB_NAME=$DB_NAME \
+  -e LANGUAGE="fr_FR.UTF-8" \
+  -e LANG="fr_FR.UTF-8" \
+  -e LC_ALL="fr_FR.UTF-8" \
+  -name trade_box hivetech/intuition \
+  intuition --context mongodb::192.168.0.12:27017/backtestNasdaq --showlog
 ```
 
-Or in realtime mode:
-
-```console
-./application/app.py --initialcash 100000 --universe EUR/USD,EUR/GBP --algorithm DualMovingAverage
-    --manager Equity --frequency minute --exchange forex --live --source ForexLiveSource
-```
-
-More examples are available in scripts/run_app.sh
-
-
-Going Further
--------------
+For Hackers
+-----------
 
 As mentionned you can easily write your own strategies, head out to :
 
 * [Algorithm API](https://github.com/hackliff/intuition-modules/blob/develop/algorithms/readme.md)
 * [Portfolio API](https://github.com/hackliff/intuition-modules/blob/develop/managers/readme.md)
 * [Data API](https://github.com/hackliff/intuition-modules/blob/develop/sources/readme.md)
+* [Context API](https://github.com/hackliff/intuition-modules/blob/develop/contexts/readme.md)
 
 Here is the Fair manager example, which allocates the same weight to all of your assets:
 
@@ -148,7 +178,7 @@ class BuyAndHold(TradingFactory):
         self.debug = properties.get('debug', False)
         self.save = properties.get('save', False)
 
-    def preamble(self, data):
+    def warming(self, data):
         if self.save:
             self.db = database.RethinkdbBackend(self.manager.name, True)
 

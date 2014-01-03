@@ -3,7 +3,6 @@
 universe: cac40
 end: 17h
 frequency: 1min
-id: liveDevelopment
 modules:
   context: file
   manager: OptimalFrontier

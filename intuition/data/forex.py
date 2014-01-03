@@ -1,5 +1,5 @@
 #
-# Copyright 2013 Xavier Bruhiere
+# Copyright 2014 Xavier Bruhiere
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -38,30 +38,30 @@ def forex_rates(user, password, pairs='', fmt='csv'):
 
 #FIXME 'Not authorized' mode works weird
 class ConnectTrueFX(object):
-    auth_url = 'http://webrates.truefx.com/rates/connect.html?u={}&p={}&q=ozrates&c={}&f={}'
-    query_url = 'http://webrates.truefx.com/rates/connect.html?id={}&f={}&c={}'
+    auth_url = ('http://webrates.truefx.com/rates/connect.html?\
+        u={}&p={}&q=ozrates&c={}&f={}')
+    query_url = ('http://webrates.truefx.com/rates/connect.html?\
+        id={}&f={}&c={}')
 
-    def __init__(self, user='', password='', auth_file='plugins.json', pairs=[], fmt='csv'):
+    def __init__(self, credentials='', pairs=[], fmt='csv'):
         #NOTE Without authentification you still can access some data
         #FIXME Not authorized response prevent from downloading quotes.
         #      However later you indeed retrieve 10 defaults
         self._code = None
-        if (not user) or (not password):
+        if not credentials:
             log.info('No credentials provided, inspecting environment')
-            if 'TRUEFX_API' in os.environ:
-                credentials = os.environ['TRUEFX_API'].split(':')
-                if len(credentials) == 2:
-                    user = credentials[0]
-                    password = credentials[1]
-                    log.info('Found credentials for user {}'.format(user))
-                else:
-                    log.warning('** Bad formated credentials, no authentification will be used')
-            else:
-                log.warning('** Credentials not found, no authentification will be used')
+            credentials = os.environ.get('TRUEFX_API', ':')
 
-        auth = requests.get(self.auth_url.format(user, password, ','.join(pairs), fmt))
+        credentials = credentials.split(':')
+        auth = requests.get(
+            self.auth_url.format(credentials[0],
+                                 credentials[1],
+                                 ','.join(pairs), fmt))
         if auth.ok:
-            log.debug('[{}] Authentification successful {}:{}'.format(auth.headers['date'], auth.reason, auth.status_code))
+            log.debug('[{}] Authentification successful {}:{}'
+                      .format(auth.headers['date'],
+                              auth.reason,
+                              auth.status_code))
             log.debug('Got: {}'.format(auth.content))
 
         ### Remove '\r\n'
@@ -70,7 +70,8 @@ class ConnectTrueFX(object):
     def QueryTrueFX(self, pairs='', fmt='csv'):
         if isinstance(pairs, str):
             pairs = [pairs]
-        response = requests.get(self.query_url.format(self._code, fmt, ','.join(pairs)))
+        response = requests.get(
+            self.query_url.format(self._code, fmt, ','.join(pairs)))
 
         mapped_data = self._fx_mapping(response.content.split('\n')[:-2])
         if len(mapped_data) == 1:

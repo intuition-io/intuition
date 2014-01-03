@@ -26,7 +26,8 @@ from utils import get_local_ip
 
 log = logbook.Logger('intuition.default.logger')
 
-log_format = u'{record.extra["ip"]} [{record.time:%m-%d %H:%M}] {record.level_name}::{record.channel} - {record.message}'
+log_format = (u'{record.extra["ip"]} [{record.time:%m-%d %H:%M}]\
+    {record.level_name}::{record.channel} - {record.message}')
 
 default_log_destination = os.path.expanduser('~/.intuition/logs')
 log_destination = default_log_destination \
@@ -38,7 +39,10 @@ def inject_information(record):
     record.extra['ip'] = get_local_ip()
 
 
-def get_nestedlog(level='debug', show_log=False, filename=default_file_log, uri=None):
+def get_nestedlog(level='debug',
+                  show_log=False,
+                  filename=default_file_log,
+                  uri=None):
     level = level.upper()
     # Default uri: tcp://127.0.0.1:5540
     if uri is not None:
@@ -48,7 +52,8 @@ def get_nestedlog(level='debug', show_log=False, filename=default_file_log, uri=
             logbook.NullHandler(),
             #logbook.NullHandler(level=logbook.DEBUG, bubble=True),
             #ColorizedStderrHandler(format_string=log_format, level='ERROR'),
-            logbook.FileHandler('{}/{}'.format(log_destination, filename), level=level)
+            logbook.FileHandler(
+                '{}/{}'.format(log_destination, filename), level=level)
             #FIXME Doesn't show anything
             #logbook.Processor(inject_information)
         ]

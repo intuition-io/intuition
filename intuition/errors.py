@@ -30,7 +30,8 @@ class IntuitionError(Exception):
     __repr__ = __str__
 
 
-#http://www.siteduzero.com/informatique/tutoriels/les-exceptions-9/liste-des-exceptions-built-in
+# http://www.siteduzero.com/informatique/tutoriels/les-exceptions-9/\
+#     liste-des-exceptions-built-in
 class Example(IntuitionError):
     '''
     Temporary example

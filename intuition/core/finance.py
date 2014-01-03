@@ -15,16 +15,12 @@
 
 
 import logbook
-#from intuition.utils.utils import reIndexDF
-
-import pandas as pd
 from pandas.core.datetools import BDay
-# Statsmodels has ols too, benchamark needed
-#from pandas import ols
-
 import numpy as np
 import math
 import datetime as dt
+
+#from intuition.utils.utils import reIndexDF
 
 
 '''-----------------------------------------------------------
@@ -72,7 +68,8 @@ def moving_average(x, n, type='simple'):
 def relative_strength(prices, n=14):
     """
     compute the n period relative strength indicator
-    http://stockcharts.com/school/doku.php?id=chart_school:glossary_r#relativestrengthindex
+    http://stockcharts.com/school/doku.php?\
+        id=chart_school:glossary_r#relativestrengthindex
     http://www.investopedia.com/terms/r/rsi.asp
     """
     deltas = np.diff(prices)
@@ -132,9 +129,9 @@ def average_returns(ts, **kwargs):
         relative = 0
     else:
         relative = -1  # gross
-    start = kwargs.get('start', ts.index[0])
-    end = kwargs.get('end', ts.index[len(ts.index) - 1])
-    delta = kwargs.get('delta', ts.index[1] - ts.index[0])
+    #start = kwargs.get('start', ts.index[0])
+    #end = kwargs.get('end', ts.index[len(ts.index) - 1])
+    #delta = kwargs.get('delta', ts.index[1] - ts.index[0])
     period = kwargs.get('period', None)
     if isinstance(period, int):
         pass
@@ -181,7 +178,7 @@ def returns(ts, **kwargs):
         relative = 1  # gross
     start = kwargs.get('start', None)
     end = kwargs.get('end', dt.datetime.today())
-    delta = kwargs.get('delta', None)
+    #delta = kwargs.get('delta', None)
     period = kwargs.get('period', 1)
     if isinstance(start, dt.datetime):
         log.debug('{} / {} -1'.format(ts[end], ts[start]))
@@ -206,7 +203,7 @@ def panel_to_retsDF(dataPanel, kept_field='close', type='dataframe'):
     '''
     @summary transform data in DataAccess format to a dataframe
              suitable for qstk.tsutils.optimizePortfolio()
-    @param dataPanel get with the reverse flag: data like quotes['close']['google']
+    @param dataPanel: data like quotes['close']['google']
     @output : a dataframe, cols = companies, rows = dates
     '''
     #TODO Here a need of data normalisation
