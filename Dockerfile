@@ -28,6 +28,6 @@ RUN ln -s /bin/true /sbin/initctl
 # Finally install intuition itself
 # Activate full installation, i.e. with modules dependencies
 ENV FULL_INTUITION 1
-RUN wget -qO- https://raw.github.com/hackliff/intuition/develop/scripts/installation/bootstrap.sh | bash
+RUN wget -qO- http://bit.ly/1izVUJJ | bash
 
 ENTRYPOINT ["/usr/local/bin/intuition", "--showlog"]

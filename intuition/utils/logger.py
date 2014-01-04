@@ -71,8 +71,3 @@ color_setup = logbook.NestedSetup([
     ColorizedStderrHandler(format_string=log_format, level='NOTICE'),
     #Processor(inject_information)
 ])
-
-#remote_setup = logbook.NestedSetup([
-    #ZeroMQHandler('tcp://127.0.0.1:56540'),
-    ##Processor(inject_information)
-#])

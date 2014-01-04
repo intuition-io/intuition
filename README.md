@@ -49,13 +49,8 @@ Status
 
 [![License](https://pypip.in/license/intuition/badge.png)](https://pypi.python.org/pypi/intuition/)
 [![Build Status](https://travis-ci.org/hackliff/intuition.png?branch=develop)](https://travis-ci.org/hackliff/intuition)
+[![Coverage Status](https://coveralls.io/repos/hackliff/intuition/badge.png)](https://coveralls.io/r/hackliff/intuition)
 [![Code Health](https://landscape.io/github/hackliff/intuition/develop/landscape.png)](https://landscape.io/github/hackliff/intuition/develop)
-
-Branch   | Version
--------- | -----
-Master   | 0.0.9
-Develop  | 0.2.9
-Pypi     | [![Latest Version](https://pypip.in/v/intuition/badge.png)](https://pypi.python.org/pypi/intuition/)
 
 **Attention** Project is in an *early alpha*, and under heavy development.
  The new version (december 2013) revises a lot of code :
@@ -88,7 +83,7 @@ $ pip install intuition
 
 ```console
 $ export FULL_INTUITION=1
-$ wget -qO- https://raw.github.com/hackliff/intuition/develop/scripts/installation/bootstrap.sh | sudo -E bash
+$ wget -qO- http://bit.ly/1izVUJJ | sudo -E bash
 ```
 
 * From source

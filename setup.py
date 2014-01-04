@@ -28,37 +28,8 @@ README_MARKDOWN = None
 
 def get_requirements():
     with open('./requirements.txt') as requirements:
-        return requirements.read().split('\n')
-
-'''
-    return [
-        'args',
-        'beautifulsoup4',
-        'blist',
-        'Cython',
-        'distribute',
-        'flake8',
-        'isit',
-        'iso8601',
-        'Logbook',
-        'mccabe',
-        'numpy',
-        'zipline',
-        'pandas',
-        'pep8',
-        'pyparsing',
-        'python-dateutil',
-        'pytz',
-        'Quandl',
-        'requests',
-        'six',
-        'stevedore',
-        'tornado',
-        'urwid',
-        'wsgiref',
-        'xlrd',
-        'rethinkdb']
-'''
+        # Avoid github based requirements
+        return requirements.read().split('\n')[:-3]
 
 with open('README.md') as markdown_source:
     README_MARKDOWN = markdown_source.read()
@@ -104,5 +75,8 @@ setup(
         'Topic :: System :: Distributed Computing',
     ],
     scripts=['app/intuition'],
-    data_files=[(os.path.expanduser('~/.intuition/data'), glob('./data/*'))]
+    data_files=[(os.path.expanduser('~/.intuition/data'), glob('./data/*'))],
+    dependency_links=[
+      'http://github.com/pydata/pandas/tarball/master#egg=pandas',
+      'http://github.com/quantopian/zipline/tarball/master#egg=zipline']
 )

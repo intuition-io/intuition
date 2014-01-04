@@ -160,9 +160,6 @@ def snapshot_google_light(symbols):
     payload = {'client': 'ig', 'q': ','.join(symbols)}
     response = requests.get(finance_urls['snapshot_google_light'],
                             params=payload)
-    #TODO In utils.errors the first error module that handle errors codes
-    #TODO check return code (200)
-    #TODO remapping
     try:
         json_infos = json.loads(response.text[3:], encoding='utf-8')
     except ValueError:

@@ -21,13 +21,13 @@ import os
 import pandas as pd
 
 
+#TODO This is quick and dirty
 def detect_exchange(universe):
     if not isinstance(universe, list):
         universe = universe.split(',')
     if universe[0] in Exchanges:
         exchange = universe[0]
     else:
-        #TODO This is quick and dirty
         if universe[0].find('/') > 0:
             exchange = 'forex'
         elif universe[0].find('.pa') > 0:
@@ -61,7 +61,7 @@ def smart_selector(sids):
     return sids
 
 
-#TODO Complete with
+#TODO Complete with :
 # http://en.wikipedia.org/wiki/List_of_stock_exchange_opening_times
 # http://en.wikipedia.org/wiki/List_of_S&P_500_companies
 def filter_market_hours(dates, exchange):
@@ -130,7 +130,6 @@ class Fields:
 googleCode = dict()
 
 
-#TODO test and understang everything
 yahooCode = {'ask': 'a', 'average daily volume': 'a2', 'ask size': 'a5',
              'bid': 'b', 'ask rt': 'b2', 'bid rt': 'b3', 'dividend yield': 'y',
              'book value': 'b4', 'bid size': 'b6', 'change and percent': 'c',

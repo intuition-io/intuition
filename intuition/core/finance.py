@@ -136,7 +136,6 @@ def average_returns(ts, **kwargs):
     if isinstance(period, int):
         pass
     #else:
-        #FIXME reIndexDF is deprecated
         #ts = reIndexDF(ts, start=start, end=end, delta=delta)
         #period = 1
     avg_ret = 1
