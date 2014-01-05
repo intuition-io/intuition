@@ -31,7 +31,7 @@ def get_requirements():
         # Avoid github based requirements and replace them
         deps = requirements.read().split('\n')[:-3]
         deps.append('zipline>=0.5.11.dev')
-        deps.append('pandas>=0.13.0-27-gf7aeaeb')
+        deps.append('pandas>=0.13.0.dev')
         return deps
 
 with open('README.md') as markdown_source:
@@ -80,6 +80,6 @@ setup(
     scripts=['app/intuition'],
     data_files=[(os.path.expanduser('~/.intuition/data'), glob('./data/*'))],
     dependency_links=[
-        'http://github.com/pydata/pandas/tarball/master#egg=pandas-0.13.0-27-gf7aeaeb',
+        'http://github.com/pydata/pandas/tarball/master#egg=pandas-0.13.0.dev',
         'http://github.com/quantopian/zipline/tarball/master#egg=zipline-0.5.11.dev']
 )

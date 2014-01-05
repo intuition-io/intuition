@@ -34,7 +34,7 @@ def dynamic_import(mod_path, obj_name):
         obj = getattr(module, obj_name)
     else:
         print('module {} has no attribute {}'.
-                 format(module.__name__, obj_name))
+              format(module.__name__, obj_name))
         return None
 
     return obj

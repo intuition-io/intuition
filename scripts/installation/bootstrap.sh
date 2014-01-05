@@ -8,10 +8,6 @@ pip install --use-mirrors numpy
 
 pip install -e git+https://github.com/hackliff/intuition.git@develop#egg=intuition
 
-# Will be remove with setup.py FIX
-pip install -e git+https://github.com/pydata/pandas.git@master#egg=pandas
-pip install -e git+https://github.com/quantopian/zipline.git@master#egg=zipline
-
 if [ -n "$FULL_INTUITION" ]; then
   apt-get install r-base
   # Otherwize statsmodel fails:

@@ -12,7 +12,7 @@ RUN echo "deb http://archive.ubuntu.com/ubuntu raring main universe" > /etc/apt/
 RUN apt-get update
 
 # Local settings
-# Change eventually fr_FR to us_US
+# Change eventually fr_FR to something else
 RUN apt-get install -y language-pack-fr
 ENV LANGUAGE fr_FR.UTF-8
 ENV LANG fr_FR.UTF-8

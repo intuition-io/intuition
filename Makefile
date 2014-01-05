@@ -31,8 +31,8 @@ package:
 	python setup.py sdist upload
 
 tests: warn_missing_linters
-	@flake8 intuition
-	@nosetests tests
+	flake8 intuition
+	nosetests -w tests --with-coverage --cover-package=intuition
 
 present_pep8=$(shell which pep8)
 present_pyflakes=$(shell which pyflakes)

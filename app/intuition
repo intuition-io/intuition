@@ -53,7 +53,7 @@ def show_perfs(cash, bm_symbol, analyzes):
     log.info('Achieved on average a pnl of {:.2f} with {:.2f} of deviation'
              .format(pnl_mean, pnl_std))
     for k, v in perfs.iteritems():
-        log.info('{}: {:2.f}'.format(k, v))
+        log.info('{}: {}'.format(k, v))
     print('\n ===================================\n')
 
 

@@ -41,10 +41,18 @@ class TradingFactory(TradingAlgorithm):
     debug = False
     #TODO Use another zipline mechanism
     day = 0
+    middlewares = []
 
     def __init__(self, *args, **kwargs):
         self.data_generator = DataFrameSource
         TradingAlgorithm.__init__(self, *args, **kwargs)
+
+    def use(self, func, when='whatever'):
+        self.middlewares.append({
+            'call': func,
+            'name': func.__name__,
+            'args': func.func_code.co_varnames,
+            'when': when})
 
     def go(self, source, sim_params=None):
         '''
@@ -83,17 +91,11 @@ class TradingFactory(TradingAlgorithm):
         self.day += 1
         signals = {}
 
-        #NOTE Temporary
-        self.logger.debug('\n' + 79 * '=')
-        self.logger.debug(self.portfolio)
-        self.logger.debug(79 * '=' + '\n')
-
         if self.initialized:
-            user_instruction = self.manager.update(
+            self.manager.update(
                 self.portfolio,
                 self.datetime,
                 self.perf_tracker.cumulative_risk_metrics.to_dict())
-            self.process_instruction(user_instruction)
         else:
             # Perf_tracker needs at least a turn to have an index
             self.warming(data)
@@ -101,38 +103,29 @@ class TradingFactory(TradingAlgorithm):
 
         signals = self.event(data)
 
+        self._call_middlewares()
+
         if signals:
             order_book = self.manager.trade_signals_handler(signals)
-            for stock in order_book:
-                self.order(stock, order_book[stock])
-                if self.debug:
-                    self.logger.notice('{}: Ordered {} {} stocks'.format(
-                        self.datetime, stock, order_book[stock]))
+            self.process_orders(order_book)
 
-    def process_instruction(self, instruction):
-        '''
-        Process orders from instruction
-        '''
-        if instruction:
-            self.logger.info('Processing user instruction')
-            if (instruction['command'] == 'order') \
-                    and ('amount' in instruction):
-                self.logger.error('{}: Ordering {} {} stocks'.format(
-                    self.datetime,
-                    instruction['amount'],
-                    instruction['asset']))
+    def process_orders(self, order_book):
+        for stock in order_book:
+            self.order(stock, order_book[stock])
+            if self.debug:
+                self.logger.notice('{}: Ordered {} {} stocks'.format(
+                    self.datetime, stock, order_book[stock]))
 
-    #NOTE self.done flag could be used to avoid in zipline waist of computation
-    #TODO Anyway should find a more elegant way
-    def stop_trading(self):
-        ''' Convenient method to stop calling user algorithm and just finish
-        the simulation'''
-        self.logger.info('Trader out of the market')
-        #NOTE Selling every open positions ?
-        # Saving the portfolio in database, eventually for reuse
-        self.db.save_portfolio(self.datetime, self.portfolio)
+    def _call_one_middleware(self, mw):
+        args = {}
+        for arg in mw['args']:
+            if hasattr(self, arg):
+                args[arg] = eval('self.' + arg)
+        self.logger.info('calling middleware event {}'
+                         .format(mw['name']))
+        mw['call'](**args)
 
-        # Closing generator
-        self.date_sorted.close()
-        #self.set_datetime(self.sim_params.last_close)
-        self.done = True
+    def _call_middlewares(self):
+        for mw in self.middlewares:
+            #TODO Use the <when> keyword
+            self._call_one_middleware(mw)

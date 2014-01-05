@@ -14,9 +14,13 @@
 # limitations under the License.
 
 
-import pandas
+import pandas as pd
 
 
+#TODO Quandl symbol decorator
+# Ressources : http://www.quandl.com/help/api/resources
+# Or the search API : https://github.com/quandl/Python
+# Seems to be {PROVIDER}/{MARKET_SUFFIX}_{GOOGLE_SYMBOL}
 #NOTE with_market symbol, build jxr.pa => JXR:EPA
 #TODO mega class decorator which will harmonize eveything
 def use_google_symbol(fct):
@@ -40,12 +44,6 @@ def use_google_symbol(fct):
     return decorator
 
 
-#TODO Quandl symbol decorator
-# Ressources : http://www.quandl.com/help/api/resources
-# Or the search API : https://github.com/quandl/Python
-# Seems to be {PROVIDER}/{MARKET_SUFFIX}_{GOOGLE_SYMBOL}
-
-
 def invert_dataframe_axis(fct):
     '''
     Make dataframe index column names,
@@ -53,7 +51,7 @@ def invert_dataframe_axis(fct):
     '''
     def decorator(*args, **kwargs):
         df_to_invert = fct(*args, **kwargs)
-        assert isinstance(df_to_invert, pandas.DataFrame)
-        return pandas.DataFrame(df_to_invert.to_dict().values(),
-                                index=df_to_invert.to_dict().keys())
+        assert isinstance(df_to_invert, pd.DataFrame)
+        return pd.DataFrame(df_to_invert.to_dict().values(),
+                            index=df_to_invert.to_dict().keys())
     return decorator

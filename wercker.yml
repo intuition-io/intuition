@@ -26,6 +26,6 @@ build:
     after-steps:
         - hipchat-notify:
             token: $HIPCHAT_TOKEN
-            room_id: 290587
+            room-id: 290587
             passed-notify: true
             failed-notify: true

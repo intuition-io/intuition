@@ -2,10 +2,8 @@
 
 if [ -n "$1" ]; then
   image=$1
-  name="root"
 else
   image="hivetech/lab"
-  name="prototype"
 fi
 
 echo "launching sandbox container..."
@@ -20,8 +18,8 @@ docker run -i -t \
   -e DB_HOST=$DB_HOST \
   -e DB_PORT=$DB_PORT \
   -e DB_NAME=$DB_NAME \
-  -e LOG=debug
+  -e LOG=debug \
   -e LANGUAGE="fr_FR.UTF-8" \
   -e LANG="fr_FR.UTF-8" \
   -e LC_ALL="fr_FR.UTF-8" \
-  -name sandbox -u ${name} ${image} bash
+  -name sandbox ${image} bash

@@ -19,7 +19,6 @@ import logbook
 import json
 
 import intuition.data.remote as remote
-import intuition.utils.utils as utils
 #FIXME Insights is an optional depency !!
 #import insights.plugins.mobile as mobile
 
@@ -27,8 +26,7 @@ import intuition.utils.utils as utils
 class PortfolioFactory():
     '''
     Manages portfolio during simulation, and stays aware of the situation
-    through the update() method. It is configured through zmq message (manager
-    field) or ~/.intuition/plugins.json file.
+    through the update() method.
 
     User strategies call it with a dictionnnary of detected opportunities (i.e.
     buy or sell signals).  Then the optimize function computes assets
@@ -52,6 +50,7 @@ class PortfolioFactory():
 
     # Zipline portfolio object, updated during simulation with self.date
     portfolio = None
+    perfs = None
     date = None
     bullet = None
 
@@ -80,8 +79,6 @@ class PortfolioFactory():
         # Make the manager talk to connected clients
         self.connected = configuration.get('connected', False)
         # Send android notifications when orders are processed
-        # It's only possible with a running server
-        #self.android = configuration.get('android', False) & self.connected
         #device = configuration.get('device', '')
         #if device:
             #self.bullet = mobile.AndroidPush(device)
@@ -104,39 +101,20 @@ class PortfolioFactory():
         ''' Users should overwrite this method '''
         pass
 
-    def update(self, portfolio, date, metrics=None):
+    def update(self, portfolio, date, perfs=None):
         '''
         Actualizes the portfolio universe
-        and if connected, sends it through the wires
         ________________________________
         Parameters
-            portfolio: zipline.portfolio
+            portfolio: zipline.Portfolio
                 ndict object storing portfolio values at the given date
             date: datetime.datetime
                 Current date in zipline simulation
         '''
-        # Make the manager aware of current simulation portfolio and date
+        # Make the manager aware of current simulation
         self.portfolio = portfolio
+        self.perfs = perfs
         self.date = date
-
-        # Send portfolio object to client
-        if self.connected:
-            #NOTE Something smarter ?
-            #NOTE Merge the dict method with the inplementation in rethinkdb
-            # We need to translate zipline portfolio and position objects into
-            # json data (i.e. dict)
-            packet_portfolio = utils.to_dict(portfolio)
-            for pos in packet_portfolio['positions']:
-                packet_portfolio['positions'][pos] = utils.to_dict(
-                    packet_portfolio['positions'][pos])
-
-            self.server.send(packet_portfolio,
-                             type='portfolio',
-                             channel='dashboard')
-
-            # Check user remote messages and return it
-            return self.catch_messages()
-        return dict()
 
     def trade_signals_handler(self, signals, extras={}):
         '''
