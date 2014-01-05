@@ -20,7 +20,8 @@ import json
 
 import intuition.data.remote as remote
 import intuition.utils.utils as utils
-import intuition.modules.plugins.mobile as mobile
+#FIXME Insights is an optional depency !!
+#import insights.plugins.mobile as mobile
 
 
 class PortfolioFactory():
@@ -81,9 +82,9 @@ class PortfolioFactory():
         # Send android notifications when orders are processed
         # It's only possible with a running server
         #self.android = configuration.get('android', False) & self.connected
-        device = configuration.get('device', '')
-        if device:
-            self.bullet = mobile.AndroidPush(device)
+        #device = configuration.get('device', '')
+        #if device:
+            #self.bullet = mobile.AndroidPush(device)
 
         # Run the server if the engine didn't, while it is asked for
         if 'server' in configuration and self.connected:
@@ -204,6 +205,7 @@ class PortfolioFactory():
                                     self.portfolio.portfolio_value / price)
                                     - self.portfolio.positions[t].amount)
 
+        '''
         if self.bullet and orderBook:
             # Alert user of the orders about to be processed
             # Ok... kind of fancy method
@@ -217,17 +219,7 @@ class PortfolioFactory():
             }
             req = self.bullet.push(payload)
             self.log.debug(req)
-
-            '''
-            msg = 'Intuition suggests you to '
-            msg += ', '.join(['{} {} stocks of {}'.format(
-                ords[str(amount / abs(amount))], amount, ticker)
-                for ticker, amount in orderBook.iteritems()])
-            self.server.send_to_android(
-                {'title': 'Portfolio manager notification',
-                 'priority': 1,
-                 'description': msg})
-          '''
+        '''
 
         return orderBook
 

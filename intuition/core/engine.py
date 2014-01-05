@@ -14,7 +14,6 @@
 # limitations under the License.
 
 
-import os
 import pytz
 import pandas as pd
 import logbook
@@ -22,6 +21,7 @@ import logbook
 from zipline.finance.trading import TradingEnvironment
 from zipline.utils.factory import create_simulation_parameters
 
+from intuition import modules_path, default_config
 from intuition.data.utils import Exchanges
 from intuition.data.loader import LiveBenchmark
 from intuition.core.analyzes import Analyze
@@ -29,8 +29,6 @@ import intuition.utils.utils as utils
 
 
 log = logbook.Logger('intuition.core.engine')
-EMPTY_CONFIG = {'algorithm': {}, 'manager': {}}
-modules_path = os.environ.get('MODULES_PATH', 'intuition.modules')
 
 
 def _intuition_module(location):
@@ -44,7 +42,7 @@ class TradingEngine(object):
     ''' Factory class wrapping zipline Backtester, returns the requested algo
     ready for use '''
 
-    def __new__(self, identity, modules, strategy_conf=EMPTY_CONFIG):
+    def __new__(self, identity, modules, strategy_conf=default_config):
 
         algo_obj = _intuition_module(modules['algorithm'])
         algo_obj.identity = identity
@@ -96,10 +94,6 @@ class Simulation(object):
         '''
         Setup from exchange traded on benchmarks used, location
         and method to load data market while simulating
-        _______________________________________________
-        Parameters
-            exchange: str
-                Trading exchange market
         '''
         # Environment configuration
         if exchange in Exchanges:

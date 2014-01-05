@@ -17,6 +17,9 @@
 import argparse
 import logbook
 
+from intuition import modules_path
+import intuition.utils.utils as utils
+
 
 log = logbook.Logger('intuition.core.configuration')
 
@@ -44,23 +47,13 @@ def parse_commandline():
     return args.id, args.context, args.showlog
 
 
-def _module(name):
-    ''' Return a python module from its name '''
-    # why fromlist keyword:
-    # http://stackoverflow.com/questions/2724260/
-    # why-does-pythons-import-require-fromlist
-    return __import__(name, fromlist=['whatever'])
-
-
 def context(driver):
     driver = driver.split('::')
-    builder_name = 'intuition.modules.contexts.{}'.format(driver[0])
+    builder_name = '{}.contexts.{}'.format(modules_path, driver[0])
 
-    try:
-        context_builder = _module(builder_name)
-    except ImportError, e:
-        log.error('loading context module: %s' % e)
+    build_context = utils.dynamic_import(builder_name, 'build_context')
+    if not build_context:
         return {}, {'algorithm': {}, 'manager': {}}
 
     log.info('building context')
-    return context_builder.build_context(driver[1])
+    return build_context(driver[1])

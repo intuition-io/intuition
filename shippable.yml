@@ -4,7 +4,7 @@ python:
 before_install: echo "install"
 install:
   - sudo apt-get -y install python-pip python-dev g++ make gfortran
-  - pip install --upgrade --use-mirrors numpy nosetests flake8
+  - pip install --upgrade --use-mirrors numpy nose flake8
   - pip install --upgrade --use-mirrors -r requirements.txt
 script:
   - nosetests tests

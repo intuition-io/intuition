@@ -14,7 +14,6 @@
 # limitations under the License.
 
 
-import sys
 import os
 import json
 import re
@@ -25,13 +24,19 @@ from urllib2 import urlopen
 
 
 def dynamic_import(mod_path, obj_name):
-    module = __import__(mod_path, fromlist=['whatever'])
+    try:
+        module = __import__(mod_path, fromlist=['whatever'])
+    except ImportError, e:
+        print(e)
+        return None
+
     if hasattr(module, obj_name):
         obj = getattr(module, obj_name)
     else:
         print('module {} has no attribute {}'.
-              format(module.__name__, obj_name))
-        sys.exit(1)
+                 format(module.__name__, obj_name))
+        return None
+
     return obj
 
 

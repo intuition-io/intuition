@@ -28,8 +28,11 @@ README_MARKDOWN = None
 
 def get_requirements():
     with open('./requirements.txt') as requirements:
-        # Avoid github based requirements
-        return requirements.read().split('\n')[:-3]
+        # Avoid github based requirements and replace them
+        deps = requirements.read().split('\n')[:-3]
+        deps.append('zipline>=0.5.11.dev')
+        deps.append('pandas>=0.13.0-27-gf7aeaeb')
+        return deps
 
 with open('README.md') as markdown_source:
     README_MARKDOWN = markdown_source.read()
@@ -77,6 +80,6 @@ setup(
     scripts=['app/intuition'],
     data_files=[(os.path.expanduser('~/.intuition/data'), glob('./data/*'))],
     dependency_links=[
-      'http://github.com/pydata/pandas/tarball/master#egg=pandas',
-      'http://github.com/quantopian/zipline/tarball/master#egg=zipline']
+        'http://github.com/pydata/pandas/tarball/master#egg=pandas-0.13.0-27-gf7aeaeb',
+        'http://github.com/quantopian/zipline/tarball/master#egg=zipline-0.5.11.dev']
 )
