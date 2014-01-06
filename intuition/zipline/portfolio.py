@@ -129,11 +129,11 @@ class PortfolioFactory():
                 Object sent from algorithm for certain managers
         ___________________________________________________________
         Return
-            dict orderBook, like {"google": 34, "apple": -56}
+            dict order_book, like {"google": 34, "apple": -56}
         '''
 
         self._optimizer_parameters['algo'] = extras
-        orderBook = dict()
+        order_book = {}
 
         # If value < 0, it's a sell signal on the key, else buy signal
         to_buy = dict(filter(lambda (sid, strength):
@@ -147,7 +147,7 @@ class PortfolioFactory():
 
         if not to_buy and not to_sell:
             # Nothing to do
-            return dict()
+            return {}
 
         # Compute the optimal portfolio allocation, using user defined function
         alloc, e_ret, e_risk = self.optimize(
@@ -163,14 +163,14 @@ class PortfolioFactory():
         for t in alloc:
             ## Handle allocation returned as number of stocks to order
             if isinstance(alloc[t], int):
-                orderBook[t] = alloc[t]
+                order_book[t] = alloc[t]
 
             ## Handle allocation returned as stock weights to order
             elif isinstance(alloc[t], float):
                 # Sell orders
                 if alloc[t] <= 0:
-                    orderBook[t] = int(alloc[t] *
-                                       self.portfolio.positions[t].amount)
+                    order_book[t] = int(alloc[t] *
+                                        self.portfolio.positions[t].amount)
                 ## Buy orders
                 else:
                     # If we already trade this ticker, substract owned amount
@@ -179,18 +179,18 @@ class PortfolioFactory():
                         price = self.portfolio.positions[t].last_sale_price
                     else:
                         price = signals[t]
-                    orderBook[t] = (int(alloc[t] *
-                                    self.portfolio.portfolio_value / price)
-                                    - self.portfolio.positions[t].amount)
+                    order_book[t] = (int(alloc[t] *
+                                     self.portfolio.portfolio_value / price)
+                                     - self.portfolio.positions[t].amount)
 
         '''
-        if self.bullet and orderBook:
+        if self.bullet and order_book:
             # Alert user of the orders about to be processed
             # Ok... kind of fancy method
             ords = {'-1': 'You should sell', '1': 'You should buy'}
             items = ['{} {} stocks of {}'.format(
                 ords[str(amount / abs(amount))], amount, ticker)
-                for ticker, amount in orderBook.iteritems()]
+                for ticker, amount in order_book.iteritems()]
             payload = {
                 'title': 'Portfolio manager notification',
                 'items': items,
@@ -199,7 +199,7 @@ class PortfolioFactory():
             self.log.debug(req)
         '''
 
-        return orderBook
+        return order_book
 
     def advise(self, **kwargs):
         '''

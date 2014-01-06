@@ -17,7 +17,7 @@
 import argparse
 import logbook
 
-from intuition import modules_path
+import intuition.constants as constants
 import intuition.utils.utils as utils
 
 
@@ -49,7 +49,7 @@ def parse_commandline():
 
 def context(driver):
     driver = driver.split('::')
-    builder_name = '{}.contexts.{}'.format(modules_path, driver[0])
+    builder_name = '{}.contexts.{}'.format(constants.MODULES_PATH, driver[0])
 
     build_context = utils.dynamic_import(builder_name, 'build_context')
     if not build_context:

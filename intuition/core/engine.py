@@ -21,7 +21,7 @@ import logbook
 from zipline.finance.trading import TradingEnvironment
 from zipline.utils.factory import create_simulation_parameters
 
-from intuition import modules_path, default_config
+import intuition.constants as constants
 from intuition.data.utils import Exchanges
 from intuition.data.loader import LiveBenchmark
 from intuition.core.analyzes import Analyze
@@ -32,17 +32,21 @@ log = logbook.Logger('intuition.core.engine')
 
 
 def _intuition_module(location):
+    ''' Build the module path and import it '''
     location = location.split('.')
     obj = location.pop(-1)
-    path = '.'.join([modules_path] + location)
+    path = '.'.join([constants.MODULES_PATH] + location)
     return utils.dynamic_import(path, obj)
 
 
+#NOTE Is there still a point to use here a constructor object instead of a
+#     simple function ?
 class TradingEngine(object):
     ''' Factory class wrapping zipline Backtester, returns the requested algo
     ready for use '''
 
-    def __new__(self, identity, modules, strategy_conf=default_config):
+    def __new__(self, identity, modules,
+                strategy_conf=constants.DEFAULT_CONFIG):
 
         algo_obj = _intuition_module(modules['algorithm'])
         algo_obj.identity = identity
@@ -88,6 +92,7 @@ class Simulation(object):
         self.context = self._configure_context(self.configuration['exchange'])
 
     def set_benchmark_loader(self, load_function):
+        ''' Define a custom benchmark loader for zipline to use '''
         self.load_market_data = load_function
 
     def _configure_context(self, exchange=''):
@@ -108,6 +113,8 @@ class Simulation(object):
         return trading_context
 
     def run(self, identity, data, strategy):
+        ''' Wrapper of zipline run() method. Use the configuration set so far
+        to build up the trading environment and launch the system '''
         engine = TradingEngine(identity,
                                self.configuration['modules'],
                                strategy)
@@ -127,7 +134,7 @@ class Simulation(object):
                 start=self.configuration['index'][0],
                 end=self.configuration['index'][-1])
 
-            daily_stats = engine.go(data, sim_params=sim_params)
+            daily_stats = engine.trade(data, sim_params=sim_params)
 
         return Analyze(
             results=daily_stats,

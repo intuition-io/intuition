@@ -24,10 +24,11 @@ from urllib2 import urlopen
 
 
 def dynamic_import(mod_path, obj_name):
+    ''' Take a string and return the corresponding module '''
     try:
         module = __import__(mod_path, fromlist=['whatever'])
-    except ImportError, e:
-        print(e)
+    except ImportError, description:
+        print(description)
         return None
 
     if hasattr(module, obj_name):
@@ -41,7 +42,8 @@ def dynamic_import(mod_path, obj_name):
 
 
 def activate_pdb_hook():
-    def debug_exception(type, value, tb):
+    ''' Catch exceptions with a prompt for post-mortem analyzis'''
+    def debug_exception(type_exception, value, tb):
         import pdb
         pdb.post_mortem(tb)
 
@@ -51,6 +53,7 @@ def activate_pdb_hook():
 
 #NOTE Could use pprint module
 def emphasis(obj, align=True):
+    ''' Clearer data printing '''
     if isinstance(obj, dict):
         if align:
             pretty_msg = os.linesep.join(
@@ -62,33 +65,23 @@ def emphasis(obj, align=True):
     return pretty_msg
 
 
-def to_dict(obj):
-    try:
-        dict_obj = obj.__dict__
-    except:
-        print '** Error: Cannot casting to dictionnary'
-        return obj
-    for key, value in dict_obj.iteritems():
-        if key.find('date') >= 0:
-            dict_obj[key] = value.strftime(format='%Y-%m-%d %H:%M')
-    return dict_obj
-
-
 def get_local_ip(public=False):
+    ''' Utility for logbook information injection '''
     if public:
         data = str(urlopen('http://checkip.dyndns.com/').read())
-        ip = re.compile(r'Address: (\d+\.\d+\.\d+\.\d+)').search(data).group(1)
+        ip_addr = re.compile(
+            r'Address: (\d+\.\d+\.\d+\.\d+)').search(data).group(1)
     else:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(('google.com', 0))
-        ip = s.getsockname()[0]
-    return ip
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.connect(('google.com', 0))
+        ip_addr = sock.getsockname()[0]
+    return ip_addr
 
 
 def apply_mapping(raw_row, mapping):
-    """
+    '''
     Override this to hand craft conversion of row.
-    """
+    '''
     row = {target: mapping_func(raw_row[source_key])
            for target, (mapping_func, source_key)
            in mapping.fget().items()}

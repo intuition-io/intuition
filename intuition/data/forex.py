@@ -36,6 +36,20 @@ def forex_rates(user, password, pairs='', fmt='csv'):
     return auth.content.split('\n')
 
 
+def _fx_mapping(raw_response):
+    ''' Map raw output to clearer labels '''
+    dict_data = dict()
+    for pair in raw_response:
+        pair = pair.split(',')
+        #FIXME Timestamp = year 45173
+        dict_data[pair[0]] = {'TimeStamp': pair[1],
+                              'Bid.Price': float(pair[2] + pair[3]),
+                              'Ask.Price': float(pair[4] + pair[5]),
+                              'High': float(pair[6]),
+                              'Low': float(pair[7])}
+    return dict_data
+
+
 #FIXME 'Not authorized' mode works weird
 class ConnectTrueFX(object):
     auth_url = ('http://webrates.truefx.com/rates/connect.html?\
@@ -67,30 +81,20 @@ class ConnectTrueFX(object):
         ### Remove '\r\n'
         self._code = auth.content[:-2]
 
-    def QueryTrueFX(self, pairs='', fmt='csv'):
+    def query_trueFX(self, pairs='', fmt='csv'):
+        ''' Perform a request against truefx data '''
         if isinstance(pairs, str):
             pairs = [pairs]
         response = requests.get(
             self.query_url.format(self._code, fmt, ','.join(pairs)))
 
-        mapped_data = self._fx_mapping(response.content.split('\n')[:-2])
+        mapped_data = _fx_mapping(response.content.split('\n')[:-2])
         if len(mapped_data) == 1:
             return Series(mapped_data)
         return DataFrame(mapped_data)
 
-    def _fx_mapping(self, raw_response):
-        dict_data = dict()
-        for pair in raw_response:
-            pair = pair.split(',')
-            #FIXME Timestamp = year 45173
-            dict_data[pair[0]] = {'TimeStamp': pair[1],
-                                  'Bid.Price': float(pair[2] + pair[3]),
-                                  'Ask.Price': float(pair[4] + pair[5]),
-                                  'High': float(pair[6]),
-                                  'Low': float(pair[7])}
-        return dict_data
-
-    def isActive(self):
+    def is_active(self):
+        ''' Indicate wether the connection is still on or not '''
         return isinstance(self._code, str) and (self._code != 'not authorized')
 
     def __del__(self):

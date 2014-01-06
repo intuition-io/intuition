@@ -38,7 +38,6 @@ class TradingFactory(TradingAlgorithm):
     __metaclass__ = abc.ABCMeta
 
     is_live = False
-    debug = False
     #TODO Use another zipline mechanism
     day = 0
     middlewares = []
@@ -47,14 +46,16 @@ class TradingFactory(TradingAlgorithm):
         self.data_generator = DataFrameSource
         TradingAlgorithm.__init__(self, *args, **kwargs)
 
-    def use(self, func, when='whatever'):
+    def use(self, func, when='whenever'):
+        ''' Append a middleware to the algorithm '''
+        #NOTE A middleware Object ?
         self.middlewares.append({
             'call': func,
             'name': func.__name__,
             'args': func.func_code.co_varnames,
             'when': when})
 
-    def go(self, source, sim_params=None):
+    def trade(self, source, sim_params=None):
         '''
         if self.is_live:
             benchmark_return_source = [
@@ -74,7 +75,9 @@ class TradingFactory(TradingAlgorithm):
         # 0.5.9 compatibility
         return self.run(source, sim_params)
 
+    #TODO How can I use several sources ?
     def set_data_generator(self, generator_class):
+        ''' Register a data source to the algorithm '''
         self.data_generator = generator_class
 
     #NOTE I'm not superfan of initialize + warming
@@ -88,6 +91,8 @@ class TradingFactory(TradingAlgorithm):
         pass
 
     def handle_data(self, data):
+        ''' Method called for each event by zipline. In intuition this is the
+        place to factorize algorithms and then call event() '''
         self.day += 1
         signals = {}
 
@@ -110,22 +115,31 @@ class TradingFactory(TradingAlgorithm):
             self.process_orders(order_book)
 
     def process_orders(self, order_book):
+        ''' Default and costant orders processor. Overwrite it for more
+        sophistiated strategies '''
         for stock in order_book:
             self.order(stock, order_book[stock])
-            if self.debug:
-                self.logger.notice('{}: Ordered {} {} stocks'.format(
-                    self.datetime, stock, order_book[stock]))
+            self.logger.debug('{}: Ordered {} {} stocks'.format(
+                self.datetime, stock, order_book[stock]))
 
-    def _call_one_middleware(self, mw):
+    def _call_one_middleware(self, middleware):
+        ''' Evaluate arguments and execute the middleware function '''
         args = {}
-        for arg in mw['args']:
+        for arg in middleware['args']:
             if hasattr(self, arg):
-                args[arg] = eval('self.' + arg)
+                # same as eval() but safer for arbitrary code execution
+                args[arg] = reduce(getattr, arg.split('.'), self)
         self.logger.info('calling middleware event {}'
-                         .format(mw['name']))
-        mw['call'](**args)
+                         .format(middleware['name']))
+        middleware['call'](**args)
+
+    def _check_condition(self, when):
+        ''' Verify that the middleware condition is True '''
+        #TODO Use self.datetime to evaluate <when>
+        return True
 
     def _call_middlewares(self):
-        for mw in self.middlewares:
-            #TODO Use the <when> keyword
-            self._call_one_middleware(mw)
+        ''' Execute the middleware stack '''
+        for middleware in self.middlewares:
+            if self._check_condition(middleware['when']):
+                self._call_one_middleware(middleware)

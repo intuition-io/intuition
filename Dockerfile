@@ -4,26 +4,23 @@
 # VERSION 0.0.1
 
 # Administration
-FROM boxcar/raring
+FROM stackbrew/ubuntu:saucy
 MAINTAINER Xavier Bruhiere, xavier.bruhiere@gmail.com
 
-# Make sure the package repository is up to date
-RUN echo "deb http://archive.ubuntu.com/ubuntu raring main universe" > /etc/apt/sources.list
-RUN apt-get update
+# Enable the necessary sources and upgrade to latest
+RUN echo "deb http://archive.ubuntu.com/ubuntu saucy main universe multiverse restricted" > /etc/apt/sources.list && \
+  apt-get update && apt-get upgrade -y -o DPkg::Options::=--force-confold
 
 # Local settings
-# Change eventually fr_FR to something else
 RUN apt-get install -y language-pack-fr
-ENV LANGUAGE fr_FR.UTF-8
-ENV LANG fr_FR.UTF-8
-ENV LC_ALL fr_FR.UTF-8
+#ENV LANGUAGE fr_FR.UTF-8
+#ENV LANG fr_FR.UTF-8
+#ENV LC_ALL fr_FR.UTF-8
 
-RUN locale-gen fr_FR.UTF-8
-RUN dpkg-reconfigure locales
+RUN (locale-gen fr_FR.UTF-8 && dpkg-reconfigure locales)
 
 # Keep upstart from complaining
-RUN dpkg-divert --local --rename --add /sbin/initctl
-RUN ln -s /bin/true /sbin/initctl
+RUN dpkg-divert --local --rename --add /sbin/initctl && ln -s /bin/true /sbin/initctl
 
 # Finally install intuition itself
 # Activate full installation, i.e. with modules dependencies
