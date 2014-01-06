@@ -1,0 +1,41 @@
+
+{
+  "universe": "nasdaq,5",
+  "start": "2011-05-10",
+  "end": "2013-11-10",
+  "frequency": "day",
+  "modules": {
+    "context": "File",
+    "manager": "Constant",
+    "algorithm": "BuyAndHold",
+    "data": "YahooPriceSource"
+  },
+  "algorithm": {
+    "debug": true,
+    "save": false,
+    "rebalance_period": 15,
+    "refresh_period": 1,
+    "window_length": 60,
+    "stddev_window": 9,
+    "vwap_window": 5,
+    "long_window" : 25,
+    "short_window" : 5,
+    "threshold" : 0,
+    "ignored": ["volume", "pouet"],
+    "gradient_iterations": 5,
+    "signal_frontier": 0.5,
+    "decision_frontier": 0.5
+  },
+  "manager": {
+    "cash": 10000,
+    "load_backup": 0,
+    "connected": 0,
+    "android": 0,
+    "loopback": 60,
+    "source": "mysql",
+    "perc_sell": 1.0,
+    "max_weight": 0.3,
+    "sell_scale": 100,
+    "buy_scale": 150
+  }
+}

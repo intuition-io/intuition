@@ -1,27 +1,10 @@
+# General
 *.py[coxd]
-
-# General and C++
-!.gitignore
 *~
-res
-*.o
-dist
-QSData
-CSV
-deprecated/
-node_modules/*
-*.bkp
 
 # R
-# History files
 .Rhistory
-Rplots.pdf
-
-# Example code in package build process
 *-Ex.R
-
-# Logs
-quantrade.log
 
 # Packages
 *.egg
@@ -44,39 +27,20 @@ pip-log.txt
 .coverage
 .tox
 nosetests.xml
-
-# Translations
-*.mo
-
-# Mr Developer
-.mr.developer.cfg
-.project
-.pydevproject
-
-# LaTex
-*.aux
-*.lof
-*.out
-*.log
-*.toc
-images/*
-
-# node
-npm-debug.log
+.ropeproject
 
 # Quandl
 authtoken.p
-config/plugins.json
 management/
 
 .vagrant
 .env
-
-# Temporary
-.quantrade
-.ropeproject
+*.bkp
+*.pdf
+.intuition
 src
+intuition.log
+tmp/*
 
-# Temporary precaution
-neuronquant/algorithmic/strategies/*
-neuronquant/algorithmic/managers/*
+.envrc
+dist

@@ -1,217 +1,248 @@
-QuanTrade: Automated quantitative trading system
-==================================================
+Intuition
+=========
 
-[![Build Status](https://travis-ci.org/hackliff/ppQuanTrade.png?branch=master)](https://travis-ci.org/hackliff/ppQuanTrade)
-
-**Super Attention!** Since I am currently involved on other [ambitious IT
-projects](https://github.com/hivetech), I paused this one for a few months. However development should retake
-by the end of --september-- november, hopefully with new tools and skills!
-
-**Attention!** Project is under early development, use for your own risk.
-
-Overview
---------
-
-**Intuition** is an engine and a set of tools meant to let you easily and intuitively build your own **automated quantitative trading system**.
-It is designed to let financial, developer and scientist dudes (together sounds great) explore, test and deploy market technical hacks.
-
-While the project is still at an early age, you can already write, or use, **signal detection algorithms, and portfolio allocation strategies**.
-Then just plug it in the system and watch it from your dev-console or the web app run on **backtest** or **live** mode.
-
-In addition the project proposes facilities to build a distributed system and 21st century application (big data, fat computations, d3.js and other html5 stuff),
-tools to mix languages like Python, node.js and R and a financial library.
-You will find some goodies like machine learning forecast, markowitz portfolio optimization, genetic optimization, sentiment analysis from twitter, ...
+> Automated quantitative trading system kit, for hackers
 
 
 ![Dashboard](https://raw.github.com/hivetech/hivetech.github.io/master/images/QuantDashboard.png)
 
 
+Overview
+--------
+
+**Intuition** is an engine, some building bricks and a set of tools meant to
+let you efficiently and intuitively make your own **automated quantitative trading
+system**. It is designed to let traders, developers and scientists explore,
+improve and deploy market technical hacks.
+
+While the project is still at an early stage, you can already write, use, combine
+**signal detection algorithms, portfolio allocation strategies, data sources
+and contexts configurators**. Just plug your strategies and analyze
+**backtests** or monitor **live trading sessions**.
+
+In addition I work on facilities to build a distributed system and
+21st century application (big data, fat computations, d3.js and other html5
+stuff), tools to mix languages like Python, node.js and R and a financial
+library. You will find some goodies like machine learning forecast, markowitz
+portfolio optimization, genetic optimization, sentiment analysis from twitter, ...
+
+
 Features
 --------
 
-* Highly configurable trading backtest environment, powered by zipline
-* Made to let you write easily algorithms, portfolio manager, parameters optimization and add data sources
+* Highly configurable trading environment, powered by [zipline](https://github.com/quantopian/zipline)
+* From instant kickstart to full control
+* Made to let you tweak algorithms, portfolio manager, data sources, contexts and plugins
 * Already includes many
-* R integration (and soon other languages) in your algorithms
-* Complete results analyser
-* Web front end for efficient results visualization
-* Android notifications (for now with the help of freely available NotifyMyAndroid)
-* Message architecture for interprocess communication and distributed computing, with a central remote console controling everything
-* Ressources to learn about quantitative finance (cleaning it, coming soon)
-* Neuronquant is also a financial library, with common used trading functions, graphics, ... used for example to solve Coursera econometrics assignments
-* Easy to use data management, powered by mysql 
-* Advanced computations available: neural networks, natural language processing, genetic optimization, checkout playground directory !
-* Random fancy stuff as well in this directory
+* Experimental live trading on different markets (Nyse, Nasdaq, CAC40 and Forex for now)
+* Experimental R integration in your algorithms
+* Results analyser
+* Mail and Android notifications (for now with the help of freely available [NotifyMyAndroid](http://www.notifymyandroid.com/) or [PushBullet](https://www.pushbullet.com))
+* Financial library, with common used trading functions, data fetchers, ... used for example to solve Coursera econometrics assignments
+* Easy to use data management, powered by [rethinkdb](rethinkdb.com)
+* [Docker](docker.io) support for development workflow and deployment
+* Kind of a CI showcase as I am testing [travis](https://travis-ci.org), [wercker](wercker.com), [shippable](shippable.com), [drone.io](shippable.com), [coveralls](coveralls.io) and [landscape](landscape.io)
+
+
+Status
+------
+
+<!--[![License](https://pypip.in/license/intuition/badge.png)](https://pypi.python.org/pypi/intuition/)-->
+<!--[![wercker status](https://app.wercker.com/status/f39a4be40502a31b3dcb94875c787b56/m "wercker status")](https://app.wercker.com/project/bykey/f39a4be40502a31b3dcb94875c787b56)-->
+[![wercker status](https://app.wercker.com/status/f39a4be40502a31b3dcb94875c787b56 "wercker status")](https://app.wercker.com/project/bykey/f39a4be40502a31b3dcb94875c787b56)
+[![Build Status](https://drone.io/github.com/hackliff/intuition/status.png)](https://drone.io/github.com/hackliff/intuition/latest)
+[![Build Status](https://travis-ci.org/hackliff/intuition.png?branch=develop)](https://travis-ci.org/hackliff/intuition)
+[![Coverage Status](https://coveralls.io/repos/hackliff/intuition/badge.png)](https://coveralls.io/r/hackliff/intuition)
+[![Code Health](https://landscape.io/github/hackliff/intuition/develop/landscape.png)](https://landscape.io/github/hackliff/intuition/develop)
+
+**Attention** Project is in an *early alpha*, and under heavy development.
+ The new version 0.3.0 revises a lot of code :
+
+* Algoithms, managers and data sources have their [own repository](https://github.com/hackliff/insights)
+* More powerful API to build custom versions of them
+* The context module now handles configuration
+* [Shiny](http://www.rstudio.com/shiny/) interface, [Dashboard](http://fdietz.github.io/team_dashboard/) and clustering will have their intuition-plugins repository (soon)
+* ZeroMQ messaging is for now removed but might be back for inter-algo communication
+* So is MySQL, that has been removed and will be re-implemented as a [data plugin](https://github.com/hackliff/intuition-modules/tree/develop/plugins)
+* But currently it has been replaced by [Rethinkdb](rethinkdb.com)
+* Installation is much simpler and a docker image is available for development and deployment
+* More intuitive configuration splitted between the context mentioned, command line argument and environment variables
+* And a lot (I mean A LOT) of house keeping and code desgin stuff
 
 
 Installation
 ------------
 
-You are just a few steps away from algoritmic trading. Follow one of those 3 methods:
+You are just a few steps away from algoritmic trading. Choose one of the
+following installation method
 
-- Plateform independant with Vagrant  and VMs/containers (http://www.vagrantup.com/):
+* The usual way
 
+```console
+$ pip install intuition
+$ # Optionnaly, install offcial algorithms, managers, ...
+$ pip install insights
 ```
+
+* One-liner for the full installation (i.e. with packages and buit-in
+  [modules](https://github.com/hackliff/insights))
+
+```console
+$ export FULL_INTUITION=1
+$ wget -qO- http://bit.ly/1izVUJJ | sudo -E bash
+$ # ... Go grab a coffee
+```
+
+* From source
+
+```console
 $ git clone https://github.com/hackliff/intuition.git
-$ sudo apt-get install lxc redir
-$ sudo apt-get update && apt-get dist-upgrade
-$ vagrant plugin install vagrant-lxc
-$ cd ppQuanTrade && vagrant up --provider=lxc
+$ cd intuition && sudo make
 ```
 
-Default is lxc because it is much more lightweight than plain VM and
-performances are of importance for trading. Anyway, you can use an other
-provider but edit eventually the Vagrantfile for fine
-customization.  You can also change default base image by setting env variables ```BOX_NAME``` (and
-optionnaly ```BOX_URI``` if you don't have it already on your system)
+* Sexy, early-adopter style
 
-- Classic style:
-
+```console
+$ docker pull hivetech/intuition
 ```
-$ git clone https://github.com/hackliff/intuition.git
-$ cd ppQuanTrade && sudo make all
-```
-
-- Or one liner style (with more installation options, only the first one is required):
-
-```
-$ export PROJECT_URL=hackliff/intuition
-$ export INSTALL_PATH=/some/where
-$ export MAKE_TARGET=all
-$ export VIRTUALIZE=false
-$ export PROVIDER=lxc
-```
-
-And shoot:
-
-```
-$ wget -qO- https://raw.github.com/hackliff/Dotfiles/master/utils/apt-git | sudo -E bash
-```
-
-- Then, in any case, you have to setup a mysql database:
-
-Edit the script in scripts/installation/createdb.sql and your preferences in
-~/.quantrade/config/default.json, the symbols you want to trade in
-ppQuanTrade/data/symbols.csv and run:
-
-```
-$ sudo chown -R $USER $HOME/.quantrade   # Fixes weird issue
-$ sudo chown -R $USER ppQuanTrade/       # Idem 
-$ make database
-```
-
-At any moment you can change or edit symbols files and run it again for update.
-
-- Intuition is able to send to your android device(s) notifications, using
-  NotifyMyAndroid. However you will need an API key, available for free with
-  the trial version of the application. Super simple to setup, check their
-  website.
-
-- You're done !
-
 
 Getting started
 ---------------
 
-You can configure the soft trough default.json and plugins.json in
-~/.quantrade. Then run:
+Intuition wires 4 primitives to build up the system : A data source generates
+events, processed by the algorithm, that can optionnaly use a portfolio manager
+to compute assets allocation. They are configured through a Context, while
+third party services use environment variables (take a look in
+config/local.env).
 
+The following example trades in real time forex, with a simple buy and hold
+algorithm and a portfolio manager that allocates same amount for each asset.
+Their configuration below is stored in a json file.
+
+```console
+$ intuition --context file::liveForex.json --id chuck --showlog
 ```
-./application/app.py --initialcash 50000 --tickers random,10 \
-        --loglevel CRITICAL --algorithm BuyAndHold --manager Constant --start 2011-05-10 \
-        --frequency daily --database backtest --exchange paris --source DBPriceSource
+
+```json
+{
+    id: "liveForex",
+    start: "2011-05-05",
+    end: "2013-10-05",
+    frequency: "day",
+    universe: "forex,5",
+    algorithm: {
+        save: false
+    },
+    manager: {
+        android: 0,
+        buy_scale: 150,
+        cash: 10000,
+        max_weight: 0.3,
+        perc_sell: 1,
+        sell_scale: 100
+    },
+    modules: {
+        context: "file",
+        algorithm: "algorithms.buyandhold.BuyAndHold",
+        data: "sources.live.forex.ForexLiveSource",
+        manager: "managers.fair.Fair"
+    }
+}
 ```
 
-Or in realtime mode (Broken, I am improving it):
+Note that in the current implementation, Nasdaq, Nyse, Cac 40 and Forex markets
+are available.
 
-```./application/app.py --initialcash 100000 --tickers EUR/USD,EUR/GBP --algorithm StdBased 
-		--manager Equity --frequency minute --exchange forex --live --source EquitiesLiveSource ```
+Alternatively you can use docker. Here we also fire up a [rethinkdb](rethinkdb.com)
+database to store portfolios while trading, and
+[mongodb](http://www.mongodb.org/) to store configurations.
 
-More examples available in scripts/run_app.sh
+```console
+$ docker run -d -name mongodb -p 27017:27017 -p 28017:28017 waitingkuo/mongodb
 
-As mentionned you can easily write your own algorithms. Here is the equity
-manager example, which allocates the same weight to all of your assets:
+$ docker run -d -name rethinkdb crosbymichael/rethinkdb --bind all
+
+$ docker run \
+  -e PUSHBULLET_API_KEY=$PUSHBULLET_API_KEY \
+  -e QUANDL_API_KEY=$QUANDL_API_KEY \
+  -e MAILGUN_API_KEY=$MAILGUN_API_KEY \
+  -e TRUEFX_API=$TRUEFX_API \
+  -e DB_HOST=$DB_HOST \
+  -e DB_PORT=$DB_PORT \
+  -e DB_NAME=$DB_NAME \
+  -e LOG=debug \
+  -e LANGUAGE="fr_FR.UTF-8" \
+  -e LANG="fr_FR.UTF-8" \
+  -e LC_ALL="fr_FR.UTF-8" \
+  -name trade_box hivetech/intuition \
+  intuition --context mongodb::${host_ip}:27017/backtestNasdaq --showlog
+```
+
+For Hackers
+-----------
+
+You can easily work out and plug your own strategies :
+
+* [Algorithm API](https://github.com/hackliff/insights/blob/develop/insights/algorithms/readme.md)
+* [Portfolio API](https://github.com/hackliff/insights/blob/develop/insights/managers/readme.md)
+* [Data API](https://github.com/hackliff/insights/blob/develop/insights/sources/readme.md)
+* [Context API](https://github.com/hackliff/insights/blob/develop/insights/contexts/readme.md)
+* [Middlewares](https://github.com/hackliff/insights/blob/develop/insights/plugins/readme.md)
+
+Either clone the [insights repository](https://github.com/hackliff/insights)
+and hack it or start from scratch. Intuition will search in ``$MODULES_PATH``
+the modules you gave him.
+
+
+The [provided](https://github.com/hackliff/intuition/blob/develop/app/intuition)
+``intuition`` command does already a lot of things but why not improve it or
+write your own. Here is a minimal implementation, assuming you installed
+*insights*.
 
 ```python
-from portfolio import PortfolioManager
+from datetime import datetime
+from intuition.core.engine import Simulation
 
-class Fair(PortfolioManager):
-    '''
-    dispatch equals weigths
-    '''
-    def optimize(self, date, to_buy, to_sell, parameters):
-        allocations = dict()
-        if to_buy:
-            fraction = round(1.0 / float(len(to_buy)), 2)
-            for s in to_buy:
-                allocations[s] = fraction
-        for s in to_sell:
-            allocations[s] = - self.portfolio.positions[s].amount
+engine = Simulation({
+    'end': datetime(2014, 1, 7),
+    'universe': 'cac40',
+    'modules': {
+        'algorithm': 'algorithms.movingaverage.DualMovingAverage',
+        'manager': 'managers.gmv.GlobalMinimumVariance',
+        'data': 'sources.live.Equities.EquitiesLiveSource'}})
 
-        expected_return = 0
-        expected_risk = 1
-        return allocations, expected_return, expected_risk
-```
+# Use the configuration to prepare the trading environment
+engine.configure()
 
-Strategies triggering buy or sell signals are used within zipline backtester
-engine and therefore use quite the same scheme, plus the manager, and some
-config parameters. Here is a classic momentum strategie:
+data = {'universe': 'cac40',
+        'index': pd.date_range(datetime.now(), datetime(2014, 1, 7))}
+analyzes = engine.run(session, data)
 
-```python
-from neuronquant.zipline.algorithm import QuantitativeTrading
-
-class BuyAndHold(QuantitativeTrading):
-    '''Simpliest algorithm ever, just buy a stock at the first frame'''
-    def initialize(self, properties):
-        self.debug = properties.get('debug', False)
-        self.save = properties.get('save', False)
-
-        self.loops = 0
-
-    def handle_data(self, data):
-        self.loops += 1
-        signals = {}
-        ''' ----------------------------------------------------------    Init   --'''
-        if self.initialized:
-            self.manager.update(
-                self.portfolio,
-                self.datetime,
-                self.perf_tracker.cumulative_risk_metrics.to_dict(),
-                save=self.save)
-        else:
-            # Perf_tracker need at least a turn to have an index
-            self.initialized = True
-
-        if self.loops == 2:
-            ''' ------------------------------------------------------    Scan   --'''
-            for ticker in data:
-                signals[ticker] = data[ticker].price
-
-        ''' ----------------------------------------------------------   Orders  --'''
-        if signals:
-            orderBook = self.manager.trade_signals_handler(signals)
-            for stock in orderBook:
-                if self.debug:
-                    self.logger.notice('{}: Ordering {} {} stocks'.format(
-                        self.datetime, stock, orderBook[stock]))
-                self.order(stock, orderBook[stock])
+# Explore the analyzes object
+print analyzes.overall_metrics('one_month')
+print analyzes.results.tail()
 ```
 
 
-Resources for Newcomers
------------------------
+Contributing
+------------
 
-* [The Wiki](https://github.com/hackliff/intuition/wiki)
-* [Contributing](https://github.com/hackliff/intuition/wiki/Contribution)
-* [Tutorial](https://github.com/hackliff/intuition/wiki/How-to-become-a-ninja-trader)
+> Fork, implement, add tests, pull request, get my everlasting thanks and a
+> respectable place here [=)](https://github.com/jondot/groundcontrol)
 
+
+License
+-------
+
+Copyright 2014 Xavier Bruhiere
+Intuition is available under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.html).
+
+---------------------------------------------------------------
 
 Credits
 -------
 
-Projects and websites below are awesome works that i heavily use, learn from and want to gratefully thank:
-
-* [Zipline](http://github.com/quantopian/zipline and quantopian http://wwww.quantopian.com)
+* [Zipline](http://github.com/quantopian/zipline)
 * [Quantopian](http://www.quantopian.com/)
 * [Pandas](http://github.com/pydata/pandas)
 * [R-bloggers](http://www.r-bloggers.com/)

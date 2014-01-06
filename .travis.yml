@@ -1,8 +1,24 @@
 language: python
 python:
   - "2.7"
+env:
+  - LOG=debug
+
+before_install:
+  - sudo apt-get -y install python-pip python-dev g++ make gfortran
 install:
-    - sudo apt-get -y install python-pip python-dev g++ make gfortran mysql-client libmysqlclient-dev r-base
-  - pip install --upgrade -r scripts/installation/requirements.txt
+  - pip install --upgrade --use-mirrors numpy nose flake8 coveralls
+  - pip install --upgrade --use-mirrors -r requirements.txt
+
+before_script:
+  - flake8 intuition tests
 script:
-    - nosetests tests
+  - nosetests -w tests --with-coverage --cover-package=intuition
+
+after_success:
+  - coveralls
+
+branches:
+  only:
+    - master
+    - develop
