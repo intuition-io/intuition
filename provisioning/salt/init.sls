@@ -6,38 +6,40 @@ intuition-pkgs:
       - r-base
       - python-pip
       - python-dev
-      - gcc
       - g++
       - make
       - gfortran
+      - libfreetype6-dev
+      - libpng-dev
+      - libopenblas-dev
+      - liblapack-dev
 
 # Requirements modules need first numpy to be installed
-numpy:
+init-intuition:
   pip.installed:
+    - names:
+      - setuptools
+      - distribute
+      - flake8
+      - nose
+      - numpy
     - require:
       - pkg: intuition-pkgs
 
-# Python dependencies
-requirements:
+intuition:
   pip.installed:
-    - requirements: salt://intuition/scripts/installation/requirements.txt
     - require:
-      - pip: numpy
+      - pip: init-intuition
 
-# Make the library system wide available
-/usr/local/lib/python2.7/dist-packages/intuition:
-  file:
-    - recurse
-    - source: salt://intuition/intuition
-
-# Copy market data to default location
-/root/.intuition:
-  file.recurse:
-    - source: salt://intuition/config
-
-# Copy market data to default location
-/root/.intuition/data:
-  file.recurse:
-    - source: salt://intuition/data
+init-insights:
+  pip.installed:
+    - names:
+      - patsy
+      - scipy
     - require:
-      - file: /root/.intuition
+      - pip: intuition
+
+insights:
+  pip.installed:
+    - require:
+      - pip: init-insights

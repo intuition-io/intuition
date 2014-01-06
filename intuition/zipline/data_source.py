@@ -29,6 +29,23 @@ from zipline.gens.utils import hash_args
 from intuition.data.utils import smart_selector
 
 
+def _build_event(date, sid, series):
+    ''' Format the input to a zipline compliant event '''
+    event = {
+        'dt': date,
+        'sid': sid}
+    if isinstance(series, pd.Series):
+        if sid in series.keys():
+            event.update({'price': series[sid],
+                          'volume': 1000})
+        else:
+            event.update(series.to_dict())
+    elif isinstance(series, pd.DataFrame):
+        event.update(series[sid].to_dict())
+
+    return event
+
+
 class DataFactory(DataSource):
     '''
     Intuition surcharge of DataSource zipline class
@@ -67,6 +84,7 @@ class DataFactory(DataSource):
         self.initialize(data_descriptor, **kwargs)
 
     def initialize(self, data_descriptor, **kwargs):
+        ''' Abstract method for user custom initialization'''
         pass
 
     @property
@@ -79,42 +97,24 @@ class DataFactory(DataSource):
             self._raw_data = self.raw_data_gen()
         return self._raw_data
 
-        ''' This method must be over written by the user custom data source '''
-        pass
-
     @abc.abstractmethod
     def get_data(self):
         ''' Users should overwrite this method '''
         pass
 
-    def build_event(self, dt, sid, series):
-        event = {
-            'dt': dt,
-            'sid': sid}
-        if isinstance(series, pd.Series):
-            if sid in series.keys():
-                event.update({'price': series[sid],
-                              'volume': 1000})
-            else:
-                event.update(series.to_dict())
-        elif isinstance(series, pd.DataFrame):
-            event.update(series[sid].to_dict())
-
-        return event
-
     def raw_data_gen(self):
         self.data = self.get_data()
 
         if isinstance(self.data, pd.DataFrame):
-            for dt, series in self.data.iterrows():
+            for date, series in self.data.iterrows():
                 for sid in self.sids:
-                    yield self.build_event(dt, sid, series)
+                    yield _build_event(date, sid, series)
 
         elif isinstance(self.data, pd.Panel):
-            for dt in self.data.major_axis:
-                df = self.data.major_xs(dt)
+            for date in self.data.major_axis:
+                df = self.data.major_xs(date)
                 for sid, series in df.iterkv():
-                    yield self.build_event(dt, sid, series)
+                    yield _build_event(date, sid, series)
 
         else:
             raise TypeError("Invalid data source type")
@@ -129,15 +129,15 @@ class LiveDataFactory(DataFactory):
 
     wait_interval = 15
 
-    def _wait_for_dt(self, dt):
+    def _wait_for_dt(self, date):
         '''
         Only return when we reach given datetime
         '''
         # Intuition works with utc dates, conversion
         # are made for I/O
         now = datetime.datetime.now(pytz.utc)
-        while now < dt:
-            print('Waiting for {} / {}'.format(now, dt))
+        while now < date:
+            print('Waiting for {} / {}'.format(now, date))
             time.sleep(self.wait_interval)
             now = datetime.datetime.now(pytz.utc)
 
@@ -158,9 +158,9 @@ class LiveDataFactory(DataFactory):
 
     def raw_data_gen(self):
         index = self._get_updated_index()
-        for dt in index:
-            self._wait_for_dt(dt)
+        for date in index:
+            self._wait_for_dt(date)
             snapshot = self.get_data()
 
             for sid, series in snapshot.iterkv():
-                yield self.build_event(dt, sid, series)
+                yield _build_event(date, sid, series)

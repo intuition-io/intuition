@@ -4,18 +4,11 @@
 # vim:ft=make
 
 LOGS?=/tmp/intuition.logs
-MODULES?=https://github.com/hackliff/intuition-modules
-PLUGINS?=https://github.com/hackliff/intuition-plugins
 
 all: dependencies modules install
 
 install:
 	python setup.py install
-
-modules:
-	@echo "Downloading submodules"
-	git submodule init
-	git submodule update
 
 dependencies:
 	@echo "[make] Installing packages"

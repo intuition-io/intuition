@@ -1,5 +1,5 @@
 #
-# Copyright 2013 Xavier Bruhiere
+# Copyright 2014 Xavier Bruhiere
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,10 +23,6 @@ import datetime as dt
 #from intuition.utils.utils import reIndexDF
 
 
-'''-----------------------------------------------------------
-Quant
------------------------------------------------------------'''
-
 log = logbook.Logger('intuition.core.finance')
 
 
@@ -47,40 +43,40 @@ def qstk_get_sharpe_ratio(rets, risk_free=0.00):
     return f_sharpe
 
 
-def moving_average(x, n, type='simple'):
+def moving_average(data, periods, type='simple'):
     """
-    compute an n period moving average.
+    compute a <periods> period moving average.
     type is 'simple' | 'exponential'
     """
-    x = np.asarray(x)
+    data = np.asarray(data)
     if type == 'simple':
-        weights = np.ones(n)
+        weights = np.ones(periods)
     else:
-        weights = np.exp(np.linspace(-1., 0., n))
+        weights = np.exp(np.linspace(-1., 0., periods))
 
     weights /= weights.sum()
 
-    a = np.convolve(x, weights, mode='full')[:len(x)]
-    a[:n] = a[n]
-    return a
+    mavg = np.convolve(data, weights, mode='full')[:len(data)]
+    mavg[:periods] = mavg[periods]
+    return mavg
 
 
-def relative_strength(prices, n=14):
+def relative_strength(prices, periods=14):
     """
-    compute the n period relative strength indicator
+    compute the <periods> period relative strength indicator
     http://stockcharts.com/school/doku.php?\
         id=chart_school:glossary_r#relativestrengthindex
     http://www.investopedia.com/terms/r/rsi.asp
     """
     deltas = np.diff(prices)
-    seed = deltas[:n + 1]
-    up = seed[seed >= 0].sum() / n
-    down = -seed[seed < 0].sum() / n
-    rs = up / down
+    seed = deltas[:periods + 1]
+    up = seed[seed >= 0].sum() / periods
+    down = -seed[seed < 0].sum() / periods
+    ratio = up / down
     rsi = np.zeros_like(prices)
-    rsi[:n] = 100. - 100. / (1. + rs)
+    rsi[:periods] = 100. - 100. / (1. + ratio)
 
-    for i in range(n, len(prices)):
+    for i in range(periods, len(prices)):
         delta = deltas[i - 1]  # Cause the diff is 1 shorter
 
         if delta > 0:
@@ -90,27 +86,27 @@ def relative_strength(prices, n=14):
             upval = 0.
             downval = -delta
 
-        up = (up * (n - 1) + upval) / n
-        down = (down * (n - 1) + downval) / n
+        up = (up * (periods - 1) + upval) / periods
+        down = (down * (periods - 1) + downval) / periods
 
-        rs = up / down
-        rsi[i] = 100. - 100. / (1. + rs)
+        ratio = up / down
+        rsi[i] = 100. - 100. / (1. + ratio)
 
     return rsi
 
 
-def moving_average_convergence(x, nslow=26, nfast=12):
+def moving_average_convergence(data, nslow=26, nfast=12):
     """
     compute the MACD (Moving Average Convergence/Divergence)
     using a fast and slow exponential moving avg
-    return value is emaslow, emafast, macd which are len(x) arrays
+    return value is emaslow, emafast, macd which are len(data) arrays
     """
-    emaslow = moving_average(x, nslow, type='exponential')
-    emafast = moving_average(x, nfast, type='exponential')
+    emaslow = moving_average(data, nslow, type='exponential')
+    emafast = moving_average(data, nfast, type='exponential')
     return emaslow, emafast, emafast - emaslow
 
 
-def CC_annualize_returns(ret_per_period, periods_per_year):
+def cc_annualize_returns(ret_per_period, periods_per_year):
     return math.log(1 + annualized_returns(ret_per_period, periods_per_year))
 
 
@@ -124,8 +120,8 @@ def annualized_returns(ret_per_period, periods_per_year):
 
 def average_returns(ts, **kwargs):
     ''' Compute geometric average returns from a returns time serie'''
-    type = kwargs.get('type', 'net')
-    if type == 'net':
+    average_type = kwargs.get('type', 'net')
+    if average_type == 'net':
         relative = 0
     else:
         relative = -1  # gross
@@ -145,7 +141,7 @@ def average_returns(ts, **kwargs):
     return avg_ret - 1
 
 
-def CC_returns(ts, **kwargs):
+def cc_returns(ts, **kwargs):
     start = kwargs.get('start', None)
     end = kwargs.get('end', dt.datetime.today())
     delta = kwargs.get('deltaya', BDay())
@@ -169,9 +165,9 @@ def returns(ts, **kwargs):
     @param end : so said
     @param cumulative: compute cumulative returns
     '''
-    type = kwargs.get('type', 'net')
+    returns_type = kwargs.get('type', 'net')
     cumulative = kwargs.get('cumulative', False)
-    if type == 'net':
+    if returns_type == 'net':
         relative = 0
     else:
         relative = 1  # gross
@@ -194,22 +190,23 @@ def returns(ts, **kwargs):
 
 
 def daily_returns(ts, **kwargs):
+    ''' re-compute ts on a daily basis '''
     relative = kwargs.get('relative', 0)
     return returns(ts, delta=BDay(), relative=relative)
 
 
-def panel_to_retsDF(dataPanel, kept_field='close', type='dataframe'):
+def panel_to_retsDF(data, kept_field='close', output='dataframe'):
     '''
     @summary transform data in DataAccess format to a dataframe
              suitable for qstk.tsutils.optimizePortfolio()
-    @param dataPanel: data like quotes['close']['google']
+    @param data: data like quotes['close']['google']
     @output : a dataframe, cols = companies, rows = dates
     '''
     #TODO Here a need of data normalisation
-    df = dataPanel[kept_field]
+    df = data[kept_field]
     df.fillna(method='ffill')
     df.fillna(method='backfill')
-    if type == 'array':
+    if output == 'array':
         return returns(df, relative=0).values
     return returns(df, relative=0)  # 1 in doc, 0 in example
 

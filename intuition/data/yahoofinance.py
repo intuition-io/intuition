@@ -1,22 +1,3 @@
-#
-# Copyright 2013 Xavier Bruhiere
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-
-import urllib
-from bs4 import BeautifulSoup
-
 """ yahoofinance
 
 This module provides a Python API for retrieving stock data from Yahoo Finance.
@@ -28,7 +9,12 @@ sample usage:
 """
 
 
+import urllib
+from bs4 import BeautifulSoup
+
+
 def __request(symbol, stat):
+    ''' Yahoo request factory method '''
     url = 'http://finance.yahoo.com/d/quotes.csv?s=%s&f=%s' % (symbol, stat)
     return urllib.urlopen(url).read().strip().strip('"')
 
@@ -157,12 +143,11 @@ def get_sector(symbol):
     '''
     url = 'http://finance.yahoo.com/q/pr?s=%s+Profile' % symbol
     soup = BeautifulSoup(urllib.urlopen(url).read())
-    sector = ''
     try:
         sector = soup.find('td', text='Sector:').\
             find_next_sibling().string.encode('utf-8')
     except:
-        pass
+        sector = ''
     return sector
 
 
@@ -172,12 +157,11 @@ def get_industry(symbol):
     '''
     url = 'http://finance.yahoo.com/q/pr?s=%s+Profile' % symbol
     soup = BeautifulSoup(urllib.urlopen(url).read())
-    industry = ''
     try:
         industry = soup.find('td', text='Industry:').\
             find_next_sibling().string.encode('utf-8')
     except:
-        pass
+        industry = ''
     return industry
 
 

@@ -14,35 +14,28 @@
 # limitations under the License.
 
 
-import os
 import sys
-
 import logbook
 from logbook.queues import ZeroMQHandler
 from logbook.more import ColorizedStderrHandler
 
-from utils import get_local_ip
+from intuition.utils.utils import get_local_ip
+import intuition.constants as constants
 
 
 log = logbook.Logger('intuition.default.logger')
 
-log_format = (u'{record.extra["ip"]} [{record.time:%m-%d %H:%M}]\
-    {record.level_name}::{record.channel} - {record.message}')
-
-default_log_destination = os.path.expanduser('~/.intuition/logs')
-log_destination = default_log_destination \
-    if os.path.exists(default_log_destination) else '/tmp'
-default_file_log = 'intuition.log'
-
 
 def inject_information(record):
+    ''' Add ip information to the logger output '''
     record.extra['ip'] = get_local_ip()
 
 
 def get_nestedlog(level='debug',
                   show_log=False,
-                  filename=default_file_log,
+                  filename=constants.DEFAULT_FILE_LOG,
                   uri=None):
+    ''' Intuition formated logger '''
     level = level.upper()
     # Default uri: tcp://127.0.0.1:5540
     if uri is not None:
@@ -53,21 +46,24 @@ def get_nestedlog(level='debug',
             #logbook.NullHandler(level=logbook.DEBUG, bubble=True),
             #ColorizedStderrHandler(format_string=log_format, level='ERROR'),
             logbook.FileHandler(
-                '{}/{}'.format(log_destination, filename), level=level)
+                '{}/{}'.format(constants.LOG_DESTINATION, filename),
+                level=level)
             #FIXME Doesn't show anything
             #logbook.Processor(inject_information)
         ]
         if show_log:
             handlers.append(
                 logbook.StreamHandler(sys.stdout,
-                                      format_string=log_format,
+                                      format_string=constants.LOG_FORMAT,
                                       level=level))
 
     return logbook.NestedSetup(handlers)
 
 
-color_setup = logbook.NestedSetup([
-    logbook.StreamHandler(sys.stdout, format_string=log_format),
-    ColorizedStderrHandler(format_string=log_format, level='NOTICE'),
-    #Processor(inject_information)
-])
+def get_colorlog():
+    return logbook.NestedSetup([
+        logbook.StreamHandler(sys.stdout, format_string=constants.LOG_FORMAT),
+        ColorizedStderrHandler(format_string=constants.LOG_FORMAT,
+                               level='NOTICE'),
+        #Processor(inject_information)
+    ])
