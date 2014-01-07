@@ -12,15 +12,13 @@ build:
 
         # A step that executes `pip install` command.
         - pip-install:
-            packages_list: numpy nose flake8 coveralls
+            packages_list: "numpy nose flake8 coveralls"
 
         # A custom script step, name value is used in the UI
         # and the code value contains the command that get executed
         - script:
-            name: echo python information
+            name: run tests
             code: |
-                echo "python version $(python --version) running"
-                echo "pip version $(pip --version) running"
                 nosetests tests
 
     after-steps:

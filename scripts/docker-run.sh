@@ -1,5 +1,9 @@
 #! /bin/bash
 
+
+image="hivetech/intuition"
+container_name="trading_box"
+
 if [ -n "$1" ]; then
   context=$1
 else
@@ -14,9 +18,9 @@ docker run \
   -e DB_HOST=$DB_HOST \
   -e DB_PORT=$DB_PORT \
   -e DB_NAME=$DB_NAME \
-  -e LOG=debug
+  -e LOG=debug \
   -e LANGUAGE="fr_FR.UTF-8" \
   -e LANG="fr_FR.UTF-8" \
   -e LC_ALL="fr_FR.UTF-8" \
-  -name trade_box hivetech/intuition \
-  intuition --context ${context} --showlog
+  -name ${container_name} ${image} \
+  intuition --context ${context} --showlog --id ${container_name}

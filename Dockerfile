@@ -12,19 +12,19 @@ RUN echo "deb http://archive.ubuntu.com/ubuntu saucy main universe multiverse re
   apt-get update && apt-get upgrade -y -o DPkg::Options::=--force-confold
 
 # Local settings
-RUN apt-get install -y language-pack-fr
-#ENV LANGUAGE fr_FR.UTF-8
-#ENV LANG fr_FR.UTF-8
-#ENV LC_ALL fr_FR.UTF-8
-
-RUN (locale-gen fr_FR.UTF-8 && dpkg-reconfigure locales)
+RUN apt-get install -y language-pack-fr wget git-core
+ENV LANGUAGE fr_FR.UTF-8
+ENV LANG fr_FR.UTF-8
+ENV LC_ALL fr_FR.UTF-8
+RUN locale-gen fr_FR.UTF-8 && dpkg-reconfigure locales
 
 # Keep upstart from complaining
-RUN dpkg-divert --local --rename --add /sbin/initctl && ln -s /bin/true /sbin/initctl
+#RUN dpkg-divert --local --rename --add /sbin/initctl && ln -s /bin/true /sbin/initctl
 
 # Finally install intuition itself
-# Activate full installation, i.e. with modules dependencies
+# Activate full installation, i.e. with  insights : official modules
 ENV FULL_INTUITION 1
-RUN wget -qO- http://bit.ly/1izVUJJ | bash
+RUN wget --no-check-certificate https://raw.github.com/hackliff/intuition/develop/scripts/installation/bootstrap.sh && \
+  bash bootstrap.sh
 
 ENTRYPOINT ["/usr/local/bin/intuition", "--showlog"]

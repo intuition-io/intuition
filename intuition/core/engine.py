@@ -33,10 +33,9 @@ log = logbook.Logger('intuition.core.engine')
 
 def _intuition_module(location):
     ''' Build the module path and import it '''
-    location = location.split('.')
-    obj = location.pop(-1)
-    path = '.'.join([constants.MODULES_PATH] + location)
-    return utils.dynamic_import(path, obj)
+    path = location.split('.')
+    obj = path.pop(-1)
+    return utils.dynamic_import('.'.join(path), obj)
 
 
 #NOTE Is there still a point to use here a constructor object instead of a

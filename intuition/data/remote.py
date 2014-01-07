@@ -29,7 +29,7 @@ from zipline.utils.factory import load_from_yahoo, load_bars_from_yahoo
 
 from intuition.utils.decorators import (
     use_google_symbol, invert_dataframe_axis)
-import intuition.utils as utils
+import intuition.utils.utils as utils
 
 
 log = logbook.Logger('intuition.data.remote')

@@ -190,8 +190,8 @@ You can easily work out and plug your own strategies :
 * [Middlewares](https://github.com/hackliff/insights/blob/develop/insights/plugins/readme.md)
 
 Either clone the [insights repository](https://github.com/hackliff/insights)
-and hack it or start from scratch. Intuition will search in ``$MODULES_PATH``
-the modules you gave him.
+and hack it or start from scratch. Just make sure the modules paths you give in
+the configuration are in the python path.
 
 
 The [provided](https://github.com/hackliff/intuition/blob/develop/app/intuition)

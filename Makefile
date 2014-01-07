@@ -18,13 +18,14 @@ dependencies:
 	pip install --use-mirrors numpy 2>&1 >> ${LOGS}
 
 package:
+	#python setup.py register
 	python setup.py sdist
 	git tag ${VERSION}
 	git push --tags
 	python setup.py sdist upload
 
 tests: warn_missing_linters
-	flake8 intuition
+	flake8 intuition tests
 	nosetests -w tests --with-coverage --cover-package=intuition
 
 present_pep8=$(shell which pep8)

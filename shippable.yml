@@ -1,13 +1,15 @@
 language: python
 python:
   - "2.7"
-before_install: echo "install"
+before_script: mkdir -p shippable/codecoverage shippable/testresults
 install:
   - sudo apt-get -y install python-pip python-dev g++ make gfortran
   - pip install --upgrade --use-mirrors numpy nose flake8
   - pip install --upgrade --use-mirrors -r requirements.txt
 script:
-  - nosetests tests
+  - nosetests tests --with-xunit --xunit-file=shippable/testresults/nosetests.xml
+  - coverage run --branch tests/*
+  - coverage xml -o shippable/codecoverage/coverage.xml tests/*
 notifications:
   mail:
     xavier.bruhiere@gmail.com
