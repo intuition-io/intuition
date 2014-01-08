@@ -40,6 +40,7 @@ class TradingFactory(TradingAlgorithm):
     is_live = False
     #TODO Use another zipline mechanism
     day = 0
+    sids = []
     middlewares = []
 
     def __init__(self, *args, **kwargs):
@@ -105,6 +106,7 @@ class TradingFactory(TradingAlgorithm):
             # Perf_tracker needs at least a turn to have an index
             self.warming(data)
             self.initialized = True
+            self.sids = data.keys()
 
         signals = self.event(data)
 

@@ -22,5 +22,4 @@ docker run \
   -e LANGUAGE="fr_FR.UTF-8" \
   -e LANG="fr_FR.UTF-8" \
   -e LC_ALL="fr_FR.UTF-8" \
-  -name ${container_name} ${image} \
-  intuition --context ${context} --showlog --id ${container_name}
+  ${image} --context ${context} --id ${container_name}

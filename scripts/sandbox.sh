@@ -3,7 +3,7 @@
 if [ -n "$1" ]; then
   image=$1
 else
-  image="hivetech/lab"
+  image="hivetech/pyscience"
 fi
 
 echo "launching sandbox container..."
@@ -22,4 +22,4 @@ docker run -i -t \
   -e LANGUAGE="fr_FR.UTF-8" \
   -e LANG="fr_FR.UTF-8" \
   -e LC_ALL="fr_FR.UTF-8" \
-  -name sandbox ${image} bash
+  -entrypoint=bash ${image}

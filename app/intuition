@@ -29,8 +29,7 @@ import intuition.core.configuration as setup
 
 def show_perfs(cash, bm_symbol, analyzes):
     # Get daily, cumulative and not, returns of portfolio and benchmark
-    #FIXME Can't find benchmark data
-    #returns_df = analyzes.get_returns(benchmark=bm_symbol)
+    returns_df = analyzes.get_returns(benchmark=bm_symbol)
 
     perfs = analyzes.overall_metrics('one_month')
 
@@ -39,17 +38,17 @@ def show_perfs(cash, bm_symbol, analyzes):
         orders += len(order)
 
     final_value = analyzes.results.portfolio_value[-1]
-    #gain = final_value - cash
-    #pf_gain_perc = returns_df['algo_c_return'][-1] * 100.0
-    #bm_gain_perc = returns_df['benchmark_c_return'][-1] * 100.0
+    gain = final_value - cash
+    pf_gain_perc = returns_df['algo_c_return'][-1] * 100.0
+    bm_gain_perc = returns_df['benchmark_c_return'][-1] * 100.0
     pnl_mean = analyzes.results.pnl.mean()
     pnl_std = analyzes.results.pnl.std()
 
     print('\n ======================  Results  ==\n')
     log.info('Final value: {} $'.format(final_value))
     log.info('Processed {} orders'.format(orders))
-    #log.info('Perf: {:.2f}% / {:.2f}%\tGain: {} $'
-             #.format(pf_gain_perc, bm_gain_perc, gain))
+    log.info('Perf: {:.2f}% / {:.2f}%\tGain: {} $'
+             .format(pf_gain_perc, bm_gain_perc, gain))
     log.info('Achieved on average a pnl of {:.2f} with {:.2f} of deviation'
              .format(pnl_mean, pnl_std))
     for k, v in perfs.iteritems():

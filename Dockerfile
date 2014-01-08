@@ -4,7 +4,8 @@
 # VERSION 0.0.1
 
 # Administration
-FROM stackbrew/ubuntu:saucy
+# hivetech/pyscience is an ubuntu 13.10 image with most popular python packages
+FROM hivetech/pyscience
 MAINTAINER Xavier Bruhiere, xavier.bruhiere@gmail.com
 
 # Enable the necessary sources and upgrade to latest
@@ -23,8 +24,16 @@ RUN locale-gen fr_FR.UTF-8 && dpkg-reconfigure locales
 
 # Finally install intuition itself
 # Activate full installation, i.e. with  insights : official modules
-ENV FULL_INTUITION 1
-RUN wget --no-check-certificate https://raw.github.com/hackliff/intuition/develop/scripts/installation/bootstrap.sh && \
-  bash bootstrap.sh
+#ENV FULL_INTUITION 1
+#RUN wget --no-check-certificate https://raw.github.com/hackliff/intuition/develop/scripts/installation/bootstrap.sh && \
+  #bash bootstrap.sh
+#RUN pip install --quiet --use-mirrors intuition
+#RUN pip install --quiet --use-mirrors insights
+RUN git clone https://github.com/hackliff/intuition.git -b develop --depth 1 && \
+  cd intuition && python setup.py install
+
+# Install modules
+RUN git clone https://github.com/hackliff/insights.git -b develop --depth 1 && \
+  cd insights && python setup.py install
 
 ENTRYPOINT ["/usr/local/bin/intuition", "--showlog"]

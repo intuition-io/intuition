@@ -13,17 +13,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import sys
 import os
 from glob import glob
 
 from setuptools import setup, find_packages
 
 from intuition import __version__, __author__, __licence__
-
-
-LONG_DESCRIPTION = None
-README_MARKDOWN = None
 
 
 def get_requirements():
@@ -34,25 +29,30 @@ def get_requirements():
         deps.append('pandas>=0.13.0.dev')
         return deps
 
-with open('README.md') as markdown_source:
-    README_MARKDOWN = markdown_source.read()
 
-if 'upload' in sys.argv:
-    # Converts the README.md file to ReST, since PyPI uses ReST for formatting,
-    # This allows to have one canonical README file, being the README.md
-    # The conversion only needs to be done on upload.
-    # Otherwise, the pandoc import and errors that are thrown when
-    # pandoc are both overhead and a source of confusion for general
-    # usage/installation.
-    import pandoc
-    pandoc.core.PANDOC_PATH = '/usr/bin/pandoc'
-    doc = pandoc.Document()
-    doc.markdown = README_MARKDOWN
-    LONG_DESCRIPTION = doc.rst
-else:
-    # If pandoc isn't installed, e.g. when downloading from pip,
-    # just use the regular README.
-    LONG_DESCRIPTION = README_MARKDOWN
+requires = [
+    'beautifulsoup4>=4.3.2',
+    'blist>=1.3.4',
+    'Cython>=0.19.1',
+    'Logbook>=0.6.0',
+    'numpy>=1.8.0',
+    'python-dateutil>=2.2',
+    'pytz>=2013.8',
+    'Quandl>=1.7',
+    'requests>=2.0.1',
+    'six>=1.4.1',
+    'zipline>=0.5.11.dev',
+    'pandas>=0.13.0.dev']
+
+
+def long_description():
+    try:
+        #with codecs.open(readme, encoding='utf8') as f:
+        with open('README.md') as f:
+            return f.read()
+    except IOError:
+        return "failed to read README.md"
+
 
 setup(
     name='intuition',
@@ -61,9 +61,9 @@ setup(
     author=__author__,
     author_email='xavier.bruhiere@gmail.com',
     packages=find_packages(),
-    long_description=LONG_DESCRIPTION,
+    long_description=long_description(),
     license=__licence__,
-    install_requires=get_requirements(),
+    install_requires=requires,
     url="https://github.com/hackliff/intuition",
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',

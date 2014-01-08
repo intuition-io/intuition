@@ -5,9 +5,9 @@ end: 17h
 frequency: 1min
 modules:
   context: file
-  manager: OptimalFrontier
-  algorithm: StochasticGradientDescent
-  data: EquitiesLiveSource
+  manager: insights.managers.optimalfrontier.OptimalFrontier
+  algorithm: insights.algorithms.gradient.StochasticGradientDescent
+  data: insights.sources.live.EquitiesLiveSource
 
 algorithm:
   save: true
