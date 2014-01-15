@@ -65,14 +65,14 @@ def main():
     '''
 
     # General simulation behavior is defined using command line arguments
-    session, ctx, showlog, auto = setup.parse_commandline()
+    cli = setup.parse_commandline()
     level = os.environ.get('LOG', 'warning')
-    log_setup = get_nestedlog(level=level, show_log=showlog)
+    log_setup = get_nestedlog(level=level, show_log=cli['showlog'])
 
     with log_setup.applicationbound():
 
         # Use the provided conext builder to fill the config dicts
-        configuration, strategy = setup.context(ctx)
+        configuration, strategy = setup.context(cli['context'])
         if not configuration:
             log.error('unable to build context, aborting...')
             sys.exit(1)
@@ -80,18 +80,22 @@ def main():
         '''__________________________________________    Backtest    ____'''
         # Backtest or live engine.
         # Registers configuration and setups data client
-        engine = Simulation(configuration)
+        engine = Simulation()
 
         # Setup quotes data and financial context (location, market, ...)
         # from user parameters. Wraps _configure_context() you can use directly
         # for better understanding
-        engine.configure()
+        engine.configure_environment(
+            configuration['index'][-1], configuration['exchange'])
+
+        # Wire togetether modules and initialize them
+        engine.build(cli['session'], configuration['modules'], strategy)
 
         data = {'universe': configuration['universe'],
                 'index': configuration['index']}
         # See intuition/core/analyze.py for details of analyzes
         # which is an Analyzes object
-        analyzes = engine.run(session, data, strategy, auto)
+        analyzes = engine.run(data, cli['bot'])
 
         '''____________________________________________    Results   ____'''
         if analyzes is None:

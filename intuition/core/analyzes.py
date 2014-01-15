@@ -30,6 +30,7 @@ log = logbook.Logger('intuition.core.analyze')
 class Analyze():
     ''' Handle backtest results and performances measurments '''
     def __init__(self, **kwargs):
+        #FIXME Those None-values aren't check later
         # R analysis file only needs portfolio returns
         self.returns = kwargs.pop('returns') if 'returns' in kwargs else None
 
@@ -38,9 +39,6 @@ class Analyze():
 
         # Simulation rolling performance
         self.metrics = kwargs.pop('metrics') if 'metrics' in kwargs else None
-
-        # You better should know what was simulation's parameters
-        self.configuration = kwargs.pop('configuration', None)
 
     def _to_perf_array(self, timestamp, key, length):
         return np.array([self.metrics[timestamp][i][key] for i in length])
@@ -100,8 +98,8 @@ class Analyze():
             try:
                 benchmark_data = (
                     get_benchmark_returns(benchmark,
-                                          self.configuration['index'][0],
-                                          self.configuration['index'][-1]))
+                                          self.results.index[0],
+                                          self.results.index[-1]))
             except Exception as e:
                 raise KeyError(e)
         else:

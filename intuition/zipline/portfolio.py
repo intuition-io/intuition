@@ -149,7 +149,7 @@ class PortfolioFactory():
                     if self.portfolio.positions[t].amount:
                         price = self.portfolio.positions[t].last_sale_price
                     else:
-                        #FIXME This is not clear if signals[t] is actually the price
+                        #FIXME Not clear if signals[t] is actually the price
                         price = signals[t]
                     order_book[t] = (int(alloc[t] *
                                      self.portfolio.portfolio_value / price)

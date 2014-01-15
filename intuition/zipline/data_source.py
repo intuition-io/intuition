@@ -69,8 +69,8 @@ class DataFactory(DataSource):
 
         #self.data_descriptor = data_descriptor
         # Unpack config dictionary with default values.
-        self.sids = smart_selector(kwargs.get('sids',
-                                              data_descriptor['universe']))
+        self.sids = smart_selector(
+            kwargs.get('sids', data_descriptor['universe']))
         self.start = kwargs.get('start', data_descriptor['index'][0])
         self.end = kwargs.get('end', data_descriptor['index'][-1])
         self.index = data_descriptor['index']

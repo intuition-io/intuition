@@ -202,20 +202,20 @@ write your own. Here is a minimal implementation, assuming you installed
 from datetime import datetime
 from intuition.core.engine import Simulation
 
-engine = Simulation({
-    'end': datetime(2014, 1, 7),
-    'universe': 'cac40',
-    'modules': {
-        'algorithm': 'algorithms.movingaverage.DualMovingAverage',
-        'manager': 'managers.gmv.GlobalMinimumVariance',
-        'data': 'sources.live.Equities.EquitiesLiveSource'}})
+data = {'universe': 'nasdaq,10',
+        'index': pd.date_range(datetime.now(), datetime(2014, 1, 7))}
+
+modules = {
+    'algorithm': 'algorithms.movingaverage.DualMovingAverage',
+    'manager': 'managers.gmv.GlobalMinimumVariance',
+    'data': 'sources.live.Equities.EquitiesLiveSource'}})
+
+engine = Simulation()
 
 # Use the configuration to prepare the trading environment
-engine.configure()
-
-data = {'universe': 'cac40',
-        'index': pd.date_range(datetime.now(), datetime(2014, 1, 7))}
-analyzes = engine.run(session, data, auto=True)
+engine.configure_environment(data['index'][-1], 'nasdaq')
+engine.build('chuck_norris', modules)
+analyzes = engine.run(data, auto=True)
 
 # Explore the analyzes object
 print analyzes.overall_metrics('one_month')

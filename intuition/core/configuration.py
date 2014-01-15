@@ -47,7 +47,11 @@ def parse_commandline():
                         help='Customize the session id')
     args = parser.parse_args()
 
-    return args.id, args.context, args.showlog, args.bot
+    return {
+        'session': args.id,
+        'context': args.context,
+        'showlog': args.showlog,
+        'bot': args.bot}
 
 
 def _check_config(config):

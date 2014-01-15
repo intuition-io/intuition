@@ -19,14 +19,6 @@ ENV LANG fr_FR.UTF-8
 ENV LC_ALL fr_FR.UTF-8
 RUN locale-gen fr_FR.UTF-8 && dpkg-reconfigure locales
 
-# Keep upstart from complaining
-#RUN dpkg-divert --local --rename --add /sbin/initctl && ln -s /bin/true /sbin/initctl
-
-# Finally install intuition itself
-# Activate full installation, i.e. with  insights : official modules
-#ENV FULL_INTUITION 1
-#RUN wget --no-check-certificate https://raw.github.com/hackliff/intuition/develop/scripts/installation/bootstrap.sh && \
-  #bash bootstrap.sh
 #RUN pip install --use-mirrors intuition
 #RUN pip install --use-mirrors insights
 RUN git clone https://github.com/hackliff/intuition.git -b develop --depth 1 && \
@@ -37,4 +29,4 @@ RUN git clone https://github.com/hackliff/insights.git -b develop --depth 1 && \
   cd insights && python setup.py install
 
 ENTRYPOINT ["/usr/local/bin/intuition", "--showlog"]
-CMD['--help']
+CMD ["--help"]

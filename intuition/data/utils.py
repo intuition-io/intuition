@@ -38,10 +38,15 @@ def detect_exchange(universe):
 
 
 def market_sids_list(exchange, n=-1):
-    csv_file = '{}.csv'.format(
-        os.path.join(os.environ['HOME'], '.intuition/data', exchange.lower()))
-    df = pd.read_csv(csv_file)
-    sids_list = df['Symbol'].tolist()
+    if exchange == 'forex':
+        sids_list = FX_PAIRS
+    else:
+        csv_file = '{}.csv'.format(
+            os.path.join(
+                os.environ['HOME'], '.intuition/data', exchange.lower()))
+        df = pd.read_csv(csv_file)
+        sids_list = df['Symbol'].tolist()
+
     shuffle(sids_list)
     if n > 0:
         sids_list = sids_list[:n]

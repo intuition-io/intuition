@@ -25,7 +25,7 @@ function activate_fleet() {
   safe_docker_run -d -name mysql brice/mysql
   safe_docker_run -d -name dashboard -p 3000:3000 \
     -e DB_HOST=$(container_ip "mysql") \
-    -e DB_PORT=$(docker port mysql 3306) \
+    -e DB_PORT=3306 \
     -e DB_USERNAME=root \
     hivetech/team-dashboard
 }
@@ -39,10 +39,10 @@ function activate_webservice_intuition() {
     -e MAILGUN_API_KEY=$MAILGUN_API_KEY \
     -e TRUEFX_API=$TRUEFX_API \
     -e DB_HOST=$(container_ip "rethinkdb") \
-    -e DB_PORT=$(docker port rethinkdb 28015) \
+    -e DB_PORT=28015 \
     -e DB_NAME=$DB_NAME \
     -e MSG_HOST=$(container_ip "redis") \
-    -e MSG_PORT=$(docker port redis 6379) \
+    -e MSG_PORT=6379 \
     -e LOG=debug \
     -e LANGUAGE="fr_FR.UTF-8" \
     -e LANG="fr_FR.UTF-8" \
