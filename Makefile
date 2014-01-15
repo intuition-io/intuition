@@ -14,8 +14,8 @@ dependencies:
 	@echo "[make] Installing packages"
 	apt-get -y --force-yes install git-core python-pip python-dev g++ make gfortran 2>&1 >> ${LOGS}
 	@echo "[make] Installing python modules"
-	pip install --use-mirrors distribute nose flake8 2>&1 >> ${LOGS}
-	pip install --use-mirrors numpy 2>&1 >> ${LOGS}
+	pip install --quiet --use-mirrors distribute nose flake8 2>&1 >> ${LOGS}
+	pip install --quiet --use-mirrors numpy 2>&1 >> ${LOGS}
 
 package:
 	#python setup.py register

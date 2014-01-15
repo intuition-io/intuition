@@ -36,6 +36,9 @@ def parse_commandline():
     parser.add_argument('-v', '--showlog',
                         action='store_true',
                         help='Print logs on stdout')
+    parser.add_argument('-b', '--bot',
+                        action='store_true',
+                        help='Allows the algorithm to process orders')
     parser.add_argument('-c', '--context',
                         action='store', default='file::conf.yaml',
                         help='Provides the way to build context')
@@ -44,7 +47,13 @@ def parse_commandline():
                         help='Customize the session id')
     args = parser.parse_args()
 
-    return args.id, args.context, args.showlog
+    return args.id, args.context, args.showlog, args.bot
+
+
+def _check_config(config):
+    assert config
+    assert ('modules' in config and 'universe' in config)
+    assert 'algorithm' in config['modules']
 
 
 def context(driver):
@@ -56,4 +65,7 @@ def context(driver):
         return {}, {'algorithm': {}, 'manager': {}}
 
     log.info('building context')
-    return build_context(driver[1])
+    config, strategy = build_context(driver[1])
+    _check_config(config)
+
+    return config, strategy

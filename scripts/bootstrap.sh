@@ -10,7 +10,7 @@ pip install --quiet --use-mirrors --upgrade insights
 
 if [ -n "$FULL_INTUITION" ]; then
   apt-get install -y r-base
-  pip install --quiet --use-mirrors --upgrade insights
+  pip install --use-mirrors --upgrade insights
   #FIXME First installation needs to specify lib parameter
   #./scripts/installation/install_r_packages.R
 fi

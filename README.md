@@ -1,7 +1,7 @@
 Intuition
 =========
 
-> Automated quantitative trading system kit, for hackers
+> Automated quantitative trading kit, for hackers
 
 
 ![Dashboard](https://raw.github.com/hivetech/hivetech.github.io/master/images/QuantDashboard.png)
@@ -47,23 +47,27 @@ Features
 Status
 ------
 
+[![Latest Version](https://pypip.in/v/intuition/badge.png)](https://pypi.python.org/pypi/intuition/)
 <!--[![wercker status](https://app.wercker.com/status/f39a4be40502a31b3dcb94875c787b56/m "wercker status")](https://app.wercker.com/project/bykey/f39a4be40502a31b3dcb94875c787b56)-->
 [![wercker status](https://app.wercker.com/status/f39a4be40502a31b3dcb94875c787b56 "wercker status")](https://app.wercker.com/project/bykey/f39a4be40502a31b3dcb94875c787b56)
 [![Build Status](https://drone.io/github.com/hackliff/intuition/status.png)](https://drone.io/github.com/hackliff/intuition/latest)
-[![Build Status](https://travis-ci.org/hackliff/intuition.png?branch=develop)](https://travis-ci.org/hackliff/intuition)
+[![Build Status](https://travis-ci.org/hackliff/intuition.png?branch=master)](https://travis-ci.org/hackliff/intuition)
 [![Coverage Status](https://coveralls.io/repos/hackliff/intuition/badge.png)](https://coveralls.io/r/hackliff/intuition)
-[![Code Health](https://landscape.io/github/hackliff/intuition/develop/landscape.png)](https://landscape.io/github/hackliff/intuition/develop)
+[![Code Health](https://landscape.io/github/hackliff/intuition/master/landscape.png)](https://landscape.io/github/hackliff/intuition/master)
+[![Requirements Status](https://requires.io/github/hackliff/intuition/requirements.png?branch=master)](https://requires.io/github/hackliff/intuition/requirements/?branch=master)
 [![License](https://pypip.in/license/intuition/badge.png)](https://pypi.python.org/pypi/intuition/)
+
+[Development Board][1]
 
 **Attention** Project is in an *early alpha*, and under heavy development.
  The new version 0.3.0 revises a lot of code :
 
-* Algoithms, managers and data sources have their [own repository](https://github.com/hackliff/insights)
+* Algoithms, managers and data sources have their [own repository][2]
 * More powerful API to build custom versions of them
 * The context module now handles configuration
 * [Shiny](http://www.rstudio.com/shiny/) interface, [Dashboard](http://fdietz.github.io/team_dashboard/) and clustering will have their intuition-plugins repository (soon)
 * ZeroMQ messaging is for now removed but might be back for inter-algo communication
-* So is MySQL, that has been removed and will be re-implemented as a [data plugin](https://github.com/hackliff/intuition-modules/tree/develop/plugins)
+* So is MySQL, that has been removed and will be re-implemented as a [data plugin](https://github.com/hackliff/insights/tree/master/insights/plugins)
 * But currently it has been replaced by [Rethinkdb](rethinkdb.com)
 * Installation is much simpler and a docker image is available for development and deployment
 * More intuitive configuration splitted between the context mentioned, command line argument and environment variables
@@ -84,12 +88,11 @@ $ # Optionnaly, install offcial algorithms, managers, ...
 $ pip install insights
 ```
 
-* One-liner for the full installation (i.e. with packages and buit-in
+* One-liner for the full installation (i.e. with packages and official
   [modules](https://github.com/hackliff/insights))
 
 ```console
-$ export FULL_INTUITION=1
-$ wget -qO- http://bit.ly/1izVUJJ | sudo -E bash
+$ wget -qO- http://bit.ly/1anxGhf | sudo FULL_INTUITION=true bash
 $ # ... Go grab a coffee
 ```
 
@@ -117,35 +120,31 @@ config/local.env).
 
 The following example trades in real time forex, with a simple buy and hold
 algorithm and a portfolio manager that allocates same amount for each asset.
-Their configuration below is stored in a json file.
+Their configuration below is stored in a json file. The `--bot` flag allows
+the portfolio to process orders on its own.
 
 ```console
-$ intuition --context file::liveForex.json --id chuck --showlog
+$ intuition --context file::liveForex.json --id chuck --showlog --bot
 ```
 
 ```json
 {
-    id: "liveForex",
-    start: "2011-05-05",
-    end: "2013-10-05",
-    frequency: "day",
-    universe: "forex,5",
-    algorithm: {
-        save: false
+    "id": "liveForex",
+    "end": "22h",
+    "universe": "forex,5",
+    "algorithm": {
+        "notify": "",
+        "save": false
     },
-    manager: {
-        android: 0,
-        buy_scale: 150,
-        cash: 10000,
-        max_weight: 0.3,
-        perc_sell: 1,
-        sell_scale: 100
+    "manager": {
+        "cash": 10000,
+        "buy_scale": 150,
+        "max_weight": 0.3
     },
-    modules: {
-        context: "file",
-        algorithm: "algorithms.buyandhold.BuyAndHold",
-        data: "sources.live.forex.ForexLiveSource",
-        manager: "managers.fair.Fair"
+    "modules": {
+        "algorithm": "insights.algorithms.buyandhold.BuyAndHold",
+        "data": "insights.sources.live.forex.ForexLiveSource",
+        "manager": "insightsmanagers.fair.Fair"
     }
 }
 ```
@@ -183,21 +182,21 @@ For Hackers
 
 You can easily work out and plug your own strategies :
 
-* [Algorithm API](https://github.com/hackliff/insights/blob/develop/insights/algorithms/readme.md)
-* [Portfolio API](https://github.com/hackliff/insights/blob/develop/insights/managers/readme.md)
-* [Data API](https://github.com/hackliff/insights/blob/develop/insights/sources/readme.md)
-* [Context API](https://github.com/hackliff/insights/blob/develop/insights/contexts/readme.md)
-* [Middlewares](https://github.com/hackliff/insights/blob/develop/insights/plugins/readme.md)
+* [Algorithm API](https://github.com/hackliff/insights/blob/master/insights/algorithms/readme.md)
+* [Portfolio API](https://github.com/hackliff/insights/blob/master/insights/managers/readme.md)
+* [Data API](https://github.com/hackliff/insights/blob/master/insights/sources/readme.md)
+* [Contexts](https://github.com/hackliff/insights/blob/master/insights/contexts/readme.md)
+* [Middlewares](https://github.com/hackliff/insights/blob/master/insights/contexts/readme.md)
 
-Either clone the [insights repository](https://github.com/hackliff/insights)
+Either clone the [insights repository][2]
 and hack it or start from scratch. Just make sure the modules paths you give in
 the configuration are in the python path.
 
 
-The [provided](https://github.com/hackliff/intuition/blob/develop/app/intuition)
+The [provided](https://github.com/hackliff/intuition/blob/master/app/intuition)
 ``intuition`` command does already a lot of things but why not improve it or
 write your own. Here is a minimal implementation, assuming you installed
-*insights*.
+[insights][2].
 
 ```python
 from datetime import datetime
@@ -216,7 +215,7 @@ engine.configure()
 
 data = {'universe': 'cac40',
         'index': pd.date_range(datetime.now(), datetime(2014, 1, 7))}
-analyzes = engine.run(session, data)
+analyzes = engine.run(session, data, auto=True)
 
 # Explore the analyzes object
 print analyzes.overall_metrics('one_month')
@@ -251,3 +250,6 @@ Credits
 * [Udacity](http://www.udacity.com/)
 * [Babypips](http://www.babypips.com/)
 * [GLMF](http://www.unixgarden.com/)
+
+[1]: https://trello.com/b/WvJDlynt/intuition
+[2]: https://github.com/hackliff/insights

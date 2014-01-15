@@ -111,7 +111,7 @@ class Simulation(object):
 
         return trading_context
 
-    def run(self, identity, data, strategy):
+    def run(self, identity, data, strategy, auto=False):
         ''' Wrapper of zipline run() method. Use the configuration set so far
         to build up the trading environment and launch the system '''
         engine = TradingEngine(identity,
@@ -124,6 +124,7 @@ class Simulation(object):
         #     (and hourly normaly) Use filter parameter of datasource ?
         #engine.set_data_frequency(self.configuration['frequency'])
         engine.is_live = self.configuration['live']
+        engine.auto = auto
 
         # Running simulation with it
         #FIXME crash if trading one day that is not a trading day

@@ -168,13 +168,13 @@ def snapshot_google_light(symbols):
 
     snapshot = {}
     for i, quote in enumerate(json_infos):
-        # Fix a weird bug
-            if quote['t'].lower() in symbols:
-                snapshot[symbols[i] + '.pa'] = utils.apply_mapping(
-                    quote, google_light_mapping)
-            else:
-                log.warning('Unknown symbol {}, ignoring...'.format(
-                    quote['t']))
+        #FIXME nasdaq and nyse `symbols` are in capital, not cac40
+        if quote['t'].lower() in map(str.lower, symbols):
+            snapshot[symbols[i] + '.pa'] = utils.apply_mapping(
+                quote, google_light_mapping)
+        else:
+            log.warning('Unknown symbol {}, ignoring...'.format(
+                quote['t']))
 
     return pd.DataFrame(snapshot)
 

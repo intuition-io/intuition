@@ -17,11 +17,12 @@
 # vim:fenc=utf-8
 
 
-import pandas as pd
 import time
 import pytz
 import datetime
 import abc
+import sys
+import pandas as pd
 
 from zipline.sources.data_source import DataSource
 from zipline.gens.utils import hash_args
@@ -103,7 +104,12 @@ class DataFactory(DataSource):
         pass
 
     def raw_data_gen(self):
-        self.data = self.get_data()
+        try:
+            self.data = self.get_data()
+        except Exception as e:
+            #TODO Identify the error and retry ?
+            print self.sids
+            sys.exit(e)
 
         if isinstance(self.data, pd.DataFrame):
             for date, series in self.data.iterrows():
@@ -160,7 +166,11 @@ class LiveDataFactory(DataFactory):
         index = self._get_updated_index()
         for date in index:
             self._wait_for_dt(date)
-            snapshot = self.get_data()
+            try:
+                snapshot = self.get_data()
+            except Exception as e:
+                print e
+                continue
 
             for sid, series in snapshot.iterkv():
                 yield _build_event(date, sid, series)

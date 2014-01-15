@@ -103,7 +103,7 @@ Exchanges = {
     # Later Londres = LON
     #FIXME Forex is temporary
     'cac40': {'symbol': '^FCHI',
-              'timezone': 'Europe/Paris',
+              'timezone': 'Europe/London',
               'code': 1001,
               'google_market': 'EPA'},
     'forex': {'symbol': '^FCHI',

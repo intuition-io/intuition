@@ -42,6 +42,8 @@ class TradingFactory(TradingAlgorithm):
     day = 0
     sids = []
     middlewares = []
+    orderbook = {}
+    auto = False
 
     def __init__(self, *args, **kwargs):
         self.data_generator = DataFrameSource
@@ -50,6 +52,7 @@ class TradingFactory(TradingAlgorithm):
     def use(self, func, when='whenever'):
         ''' Append a middleware to the algorithm '''
         #NOTE A middleware Object ?
+        print('registering middleware {}'.format(func.__name__))
         self.middlewares.append({
             'call': func,
             'name': func.__name__,
@@ -96,8 +99,9 @@ class TradingFactory(TradingAlgorithm):
         place to factorize algorithms and then call event() '''
         self.day += 1
         signals = {}
+        self.orderbook = {}
 
-        if self.initialized:
+        if self.initialized and self.manager:
             self.manager.update(
                 self.portfolio,
                 self.datetime,
@@ -110,19 +114,20 @@ class TradingFactory(TradingAlgorithm):
 
         signals = self.event(data)
 
+        if signals and self.manager:
+            self.orderbook = self.manager.trade_signals_handler(signals)
+            if self.auto:
+                self.process_orders(self.orderbook)
+
         self._call_middlewares()
 
-        if signals:
-            order_book = self.manager.trade_signals_handler(signals)
-            self.process_orders(order_book)
-
-    def process_orders(self, order_book):
+    def process_orders(self, orderbook):
         ''' Default and costant orders processor. Overwrite it for more
         sophistiated strategies '''
-        for stock in order_book:
-            self.order(stock, order_book[stock])
+        for stock in orderbook:
+            self.order(stock, orderbook[stock])
             self.logger.debug('{}: Ordered {} {} stocks'.format(
-                self.datetime, stock, order_book[stock]))
+                self.datetime, stock, orderbook[stock]))
 
     def _call_one_middleware(self, middleware):
         ''' Evaluate arguments and execute the middleware function '''
@@ -131,8 +136,8 @@ class TradingFactory(TradingAlgorithm):
             if hasattr(self, arg):
                 # same as eval() but safer for arbitrary code execution
                 args[arg] = reduce(getattr, arg.split('.'), self)
-        self.logger.info('calling middleware event {}'
-                         .format(middleware['name']))
+        self.logger.debug('calling middleware event {}'
+                          .format(middleware['name']))
         middleware['call'](**args)
 
     def _check_condition(self, when):
