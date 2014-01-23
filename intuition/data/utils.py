@@ -63,7 +63,8 @@ def smart_selector(sids):
             n = -1
         sids = market_sids_list(sids[0], n)
 
-    return sids
+    #return sids
+    return map(str.lower, map(str, sids))
 
 
 #TODO Complete with :

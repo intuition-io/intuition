@@ -8,16 +8,13 @@
 FROM hivetech/pyscience
 MAINTAINER Xavier Bruhiere <xavier.bruhiere@gmail.com>
 
-# Enable the necessary sources and upgrade to latest
-RUN echo "deb http://archive.ubuntu.com/ubuntu saucy main universe multiverse restricted" > /etc/apt/sources.list && \
-  apt-get update && apt-get upgrade -y -o DPkg::Options::=--force-confold
-
 # Local settings
-RUN apt-get install -y language-pack-fr wget git-core
-ENV LANGUAGE fr_FR.UTF-8
-ENV LANG fr_FR.UTF-8
-ENV LC_ALL fr_FR.UTF-8
-RUN locale-gen fr_FR.UTF-8 && dpkg-reconfigure locales
+RUN apt-get install -y wget git-core libssl-dev
+#RUN apt-get install -y language-pack-fr wget git-core
+#ENV LANGUAGE fr_FR.UTF-8
+#ENV LANG fr_FR.UTF-8
+#ENV LC_ALL fr_FR.UTF-8
+#RUN locale-gen fr_FR.UTF-8 && dpkg-reconfigure locales
 
 #RUN pip install --use-mirrors intuition
 #RUN pip install --use-mirrors insights
@@ -27,6 +24,11 @@ RUN git clone https://github.com/hackliff/intuition.git -b develop --depth 1 && 
 # Install modules
 RUN git clone https://github.com/hackliff/insights.git -b develop --depth 1 && \
   cd insights && python setup.py install
+
+# Install R libraries
+RUN wget -qO- http://bit.ly/L39jeY | R --no-save
+
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 ENTRYPOINT ["/usr/local/bin/intuition", "--showlog"]
 CMD ["--help"]

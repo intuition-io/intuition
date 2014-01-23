@@ -21,10 +21,12 @@ import abc
 from zipline.algorithm import TradingAlgorithm
 from zipline.sources import DataFrameSource
 
+from intuition.errors import AlgorithmEventFailed
+
 
 class TradingFactory(TradingAlgorithm):
     '''
-    Intuition surcharge of main zipline class.
+    Intuition surcharge of main zipline class, but fully compatible.
     Its role is slightly different : the user will eventually expose an event()
     method meant to return buy and sell signals, processed further by the
     portfolio strategy. However it remains fully compatible with zipline method
@@ -35,7 +37,7 @@ class TradingFactory(TradingAlgorithm):
     __metaclass__ = abc.ABCMeta
 
     #TODO Use another zipline mechanism
-    day = 0
+    days = 0
     sids = []
     middlewares = []
     orderbook = {}
@@ -79,7 +81,7 @@ class TradingFactory(TradingAlgorithm):
     def handle_data(self, data):
         ''' Method called for each event by zipline. In intuition this is the
         place to factorize algorithms and then call event() '''
-        self.day += 1
+        self.days += 1
         signals = {}
         self.orderbook = {}
 
@@ -90,26 +92,43 @@ class TradingFactory(TradingAlgorithm):
                 self.perf_tracker.cumulative_risk_metrics.to_dict())
         else:
             # Perf_tracker needs at least a turn to have an index
+            self.sids = data.keys()
             self.warming(data)
             self.initialized = True
-            self.sids = data.keys()
+            return
 
-        signals = self.event(data)
+        try:
+            signals = self.event(data)
+        except Exception, error:
+            # NOTE Temporary debug. Will probably notify the error and go on
+            # with signals=None
+            raise AlgorithmEventFailed(
+                reason=error, date=self.datetime, data=data)
 
-        if signals and self.manager:
-            self.orderbook = self.manager.trade_signals_handler(signals)
-            if self.auto:
-                self.process_orders(self.orderbook)
+        # One can process orders within the alogrithm and don't return anything
+        if signals:
+            if (signals['buy'] or signals['sell']) and self.manager:
+                self.orderbook = self.manager.trade_signals_handler(signals)
+                if self.auto:
+                    self.process_orders(self.orderbook)
 
         self._call_middlewares()
 
     def process_orders(self, orderbook):
         ''' Default and costant orders processor. Overwrite it for more
-        sophistiated strategies '''
-        for stock in orderbook:
-            self.order(stock, orderbook[stock])
+        sophisticated strategies '''
+        for stock, alloc in orderbook.iteritems():
             self.logger.debug('{}: Ordered {} {} stocks'.format(
-                self.datetime, stock, orderbook[stock]))
+                self.datetime, stock, alloc))
+            if isinstance(alloc, int):
+                self.order(stock, alloc)
+            elif isinstance(alloc, float) and \
+                    alloc >= -1 and alloc <= 1:
+                self.order_percent(stock, alloc)
+            else:
+                self.logger.warning(
+                    '{}: invalid order for {}: {})'
+                    .format(self.datetime, stock, alloc))
 
     def _call_one_middleware(self, middleware):
         ''' Evaluate arguments and execute the middleware function '''

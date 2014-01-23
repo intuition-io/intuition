@@ -173,8 +173,7 @@ $ docker run \
   -e LANGUAGE="fr_FR.UTF-8" \
   -e LANG="fr_FR.UTF-8" \
   -e LC_ALL="fr_FR.UTF-8" \
-  -name trade_box hivetech/intuition \
-  intuition --context mongodb::${host_ip}:27017/backtestNasdaq --showlog
+  hivetech/intuition --context mongodb::${host_ip}:27017/{{ config_id }} --showlog
 ```
 
 For Hackers

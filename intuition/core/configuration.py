@@ -20,6 +20,9 @@ import logbook
 import intuition.constants as constants
 import intuition.utils.utils as utils
 
+from intuition.errors import InvalidConfiguration
+from intuition.constants import CONFIG_SCHEMA
+
 
 log = logbook.Logger('intuition.core.configuration')
 
@@ -31,7 +34,7 @@ def parse_commandline():
         description='Intuition, the terrific trading system')
     parser.add_argument('-V', '--version',
                         action='version',
-                        version='%(prog)s v0.1.3 Licence Apache 2.0',
+                        version='%(prog)s v0.3.2 Licence Apache 2.0',
                         help='Print program version')
     parser.add_argument('-v', '--showlog',
                         action='store_true',
@@ -54,22 +57,20 @@ def parse_commandline():
         'bot': args.bot}
 
 
-def _check_config(config):
-    assert config
-    assert ('modules' in config and 'universe' in config)
-    assert 'algorithm' in config['modules']
-
-
 def context(driver):
     driver = driver.split('::')
+    #TODO No use of environment, it breaks how other modules are found
     builder_name = '{}.contexts.{}'.format(constants.MODULES_PATH, driver[0])
 
     build_context = utils.dynamic_import(builder_name, 'build_context')
-    if not build_context:
-        return {}, {'algorithm': {}, 'manager': {}}
 
     log.info('building context')
     config, strategy = build_context(driver[1])
-    _check_config(config)
+
+    log.info('validating configuration')
+    try:
+        assert CONFIG_SCHEMA.validate(config)
+    except:
+        raise InvalidConfiguration(config=config, module=builder_name)
 
     return config, strategy

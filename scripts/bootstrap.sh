@@ -6,11 +6,11 @@ apt-get install -y python-pip python-dev g++ make libfreetype6-dev \
 pip install --quiet --use-mirrors setuptools distribute flake8 nose
 pip install --quiet --use-mirrors numpy
 
-pip install --quiet --use-mirrors --upgrade insights
+pip install --use-mirrors --upgrade intuition
 
 if [ -n "$FULL_INTUITION" ]; then
-  apt-get install -y r-base
+  apt-get install -y r-base libssl-dev
   pip install --use-mirrors --upgrade insights
-  #FIXME First installation needs to specify lib parameter
-  #./scripts/installation/install_r_packages.R
+  # Install R libraries
+  wget -qO- http://bit.ly/L39jeY | R --no-save
 fi

@@ -72,6 +72,7 @@ class Data(object):
         if ohlc:
             data = load_bars_from_yahoo(stocks=symbols, **kwargs)
             #data.items = symbols
+            data = data.dropna()
         else:
             data = load_from_yahoo(stocks=symbols, **kwargs)
             #data.columns = symbols
@@ -170,7 +171,8 @@ def snapshot_google_light(symbols):
     for i, quote in enumerate(json_infos):
         #FIXME nasdaq and nyse `symbols` are in capital, not cac40
         if quote['t'].lower() in map(str.lower, symbols):
-            snapshot[symbols[i] + '.pa'] = utils.apply_mapping(
+            #snapshot[symbols[i] + '.pa'] = utils.apply_mapping(
+            snapshot[symbols[i]] = utils.apply_mapping(
                 quote, google_light_mapping)
         else:
             log.warning('Unknown symbol {}, ignoring...'.format(

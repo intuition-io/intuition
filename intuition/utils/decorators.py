@@ -1,5 +1,5 @@
 #
-# Copyright 2013 Xavier Bruhiere
+# Copyright 2014 Xavier Bruhiere
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,12 +17,7 @@
 import pandas as pd
 
 
-#TODO Quandl symbol decorator
-# Ressources : http://www.quandl.com/help/api/resources
-# Or the search API : https://github.com/quandl/Python
-# Seems to be {PROVIDER}/{MARKET_SUFFIX}_{GOOGLE_SYMBOL}
 #NOTE with_market symbol, build jxr.pa => JXR:EPA
-#TODO mega class decorator which will harmonize eveything
 def use_google_symbol(fct):
     '''
     Removes ".PA" or other market indicator from yahoo symbol
@@ -35,12 +30,15 @@ def use_google_symbol(fct):
         if isinstance(symbols, str):
             symbols = [symbols]
 
+        symbols = sorted(symbols)
         for symbol in symbols:
             dot_pos = symbol.find('.')
             google_symbols.append(
                 symbol[:dot_pos] if (dot_pos > 0) else symbol)
 
-        return fct(google_symbols)
+        data = fct(google_symbols)
+        data.columns = symbols
+        return data
     return decorator
 
 

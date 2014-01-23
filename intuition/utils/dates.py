@@ -33,14 +33,12 @@ def normalize_date_format(date):
     Dates can be defined in many ways, but zipline use
     aware datetime objects only. Plus, the software work
     with utc timezone so we convert it.
-    __________________________________________________
-    Parameters
-        date: str
-            String date, see dateutils module for precisions
-    __________________________________________________
-    Return
-        datetime.datetime utc tz aware object
     '''
+    if isinstance(date, int):
+        # This is probably epoch time
+        date = time.strftime('%Y-%m-%d %H:%M:%S',
+                             time.localtime(date))
+
     assert isinstance(date, str) or isinstance(date, unicode)
     local_tz = pytz.timezone(_detect_timezone())
     local_dt = local_tz.localize(parse(date), is_dst=None)
@@ -98,7 +96,7 @@ def build_date_index(start='', end='', freq='D'):
     return pd.date_range(start, end, freq=freq)
 
 
-def UTCdateToEpoch(utc_date):
+def UTC_date_to_epoch(utc_date):
     return calendar.timegm(utc_date.timetuple())
 
 

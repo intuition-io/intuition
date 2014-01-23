@@ -25,6 +25,31 @@ import Quandl
 log = logbook.Logger('intuition.data.quandl')
 
 
+def build_quandl_code(code, market, provider='GOOG'):
+    # known providers: YAHOO, GOOG
+    return '{}/{}_{}'.format(provider, market, code).upper()
+
+
+# Ressources : http://www.quandl.com/help/api/resources
+# Or the search API : https://github.com/quandl/Python
+# Seems to be {PROVIDER}/{MARKET_SUFFIX}_{GOOGLE_SYMBOL}
+def use_quandl_symbol(fct):
+    def decorator(self, symbol, **kwargs):
+
+        dot_pos = symbol.find('.')
+        if dot_pos > 0:
+            market = symbol[dot_pos+1:]
+            provider = 'YAHOO'
+            symbol = symbol[:dot_pos]
+        else:
+            market = 'NASDAQ'
+            provider = 'GOOG'
+        quandl_symbol = build_quandl_code(symbol, market, provider)
+
+        return fct(self, quandl_symbol, **kwargs)
+    return decorator
+
+
 def multi_codes(fct):
     '''
     Decorator that allows to use Data.Quandl.fetch with multi codes and get a
@@ -59,19 +84,10 @@ class DataQuandl(object):
 
     #TODO Use of search feature for more powerfull and flexible use
     @multi_codes
+    @use_quandl_symbol
     def fetch(self, code, **kwargs):
         '''
         Quandl entry point in datafeed object
-        _____________________________________
-        Parameters
-            code: str
-                quandl data code
-            kwargs: dict
-                keyword args passed to quandl call
-        _____________________________________
-        Return:
-            data: pandas.dataframe or numpy array
-                 returned from quandl call
         '''
         log.debug('fetching QuanDL data (%s)' % code)
         # This way you can use your credentials even if
@@ -89,6 +105,6 @@ class DataQuandl(object):
             data = Quandl.get(code, authtoken=self.quandl_key, **kwargs)
             data.index = data.index.tz_localize(pytz.utc)
         except:
-            log.error('** Fetching %s from Quandl' % code)
+            log.error('** unable to fetch %s from Quandl' % code)
             data = pd.DataFrame()
         return data

@@ -1,5 +1,5 @@
 #
-# Copyright 2013 Xavier Bruhiere
+# Copyright 2014 Quantopian, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 
 
 class IntuitionError(Exception):
+    ''' Base class for exceptions in Intuition module '''
     msg = None
 
     def __init__(self, *args, **kwargs):
@@ -30,10 +31,25 @@ class IntuitionError(Exception):
     __repr__ = __str__
 
 
-# http://www.siteduzero.com/informatique/tutoriels/les-exceptions-9/\
-#     liste-des-exceptions-built-in
-class Example(IntuitionError):
-    '''
-    Temporary example
-    '''
-    msg = "{transform} requires {fields}. Event cannot be processed."
+class ImportContextFailed(IntuitionError):
+    msg = "unable to import context builer from {module}: {reason}"
+
+
+class InvalidConfiguration(IntuitionError):
+    msg = "invalid configuration: {config} ({module})"
+
+
+class PortfolioOptimizationFailed(IntuitionError):
+    msg = """
+[{date}] \
+Portfolio optimization failed: {reason}, \
+processing {data}
+""".strip()
+
+
+class AlgorithmEventFailed(IntuitionError):
+    msg = """
+[{date}] \
+algorithm event failed: {reason}, \
+processing {data}
+""".strip()

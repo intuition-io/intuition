@@ -92,8 +92,8 @@ class Simulation(object):
                 exchange_tz=Exchanges[exchange]['timezone'],
                 load=self._get_benchmark_handler(last_trade))
         else:
-            raise NotImplementedError('Because of computation limitation, \
-                trading worldwide not permitted currently')
+            raise NotImplementedError(
+                'trading worldwide not permitted currently')
 
     def build(self, identity, modules, strategy=constants.DEFAULT_CONFIG):
         '''

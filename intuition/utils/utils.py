@@ -19,23 +19,25 @@ import json
 import re
 import socket
 from urllib2 import urlopen
-#import babel.numbers
-#import decimal
+
+from intuition.errors import ImportContextFailed
 
 
 def dynamic_import(mod_path, obj_name):
     ''' Take a string and return the corresponding module '''
     try:
         module = __import__(mod_path, fromlist=['whatever'])
-    except ImportError, description:
-        print(description)
-        return None
+    except ImportError, error:
+        raise ImportContextFailed(
+            module='.'.join([mod_path, obj_name]), reason=error)
 
     if hasattr(module, obj_name):
         obj = getattr(module, obj_name)
     else:
-        print('module {} has no attribute {}'.
-              format(module.__name__, obj_name))
+        raise ImportContextFailed(
+            module='.'.join([mod_path, obj_name]),
+            reason='module {} has no attribute {}'.
+                   format(module.__name__, obj_name))
         return None
 
     return obj

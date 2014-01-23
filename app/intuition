@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 #
-# Copyright © 2013 xavier
+# Copyright (C) 2014 xavier
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@
 
 import sys
 import os
-import traceback
 
 from intuition.core.engine import Simulation
 from intuition.utils.logger import log, get_nestedlog
@@ -56,12 +55,12 @@ def show_perfs(cash, bm_symbol, analyzes):
     print('\n ===================================\n')
 
 
-def main():
+def intuition():
     '''________________________________________________    Setup    ____
     Setup's goal is to fill 3 dictionnaries :
       - Backtest behavior
       - Strategy parameters (algo(, source) and manager)
-      - Environment (global informations like database access)
+      - Environment (global informations like third party access)
     '''
 
     # General simulation behavior is defined using command line arguments
@@ -73,11 +72,7 @@ def main():
 
         # Use the provided conext builder to fill the config dicts
         configuration, strategy = setup.context(cli['context'])
-        if not configuration:
-            log.error('unable to build context, aborting...')
-            sys.exit(1)
 
-        '''__________________________________________    Backtest    ____'''
         # Backtest or live engine.
         # Registers configuration and setups data client
         engine = Simulation()
@@ -93,27 +88,34 @@ def main():
 
         data = {'universe': configuration['universe'],
                 'index': configuration['index']}
+        data.update(strategy['data'])
         # See intuition/core/analyze.py for details of analyzes
         # which is an Analyzes object
         analyzes = engine.run(data, cli['bot'])
-
-        '''____________________________________________    Results   ____'''
-        if analyzes is None:
-            log.error('** Backtest failed.')
-            sys.exit(1)
 
         bm_symbol = datautils.Exchanges[configuration['exchange']]['symbol']
         show_perfs(strategy['manager']['cash'], bm_symbol, analyzes)
 
 
-if __name__ == '__main__':
+def main():
     try:
-        main()
+        intuition()
+        code = 0
     except KeyboardInterrupt:
         log.info('Received SIGINT, cleaning...')
-        sys.exit(0)
-    except Exception as e:
-        log.error("An exception occured : {} ({})".format(e, type(e)))
+        code = 0
+    except Exception, error:
+        log.error(error)
+        #log.catch_exceptions()
+        #log.exception()
+        import traceback
         print '\n' + 79 * '=' + '\n'
         traceback.print_exc(file=sys.stdout)
         print '\n' + 79 * '=' + '\n'
+        code = 1
+
+    return code
+
+
+if __name__ == '__main__':
+    sys.exit(main())
