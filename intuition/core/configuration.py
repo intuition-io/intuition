@@ -1,40 +1,34 @@
-#
-# Copyright 2013 Xavier Bruhiere
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
 
+'''
+  Intuition configuration
+  -----------------------
+
+  Configure intuition at launch time
+
+  :copyright (c) 2014 Xavier Bruhiere
+  :license: Apache 2.0, see LICENSE for more details.
+'''
 
 import argparse
-import logbook
-
+import dna.logging
+import dna.utils
+from intuition import __version__, __licence__
 import intuition.constants as constants
-import intuition.utils.utils as utils
-
 from intuition.errors import InvalidConfiguration
 from intuition.constants import CONFIG_SCHEMA
 
-
-log = logbook.Logger('intuition.core.configuration')
+log = dna.logging.logger(__name__)
 
 
 def parse_commandline():
-    log.debug('parsing commandline arguments')
-
     parser = argparse.ArgumentParser(
         description='Intuition, the terrific trading system')
     parser.add_argument('-V', '--version',
                         action='version',
-                        version='%(prog)s v0.3.2 Licence Apache 2.0',
+                        version='%(prog)s v{} Licence {}'.format(
+                            __version__, __licence__),
                         help='Print program version')
     parser.add_argument('-v', '--showlog',
                         action='store_true',
@@ -58,11 +52,12 @@ def parse_commandline():
 
 
 def context(driver):
+    #TODO Check driver syntax
     driver = driver.split('::')
     #TODO No use of environment, it breaks how other modules are found
     builder_name = '{}.contexts.{}'.format(constants.MODULES_PATH, driver[0])
 
-    build_context = utils.dynamic_import(builder_name, 'build_context')
+    build_context = dna.utils.dynamic_import(builder_name, 'build_context')
 
     log.info('building context')
     config, strategy = build_context(driver[1])

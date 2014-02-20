@@ -1,31 +1,36 @@
-#!/usr/bin/python
-# encoding: utf-8
-#
-# Copyright 2013 Xavier Bruhiere
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
+
+'''
+  Data related utilities
+  ----------------------
+
+  :copyright (c) 2014 Xavier Bruhiere
+  :license: Apache 2.0, see LICENSE for more details.
+'''
 
 
-from random import shuffle
 import os
+import intuition.data.data as data
+import random
 import pandas as pd
+
+
+def apply_mapping(raw_row, mapping):
+    '''
+    Override this to hand craft conversion of row.
+    '''
+    row = {target: mapping_func(raw_row[source_key])
+           for target, (mapping_func, source_key)
+           in mapping.fget().items()}
+    return row
 
 
 #TODO This is quick and dirty
 def detect_exchange(universe):
     if not isinstance(universe, list):
         universe = universe.split(',')
-    if universe[0] in Exchanges:
+    if universe[0] in data.Exchanges:
         exchange = universe[0]
     else:
         if universe[0].find('/') > 0:
@@ -39,7 +44,7 @@ def detect_exchange(universe):
 
 def market_sids_list(exchange, n=-1):
     if exchange == 'forex':
-        sids_list = FX_PAIRS
+        sids_list = data.FX_PAIRS
     else:
         csv_file = '{}.csv'.format(
             os.path.join(
@@ -47,7 +52,7 @@ def market_sids_list(exchange, n=-1):
         df = pd.read_csv(csv_file)
         sids_list = df['Symbol'].tolist()
 
-    shuffle(sids_list)
+    random.shuffle(sids_list)
     if n > 0:
         sids_list = sids_list[:n]
     return sids_list
@@ -56,7 +61,7 @@ def market_sids_list(exchange, n=-1):
 def smart_selector(sids):
     if not isinstance(sids, list):
         sids = sids.split(',')
-    if sids[0] in Exchanges:
+    if sids[0] in data.Exchanges:
         if len(sids) == 2:
             n = int(sids[1])
         else:
@@ -95,79 +100,40 @@ def filter_market_hours(dates, exchange):
     return dates[selector]
 
 
-FX_PAIRS = ['EUR/USD', 'USD/JPY', 'GBP/USD',
-            'EUR/GBP', 'USD/CHF', 'EUR/JPY',
-            'EUR/CHF', 'USD/CAD', 'AUD/USD',
-            'GBP/JPY', 'AUD/JPY', 'AUD/NZD',
-            'CAD/JPY', 'CHF/JPY', 'NZD/USD']
+def invert_dataframe_axis(fct):
+    '''
+    Make dataframe index column names,
+    and vice et versa
+    '''
+    def inner(*args, **kwargs):
+        df_to_invert = fct(*args, **kwargs)
+        assert isinstance(df_to_invert, pd.DataFrame)
+        return pd.DataFrame(df_to_invert.to_dict().values(),
+                            index=df_to_invert.to_dict().keys())
+    return inner
 
 
-# World exchanges caracteristics
-Exchanges = {
-    # Market code, from yahoo stock code to google market code (needed for
-    # reliable download)
-    # Later Londres = LON
-    #FIXME Forex is temporary
-    'cac40': {'symbol': '^FCHI',
-              'timezone': 'Europe/London',
-              'code': 1001,
-              'google_market': 'EPA'},
-    'forex': {'symbol': '^FCHI',
-              'timezone': 'Europe/London',
-              'indexes': [],
-              'code': 1002},
-    'nasdaq': {'symbol': '^GSPC',
-               'timezone': 'US/Eastern',
-               'code': 1003,
-               'indexes': ['nasdaq', 'nyse'],
-               'google_market': 'NASDAQ'},
-    'nyse': {'symbol': '^GSPC',
-             'timezone': 'US/Eastern',
-             'code': 1004,
-             'google_market': 'NYSE'}
-}
+#NOTE with_market symbol, build jxr.pa => JXR:EPA
+def use_google_symbol(fct):
+    '''
+    Removes ".PA" or other market indicator from yahoo symbol
+    convention to suit google convention
+    '''
+    def decorator(symbols):
+        google_symbols = []
 
+        # If one symbol string
+        if isinstance(symbols, str):
+            symbols = [symbols]
 
-class Fields:
-    QUOTES = ['open', 'low', 'high', 'close', 'volume', 'adj_close']
+        symbols = sorted(symbols)
+        for symbol in symbols:
+            dot_pos = symbol.find('.')
+            google_symbols.append(
+                symbol[:dot_pos] if (dot_pos > 0) else symbol)
 
-
-#TODO Same for google json and xml retrieving
-googleCode = dict()
-
-
-yahooCode = {'ask': 'a', 'average daily volume': 'a2', 'ask size': 'a5',
-             'bid': 'b', 'ask rt': 'b2', 'bid rt': 'b3', 'dividend yield': 'y',
-             'book value': 'b4', 'bid size': 'b6', 'change and percent': 'c',
-             'change': 'c1', 'commission': 'c3', 'change rt': 'c6',
-             'after hours change rt': 'c8', 'dividend': 'd',
-             'last trade date': 'd1', 'trade date': 'd2', 'earnings': 'e',
-             'error': 'e1', 'eps estimate year': 'e7',
-             'eps estimate next year': 'e8', 'eps estimate next quarter': 'e9',
-             'float shares': 'f6', 'day low': 'g', 'day high': 'h',
-             '52-week low': 'j', '52-week high': 'k',
-             'holdings gain percent': 'g1', 'annualized gain': 'g3',
-             'holdings gain': 'g4', 'holdings gain percent rt': 'g5',
-             'holdings gain rt': 'g6', 'more info': 'i', 'order book rt': 'i5',
-             'market capitalization': 'j1', 'market cap rt': 'j3',
-             'EBITDA': 'j4', 'change from 52-week': 'j5',
-             'percent change from 52-week low': 'j6',
-             'last trade rt with time': 'k1', 'change percent rt': 'k2',
-             'last trade size': 'k3', 'change from 52-week high': 'k4',
-             'percent change from 52-week high': 'k5',
-             'last trade with time': 'l', 'last trade price': 'l1',
-             'high limit': 'l2', 'low limit': 'l3', 'day range': 'm',
-             'day range rt': 'm2', '50-day ma': 'm3', '200-day ma': 'm4',
-             'percent change from 50-day ma': 'm8', 'name': 'n', 'notes': 'n4',
-             'open': 'o', 'previous close': 'p', 'price paid': 'p1',
-             'change percent': 'p2', 'price/sales': 'p5', 'price/book': 'p6',
-             'ex-dividend date': 'q', 'p/e ratio': 'r', 'dividend date': 'r1',
-             'p/e ratio rt': 'r2', 'peg ratio': 'r5',
-             'price/eps estimate year': 'r6',
-             'price/eps estimate next year': 'r7', 'symbol': 's',
-             'shares owned': 's1', 'short ratio': 's7',
-             'last trade time': 't1', 'trade links': 't6',
-             'ticker trend': 't7', '1 year target price': 't8', 'volume': 'v',
-             'holdings value': 'v1', 'holdings value rt': 'v7',
-             '52-week range': 'w', 'day value change': 'w1',
-             'day value change rt': 'w4', 'stock exchange': 'x'}
+        data = fct(google_symbols)
+        #NOTE Not very elegant
+        data.columns = [s for s in symbols if s.split('.')[0] in data.columns]
+        return data
+    return decorator

@@ -1,41 +1,35 @@
-#
-# Copyright 2013 Xavier Bruhiere
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
 
+'''
+  Intuition engine
+  ----------------
 
-import pytz
-import pandas as pd
-import logbook
+  Wraps zipline engine and results with more configuration options
+
+  :copyright (c) 2014 Xavier Bruhiere
+  :license: Apache 2.0, see LICENSE for more details.
+'''
+
 
 from zipline.finance.trading import TradingEnvironment
 from zipline.utils.factory import create_simulation_parameters
-
+import dna.utils
+import dna.logging
 import intuition.constants as constants
-from intuition.data.utils import Exchanges
+from intuition.data.data import Exchanges
 from intuition.data.loader import LiveBenchmark
 from intuition.core.analyzes import Analyze
-import intuition.utils.utils as utils
+import intuition.utils
 
-
-log = logbook.Logger('intuition.core.engine')
+log = dna.logging.logger(__name__)
 
 
 def _intuition_module(location):
     ''' Build the module path and import it '''
     path = location.split('.')
     obj = path.pop(-1)
-    return utils.dynamic_import('.'.join(path), obj)
+    return dna.utils.dynamic_import('.'.join(path), obj)
 
 
 #NOTE Is there still a point to use here a constructor object instead of a
@@ -50,7 +44,8 @@ class TradingEngine(object):
         algo_obj.identity = identity
         trading_algo = algo_obj(properties=strategy_conf['algorithm'])
 
-        trading_algo.set_logger(logbook.Logger('algo.' + identity))
+        #trading_algo.set_logger(logbook.Logger('algo.' + identity))
+        trading_algo.set_logger(dna.logging.logger('algo.' + identity))
 
         if modules['data']:
             trading_algo.set_data_generator(_intuition_module(modules['data']))
@@ -76,11 +71,10 @@ class Simulation(object):
         '''
         Setup a custom benchmark handler or let zipline manage it
         '''
-        is_live = (last_trade > pd.datetime.now(pytz.utc))
         #NOTE minute hardcoded until more timedeltas supported
         return LiveBenchmark(
             last_trade, frequency='minute').surcharge_market_data \
-            if is_live else None
+            if intuition.utils.is_live(last_trade) else None
 
     def configure_environment(self, last_trade, exchange):
         ''' Prepare benchmark loader and trading context '''

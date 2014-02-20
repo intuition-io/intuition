@@ -18,7 +18,9 @@ from glob import glob
 
 from setuptools import setup, find_packages
 
-from intuition import __version__, __author__, __licence__
+from intuition import (
+    __version__, __author__, __licence__, __project__
+)
 
 
 def get_requirements():
@@ -33,16 +35,16 @@ def get_requirements():
 requires = [
     'beautifulsoup4>=4.3.2',
     'blist>=1.3.4',
-    'Cython>=0.19.1',
-    'Logbook>=0.6.0',
+    'Cython>=0.20.1',
     'ystockquote',
     'numpy>=1.8.0',
     'schema==0.2.0',
     'python-dateutil>=2.2',
-    'pytz>=2013.8',
-    'Quandl>=1.7',
-    'requests>=2.0.1',
-    'six>=1.4.1',
+    'pytz>=2013.9',
+    'Quandl>=1.8.1',
+    'dna',
+    'requests>=2.2.1',
+    'six>=1.5.2',
     'zipline>=0.5.11.dev',
     'pandas>=0.13.0.dev']
 
@@ -57,7 +59,7 @@ def long_description():
 
 
 setup(
-    name='intuition',
+    name=__project__,
     version=__version__,
     description='A trading system building blocks',
     author=__author__,
@@ -67,6 +69,11 @@ setup(
     license=__licence__,
     install_requires=requires,
     url="https://github.com/hackliff/intuition",
+    entry_points={
+        'console_scripts': [
+            'intuition = intuition.__main__:main',
+        ],
+    },
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'License :: OSI Approved :: Apache Software License',
@@ -79,7 +86,6 @@ setup(
         'Topic :: Scientific/Engineering :: Information Analysis',
         'Topic :: System :: Distributed Computing',
     ],
-    scripts=['app/intuition'],
     data_files=[(os.path.expanduser('~/.intuition/data'), glob('./data/*'))],
     dependency_links=[
         'http://github.com/pydata/pandas/tarball/master#egg=pandas-0.13.0.dev',

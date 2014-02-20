@@ -6,6 +6,11 @@ Intuition
 
 ![Dashboard](https://raw.github.com/hivetech/hivetech.github.io/master/images/QuantDashboard.png)
 
+> The intuitive mind is a sacred gift and the rational mind is a faithful
+> servant. We have created a society that honors the servant and has forgotten
+> the gift.
+Albert Einstein
+
 
 Overview
 --------
@@ -58,6 +63,7 @@ Status
 [![License](https://pypip.in/license/intuition/badge.png)](https://pypi.python.org/pypi/intuition/)
 
 [Development Board][1]
+[Chat about the project][3]
 
 **Attention** Project is in an *early alpha*, and under heavy development.
  The new version 0.3.0 revises a lot of code :
@@ -252,3 +258,4 @@ Credits
 
 [1]: https://trello.com/b/WvJDlynt/intuition
 [2]: https://github.com/hackliff/insights
+[3]: https://gitter.im/hackliff/intuition

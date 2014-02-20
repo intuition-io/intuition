@@ -25,8 +25,14 @@ package:
 	python setup.py sdist upload
 
 tests: warn_missing_linters
-	flake8 intuition tests
-	nosetests -w tests --with-coverage --cover-package=intuition
+	flake8 tests intuition
+	nosetests -w tests --with-yanc --with-coverage --cover-package=intuition
+
+watch: warn_missing_linters
+	watchmedo shell-command \
+    --patterns="*.py;*.txt" \
+    --recursive \
+    --command="make tests" .
 
 present_pep8=$(shell which pep8)
 present_pyflakes=$(shell which pyflakes)

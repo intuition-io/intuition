@@ -1,20 +1,15 @@
-#!/usr/bin/python
-# encoding: utf-8
-#
-# Copyright 2013 Xavier Bruhiere
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
 
+'''
+  Intuition remote data
+  ---------------------
+
+  Provides functions to access various trading data accross internet wires
+
+  :copyright (c) 2014 Xavier Bruhiere.
+  :license: Apache2.0, see LICENSE for more details.
+'''
 
 from pandas.rpy.common import convert_to_r_matrix
 import requests
@@ -23,16 +18,13 @@ import pandas as pd
 import json
 from xml.dom import minidom, Node
 import urllib2
-import logbook
-
+import dna.logging
 from zipline.utils.factory import load_from_yahoo, load_bars_from_yahoo
-
-from intuition.utils.decorators import (
+from intuition.data.utils import (
     use_google_symbol, invert_dataframe_axis)
-import intuition.utils.utils as utils
+import intuition.utils
 
-
-log = logbook.Logger('intuition.data.remote')
+log = dna.logging.logger(__name__)
 
 finance_urls = {
     'yahoo_hist': 'http://ichart.yahoo.com/table.csv',
@@ -171,8 +163,7 @@ def snapshot_google_light(symbols):
     for i, quote in enumerate(json_infos):
         #FIXME nasdaq and nyse `symbols` are in capital, not cac40
         if quote['t'].lower() in map(str.lower, symbols):
-            #snapshot[symbols[i] + '.pa'] = utils.apply_mapping(
-            snapshot[symbols[i]] = utils.apply_mapping(
+            snapshot[symbols[i]] = intuition.utils.apply_mapping(
                 quote, google_light_mapping)
         else:
             log.warning('Unknown symbol {}, ignoring...'.format(

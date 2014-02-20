@@ -1,20 +1,17 @@
-#
-# Copyright 2013 Xavier Bruhiere
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
+
+'''
+  Intuition Data source api
+  -------------------------
+
+  Trading data source factory. Everything that can extend in a useful way
+  zipline.DataSource goes here. Future data sources should inherit from
+  this class.
+
+  :copyright (c) 2014 Xavier Bruhiere
+  :license: Apache 2.0, see LICENSE for more details.
+'''
 
 
 import time
@@ -23,10 +20,8 @@ import datetime
 import abc
 import sys
 import pandas as pd
-
 from zipline.sources.data_source import DataSource
 from zipline.gens.utils import hash_args
-
 from intuition.data.utils import smart_selector
 
 
@@ -139,11 +134,10 @@ class LiveDataFactory(DataFactory):
         '''
         Only return when we reach given datetime
         '''
-        # Intuition works with utc dates, conversion
-        # are made for I/O
+        # Intuition works with utc dates, conversion are made for I/O
         now = datetime.datetime.now(pytz.utc)
+        print('next tick: {} --> {}'.format(now, date))
         while now < date:
-            print('Waiting for {} / {}'.format(now, date))
             time.sleep(self.wait_interval)
             now = datetime.datetime.now(pytz.utc)
 
