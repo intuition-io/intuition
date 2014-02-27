@@ -3,12 +3,10 @@
   "universe": "nasdaq,5",
   "start": "2011-05-10",
   "end": "2013-11-10",
-  "frequency": "day",
   "modules": {
-    "context": "File",
-    "manager": "Constant",
-    "algorithm": "BuyAndHold",
-    "data": "YahooPriceSource"
+    "manager": "insights.managers.fair.Fair",
+    "algorithm": "insights.algorithms.dummy.Random.BuyAndHold",
+    "data": "insights.sources.backtest.yahoo.YahooPriceSource"
   },
   "algorithm": {
     "debug": true,
@@ -29,10 +27,7 @@
   "manager": {
     "cash": 10000,
     "load_backup": 0,
-    "connected": 0,
-    "android": 0,
     "loopback": 60,
-    "source": "mysql",
     "perc_sell": 1.0,
     "max_weight": 0.3,
     "sell_scale": 100,

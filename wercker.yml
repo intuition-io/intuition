@@ -10,9 +10,6 @@ build:
         - virtualenv:
             name: setup virtual environment
 
-        - pip-install:
-            packages_list: "numpy"
-
         # A step that executes `pip install` command.
         - pip-install
 

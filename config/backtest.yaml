@@ -1,0 +1,26 @@
+universe: nasdaq,5
+start: 2011-05-10
+end: 2013-11-10
+modules:
+  manager: insights.managers.constant.Constant
+  algorithm: insights.algorithms.dummy.Random
+  data: insights.sources.backtest.database.RethinkdbPrices
+
+data:
+  database: quotes
+
+algorithm:
+  start_day: -1
+  rate: -1
+  notify:
+  interactive: false
+  save: false
+  gradient_iterations: 5
+  long_window: 30
+  short_window: 20
+  threshold: 0.5
+
+manager:
+  buy_amount: 100
+  sell_amount: 100
+  cash: 2027

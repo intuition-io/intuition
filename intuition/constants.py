@@ -7,7 +7,10 @@ from schema import Schema, Optional, Or
 
 
 DEFAULT_CONFIG = {'algorithm': {}, 'manager': {}}
-MODULES_PATH = os.environ.get('MODULES_PATH', 'insights')
+
+DEFAULT_LOGPATH = '/tmp'
+
+DEFAULT_HOME = '/'.join([os.environ.get('HOME', '/'), '.intuition'])
 
 # https://github.com/halst/schema
 #NOTE Even better ? https://github.com/j2labs/schematics
@@ -20,7 +23,15 @@ CONFIG_SCHEMA = Schema({
     #Optional('id'): Use(basestring, error='invalid identity'),
     Optional('id'): basestring,
     Optional('live'): bool,
+    Optional('frequency'): basestring,
     'modules': {
         'algorithm': basestring,
         'data': basestring,
         Optional('manager'): Or(basestring, None)}})
+
+
+PANDAS_FREQ = {
+    'daily': 'D',
+    'hourly': 'H',
+    'minutely': 'Min'
+}

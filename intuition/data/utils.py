@@ -11,9 +11,10 @@
 
 
 import os
-import intuition.data.data as data
 import random
 import pandas as pd
+import intuition.data.data as data
+from intuition.errors import ExchangeIsClosed
 
 
 def apply_mapping(raw_row, mapping):
@@ -97,7 +98,10 @@ def filter_market_hours(dates, exchange):
         return dates
 
     # Pandas dataframe filtering mechanism
-    return dates[selector]
+    index = dates[selector]
+    if not index.size:
+        raise ExchangeIsClosed(exchange=exchange, dates=dates)
+    return index
 
 
 def invert_dataframe_axis(fct):

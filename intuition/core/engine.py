@@ -20,16 +20,9 @@ import intuition.constants as constants
 from intuition.data.data import Exchanges
 from intuition.data.loader import LiveBenchmark
 from intuition.core.analyzes import Analyze
-import intuition.utils
+import intuition.utils as utils
 
 log = dna.logging.logger(__name__)
-
-
-def _intuition_module(location):
-    ''' Build the module path and import it '''
-    path = location.split('.')
-    obj = path.pop(-1)
-    return dna.utils.dynamic_import('.'.join(path), obj)
 
 
 #NOTE Is there still a point to use here a constructor object instead of a
@@ -40,21 +33,21 @@ class TradingEngine(object):
 
     def __new__(self, identity, modules, strategy_conf):
 
-        algo_obj = _intuition_module(modules['algorithm'])
+        algo_obj = utils.intuition_module(modules['algorithm'])
         algo_obj.identity = identity
         trading_algo = algo_obj(properties=strategy_conf['algorithm'])
 
-        #trading_algo.set_logger(logbook.Logger('algo.' + identity))
         trading_algo.set_logger(dna.logging.logger('algo.' + identity))
 
         if modules['data']:
-            trading_algo.set_data_generator(_intuition_module(modules['data']))
+            trading_algo.set_data_generator(
+                utils.intuition_module(modules['data']))
 
         # Use a portfolio manager
         if modules.get('manager'):
             log.info('initializing manager {}'.format(modules['manager']))
             # Linking to the algorithm the configured portfolio manager
-            trading_algo.manager = _intuition_module(modules['manager'])(
+            trading_algo.manager = utils.intuition_module(modules['manager'])(
                 strategy_conf['manager'])
         else:
             trading_algo.manager = None
@@ -67,19 +60,19 @@ class Simulation(object):
     ''' Setup and trigger trading sessions '''
     context = None
 
-    def _get_benchmark_handler(self, last_trade):
+    def _get_benchmark_handler(self, last_trade, freq='minutely'):
         '''
         Setup a custom benchmark handler or let zipline manage it
         '''
-        #NOTE minute hardcoded until more timedeltas supported
         return LiveBenchmark(
-            last_trade, frequency='minute').surcharge_market_data \
-            if intuition.utils.is_live(last_trade) else None
+            last_trade, frequency=freq).surcharge_market_data \
+            if utils.is_live(last_trade) else None
 
     def configure_environment(self, last_trade, exchange):
         ''' Prepare benchmark loader and trading context '''
 
         # Setup the trading calendar from market informations
+        self.exchange = exchange
         if exchange in Exchanges:
             self.context = TradingEnvironment(
                 bm_symbol=Exchanges[exchange]['symbol'],
@@ -87,15 +80,14 @@ class Simulation(object):
                 load=self._get_benchmark_handler(last_trade))
         else:
             raise NotImplementedError(
-                'trading worldwide not permitted currently')
+                'exchange {} not supported'.format(exchange))
 
     def build(self, identity, modules, strategy=constants.DEFAULT_CONFIG):
         '''
         Wrapper of zipline run() method. Use the configuration set so far
-        to build up the trading environment and launch the system
+        to build up the trading environment
         '''
         self.engine = TradingEngine(identity, modules, strategy)
-
         self.initial_cash = strategy['manager'].get('cash', None)
 
     def run(self, data, auto=False):
@@ -111,5 +103,7 @@ class Simulation(object):
             daily_stats = self.engine.trade(data, sim_params=sim_params)
 
         return Analyze(
+            params=sim_params,
+            exchange=self.exchange,
             results=daily_stats,
             metrics=self.engine.risk_report)

@@ -14,15 +14,14 @@
 '''
 
 
-import time
-import pytz
-import datetime
 import abc
-import sys
 import pandas as pd
 from zipline.sources.data_source import DataSource
 from zipline.gens.utils import hash_args
+import dna.logging
+import intuition.utils as utils
 from intuition.data.utils import smart_selector
+from intuition.errors import LoadDataFailed
 
 
 def _build_event(date, sid, series):
@@ -42,9 +41,10 @@ def _build_event(date, sid, series):
     return event
 
 
-class DataFactory(DataSource):
+class HybridDataFactory(DataSource):
     '''
-    Intuition surcharge of DataSource zipline class
+    Surcharge of zipline.DataSource, switching automatically between live
+    stream and backtest sources
 
     Configuration options:
 
@@ -58,11 +58,17 @@ class DataFactory(DataSource):
 
     __metaclass__ = abc.ABCMeta
 
+    backtest = None
+    live = None
+    switched = False
+    wait_interval = 15
+
     def __init__(self, data_descriptor, **kwargs):
         assert isinstance(data_descriptor['index'],
                           pd.tseries.index.DatetimeIndex)
 
-        #self.data_descriptor = data_descriptor
+        self.log = dna.logging.logger(__name__)
+
         # Unpack config dictionary with default values.
         self.sids = smart_selector(
             kwargs.get('sids', data_descriptor['universe']))
@@ -79,6 +85,21 @@ class DataFactory(DataSource):
         self._raw_data = None
         self.initialize(data_descriptor, **kwargs)
 
+        if hasattr(self.backtest, 'mapping'):
+            self.current_mapping = self.backtest.mapping
+        else:
+            self.current_mapping = self.mapping
+
+    @property
+    def mapping(self):
+        return {
+            'dt': (lambda x: x, 'dt'),
+            'sid': (lambda x: x, 'sid'),
+            'price': (float, 'price'),
+            'volume': (int, 'volume'),
+        }
+
+    @abc.abstractmethod
     def initialize(self, data_descriptor, **kwargs):
         ''' Abstract method for user custom initialization'''
         pass
@@ -94,77 +115,62 @@ class DataFactory(DataSource):
         return self._raw_data
 
     @abc.abstractmethod
-    def get_data(self):
+    def backtest_data(self):
         ''' Users should overwrite this method '''
         pass
 
-    def raw_data_gen(self):
-        try:
-            self.data = self.get_data()
-        except Exception as e:
-            #TODO Identify the error and retry ?
-            print self.sids
-            sys.exit(e)
+    @abc.abstractmethod
+    def live_data(self):
+        ''' Users should overwrite this method '''
+        pass
 
-        if isinstance(self.data, pd.DataFrame):
-            for date, series in self.data.iterrows():
-                for sid in self.sids:
-                    yield _build_event(date, sid, series)
+    def _switch_context(self):
+        self.log.info(
+            'switching from backtest to live mode')
+        self.switched = True
+        if self.live:
+            if hasattr(self.live, 'mapping'):
+                self.current_mapping = self.live.mapping
 
-        elif isinstance(self.data, pd.Panel):
-            for date in self.data.major_axis:
-                df = self.data.major_xs(date)
-                for sid, series in df.iterkv():
-                    yield _build_event(date, sid, series)
-
-        else:
-            raise TypeError("Invalid data source type")
-
-
-class LiveDataFactory(DataFactory):
-    '''
-    Surcharge of DataFactory for live stream sources
-    '''
-
-    __metaclass__ = abc.ABCMeta
-
-    wait_interval = 15
-
-    def _wait_for_dt(self, date):
-        '''
-        Only return when we reach given datetime
-        '''
-        # Intuition works with utc dates, conversion are made for I/O
-        now = datetime.datetime.now(pytz.utc)
-        print('next tick: {} --> {}'.format(now, date))
-        while now < date:
-            time.sleep(self.wait_interval)
-            now = datetime.datetime.now(pytz.utc)
-
-    def _get_updated_index(self):
-        '''
-        truncate past dates in index
-        '''
-        late_index = self.index
-        current_dt = datetime.datetime.now(pytz.utc)
-        selector = (late_index.day > current_dt.day) \
-            | ((late_index.day == current_dt.day)
-                & (late_index.hour > current_dt.hour)) \
-            | ((late_index.day == current_dt.day)
-                & (late_index.hour == current_dt.hour)
-                & (late_index.minute >= current_dt.minute))
-
-        return self.index[selector]
+    def apply_mapping(self, raw_row):
+        row = {target: mapping_func(raw_row[source_key])
+               for target, (mapping_func, source_key)
+               in self.current_mapping.items()}
+        row.update({'source_id': self.get_hash()})
+        row.update({'type': self.event_type})
+        return row
 
     def raw_data_gen(self):
-        index = self._get_updated_index()
-        for date in index:
-            self._wait_for_dt(date)
+        if self.backtest:
             try:
-                snapshot = self.get_data()
-            except Exception as e:
-                print e
-                continue
+                bt_data = self.backtest_data()
+            except Exception as error:
+                raise LoadDataFailed(sids=self.sids, reason=error)
+        else:
+            bt_data = None
 
-            for sid, series in snapshot.iterkv():
-                yield _build_event(date, sid, series)
+        for date in self.index:
+            self.log.debug('--> next tick {}'.format(date))
+            is_live = utils.next_tick(date)
+            if not is_live:
+                date = date.replace(hour=0)
+
+                if isinstance(bt_data, pd.DataFrame):
+                    if date not in bt_data.index:
+                        continue
+                    for sid in self.sids:
+                        series = bt_data.ix[date]
+                        yield _build_event(date, sid, series)
+                elif isinstance(bt_data, pd.Panel):
+                    df = self.data.major_xs(date)
+                    for sid, series in df.iterkv():
+                        yield _build_event(date, sid, series)
+            else:
+                if not self.switched:
+                    self._switch_context()
+                try:
+                    snapshot = self.live_data()
+                except Exception as error:
+                    raise LoadDataFailed(sids=self.sids, reason=error)
+                for sid, series in snapshot.iterkv():
+                    yield _build_event(date, sid, series)

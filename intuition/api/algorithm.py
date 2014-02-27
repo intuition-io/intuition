@@ -15,6 +15,7 @@
 
 
 import abc
+import datetime as dt
 from zipline.algorithm import TradingAlgorithm
 from zipline.sources import DataFrameSource
 from intuition.errors import AlgorithmEventFailed
@@ -36,12 +37,17 @@ class TradingFactory(TradingAlgorithm):
     days = 0
     sids = []
     middlewares = []
-    orderbook = {}
     auto = False
 
     def __init__(self, *args, **kwargs):
         self.data_generator = DataFrameSource
+        self.realworld = kwargs['properties'].get('realworld')
         TradingAlgorithm.__init__(self, *args, **kwargs)
+
+    def _is_interactive(self):
+        ''' Prevent middlewares and orders to work outside live mode '''
+        return not (
+            self.realworld and (dt.date.today() > self.datetime.date()))
 
     def use(self, func, when='whenever'):
         ''' Append a middleware to the algorithm '''
@@ -64,8 +70,8 @@ class TradingFactory(TradingAlgorithm):
         ''' Register a data source to the algorithm '''
         self.data_generator = generator_class
 
-    #NOTE I'm not superfan of initialize + warming
-    def warming(self, data):
+    #NOTE I'm not superfan of initialize + warm
+    def warm(self, data):
         ''' Called at the first handle_data frame '''
         pass
 
@@ -89,7 +95,7 @@ class TradingFactory(TradingAlgorithm):
         else:
             # Perf_tracker needs at least a turn to have an index
             self.sids = data.keys()
-            self.warming(data)
+            self.warm(data)
             self.initialized = True
             return
 
@@ -102,13 +108,14 @@ class TradingFactory(TradingAlgorithm):
                 reason=error, date=self.datetime, data=data)
 
         # One can process orders within the alogrithm and don't return anything
-        if signals:
-            if (signals['buy'] or signals['sell']) and self.manager:
+        if signals and self.manager:
+            if (signals.get('buy') or signals.get('sell')):
                 self.orderbook = self.manager.trade_signals_handler(signals)
-                if self.auto:
+                if self.auto and self._is_interactive():
                     self.process_orders(self.orderbook)
 
-        self._call_middlewares()
+        if self._is_interactive():
+            self._call_middlewares()
 
     def process_orders(self, orderbook):
         ''' Default and costant orders processor. Overwrite it for more

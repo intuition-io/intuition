@@ -15,7 +15,7 @@
 
 import abc
 import dna.logging
-import intuition.data.remote as remote
+#import intuition.data.remote as remote
 from intuition.errors import PortfolioOptimizationFailed
 
 
@@ -60,15 +60,13 @@ class PortfolioFactory():
                 Named parameters used either for general portfolio settings
                 (server and constraints), and for user optimizer function
         '''
-        # Portfolio owner, mainly used for database saving and client
-        # communication
         self.log = dna.logging.logger(__name__)
 
         # Other parameters are used in user's optimize() method
         self._optimizer_parameters = configuration
 
         # In case user optimization would need to retrieve more data
-        self.data = remote.Data()
+        #self.data = remote.Data()
 
         self.initialize(configuration)
 

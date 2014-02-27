@@ -15,24 +15,72 @@ import pytz
 import pandas as pd
 import numpy as np
 import dna.logging
+import dna.debug
 from zipline.data.benchmarks import get_benchmark_returns
+import intuition.utils
 from intuition.core.finance import qstk_get_sharpe_ratio
+from intuition.data.data import Exchanges
 
 log = dna.logging.logger(__name__)
 
 
 class Analyze():
     ''' Handle backtest results and performances measurments '''
-    def __init__(self, **kwargs):
-        #FIXME Those None-values aren't check later
-        # R analysis file only needs portfolio returns
-        self.returns = kwargs.pop('returns') if 'returns' in kwargs else None
-
+    def __init__(self, params, results, metrics, exchange=None):
+        # NOTE Temporary
+        # Simulation parameters
+        self.sim_params = params
         # Final risk measurments as returned by the backtester
-        self.results = kwargs.pop('results') if 'results' in kwargs else None
-
+        self.results = results
         # Simulation rolling performance
-        self.metrics = kwargs.pop('metrics') if 'metrics' in kwargs else None
+        self.metrics = metrics
+        # Market where we traded
+        self.exchange = exchange
+
+    def build_report(self, show=False):
+        # Get daily, cumulative and not, returns of portfolio and benchmark
+        # NOTE Temporary fix before intuition would be able to get benchmark
+        # data on live trading
+        try:
+            bm_sym = Exchanges[self.exchange]['symbol']
+            returns_df = self.get_returns(benchmark=bm_sym)
+            skip = False
+        except:
+            log.warn('unable to get benchmark data on live trading for now')
+            skip = True
+
+        orders = 0
+        for order in self.results.orders:
+            orders += len(order)
+
+        final_value = self.results.portfolio_value[-1]
+        report = {
+            'portfolio': final_value,
+            'gain': final_value - self.sim_params.capital_base,
+            'orders': orders,
+            'pnl_mean': self.results.pnl.mean(),
+            'pnl_deviation': self.results.pnl.std(),
+        }
+        if not skip:
+            report['portfolio_perfs'] = returns_df['algo_c_return'][-1] * 100.0
+            report['benchmark_perfs'] = \
+                returns_df['benchmark_c_return'][-1] * 100.0
+
+        perfs = self.overall_metrics('one_month')
+        for k, v in perfs.iteritems():
+            report[k] = v
+
+        # Float values for humans
+        for key, value in report.iteritems():
+            report[key] = intuition.utils.truncate(value, 3)
+
+        log.info('generated report', report=report)
+        if show:
+            print
+            print(dna.debug.emphasis(report, align=True))
+            print
+
+        return report
 
     def _to_perf_array(self, timestamp, key, length):
         return np.array([self.metrics[timestamp][i][key] for i in length])

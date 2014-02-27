@@ -12,8 +12,9 @@ from intuition.errors import InvalidConfiguration
 class ConfigurationTestCase(unittest.TestCase):
 
     #FIXME File only on my local computer
-    good_driver = 'file::intuition/conf.yaml'
-    bad_driver = 'file::intuition/fake.yaml'
+    good_driver = 'insights.contexts.file::intuition/conf.yaml'
+    bad_driver = 'no.where.file::intuition/conf.yaml'
+    bad_config = 'insights.contexts.file::/fake.yaml'
 
     def test_parse_command_line(self):
         try:
@@ -26,30 +27,29 @@ class ConfigurationTestCase(unittest.TestCase):
     def test_load_context(self):
         if os.path.exists(self.good_driver):
             conf, strat = configuration.context(self.good_driver)
-            self.assertTrue(isinstance(strat, dict))
-            self.assertTrue(isinstance(conf, dict))
+            self.assertIsInstance(strat, dict)
+            self.assertIsInstance(conf, dict)
         else:
             pass
 
     def test_load_bad_configuration(self):
-        try:
-            _, __ = configuration.context(self.bad_driver)
-        except Exception as error:
-            self.assertTrue(type(error) == InvalidConfiguration)
+        self.assertRaises(
+            InvalidConfiguration, configuration.context, self.bad_config)
 
     def test_loaded_configuration(self):
         if os.path.exists(self.good_driver):
             conf, strat = configuration.context(self.good_driver)
             for field in ['manager', 'algorithm', 'data']:
-                self.assertTrue(field in strat)
+                self.assertIn(field, strat)
             for field in ['index', 'live', 'exchange']:
-                self.assertTrue(field in conf)
+                self.assertIn(field, conf)
         else:
             pass
 
     def test_absent_driver_context_load(self):
-        try:
-            _, __ = configuration.context('unavailable')
-        except Exception as error:
-            self.assertTrue(type(error) == ImportContextFailed)
-            self.assertTrue('No module named unavailable' in str(error))
+        self.assertRaises(
+            ImportContextFailed, configuration.context, self.bad_driver)
+
+    def test_logfile(self):
+        logfile = configuration.logfile('fake_id')
+        self.assertIn('.intuition/logs/fake_id.log', logfile)

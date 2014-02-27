@@ -11,13 +11,13 @@
   :license: Apache 2.0, see LICENSE for more details.
 '''
 
+import os
 import argparse
 import dna.logging
 import dna.utils
 from intuition import __version__, __licence__
-import intuition.constants as constants
-from intuition.errors import InvalidConfiguration
-from intuition.constants import CONFIG_SCHEMA
+import intuition.constants
+import intuition.utils as utils
 
 log = dna.logging.logger(__name__)
 
@@ -52,20 +52,15 @@ def parse_commandline():
 
 
 def context(driver):
-    #TODO Check driver syntax
-    driver = driver.split('::')
-    #TODO No use of environment, it breaks how other modules are found
-    builder_name = '{}.contexts.{}'.format(constants.MODULES_PATH, driver[0])
+    driver = driver.split('://')
+    context_builder = utils.intuition_module(driver[0])
 
-    build_context = dna.utils.dynamic_import(builder_name, 'build_context')
+    log.info('building context', driver=driver[0], data=driver[1])
+    return context_builder(driver[1]).build(validate=True)
 
-    log.info('building context')
-    config, strategy = build_context(driver[1])
 
-    log.info('validating configuration')
-    try:
-        assert CONFIG_SCHEMA.validate(config)
-    except:
-        raise InvalidConfiguration(config=config, module=builder_name)
-
-    return config, strategy
+def logfile(session_id):
+    log_path = os.path.expanduser('~/.intuition/logs')
+    log_path = log_path if os.path.exists(log_path) \
+        else intuition.constants.DEFAULT_LOGPATH
+    return '{}/{}.log'.format(log_path, session_id)

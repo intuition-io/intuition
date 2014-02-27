@@ -21,8 +21,10 @@ class LiveBenchmark(object):
     def __init__(self, end, frequency='daily', loopback=4):
         self.last_trading_day = end
         self.loopback = loopback
-        if frequency == 'minute':
+        if frequency == 'minutely':
             self.offset = pd.datetools.Minute()
+        elif frequency == 'hourly':
+            self.offset = pd.datetools.Hour()
         elif frequency == 'daily':
             self.offset = pd.datetools.Day()
         else:
@@ -34,6 +36,13 @@ class LiveBenchmark(object):
         return pd.tseries.tools.normalize_date(test_date)
 
     def surcharge_market_data(self, bm_symbol='^GSPC'):
+        bm_bt, tr_bt = zipline.load_market_data(bm_symbol)
+        bm_live, tr_live = self._load_live_market_data(bm_symbol)
+        bm = bm_bt.append(bm_live)
+        tr_bt.update(tr_live)
+        return bm, tr_bt
+
+    def _load_live_market_data(self, bm_symbol='^GSPC'):
         #TODO Parametric
         #event_dt = datetime.today().replace(tzinfo=pytz.utc)
         event_dt = self.normalize_date(datetime.now())

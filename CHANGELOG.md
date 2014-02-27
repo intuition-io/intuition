@@ -1,4 +1,15 @@
 
+n.n.n / 2014-02-27 
+==================
+
+ * chore(*): dna factorization
+ * chore(*): hot fixes after insights push
+ * chore(.): fix dockerfile, improve core/engine api
+ * chore(*) various fixes and adaptation to insights evolutions
+ * chore(.): setup.py and dockerfile fix, pyscience docker image
+ * chore(*): minor hotfix after release
+ * Merge branch 'release/v0.3.0' into develop
+
 n.n.n / 2013-11-28 
 ==================
 

@@ -86,7 +86,8 @@ setup(
         'Topic :: Scientific/Engineering :: Information Analysis',
         'Topic :: System :: Distributed Computing',
     ],
-    data_files=[(os.path.expanduser('~/.intuition/data'), glob('./data/*'))],
+    data_files=[(os.path.expanduser('~/.intuition/data'), glob('./data/*')),
+                (os.path.expanduser('~/.intuition/logs'), './logs.doc.md')],
     dependency_links=[
         'http://github.com/pydata/pandas/tarball/master#egg=pandas-0.13.0.dev',
         'http://github.com/quantopian/zipline/tarball/master#egg=zipline-0.5.11.dev']

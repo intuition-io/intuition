@@ -31,3 +31,15 @@ class AlgorithmEventFailed(dna.errors.FactoryError):
 algorithm event failed: {reason}, \
 processing {data}
 """.strip()
+
+
+class LoadDataFailed(dna.errors.FactoryError):
+    msg = "Failed to load data for {sids}: {reason}"
+
+
+class LoadContextFailed(dna.errors.FactoryError):
+    msg = "Unable to load data from {driver}: {reason}"
+
+
+class ExchangeIsClosed(dna.errors.FactoryError):
+    msg = "{exchange} is closed during {dates}"
