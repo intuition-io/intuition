@@ -10,13 +10,7 @@
 '''
 
 
-FX_PAIRS = ['EUR/USD', 'USD/JPY', 'GBP/USD',
-            'EUR/GBP', 'USD/CHF', 'EUR/JPY',
-            'EUR/CHF', 'USD/CAD', 'AUD/USD',
-            'GBP/JPY', 'AUD/JPY', 'AUD/NZD',
-            'CAD/JPY', 'CHF/JPY', 'NZD/USD']
-
-
+"""
 # World exchanges caracteristics
 Exchanges = {
     # Market code, from yahoo stock code to google market code (needed for
@@ -27,10 +21,10 @@ Exchanges = {
               'timezone': 'Europe/London',
               'code': 1001,
               'google_market': 'EPA'},
-    'forex': {'symbol': '^FCHI',
-              'timezone': 'Europe/London',
-              'indexes': [],
-              'code': 1002},
+    'forex': {'symbol': '^GSPC',
+              'timezone': 'US/Eastern',
+              'code': 1002,
+              'indexes': []},
     'nasdaq': {'symbol': '^GSPC',
                'timezone': 'US/Eastern',
                'code': 1003,
@@ -41,14 +35,7 @@ Exchanges = {
              'code': 1004,
              'google_market': 'NYSE'}
 }
-
-
-class Fields:
-    QUOTES = ['open', 'low', 'high', 'close', 'volume', 'adj_close']
-
-
-#TODO Same for google json and xml retrieving
-googleCode = dict()
+"""
 
 
 yahooCode = {'ask': 'a', 'average daily volume': 'a2', 'ask size': 'a5',

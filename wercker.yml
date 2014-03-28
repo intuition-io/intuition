@@ -21,7 +21,8 @@ build:
         - script:
             name: run tests
             code: |
-              make tests
+              flake8 tests intuition
+              nosetests -w tests
 
     after-steps:
         - hipchat-notify:

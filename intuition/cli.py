@@ -14,6 +14,8 @@
 import os
 import dna.logging
 from intuition import __version__
+import intuition.utils as utils
+import intuition.api.datafeed as datafeed
 from intuition.core.engine import Simulation
 import intuition.core.configuration as setup
 
@@ -28,29 +30,39 @@ def intuition(args):
       - Environment (global informations like third party access)
     '''
 
-    # Use the provided conext builder to fill the config dicts
-    configuration, strategy = setup.context(args['context'])
+    # Use the provided context builder to fill the config dicts
+    #configuration, strategy = setup.context(args['context'])
+    with setup.Context(args['context']) as context:
 
-    # Backtest or live engine.
-    # Registers configuration and setups data client
-    engine = Simulation()
+        # Backtest or live engine.
+        # Registers configuration and setups data client
+        simulation = Simulation()
 
-    # Setup quotes data and financial context (location, market, ...)
-    # from user parameters. Wraps _configure_context() you can use directly
-    # for better understanding
-    engine.configure_environment(
-        configuration['index'][-1],
-        configuration['exchange'])
+        # Setup quotes data and financial context (location, market, ...) from
+        # user parameters. Wraps _configure_context() you can use directly for
+        # better understanding
+        simulation.configure_environment(
+            context['config']['index'][-1],
+            context['market'])
 
-    # Wire togetether modules and initialize them
-    engine.build(args['session'], configuration['modules'], strategy)
+        # Wire togetether modules and initialize them
+        simulation.build(args['session'],
+                         context['config']['modules'],
+                         context['strategy'])
 
-    data = {'universe': configuration['universe'],
-            'index': configuration['index']}
-    data.update(strategy['data'])
-    # See intuition/core/analyze.py for details of analyzes
-    # which is an Analyzes object
-    return engine.run(data, args['bot'])
+        # Build data generator
+        #TODO How can I use several sources ?
+        data = {'universe': context['market'],
+                'index': context['config']['index']}
+        data.update(context['strategy']['data'])
+        if 'backtest' in context['config']['modules']:
+            data['backtest'] = utils.intuition_module(
+                context['config']['modules']['backtest'])
+        if 'live' in context['config']['modules']:
+            data['live'] = utils.intuition_module(
+                context['config']['modules']['live'])
+
+        return simulation(datafeed.HybridDataFactory(**data), args['bot'])
 
 
 def main():

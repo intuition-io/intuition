@@ -4,3 +4,4 @@ flake8==2.1.0
 coveralls==0.4.1
 ipdb==0.8
 piprot==0.5.0
+radon==0.5

@@ -19,14 +19,13 @@ import dna.debug
 from zipline.data.benchmarks import get_benchmark_returns
 import intuition.utils
 from intuition.core.finance import qstk_get_sharpe_ratio
-from intuition.data.data import Exchanges
 
 log = dna.logging.logger(__name__)
 
 
 class Analyze():
     ''' Handle backtest results and performances measurments '''
-    def __init__(self, params, results, metrics, exchange=None):
+    def __init__(self, params, results, metrics, benchmark='^GSPC'):
         # NOTE Temporary
         # Simulation parameters
         self.sim_params = params
@@ -35,14 +34,14 @@ class Analyze():
         # Simulation rolling performance
         self.metrics = metrics
         # Market where we traded
-        self.exchange = exchange
+        self.benchmark = benchmark
 
-    def build_report(self, show=False):
+    def build_report(self, timestamp='one_month', show=False):
         # Get daily, cumulative and not, returns of portfolio and benchmark
         # NOTE Temporary fix before intuition would be able to get benchmark
         # data on live trading
         try:
-            bm_sym = Exchanges[self.exchange]['symbol']
+            bm_sym = self.benchmark
             returns_df = self.get_returns(benchmark=bm_sym)
             skip = False
         except:
@@ -66,7 +65,7 @@ class Analyze():
             report['benchmark_perfs'] = \
                 returns_df['benchmark_c_return'][-1] * 100.0
 
-        perfs = self.overall_metrics('one_month')
+        perfs = self.overall_metrics(timestamp)
         for k, v in perfs.iteritems():
             report[k] = v
 
@@ -96,7 +95,7 @@ class Analyze():
             perfs = {}
             length = range(len(self.metrics[timestamp]))
             index = self._get_index(self.metrics[timestamp])
-            perf_keys = self.metrics['one_month'][0].keys()
+            perf_keys = self.metrics[timestamp][0].keys()
             perf_keys.pop(perf_keys.index('period_label'))
 
             perfs['period'] = np.array(

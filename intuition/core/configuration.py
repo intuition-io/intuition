@@ -13,11 +13,14 @@
 
 import os
 import argparse
+from schematics.types import StringType, URLType
 import dna.logging
 import dna.utils
 from intuition import __version__, __licence__
 import intuition.constants
 import intuition.utils as utils
+import intuition.data.universe as universe
+from intuition.errors import InvalidConfiguration
 
 log = dna.logging.logger(__name__)
 
@@ -51,12 +54,41 @@ def parse_commandline():
         'bot': args.bot}
 
 
-def context(driver):
-    driver = driver.split('://')
-    context_builder = utils.intuition_module(driver[0])
+class Context(object):
+    ''' Load and control configuration '''
 
-    log.info('building context', driver=driver[0], data=driver[1])
-    return context_builder(driver[1]).build(validate=True)
+    def __init__(self, access):
+        # Hold infos to reach the config formatted like an url path
+        StringType(regex='.*://\w').validate(access)
+        self._ctx_module = access.split('://')[0]
+        self._ctx_infos = access.split('://')[1]
+        URLType().validate('http://{}'.format(self._ctx_infos))
+
+    def __enter__(self):
+        Loader = utils.intuition_module(self._ctx_module)
+
+        log.info('building context',
+                 driver=self._ctx_module, data=self._ctx_infos)
+        config, strategy = Loader(self._ctx_infos).build()
+
+        # TODO Validate strategy as well
+        self._validate(config)
+
+        market = universe.Market()
+        market.parse_universe_description(config.pop('universe'))
+        config['index'] = market.filter_open_hours(config['index'])
+
+        return {'config': config, 'strategy': strategy, 'market': market}
+
+    def __exit__(self, type, value, traceback):
+        pass
+
+    def _validate(self, config):
+        log.info('validating configuration', config=config)
+        try:
+            assert intuition.constants.CONFIG_SCHEMA.validate(config)
+        except:
+            raise InvalidConfiguration(config=config, module=__name__)
 
 
 def logfile(session_id):

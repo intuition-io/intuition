@@ -17,16 +17,19 @@ DEFAULT_HOME = '/'.join([os.environ.get('HOME', '/'), '.intuition'])
 #TODO More strict validation
 CONFIG_SCHEMA = Schema({
     'universe': basestring,
-    'exchange': basestring,
     'index': object,
     Optional('_id'): object,
     #Optional('id'): Use(basestring, error='invalid identity'),
     Optional('id'): basestring,
     Optional('live'): bool,
     Optional('frequency'): basestring,
+    Optional('_id'): object,
+    Optional('__v'): object,
     'modules': {
         'algorithm': basestring,
-        'data': basestring,
+        # TODO It will be at least one
+        Optional('backtest'): basestring,
+        Optional('live'): basestring,
         Optional('manager'): Or(basestring, None)}})
 
 

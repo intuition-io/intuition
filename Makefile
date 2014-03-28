@@ -26,6 +26,11 @@ package:
 
 tests: warn_missing_linters
 	@hr '-'
+	# TODO Recursively analyze all files and fail on conditions
+	@echo -e '\tChecking complexity ...'
+	@hr '-'
+	radon cc -ana intuition/core/engine.py
+	@hr '-'
 	@echo -e '\tChecking requirements ...'
 	@hr '-'
 	#TODO Fail if outdated

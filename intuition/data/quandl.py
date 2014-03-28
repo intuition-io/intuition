@@ -19,53 +19,70 @@ import Quandl
 log = dna.logging.logger(__name__)
 
 
-def build_quandl_code(code, market, provider='GOOG'):
-    # known providers: YAHOO, GOOG
-    return '{}/{}_{}'.format(provider, market, code).upper()
+def _clean_sid(sid):
+    sid = str(sid).lower()
+    # Remove market extension
+    dot_pos = sid.find('.')
+    sid = sid[:dot_pos] if dot_pos > 0 else sid
+    # Remove forex slash
+    return sid.replace('/', '')
 
 
-# Ressources : http://www.quandl.com/help/api/resources
-# Or the search API : https://github.com/quandl/Python
-# Seems to be {PROVIDER}/{MARKET_SUFFIX}_{GOOGLE_SYMBOL}
-def use_quandl_symbol(fct):
-    def decorator(self, symbol, **kwargs):
-
-        dot_pos = symbol.find('.')
-        if dot_pos > 0:
-            market = symbol[dot_pos+1:]
-            provider = 'YAHOO'
-            symbol = symbol[:dot_pos]
+def _build_quandl_code(symbol):
+    dot_pos = symbol.find('.')
+    slash_pos = symbol.find('/')
+    if dot_pos > 0:
+        market = symbol[dot_pos+1:]
+        provider = 'YAHOO'
+        symbol = symbol[:dot_pos]
+        code = '{}_{}'.format(market, symbol)
+    else:
+        if slash_pos > 0:
+            pair = symbol.split('/')
+            provider = 'QUANDL'
+            code = '{}{}'.format(pair[0], pair[1])
         else:
             market = 'NASDAQ'
             provider = 'GOOG'
-        quandl_symbol = build_quandl_code(symbol, market, provider)
+            code = '{}_{}'.format(market, symbol)
+    return '{}/{}'.format(provider, code).upper()
 
-        return fct(self, quandl_symbol, **kwargs)
+
+def use_quandl_symbols(fct):
+    def decorator(self, symbols, **kwargs):
+        if not isinstance(symbols, list):
+            symbols = [symbols]
+        quandl_symbols = map(_build_quandl_code, symbols)
+        raw_data = fct(self, quandl_symbols, **kwargs)
+
+        data = {}
+        for sid in symbols:
+            data[sid] = raw_data.filter(regex='.*{}.*'.format(
+                _clean_sid(sid).upper()))
+            data[sid].columns = map(
+                lambda x: x.replace(' ', '_').lower().split('_-_')[-1],
+                data[sid].columns)
+        return data
     return decorator
 
 
-def multi_codes(fct):
-    '''
-    Decorator that allows to use Data.Quandl.fetch with multi codes and get a
-    panel of it
-    '''
-    def build_panel(self, codes, **kwargs):
-        if isinstance(codes, str):
-            # One code, do nothing special
-            data = fct(self, codes, **kwargs)
-        elif isinstance(codes, list):
-            # Multi codes, build a panel
-            tmp_data = {}
-            for code in codes:
-                tmp_data[code] = fct(self, code, **kwargs)
-            data = pd.Panel(tmp_data)
-        else:
-            raise TypeError('quandl codes must be one string or a list')
-
-        #NOTE The algorithm can't detect missing values this way...
-        #NOTE An interpolate() method could be more powerful
-        return data.fillna(method='pad')
-    return build_panel
+def fractionate_request(fct):
+    def inner(self, symbols, **kwargs):
+        tolerance_window = 10
+        cursor = 0
+        data = {}
+        while cursor < len(symbols):
+            if cursor + tolerance_window > len(symbols):
+                limit = len(symbols)
+            else:
+                limit = cursor + tolerance_window
+            symbols_fraction = symbols[cursor:limit]
+            cursor += tolerance_window
+            data_fraction = fct(self, symbols_fraction, **kwargs)
+            for sid, df in data_fraction.iteritems():
+                data[sid] = df
+        return pd.Panel(data).fillna(method='pad')
+    return inner
 
 
 class DataQuandl(object):
@@ -76,9 +93,8 @@ class DataQuandl(object):
         self.quandl_key = quandl_key if quandl_key != '' \
             else os.environ["QUANDL_API_KEY"]
 
-    #TODO Use of search feature for more powerfull and flexible use
-    @multi_codes
-    @use_quandl_symbol
+    @fractionate_request
+    @use_quandl_symbols
     def fetch(self, code, **kwargs):
         '''
         Quandl entry point in datafeed object
@@ -89,15 +105,18 @@ class DataQuandl(object):
         if 'authtoken' in kwargs:
             self.quandl_key = kwargs.pop('authtoken')
 
-        # Harmonization: Quandl call start_date trim_start
-        if 'start_date' in kwargs:
-            kwargs['trim_start'] = kwargs.pop('start_date')
-        if 'end_date' in kwargs:
-            kwargs['trim_end'] = kwargs.pop('end_date')
+        # Harmonization: Quandl call start trim_start
+        if 'start' in kwargs:
+            kwargs['trim_start'] = kwargs.pop('start')
+        if 'end' in kwargs:
+            kwargs['trim_end'] = kwargs.pop('end')
 
         try:
             data = Quandl.get(code, authtoken=self.quandl_key, **kwargs)
+            # FIXME With a symbol not found, insert a not_found column
             data.index = data.index.tz_localize(pytz.utc)
+            #data.columns = map(
+                #lambda x: x.replace(' ', '_').lower(), data.columns)
         except:
             log.error('** unable to fetch %s from Quandl' % code)
             data = pd.DataFrame()

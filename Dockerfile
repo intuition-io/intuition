@@ -9,15 +9,13 @@ FROM hivetech/pyscience
 MAINTAINER Xavier Bruhiere <xavier.bruhiere@gmail.com>
 
 # Local settings
-RUN apt-get install -y wget git-core libssl-dev
-#RUN apt-get install -y language-pack-fr wget git-core
+RUN apt-get update && \
+  apt-get install -y language-pack-fr wget git-core libssl-dev
 #ENV LANGUAGE fr_FR.UTF-8
 #ENV LANG fr_FR.UTF-8
 #ENV LC_ALL fr_FR.UTF-8
 #RUN locale-gen fr_FR.UTF-8 && dpkg-reconfigure locales
 
-#RUN pip install --use-mirrors intuition
-#RUN pip install --use-mirrors insights
 RUN git clone https://github.com/hackliff/intuition.git -b develop --depth 1 && \
   cd intuition && python setup.py install
 

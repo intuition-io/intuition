@@ -18,8 +18,6 @@ import datetime as dt
 import pandas as pd
 import dna.logging
 import intuition.utils
-from intuition.errors import InvalidConfiguration
-import intuition.data.utils as datautils
 
 EMPTY_DATES = pd.date_range('2000/01/01', periods=0, tz=pytz.utc)
 
@@ -76,23 +74,18 @@ class ContextFactory():
             if isinstance(context['end'], dt.date):
                 context['end'] = dt.date.strftime(
                     context['end'], format='%Y-%m-%d')
-        #context['frequency'] = intuition.constants.PANDAS_FREQ[
-            #context.get('frequency', 'daily')]
         context['frequency'] = context.get('frequency', 'D')
-
-        exchange = datautils.detect_exchange(context['universe'])
 
         # TODO Check if 'frequency' available
         trading_dates = self._build_trading_timeline(
             context.pop('start', None), context.pop('end', None),
-            context['frequency'], exchange)
+            context['frequency'])
 
-        context['exchange'] = exchange
         context['index'] = trading_dates
         context['live'] = (dt.datetime.now(tz=pytz.utc) < trading_dates[-1])
 
     # TODO Frequency for live trading (and backtesting ?)
-    def _build_trading_timeline(self, start, end, freq, exchange):
+    def _build_trading_timeline(self, start, end, freq):
         now = dt.datetime.now(tz=pytz.utc)
 
         if not start:
@@ -159,11 +152,7 @@ class ContextFactory():
                         start=start,
                         end=end, freq=freq)
 
-        #TODO Use zipline style to filter instead
-        bt_dates = datautils.filter_market_hours(bt_dates, exchange)
-        live_dates = datautils.filter_market_hours(live_dates, exchange)
-        trading_timeline = bt_dates + live_dates
-        return trading_timeline
+        return bt_dates + live_dates
 
     def _normalize_strategy(self, strategy):
         ''' some contexts only retrieves strings, giving back right type '''
@@ -172,20 +161,13 @@ class ContextFactory():
                 strategy[k] = True
             elif v == 'false' or v is None:
                 strategy[k] = False
-            #else:
-                #try:
-                    #strategy[k] = float(v)
-                #except ValueError:
-                    #pass
+            else:
+                try:
+                    strategy[k] = float(v)
+                except ValueError:
+                    pass
 
-    def validate(self, config):
-        self.log.info('validating configuration', config=config)
-        try:
-            assert intuition.constants.CONFIG_SCHEMA.validate(config)
-        except:
-            raise InvalidConfiguration(config=config, module=__name__)
-
-    def build(self, validate=False):
+    def build(self):
         context = self.load()
 
         algorithm = context.pop('algorithm', {})
@@ -204,8 +186,5 @@ class ContextFactory():
             'manager': manager,
             'data': data
         }
-
-        if validate:
-            self.validate(context)
 
         return context, strategy

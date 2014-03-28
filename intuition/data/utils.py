@@ -12,6 +12,7 @@
 
 import os
 import random
+import yaml
 import pandas as pd
 import intuition.data.data as data
 from intuition.errors import ExchangeIsClosed
@@ -25,83 +26,6 @@ def apply_mapping(raw_row, mapping):
            for target, (mapping_func, source_key)
            in mapping.fget().items()}
     return row
-
-
-#TODO This is quick and dirty
-def detect_exchange(universe):
-    if not isinstance(universe, list):
-        universe = universe.split(',')
-    if universe[0] in data.Exchanges:
-        exchange = universe[0]
-    else:
-        if universe[0].find('/') > 0:
-            exchange = 'forex'
-        elif universe[0].find('.pa') > 0:
-            exchange = 'paris'
-        else:
-            exchange = 'nasdaq'
-    return exchange
-
-
-def market_sids_list(exchange, n=-1):
-    if exchange == 'forex':
-        sids_list = data.FX_PAIRS
-    else:
-        csv_file = '{}.csv'.format(
-            os.path.join(
-                os.environ['HOME'], '.intuition/data', exchange.lower()))
-        df = pd.read_csv(csv_file)
-        sids_list = df['Symbol'].tolist()
-
-    random.shuffle(sids_list)
-    if n > 0:
-        sids_list = sids_list[:n]
-    return sids_list
-
-
-def smart_selector(sids):
-    if not isinstance(sids, list):
-        sids = sids.split(',')
-    if sids[0] in data.Exchanges:
-        if len(sids) == 2:
-            n = int(sids[1])
-        else:
-            n = -1
-        sids = market_sids_list(sids[0], n)
-
-    #return sids
-    return map(str.lower, map(str, sids))
-
-
-#TODO Complete with :
-# http://en.wikipedia.org/wiki/List_of_stock_exchange_opening_times
-# http://en.wikipedia.org/wiki/List_of_S&P_500_companies
-def filter_market_hours(dates, exchange):
-    ''' Only return market open hours from UTC timezone'''
-    #NOTE UTC times ! Beware of summer and winter hours
-    if dates.freq >= pd.datetools.Day():
-        # Daily or lower frequency, no hours filter required
-        return dates
-    if exchange == 'paris':
-        selector = ((dates.hour > 6) & (dates.hour < 16)) | \
-            ((dates.hour == 17) & (dates.minute < 31))
-    elif exchange == 'london':
-        selector = ((dates.hour > 8) & (dates.hour < 16)) | \
-            ((dates.hour == 16) & (dates.minute > 31))
-    elif exchange == 'tokyo':
-        selector = ((dates.hour > 0) & (dates.hour < 6))
-    elif exchange == 'nasdaq' or exchange == 'nyse':
-        selector = ((dates.hour > 13) & (dates.hour < 21)) | \
-            ((dates.hour == 13) & (dates.minute > 31))
-    else:
-        # Forex or Unknown market, return as is
-        return dates
-
-    # Pandas dataframe filtering mechanism
-    index = dates[selector]
-    if not index.size:
-        raise ExchangeIsClosed(exchange=exchange, dates=dates)
-    return index
 
 
 def invert_dataframe_axis(fct):

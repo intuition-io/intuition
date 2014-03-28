@@ -14,7 +14,6 @@ from datetime import datetime
 import pandas as pd
 from collections import OrderedDict
 import zipline.data.loader as zipline
-import intuition.data.data as data
 
 
 class LiveBenchmark(object):
@@ -47,12 +46,6 @@ class LiveBenchmark(object):
         #event_dt = datetime.today().replace(tzinfo=pytz.utc)
         event_dt = self.normalize_date(datetime.now())
 
-        #TODO Handle invalid code
-        for exchange, infos in data.Exchanges.iteritems():
-            if infos['symbol'] == bm_symbol:
-                code = data.Exchanges[exchange]['code']
-                break
-
         bm_returns, tr_curves = zipline.load_market_data(bm_symbol)
 
         dates = pd.date_range(event_dt,
@@ -64,7 +57,8 @@ class LiveBenchmark(object):
              for i, c in enumerate(tr_curves.values())),
             key=lambda t: t[0]))
 
-        bm_fake = pd.Series([code] * len(dates), index=dates)
+        # NOTE the code concept is deprecated
+        bm_fake = pd.Series([1001] * len(dates), index=dates)
         for i, dt in enumerate(tr_curves.keys()):
             pd.Timestamp(event_dt + i * self.offset)
 

@@ -17,8 +17,12 @@
 import abc
 import datetime as dt
 from zipline.algorithm import TradingAlgorithm
-from zipline.sources import DataFrameSource
+import zipline.finance.commission as commission
 from intuition.errors import AlgorithmEventFailed
+import insights.plugins.database as database
+import insights.plugins.mobile as mobile
+import insights.plugins.hipchat as hipchat
+import insights.plugins.messaging as msg
 
 
 class TradingFactory(TradingAlgorithm):
@@ -40,7 +44,6 @@ class TradingFactory(TradingAlgorithm):
     auto = False
 
     def __init__(self, *args, **kwargs):
-        self.data_generator = DataFrameSource
         self.realworld = kwargs['properties'].get('realworld')
         TradingAlgorithm.__init__(self, *args, **kwargs)
 
@@ -48,6 +51,24 @@ class TradingFactory(TradingAlgorithm):
         ''' Prevent middlewares and orders to work outside live mode '''
         return not (
             self.realworld and (dt.date.today() > self.datetime.date()))
+
+    def use_default_middlewares(self, properties):
+        if properties.get('interactive'):
+            self.use(msg.RedisProtocol(self.identity).check)
+        device = properties.get('mobile')
+        if device:
+            self.use(mobile.AndroidPush(device).notify)
+        if properties.get('save'):
+            self.use(database.RethinkdbBackend(
+                table=self.identity, db='portfolios', reset=True)
+                .save_portfolio)
+        hipchat_room = properties.get('hipchat')
+        if hipchat_room:
+            self.use(hipchat.Bot(
+                hipchat_room, name=self.identity).notify)
+
+        self.set_commission(commission.PerTrade(
+            cost=properties.get('commission', 2.5)))
 
     def use(self, func, when='whenever'):
         ''' Append a middleware to the algorithm '''
@@ -59,17 +80,6 @@ class TradingFactory(TradingAlgorithm):
             'args': func.func_code.co_varnames,
             'when': when})
 
-    def trade(self, source, sim_params=None):
-        if isinstance(source, dict):
-            source = self.data_generator(source)
-
-        return self.run(source, sim_params)
-
-    #TODO How can I use several sources ?
-    def set_data_generator(self, generator_class):
-        ''' Register a data source to the algorithm '''
-        self.data_generator = generator_class
-
     #NOTE I'm not superfan of initialize + warm
     def warm(self, data):
         ''' Called at the first handle_data frame '''
@@ -77,7 +87,7 @@ class TradingFactory(TradingAlgorithm):
 
     @abc.abstractmethod
     def event(self, data):
-        ''' Users should overwrite this method '''
+        ''' User should overwrite this method '''
         pass
 
     def handle_data(self, data):
@@ -121,7 +131,7 @@ class TradingFactory(TradingAlgorithm):
         ''' Default and costant orders processor. Overwrite it for more
         sophisticated strategies '''
         for stock, alloc in orderbook.iteritems():
-            self.logger.debug('{}: Ordered {} {} stocks'.format(
+            self.logger.info('{}: Ordered {} {} stocks'.format(
                 self.datetime, stock, alloc))
             if isinstance(alloc, int):
                 self.order(stock, alloc)

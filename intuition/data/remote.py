@@ -21,8 +21,7 @@ import urllib2
 import dna.logging
 from zipline.utils.factory import load_from_yahoo, load_bars_from_yahoo
 from intuition.data.utils import (
-    use_google_symbol, invert_dataframe_axis)
-import intuition.utils
+    use_google_symbol, invert_dataframe_axis, apply_mapping)
 
 log = dna.logging.logger(__name__)
 
@@ -83,7 +82,7 @@ class Data(object):
         current infromations about given equitiy names
         ______________________________________________
         Parameters
-            args: tuple
+            args: tuple | list
                 company symbols to consider
             kwargs['level']: int
                 Quantity of information level
@@ -143,7 +142,10 @@ def snapshot_yahoo_pandas(symbols):
     '''
     if isinstance(symbols, str):
         symbols = [symbols]
-    return get_quote_yahoo(symbols)
+    # TODO lower() columns
+    data = get_quote_yahoo(symbols)
+    data.columns = map(str.lower, data.columns)
+    return data
 
 
 #NOTE Can use symbol with market: 'goog:nasdaq', any difference ?
@@ -163,7 +165,8 @@ def snapshot_google_light(symbols):
     for i, quote in enumerate(json_infos):
         #FIXME nasdaq and nyse `symbols` are in capital, not cac40
         if quote['t'].lower() in map(str.lower, symbols):
-            snapshot[symbols[i]] = intuition.utils.apply_mapping(
+            #snapshot[symbols[i]] = intuition.utils.apply_mapping(
+            snapshot[symbols[i]] = apply_mapping(
                 quote, google_light_mapping)
         else:
             log.warning('Unknown symbol {}, ignoring...'.format(

@@ -12,12 +12,11 @@
 '''
 
 
-from zipline.finance.trading import TradingEnvironment
-from zipline.utils.factory import create_simulation_parameters
 import dna.utils
 import dna.logging
+from zipline.finance.trading import TradingEnvironment
+from zipline.utils.factory import create_simulation_parameters
 import intuition.constants as constants
-from intuition.data.data import Exchanges
 from intuition.data.loader import LiveBenchmark
 from intuition.core.analyzes import Analyze
 import intuition.utils as utils
@@ -38,10 +37,6 @@ class TradingEngine(object):
         trading_algo = algo_obj(properties=strategy_conf['algorithm'])
 
         trading_algo.set_logger(dna.logging.logger('algo.' + identity))
-
-        if modules['data']:
-            trading_algo.set_data_generator(
-                utils.intuition_module(modules['data']))
 
         # Use a portfolio manager
         if modules.get('manager'):
@@ -68,19 +63,15 @@ class Simulation(object):
             last_trade, frequency=freq).surcharge_market_data \
             if utils.is_live(last_trade) else None
 
-    def configure_environment(self, last_trade, exchange):
+    def configure_environment(self, last_trade, market):
         ''' Prepare benchmark loader and trading context '''
 
         # Setup the trading calendar from market informations
-        self.exchange = exchange
-        if exchange in Exchanges:
-            self.context = TradingEnvironment(
-                bm_symbol=Exchanges[exchange]['symbol'],
-                exchange_tz=Exchanges[exchange]['timezone'],
-                load=self._get_benchmark_handler(last_trade))
-        else:
-            raise NotImplementedError(
-                'exchange {} not supported'.format(exchange))
+        self.benchmark = market.benchmark
+        self.context = TradingEnvironment(
+            bm_symbol=market.benchmark,
+            exchange_tz=market.timezone,
+            load=self._get_benchmark_handler(last_trade))
 
     def build(self, identity, modules, strategy=constants.DEFAULT_CONFIG):
         '''
@@ -90,20 +81,20 @@ class Simulation(object):
         self.engine = TradingEngine(identity, modules, strategy)
         self.initial_cash = strategy['manager'].get('cash', None)
 
-    def run(self, data, auto=False):
+    def __call__(self, datafeed, auto=False):
         ''' wrap zipline.run() with finer control '''
         self.engine.auto = auto
         #FIXME crash if trading one day that is not a trading day
         with self.context:
             sim_params = create_simulation_parameters(
                 capital_base=self.initial_cash,
-                start=data['index'][0],
-                end=data['index'][-1])
+                start=datafeed.start,
+                end=datafeed.end)
 
-            daily_stats = self.engine.trade(data, sim_params=sim_params)
+            daily_stats = self.engine.run(datafeed, sim_params)
 
         return Analyze(
             params=sim_params,
-            exchange=self.exchange,
             results=daily_stats,
-            metrics=self.engine.risk_report)
+            metrics=self.engine.risk_report,
+            benchmark=self.benchmark)

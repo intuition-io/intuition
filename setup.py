@@ -13,11 +13,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import os
 from glob import glob
-
 from setuptools import setup, find_packages
-
 from intuition import (
     __version__, __author__, __licence__, __project__
 )
@@ -38,6 +37,7 @@ requires = [
     'Cython>=0.20.1',
     'ystockquote',
     'numpy>=1.8.0',
+    'schematics>=0.9-4',
     'schema==0.2.0',
     'python-dateutil>=2.2',
     'pytz>=2013.9',
@@ -87,7 +87,7 @@ setup(
         'Topic :: System :: Distributed Computing',
     ],
     data_files=[(os.path.expanduser('~/.intuition/data'), glob('./data/*')),
-                (os.path.expanduser('~/.intuition/logs'), './logs.doc.md')],
+                (os.path.expanduser('~/.intuition/logs'), ['logs.doc.md'])],
     dependency_links=[
         'http://github.com/pydata/pandas/tarball/master#egg=pandas-0.13.0.dev',
         'http://github.com/quantopian/zipline/tarball/master#egg=zipline-0.5.11.dev']
