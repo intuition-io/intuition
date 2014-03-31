@@ -237,8 +237,10 @@ def lookup_symbol(company):
     infos = {}
     request = requests.get(finance_urls['info_lookup'].format(company))
     if request.ok:
-        infos = json.loads(request.text[39:-1])["ResultSet"]["Result"][0]
-        infos["market"] = infos.pop("exchDisp")
-        infos["type"] = infos.pop("typeDisp")
+        result = json.loads(request.text[39:-1])["ResultSet"]["Result"]
+        if result:
+            infos = result[0]
+            infos["market"] = infos.pop("exchDisp")
+            infos["type"] = infos.pop("typeDisp")
 
     return infos
