@@ -44,3 +44,4 @@ tmp/*
 
 .envrc
 dist
+bkp.README.md

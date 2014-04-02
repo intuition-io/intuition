@@ -30,7 +30,9 @@ CONFIG_SCHEMA = Schema({
         # TODO It will be at least one
         Optional('backtest'): basestring,
         Optional('live'): basestring,
-        Optional('manager'): Or(basestring, None)}})
+        Optional('manager'): Or(basestring, None)
+    }
+})
 
 
 PANDAS_FREQ = {

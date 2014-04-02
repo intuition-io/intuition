@@ -1,10 +1,11 @@
 Intuition
 =========
 
-> Automated quantitative trading kit, for hackers
+> Quantitative trading kit, for hackers
 
 
-![Dashboard](https://raw.github.com/hivetech/hivetech.github.io/master/images/QuantDashboard.png)
+<!--![Dashboard](https://raw.github.com/hivetech/hivetech.github.io/master/images/QuantDashboard.png)-->
+![Dashboard](http://intuition.io/img/flat-showoff.png)
 
 > The intuitive mind is a sacred gift and the rational mind is a faithful
 > servant. We have created a society that honors the servant and has forgotten
@@ -35,16 +36,16 @@ portfolio optimization, genetic optimization, sentiment analysis from twitter, .
 Features
 --------
 
-* Highly configurable trading environment, powered by [zipline](https://github.com/quantopian/zipline)
+* Highly configurable trading environment, powered by [zipline][9]
 * From instant kickstart to full control
 * Made to let you tweak algorithms, portfolio manager, data sources, contexts and plugins
-* Already includes many
+* [Plugin friendly][8]. Enjoy mail or mobile notifications.
+* Already includes [many][2]
 * Experimental live trading on different markets (Nyse, Nasdaq, CAC40 and Forex for now)
 * Experimental R integration in your algorithms
 * Results analyser
-* Mail and Android notifications (for now with the help of freely available [NotifyMyAndroid](http://www.notifymyandroid.com/) or [PushBullet](https://www.pushbullet.com))
 * Financial library, with common used trading functions, data fetchers, ... used for example to solve Coursera econometrics assignments
-* Easy to use data management, powered by [rethinkdb](rethinkdb.com)
+* Easy to use data management, powered by [rethinkdb][6]
 * [Docker](docker.io) support for development workflow and deployment
 * Kind of a CI showcase as I am testing [travis](https://travis-ci.org), [wercker](wercker.com), [shippable](shippable.com), [drone.io](shippable.com), [coveralls](coveralls.io) and [landscape](landscape.io)
 
@@ -65,197 +66,40 @@ Status
 [Development Board][1]
 [Chat about the project][3]
 
-**Attention** Project is in an *early alpha*, and under heavy development.
- The new version 0.3.0 revises a lot of code :
-
-* Algoithms, managers and data sources have their [own repository][2]
-* More powerful API to build custom versions of them
-* The context module now handles configuration
-* [Shiny](http://www.rstudio.com/shiny/) interface, [Dashboard](http://fdietz.github.io/team_dashboard/) and clustering will have their intuition-plugins repository (soon)
-* ZeroMQ messaging is for now removed but might be back for inter-algo communication
-* So is MySQL, that has been removed and will be re-implemented as a [data plugin](https://github.com/hackliff/insights/tree/master/insights/plugins)
-* But currently it has been replaced by [Rethinkdb](rethinkdb.com)
-* Installation is much simpler and a docker image is available for development and deployment
-* More intuitive configuration splitted between the context mentioned, command line argument and environment variables
-* And a lot (I mean A LOT) of house keeping and code desgin stuff
-
-
-Installation
-------------
-
-You are just a few steps away from algoritmic trading. Choose one of the
-following installation method
-
-* The usual way
-
-```console
-$ pip install intuition
-$ # Optionnaly, install offcial algorithms, managers, ...
-$ pip install insights
-```
-
-* One-liner for the full installation (i.e. with packages and official
-  [modules](https://github.com/hackliff/insights))
-
-```console
-$ wget -qO- http://bit.ly/1anxGhf | sudo FULL_INTUITION=true bash
-$ # ... Go grab a coffee
-```
-
-* From source
-
-```console
-$ git clone https://github.com/hackliff/intuition.git
-$ cd intuition && sudo make
-```
-
-* Sexy, early-adopter style
-
-```console
-$ docker pull hivetech/intuition
-```
 
 Getting started
 ---------------
 
-Intuition wires 4 primitives to build up the system : A data source generates
-events, processed by the algorithm, that can optionnaly use a portfolio manager
-to compute assets allocation. They are configured through a Context, while
-third party services use environment variables (take a look in
-config/local.env).
+Learn more and find the (in progress) documentation at http://doc.intuition.io.
 
-The following example trades in real time forex, with a simple buy and hold
-algorithm and a portfolio manager that allocates same amount for each asset.
-Their configuration below is stored in a json file. The `--bot` flag allows
-the portfolio to process orders on its own.
+You can follow the development on this [trello board][1] and chat about the
+project on [Gitter][3].
 
-```console
-$ intuition --context file::liveForex.json --id chuck --showlog --bot
-```
-
-```json
-{
-    "id": "liveForex",
-    "end": "22h",
-    "universe": "forex,5",
-    "algorithm": {
-        "notify": "",
-        "save": false
-    },
-    "manager": {
-        "cash": 10000,
-        "buy_scale": 150,
-        "max_weight": 0.3
-    },
-    "modules": {
-        "algorithm": "insights.algorithms.buyandhold.BuyAndHold",
-        "data": "insights.sources.live.forex.ForexLiveSource",
-        "manager": "insightsmanagers.fair.Fair"
-    }
-}
-```
-
-Note that in the current implementation, Nasdaq, Nyse, Cac 40 and Forex markets
-are available.
-
-Alternatively you can use docker. Here we also fire up a [rethinkdb](rethinkdb.com)
-database to store portfolios while trading, and
-[mongodb](http://www.mongodb.org/) to store configurations.
-
-```console
-$ docker run -d -name mongodb -p 27017:27017 -p 28017:28017 waitingkuo/mongodb
-
-$ docker run -d -name rethinkdb crosbymichael/rethinkdb --bind all
-
-$ docker run \
-  -e PUSHBULLET_API_KEY=$PUSHBULLET_API_KEY \
-  -e QUANDL_API_KEY=$QUANDL_API_KEY \
-  -e MAILGUN_API_KEY=$MAILGUN_API_KEY \
-  -e TRUEFX_API=$TRUEFX_API \
-  -e DB_HOST=$DB_HOST \
-  -e DB_PORT=$DB_PORT \
-  -e DB_NAME=$DB_NAME \
-  -e LOG=debug \
-  -e LANGUAGE="fr_FR.UTF-8" \
-  -e LANG="fr_FR.UTF-8" \
-  -e LC_ALL="fr_FR.UTF-8" \
-  hivetech/intuition --context mongodb::${host_ip}:27017/{{ config_id }} --showlog
-```
-
-For Hackers
------------
-
-You can easily work out and plug your own strategies :
-
-* [Algorithm API](https://github.com/hackliff/insights/blob/master/insights/algorithms/readme.md)
-* [Portfolio API](https://github.com/hackliff/insights/blob/master/insights/managers/readme.md)
-* [Data API](https://github.com/hackliff/insights/blob/master/insights/sources/readme.md)
-* [Contexts](https://github.com/hackliff/insights/blob/master/insights/contexts/readme.md)
-* [Middlewares](https://github.com/hackliff/insights/blob/master/insights/contexts/readme.md)
-
-Either clone the [insights repository][2]
-and hack it or start from scratch. Just make sure the modules paths you give in
-the configuration are in the python path.
-
-
-The [provided](https://github.com/hackliff/intuition/blob/master/app/intuition)
-``intuition`` command does already a lot of things but why not improve it or
-write your own. Here is a minimal implementation, assuming you installed
-[insights][2].
-
-```python
-from datetime import datetime
-from intuition.core.engine import Simulation
-
-data = {'universe': 'nasdaq,10',
-        'index': pd.date_range(datetime.now(), datetime(2014, 1, 7))}
-
-modules = {
-    'algorithm': 'algorithms.movingaverage.DualMovingAverage',
-    'manager': 'managers.gmv.GlobalMinimumVariance',
-    'data': 'sources.live.Equities.EquitiesLiveSource'}})
-
-engine = Simulation()
-
-# Use the configuration to prepare the trading environment
-engine.configure_environment(data['index'][-1], 'nasdaq')
-engine.build('chuck_norris', modules)
-analyzes = engine.run(data, auto=True)
-
-# Explore the analyzes object
-print analyzes.overall_metrics('one_month')
-print analyzes.results.tail()
-```
+A webapp built on top of Intuition is also in preparation, get your early
+ticket at http://intuition.io !
 
 
 Contributing
 ------------
 
-> Fork, implement, add tests, pull request, get my everlasting thanks and a
-> respectable place here [=)](https://github.com/jondot/groundcontrol)
+Contributors are happily welcome, [here is the place to start][10].
 
 
 License
 -------
 
 Copyright 2014 Xavier Bruhiere
-Intuition is available under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.html).
+Intuition is available under the [Apache License, Version 2.0][5].
 
 ---------------------------------------------------------------
 
-Credits
--------
-
-* [Zipline](http://github.com/quantopian/zipline)
-* [Quantopian](http://www.quantopian.com/)
-* [Pandas](http://github.com/pydata/pandas)
-* [R-bloggers](http://www.r-bloggers.com/)
-* [QSTK](https://github.com/tucker777/QSTK)
-* [Coursera](http://www.coursera.org/)
-* [Udacity](http://www.udacity.com/)
-* [Babypips](http://www.babypips.com/)
-* [GLMF](http://www.unixgarden.com/)
-
 [1]: https://trello.com/b/WvJDlynt/intuition
-[2]: https://github.com/hackliff/insights
-[3]: https://gitter.im/hackliff/intuition
+[2]: https://github.com/intuition-io/insights
+[3]: https://gitter.im/intuition-io
+[4]: https://github.com/jondot/groundcontrol
+[5]: http://www.apache.org/licenses/LICENSE-2.0.html
+[6]: rethinkdb.com
+[7]: http://www.mongodb.org
+[8]: https://github.com/intuition-io/insights/tree/develop/insights/plugins
+[9]: https://github.com/quantopian/zipline
+[10]: http://doc.intuition.io/articles/contributors.html

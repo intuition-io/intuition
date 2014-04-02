@@ -9,13 +9,7 @@
   :license: Apache 2.0, see LICENSE for more details.
 '''
 
-
-import os
-import random
-import yaml
 import pandas as pd
-import intuition.data.data as data
-from intuition.errors import ExchangeIsClosed
 
 
 def apply_mapping(raw_row, mapping):

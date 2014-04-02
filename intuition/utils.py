@@ -51,8 +51,10 @@ def _detect_timezone():
     Experimental and temporary (since there is a world module)
     get timezone as set by the system
     '''
-    locale_code = locale.getdefaultlocale()[0]
-    return str(pytz.country_timezones[locale_code[-2:]][0])
+    default_timezone = 'America/New_York'
+    locale_code = locale.getdefaultlocale()
+    return default_timezone if not locale_code else \
+        str(pytz.country_timezones[locale_code[0][-2:]][0])
 
 
 def build_date_index(start='', end='', freq='D'):

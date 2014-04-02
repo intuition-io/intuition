@@ -14,7 +14,7 @@ import dna.errors
 
 
 class InvalidConfiguration(dna.errors.FactoryError):
-    msg = "invalid configuration: {config} ({module})"
+    msg = "invalid configuration: {reason} ({config})"
 
 
 class PortfolioOptimizationFailed(dna.errors.FactoryError):

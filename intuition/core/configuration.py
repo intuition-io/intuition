@@ -87,8 +87,8 @@ class Context(object):
         log.info('validating configuration', config=config)
         try:
             assert intuition.constants.CONFIG_SCHEMA.validate(config)
-        except:
-            raise InvalidConfiguration(config=config, module=__name__)
+        except Exception as error:
+            raise InvalidConfiguration(config=config, reason=error)
 
 
 def logfile(session_id):

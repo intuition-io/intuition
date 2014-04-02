@@ -25,23 +25,15 @@ package:
 	python setup.py sdist upload
 
 tests: warn_missing_linters
-	@hr '-'
 	# TODO Recursively analyze all files and fail on conditions
-	@echo -e '\tChecking complexity ...'
-	@hr '-'
+	@echo -e '\tChecking complexity (experimental) ...'
 	radon cc -ana intuition/core/engine.py
-	@hr '-'
 	@echo -e '\tChecking requirements ...'
-	@hr '-'
 	#TODO Fail if outdated
 	piprot --outdated requirements.txt dev-requirements.txt
-	@hr '-'
 	@echo -e '\tChecking syntax ...'
-	@hr '-'
 	flake8 tests intuition
-	@hr '-'
 	@echo -e '\tRunning tests ...'
-	@hr '-'
 	nosetests -w tests --with-yanc --with-coverage --cover-package=intuition
 
 watch: warn_missing_linters

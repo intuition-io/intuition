@@ -37,7 +37,7 @@ def parse_storage(storage):
     return {
         'uri': uri,
         'path': path,
-        'param': params
+        'params': params
     }
 
 

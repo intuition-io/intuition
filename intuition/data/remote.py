@@ -150,7 +150,6 @@ def snapshot_yahoo_pandas(symbols):
 
 #NOTE Can use symbol with market: 'goog:nasdaq', any difference ?
 @use_google_symbol
-# Index symbol ex: PX1
 def snapshot_google_light(symbols):
     payload = {'client': 'ig', 'q': ','.join(symbols)}
     response = requests.get(finance_urls['snapshot_google_light'],
@@ -234,11 +233,6 @@ def lookup_symbol(company):
            u'symbol': u'AAPL',
            u'type': u'Equity'}
     '''
-    infos = {}
     request = requests.get(finance_urls['info_lookup'].format(company))
-    if request.ok:
-        infos = json.loads(request.text[39:-1])["ResultSet"]["Result"][0]
-        infos["market"] = infos.pop("exchDisp")
-        infos["type"] = infos.pop("typeDisp")
-
-    return infos
+    return json.loads(request.text[39:-1])["ResultSet"]["Result"] \
+        if request.ok else {'error': request.reason}

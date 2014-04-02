@@ -14,16 +14,10 @@ class ConfigurationTestCase(unittest.TestCase):
     # FIXME Needs insights installed for these tests
     good_driver = '{}://{}'.format(
         'insights.contexts.file.FileContext',
-        'intuition.io/../config/backtest.yaml')
-    good_driver = '{}://{}'.format(
-        'insights.contexts.file.FileContext',
-        'intuition.io/../config/backtest.yaml')
-    good_driver = '{}://{}'.format(
-        'insights.contexts.file.FileContext',
-        'intuition.io/../config/backtest.yaml')
-    bad_driver = 'no.file.FileContext://intuition.io/../config/backtest.yaml'
-    bad_config = 'insights.contexts.file.FileContext://intuition.io/fake.yaml'
-    bad_formatted_config = 'insights.contexts.file.FileContext::/fake.yaml'
+        'intuition.io/../config/backtest.yml')
+    bad_driver = 'no.file.FileContext://intuition.io/../config/backtest.yml'
+    bad_config = 'insights.contexts.file.FileContext://intuition.io/fake.yml'
+    bad_formatted_config = 'insights.contexts.file.FileContext::/fake.yml'
 
     def test_logfile(self):
         logfile = configuration.logfile('fake_id')
@@ -52,11 +46,9 @@ class ConfigurationTestCase(unittest.TestCase):
     def test_validate_good_config(self):
         good_config = {
             'universe': 'nasdaq,4',
-            'exchange': 'nasdaq',
             'index': pd.date_range('2014/2/3', periods=30),
             'modules': {
-                'algorithm': 'dualma',
-                'data': 'database'
+                'algorithm': 'dualma'
             }
         }
         ctx = configuration.Context(self.bad_driver)
@@ -70,7 +62,7 @@ class ConfigurationTestCase(unittest.TestCase):
         with configuration.Context(self.good_driver) as context:
             for field in ['manager', 'algorithm', 'data']:
                 self.assertIn(field, context['strategy'])
-            for field in ['index', 'live', 'exchange']:
+            for field in ['index', 'live']:
                 self.assertIn(field, context['config'])
 
     def test_absent_driver_context_load(self):

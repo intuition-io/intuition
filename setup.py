@@ -33,18 +33,19 @@ def get_requirements():
 
 requires = [
     'beautifulsoup4>=4.3.2',
-    'blist>=1.3.4',
+    'blist>=1.3.6',
     'Cython>=0.20.1',
     'ystockquote',
-    'numpy>=1.8.0',
+    'numpy>=1.8.1',
     'schematics>=0.9-4',
     'schema==0.2.0',
     'python-dateutil>=2.2',
-    'pytz>=2013.9',
-    'Quandl>=1.8.1',
-    'dna',
+    'pytz>=2014.2',
+    'PyYAML>=3.11',
+    'Quandl>=1.9.1',
+    'dna>=0.0.2',
     'requests>=2.2.1',
-    'six>=1.5.2',
+    'six>=1.6.1',
     'zipline>=0.5.11.dev',
     'pandas>=0.13.0.dev']
 
@@ -86,8 +87,7 @@ setup(
         'Topic :: Scientific/Engineering :: Information Analysis',
         'Topic :: System :: Distributed Computing',
     ],
-    data_files=[(os.path.expanduser('~/.intuition/data'), glob('./data/*')),
-                (os.path.expanduser('~/.intuition/logs'), ['logs.doc.md'])],
+    data_files=[(os.path.expanduser('~/.intuition/data'), glob('./data/*'))],
     dependency_links=[
         'http://github.com/pydata/pandas/tarball/master#egg=pandas-0.13.0.dev',
         'http://github.com/quantopian/zipline/tarball/master#egg=zipline-0.5.11.dev']
