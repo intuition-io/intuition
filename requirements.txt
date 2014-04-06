@@ -7,7 +7,7 @@ Cython==0.20.1
 numpy==1.8.1
 python-dateutil==2.2
 pytz==2014.2
-Quandl==1.9.1
+Quandl==1.9.7
 requests==2.2.1
 six==1.6.1
 PyYAML==3.11

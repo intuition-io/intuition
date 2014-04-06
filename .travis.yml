@@ -12,7 +12,7 @@ install:
   - pip install --use-mirrors -r dev-requirements.txt
 
 before_script:
-  - flake8 intuition tests
+  - flake8 --ignore E265 intuition tests
 script:
   - nosetests -w tests --with-coverage --cover-package=intuition
 

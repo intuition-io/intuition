@@ -24,7 +24,7 @@ import intuition.utils as utils
 log = dna.logging.logger(__name__)
 
 
-#NOTE Is there still a point to use here a constructor object instead of a
+# NOTE Is there still a point to use here a constructor object instead of a
 #     simple function ?
 class TradingEngine(object):
     ''' Factory class wrapping zipline Backtester, returns the requested algo
@@ -63,14 +63,14 @@ class Simulation(object):
             last_trade, frequency=freq).surcharge_market_data \
             if utils.is_live(last_trade) else None
 
-    def configure_environment(self, last_trade, market):
+    def configure_environment(self, last_trade, benchmark, timezone):
         ''' Prepare benchmark loader and trading context '''
 
         # Setup the trading calendar from market informations
-        self.benchmark = market.benchmark
+        self.benchmark = benchmark
         self.context = TradingEnvironment(
-            bm_symbol=market.benchmark,
-            exchange_tz=market.timezone,
+            bm_symbol=benchmark,
+            exchange_tz=timezone,
             load=self._get_benchmark_handler(last_trade))
 
     def build(self, identity, modules, strategy=constants.DEFAULT_CONFIG):
@@ -84,7 +84,7 @@ class Simulation(object):
     def __call__(self, datafeed, auto=False):
         ''' wrap zipline.run() with finer control '''
         self.engine.auto = auto
-        #FIXME crash if trading one day that is not a trading day
+        # FIXME crash if trading one day that is not a trading day
         with self.context:
             sim_params = create_simulation_parameters(
                 capital_base=self.initial_cash,

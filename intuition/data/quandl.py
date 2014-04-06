@@ -15,24 +15,16 @@ import pytz
 import os
 import dna.logging
 import Quandl
+import intuition.data.utils as utils
 
 log = dna.logging.logger(__name__)
-
-
-def _clean_sid(sid):
-    sid = str(sid).lower()
-    # Remove market extension
-    dot_pos = sid.find('.')
-    sid = sid[:dot_pos] if dot_pos > 0 else sid
-    # Remove forex slash
-    return sid.replace('/', '')
 
 
 def _build_quandl_code(symbol):
     dot_pos = symbol.find('.')
     slash_pos = symbol.find('/')
     if dot_pos > 0:
-        market = symbol[dot_pos+1:]
+        market = symbol[dot_pos + 1:]
         provider = 'YAHOO'
         symbol = symbol[:dot_pos]
         code = '{}_{}'.format(market, symbol)
@@ -58,7 +50,7 @@ def use_quandl_symbols(fct):
         data = {}
         for sid in symbols:
             data[sid] = raw_data.filter(regex='.*{}.*'.format(
-                _clean_sid(sid).upper()))
+                utils.clean_sid(sid).upper()))
             data[sid].columns = map(
                 lambda x: x.replace(' ', '_').lower().split('_-_')[-1],
                 data[sid].columns)
@@ -89,9 +81,9 @@ class DataQuandl(object):
     '''
     Quandl.com as datasource
     '''
-    def __init__(self, quandl_key=''):
-        self.quandl_key = quandl_key if quandl_key != '' \
-            else os.environ["QUANDL_API_KEY"]
+    def __init__(self, quandl_key=None):
+        self.quandl_key = quandl_key if quandl_key \
+            else os.environ.get('QUANDL_API_KEY', None)
 
     @fractionate_request
     @use_quandl_symbols
@@ -116,7 +108,7 @@ class DataQuandl(object):
             # FIXME With a symbol not found, insert a not_found column
             data.index = data.index.tz_localize(pytz.utc)
             #data.columns = map(
-                #lambda x: x.replace(' ', '_').lower(), data.columns)
+            #   lambda x: x.replace(' ', '_').lower(), data.columns)
         except:
             log.error('** unable to fetch %s from Quandl' % code)
             data = pd.DataFrame()

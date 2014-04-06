@@ -16,6 +16,7 @@ import os
 import random
 import yaml
 import dna.logging
+from intuition.errors import LoadMarketSchemeFailed
 
 log = dna.logging.logger(__name__)
 
@@ -29,40 +30,51 @@ class Market(object):
     benchmark = '^GSPC'
     timezone = 'US/Eastern'
     raw_description = None
+    scheme_path = os.path.expanduser('~/.intuition/data/market.yml')
 
     def __init__(self):
         log.info('loading market scheme')
-        self.scheme = self._read_market_scheme()
+        self._load_market_scheme()
 
-    def _read_market_scheme(self):
+    def _load_market_scheme(self):
         ''' Load market yaml description '''
-        path = os.path.expanduser('~/.intuition/data/market.yml')
-        return yaml.load(open(path, 'r'))
+        try:
+            self.scheme = yaml.load(open(self.scheme_path, 'r'))
+        except Exception, error:
+            raise LoadMarketSchemeFailed(reason=error)
 
-    def _detect_exchange(self, description):
-        ''' Guess from the description and the market scheme '''
-        pass
+    def _extract_forex(self):
+        self.timezone = self.scheme['forex']['timezone']
+        return self.scheme['forex']['pairs']
 
-    def filter_open_hours(self, index):
-        ''' Remove market specific closed hours '''
-        return index
+    def _extract_cac40(self, market):
+        market_scheme = self.scheme
+        # Walk the market structure
+        for key in market[:-1]:
+            market_scheme = market_scheme[key]
+
+        self.timezone = market_scheme['timezone']
+        self.benchmark = market_scheme['benchmark']
+        return map(
+            lambda x: x + '.pa',
+            market_scheme[market[-1]].keys())
 
     def _lookup_sids(self, market, limit=-1):
-        if market == 'forex':
-            self.timezone = self.scheme[market]['timezone']
-            sids_list = self.scheme[market]['pairs']
-        else:
-            market = market.split(':')
-            market_scheme = self.scheme
-            for key in market[:-1]:
-                market_scheme = market_scheme[key]
-            sids_list = map(
-                lambda x: x + '.pa', market_scheme[market[-1]].keys())
-            self.timezone = market_scheme['timezone']
-            self.benchmark = market_scheme['benchmark']
+        market = market.split(':')
 
-        random.shuffle(sids_list)
-        return sids_list[:limit] if limit > 0 else sids_list
+        try:
+            if 'forex' in market:
+                sids = self._extract_forex()
+            elif 'paris' in market:
+                sids = self._extract_cac40(market)
+            else:
+                raise NotImplementedError(
+                    'market {} not supported'.format(market))
+        except Exception, error:
+            raise LoadMarketSchemeFailed(reason=error)
+
+        random.shuffle(sids)
+        return sids[:limit] if limit > 0 else sids
 
     # TODO multi exchange, sector and other criterias
     def parse_universe_description(self, description):
@@ -80,6 +92,14 @@ class Market(object):
 
         n = int(description[1]) if len(description) == 2 else -1
         self.sids = self._lookup_sids(description[0], n)
+
+    def _detect_exchange(self, description):
+        ''' Guess from the description and the market scheme '''
+        pass
+
+    def filter_open_hours(self, index):
+        ''' Remove market specific closed hours '''
+        return index
 
     def __str__(self):
         return '<sids: {} exchange: {} timezone: {} benchmark: {}'.format(

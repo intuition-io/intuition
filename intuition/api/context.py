@@ -15,11 +15,8 @@
 import abc
 import pytz
 import datetime as dt
-import pandas as pd
 import dna.logging
 import intuition.utils
-
-EMPTY_DATES = pd.date_range('2000/01/01', periods=0, tz=pytz.utc)
 
 
 def parse_storage(storage):
@@ -31,8 +28,11 @@ def parse_storage(storage):
     if len(tmp_uri) > 1:
         tmp_params = tmp_uri[1].split('&')
         for item in tmp_params:
-            k, v = item.split('=')
-            params[k] = v
+            if item.find('=') > 0:
+                k, v = item.split('=')
+                params[k] = v
+            else:
+                params[item] = True
 
     return {
         'uri': uri,
@@ -52,7 +52,6 @@ class ContextFactory():
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, storage):
-      # TODO Check storage syntax
         self.log = dna.logging.logger(__name__)
         self.initialize(parse_storage(storage))
 
@@ -65,7 +64,10 @@ class ContextFactory():
         ''' Users should overwrite this method '''
         pass
 
-    def _normalize_context(self, context):
+    def _normalize_dates(self, context):
+        '''
+        Build a timeline from the start, end and frequency infos
+        '''
         if 'start' in context:
             if isinstance(context['start'], dt.date):
                 context['start'] = dt.date.strftime(
@@ -76,94 +78,29 @@ class ContextFactory():
                     context['end'], format='%Y-%m-%d')
         context['frequency'] = context.get('frequency', 'D')
 
-        # TODO Check if 'frequency' available
-        trading_dates = self._build_trading_timeline(
+        trading_dates = intuition.utils.build_trading_timeline(
             context.pop('start', None), context.pop('end', None),
             context['frequency'])
 
         context['index'] = trading_dates
         context['live'] = (dt.datetime.now(tz=pytz.utc) < trading_dates[-1])
 
-    # TODO Frequency for live trading (and backtesting ?)
-    def _build_trading_timeline(self, start, end, freq):
-        now = dt.datetime.now(tz=pytz.utc)
-
-        if not start:
-            if not end:
-                # Live trading until the end of the day
-                bt_dates = EMPTY_DATES
-                live_dates = intuition.utils.build_date_index(
-                    start=now,
-                    end=intuition.utils.normalize_date_format('23h'),
-                    freq=freq)
-            else:
-                end = intuition.utils.normalize_date_format(end)
-                if end < now:
-                    # Backtesting since a year before end
-                    bt_dates = intuition.utils.build_date_index(
-                        start=end - 360 * pd.datetools.day,
-                        end=end)
-                    live_dates = EMPTY_DATES
-                elif end > now:
-                    # Live trading from now to end
-                    bt_dates = EMPTY_DATES
-                    live_dates = intuition.utils.build_date_index(
-                        start=now, end=end, freq=freq)
-        else:
-            start = intuition.utils.normalize_date_format(start)
-            if start < now:
-                if not end:
-                    # Backtest for a year or until now
-                    end = start + 360 * pd.datetools.day
-                    if end > now:
-                        end = now - pd.datetools.day
-                    live_dates = EMPTY_DATES
-                    bt_dates = intuition.utils.build_date_index(
-                        start=start, end=end)
-                else:
-                    end = intuition.utils.normalize_date_format(end)
-                    if end < now:
-                        # Nothing to do, backtest from start to end
-                        live_dates = EMPTY_DATES
-                        bt_dates = intuition.utils.build_date_index(
-                            start=start,
-                            end=end)
-                    elif end > now:
-                        # Hybrid timeline, backtest from start to end, live
-                        # trade from now to end
-                        bt_dates = intuition.utils.build_date_index(
-                            start=start, end=now-pd.datetools.day)
-
-                        live_dates = intuition.utils.build_date_index(
-                            start=now, end=end, freq=freq)
-            elif start > now:
-                if not end:
-                    # Live trading from start to the end of the day
-                    bt_dates = EMPTY_DATES
-                    live_dates = intuition.utils.build_date_index(
-                        start=start,
-                        end=intuition.utils.normalize_date_format('23h'),
-                        freq=freq)
-                else:
-                    # Live trading from start to end
-                    end = intuition.utils.normalize_date_format(end)
-                    bt_dates = EMPTY_DATES
-                    live_dates = intuition.utils.build_date_index(
-                        start=start,
-                        end=end, freq=freq)
-
-        return bt_dates + live_dates
-
-    def _normalize_strategy(self, strategy):
+    def _normalize_data_types(self, strategy):
         ''' some contexts only retrieves strings, giving back right type '''
         for k, v in strategy.iteritems():
+            if not isinstance(v, str):
+                # There is probably nothing to do
+                continue
             if v == 'true':
                 strategy[k] = True
             elif v == 'false' or v is None:
                 strategy[k] = False
             else:
                 try:
-                    strategy[k] = float(v)
+                    if v.find('.') > 0:
+                        strategy[k] = float(v)
+                    else:
+                        strategy[k] = int(v)
                 except ValueError:
                     pass
 
@@ -175,11 +112,11 @@ class ContextFactory():
         data = context.pop('data', {})
 
         if context:
-            self._normalize_context(context)
-        if algorithm:
-            self._normalize_strategy(algorithm)
-        if manager:
-            self._normalize_strategy(manager)
+            self._normalize_dates(context)
+
+        self._normalize_data_types(algorithm)
+        self._normalize_data_types(manager)
+        self._normalize_data_types(data)
 
         strategy = {
             'algorithm': algorithm,

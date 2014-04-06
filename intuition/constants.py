@@ -13,13 +13,13 @@ DEFAULT_LOGPATH = '/tmp'
 DEFAULT_HOME = '/'.join([os.environ.get('HOME', '/'), '.intuition'])
 
 # https://github.com/halst/schema
-#NOTE Even better ? https://github.com/j2labs/schematics
-#TODO More strict validation
+# NOTE Even better ? https://github.com/j2labs/schematics
+# TODO More strict validation
 CONFIG_SCHEMA = Schema({
     'universe': basestring,
     'index': object,
     Optional('_id'): object,
-    #Optional('id'): Use(basestring, error='invalid identity'),
+    # Optional('id'): Use(basestring, error='invalid identity'),
     Optional('id'): basestring,
     Optional('live'): bool,
     Optional('frequency'): basestring,

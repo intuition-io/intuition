@@ -37,6 +37,10 @@ class LoadDataFailed(dna.errors.FactoryError):
     msg = "Failed to load data for {sids}: {reason}"
 
 
+class LoadMarketSchemeFailed(dna.errors.FactoryError):
+    msg = "Failed to load market scheme: {reason}"
+
+
 class LoadContextFailed(dna.errors.FactoryError):
     msg = "Unable to load data from {driver}: {reason}"
 

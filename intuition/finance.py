@@ -21,7 +21,7 @@ import dna.logging
 log = dna.logging.logger(__name__)
 
 
-#NOTE This is temporary copied from QSTK library
+# NOTE This is temporary copied from QSTK library
 #     which will be more used in the future
 def qstk_get_sharpe_ratio(rets, risk_free=0.00):
     """

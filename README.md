@@ -10,7 +10,8 @@ Intuition
 > The intuitive mind is a sacred gift and the rational mind is a faithful
 > servant. We have created a society that honors the servant and has forgotten
 > the gift.
-Albert Einstein
+
+<i align=right>Albert Einstein</i>
 
 
 Overview
@@ -55,16 +56,13 @@ Status
 
 [![Latest Version](https://pypip.in/v/intuition/badge.png)](https://pypi.python.org/pypi/intuition/)
 <!--[![wercker status](https://app.wercker.com/status/f39a4be40502a31b3dcb94875c787b56/m "wercker status")](https://app.wercker.com/project/bykey/f39a4be40502a31b3dcb94875c787b56)-->
-[![wercker status](https://app.wercker.com/status/f39a4be40502a31b3dcb94875c787b56 "wercker status")](https://app.wercker.com/project/bykey/f39a4be40502a31b3dcb94875c787b56)
+<!--[![wercker status](https://app.wercker.com/status/f39a4be40502a31b3dcb94875c787b56 "wercker status")](https://app.wercker.com/project/bykey/f39a4be40502a31b3dcb94875c787b56)-->
 [![Build Status](https://drone.io/github.com/hackliff/intuition/status.png)](https://drone.io/github.com/hackliff/intuition/latest)
-[![Build Status](https://travis-ci.org/hackliff/intuition.png?branch=master)](https://travis-ci.org/hackliff/intuition)
+<!--[![Build Status](https://travis-ci.org/hackliff/intuition.png?branch=master)](https://travis-ci.org/hackliff/intuition)-->
 [![Coverage Status](https://coveralls.io/repos/hackliff/intuition/badge.png)](https://coveralls.io/r/hackliff/intuition)
 [![Code Health](https://landscape.io/github/hackliff/intuition/master/landscape.png)](https://landscape.io/github/hackliff/intuition/master)
 [![Requirements Status](https://requires.io/github/hackliff/intuition/requirements.png?branch=master)](https://requires.io/github/hackliff/intuition/requirements/?branch=master)
 [![License](https://pypip.in/license/intuition/badge.png)](https://pypi.python.org/pypi/intuition/)
-
-[Development Board][1]
-[Chat about the project][3]
 
 
 Getting started
@@ -75,7 +73,7 @@ Learn more and find the (in progress) documentation at http://doc.intuition.io.
 You can follow the development on this [trello board][1] and chat about the
 project on [Gitter][3].
 
-A webapp built on top of Intuition is also in preparation, get your early
+A webapp built on top of Intuition is also in development, get your early
 ticket at http://intuition.io !
 
 
@@ -88,18 +86,16 @@ Contributors are happily welcome, [here is the place to start][10].
 License
 -------
 
-Copyright 2014 Xavier Bruhiere
+Copyright 2014 Xavier Bruhiere.
+
 Intuition is available under the [Apache License, Version 2.0][5].
 
----------------------------------------------------------------
 
 [1]: https://trello.com/b/WvJDlynt/intuition
 [2]: https://github.com/intuition-io/insights
 [3]: https://gitter.im/intuition-io
-[4]: https://github.com/jondot/groundcontrol
 [5]: http://www.apache.org/licenses/LICENSE-2.0.html
 [6]: rethinkdb.com
-[7]: http://www.mongodb.org
 [8]: https://github.com/intuition-io/insights/tree/develop/insights/plugins
 [9]: https://github.com/quantopian/zipline
 [10]: http://doc.intuition.io/articles/contributors.html

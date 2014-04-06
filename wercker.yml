@@ -23,10 +23,3 @@ build:
             code: |
               flake8 tests intuition
               nosetests -w tests
-
-    after-steps:
-        - hipchat-notify:
-            token: $HIPCHAT_TOKEN
-            room-id: 290587
-            passed-notify: true
-            failed-notify: true

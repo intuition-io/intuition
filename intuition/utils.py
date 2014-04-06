@@ -24,7 +24,7 @@ def is_live(current_date):
     return (current_date > pd.datetime.now(pytz.utc))
 
 
-#TODO Handle in-day dates, with hours and minutes
+# TODO Handle in-day dates, with hours and minutes
 def normalize_date_format(date):
     '''
     Dates can be defined in many ways, but zipline use
@@ -36,14 +36,16 @@ def normalize_date_format(date):
         date = time.strftime('%Y-%m-%d %H:%M:%S',
                              time.localtime(date))
 
-    #assert isinstance(date, str) or isinstance(date, unicode)
+    # assert isinstance(date, str) or isinstance(date, unicode)
     if isinstance(date, str) or isinstance(date, unicode):
         date = dateutil.parser.parse(date)
-    assert isinstance(date, dt.datetime)
-    local_tz = pytz.timezone(_detect_timezone())
-    local_dt = local_tz.localize(date, is_dst=None)
-    #local_dt = local_tz.localize(parse(date), is_dst=None)
-    return local_dt.astimezone(pytz.utc)
+    if not date.tzinfo:
+        local_tz = pytz.timezone(_detect_timezone())
+        local_dt = local_tz.localize(date, is_dst=None)
+        # local_dt = local_tz.localize(parse(date), is_dst=None)
+        date = local_dt.astimezone(pytz.utc)
+
+    return date
 
 
 def _detect_timezone():
@@ -55,36 +57,6 @@ def _detect_timezone():
     locale_code = locale.getdefaultlocale()
     return default_timezone if not locale_code else \
         str(pytz.country_timezones[locale_code[0][-2:]][0])
-
-
-def build_date_index(start='', end='', freq='D'):
-    #import ipdb; ipdb.set_trace()
-    #TODO Only 'D' for backtest and '1min' for live are supported
-    now = dt.datetime.now(tz=pytz.utc)
-    if not start:
-        if not end:
-            # Live trading until the end of the day
-            start = now
-            end = now.replace(hour=23, minute=00, second=0)
-            freq = '1min'
-        else:
-            if end > now:
-                # Live trading from now to end
-                start = now
-                freq = '1min'
-            else:
-                # Backtest for a year
-                start = end - 360 * pd.datetools.day
-    else:
-        # Only backtests support start information
-        if not end:
-            # Backtest for a year or until now
-            end = start + 360 * pd.datetools.day
-            if end > now:
-                end = now
-        else:
-            assert start < end
-    return pd.date_range(start, end, freq=freq)
 
 
 def UTC_date_to_epoch(utc_date):
@@ -122,3 +94,72 @@ def truncate(float_value, n=2):
     if isinstance(float_value, float):
         float_value = float('%.*f' % (n, float_value))
     return float_value
+
+
+# TODO Frequency for live trading (and backtesting ?)
+def build_trading_timeline(start, end, freq='D'):
+    EMPTY_DATES = pd.date_range('2000/01/01', periods=0, tz=pytz.utc)
+    now = dt.datetime.now(tz=pytz.utc)
+
+    if not start:
+        if not end:
+            # Live trading until the end of the day
+            bt_dates = EMPTY_DATES
+            live_dates = pd.date_range(
+                start=now,
+                end=normalize_date_format('23h'),
+                freq=freq)
+        else:
+            end = normalize_date_format(end)
+            if end < now:
+                # Backtesting since a year before end
+                bt_dates = pd.date_range(
+                    start=end - 360 * pd.datetools.day,
+                    end=end)
+                live_dates = EMPTY_DATES
+            elif end > now:
+                # Live trading from now to end
+                bt_dates = EMPTY_DATES
+                live_dates = pd.date_range(start=now, end=end, freq=freq)
+    else:
+        start = normalize_date_format(start)
+        if start < now:
+            if not end:
+                # Backtest for a year or until now
+                end = start + 360 * pd.datetools.day
+                if end > now:
+                    end = now - pd.datetools.day
+                live_dates = EMPTY_DATES
+                bt_dates = pd.date_range(
+                    start=start, end=end)
+            else:
+                end = normalize_date_format(end)
+                if end < now:
+                    # Nothing to do, backtest from start to end
+                    live_dates = EMPTY_DATES
+                    bt_dates = pd.date_range(start=start, end=end)
+                elif end > now:
+                    # Hybrid timeline, backtest from start to end, live
+                    # trade from now to end
+                    bt_dates = pd.date_range(
+                        start=start, end=now - pd.datetools.day)
+
+                    live_dates = pd.date_range(
+                        start=now, end=end, freq=freq)
+        elif start > now:
+            if not end:
+                # Live trading from start to the end of the day
+                bt_dates = EMPTY_DATES
+                live_dates = pd.date_range(
+                    start=start,
+                    end=normalize_date_format('23h'),
+                    freq=freq)
+            else:
+                # Live trading from start to end
+                end = normalize_date_format(end)
+                bt_dates = EMPTY_DATES
+                live_dates = pd.date_range(
+                    start=start,
+                    end=end, freq=freq)
+
+    return bt_dates + live_dates

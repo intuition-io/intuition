@@ -12,6 +12,16 @@
 import pandas as pd
 
 
+# TODO Make it a decorator
+def clean_sid(sid):
+    sid = str(sid).lower()
+    # Remove market extension
+    dot_pos = sid.find('.')
+    sid = sid[:dot_pos] if dot_pos > 0 else sid
+    # Remove forex slash
+    return sid.replace('/', '')
+
+
 def apply_mapping(raw_row, mapping):
     '''
     Override this to hand craft conversion of row.

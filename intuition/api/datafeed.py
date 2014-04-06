@@ -53,7 +53,6 @@ class HybridDataFactory(DataSource):
     def __init__(self, **kwargs):
         self.log = dna.logging.logger(__name__)
 
-        assert 'backtest' in kwargs
         assert isinstance(kwargs.get('index'),
                           pd.tseries.index.DatetimeIndex)
 

@@ -51,7 +51,8 @@ def parse_commandline():
         'session': args.id,
         'context': args.context,
         'showlog': args.showlog,
-        'bot': args.bot}
+        'bot': args.bot
+    }
 
 
 class Context(object):
@@ -59,6 +60,7 @@ class Context(object):
 
     def __init__(self, access):
         # Hold infos to reach the config formatted like an url path
+        # <path.to.module>://<ip>:<port>/<access/...?<key>=<value>...
         StringType(regex='.*://\w').validate(access)
         self._ctx_module = access.split('://')[0]
         self._ctx_infos = access.split('://')[1]

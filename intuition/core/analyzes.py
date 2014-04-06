@@ -18,7 +18,7 @@ import dna.logging
 import dna.debug
 from zipline.data.benchmarks import get_benchmark_returns
 import intuition.utils
-from intuition.core.finance import qstk_get_sharpe_ratio
+from intuition.finance import qstk_get_sharpe_ratio
 
 log = dna.logging.logger(__name__)
 
@@ -86,9 +86,9 @@ class Analyze():
 
     def rolling_performances(self, timestamp='one_month'):
         ''' Filters self.perfs '''
-        #TODO Study the impact of month choice
-        #TODO Check timestamp in an enumeration
-        #TODO Implement other benchmarks for perf computation
+        # TODO Study the impact of month choice
+        # TODO Check timestamp in an enumeration
+        # TODO Implement other benchmarks for perf computation
         # (zipline issue, maybe expected)
 
         if self.metrics:
@@ -103,7 +103,7 @@ class Analyze():
             for key in perf_keys:
                 perfs[key] = self._to_perf_array(timestamp, key, length)
         else:
-            #TODO Get it from DB if it exists
+            # TODO Get it from DB if it exists
             raise NotImplementedError()
 
         return pd.DataFrame(perfs, index=index)
@@ -147,7 +147,7 @@ class Analyze():
             #TODO Automatic detection given exchange market (on command line) ?
             raise NotImplementedError()
 
-        #NOTE Could be more efficient. But len(benchmark_data.date) !=
+        # NOTE Could be more efficient. But len(benchmark_data.date) !=
         # len(self.results.returns.index). Maybe because of different markets
         dates = pd.DatetimeIndex([d.date for d in benchmark_data])
 
@@ -167,7 +167,7 @@ class Analyze():
         return df
 
     def _get_index(self, perfs):
-        #NOTE No frequency infos or just period number ?
+        # NOTE No frequency infos or just period number ?
         start = pytz.utc.localize(pd.datetime.strptime(
             perfs[0]['period_label'] + '-01', '%Y-%m-%d'))
         end = pytz.utc.localize(pd.datetime.strptime(

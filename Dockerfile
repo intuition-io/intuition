@@ -14,25 +14,32 @@
 FROM hivetech/pyscience
 MAINTAINER Xavier Bruhiere <xavier.bruhiere@gmail.com>
 
-# Local settings
-#RUN apt-get update && \
-  #apt-get install -y language-pack-fr wget git-core libssl-dev
-#ENV LANGUAGE fr_FR.UTF-8
-#ENV LANG fr_FR.UTF-8
-#ENV LC_ALL fr_FR.UTF-8
-#RUN locale-gen fr_FR.UTF-8 && dpkg-reconfigure locales
+#RUN git clone https://github.com/intuition-io/intuition.git -b develop --depth 1 && \
+  #cd /intuition && python setup.py install
+ADD . /intuition
+RUN cd /intuition && python setup.py install
 
-RUN git clone https://github.com/intuition-io/intuition.git -b develop --depth 1 && \
-  cd /intuition && python setup.py install
-
-# Install modules
+# Install Insights ------------------------------------------
 RUN git clone https://github.com/intuition-io/insights.git -b develop --depth 1 && \
   apt-get update && apt-get install -y libreadline-dev && \
   cd insights && python setup.py install
+
+# Install Extras --------------------------------------------
 # Install R libraries
 RUN wget -qO- http://bit.ly/L39jeY | R --no-save
 
+# TA-Lib support
+RUN apt-get install -y libopenblas-dev liblapack-dev gfortran && \
+  wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz && \
+  tar -xvzf ta-lib-0.4.0-src.tar.gz && \
+  cd ta-lib/ && \
+  ./configure --prefix=/usr && \
+  make && \
+  make install
+# Python wrapper
+RUN pip install --use-mirrors TA-Lib==0.4.8
+
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-ENTRYPOINT ["/usr/local/bin/intuition", "--showlog"]
-CMD ["--help"]
+ENV LANG fr_FR.UTF-8
+CMD ["/usr/local/bin/intuition"]

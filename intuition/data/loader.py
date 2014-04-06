@@ -53,7 +53,7 @@ class LiveBenchmark(object):
         #NOTE What is tr_curves['tid'] ?
         #TODO Replace values to detect the fake later
         tr_fake = OrderedDict(sorted(
-            ((pd.Timestamp(event_dt + i*self.offset), c)
+            ((pd.Timestamp(event_dt + i * self.offset), c)
              for i, c in enumerate(tr_curves.values())),
             key=lambda t: t[0]))
 

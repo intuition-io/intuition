@@ -23,14 +23,6 @@ class ConfigurationTestCase(unittest.TestCase):
         logfile = configuration.logfile('fake_id')
         self.assertIn('.intuition/logs/fake_id.log', logfile)
 
-    def test_parse_command_line(self):
-        try:
-            args = None
-            args = configuration.parse_commandline()
-        except SystemExit:
-            self.assertTrue(args is None)
-            pass
-
     def test_load_context(self):
         with configuration.Context(self.good_driver) as context:
             self.assertIsInstance(context, dict)

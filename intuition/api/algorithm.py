@@ -52,6 +52,7 @@ class TradingFactory(TradingAlgorithm):
         return not (
             self.realworld and (dt.date.today() > self.datetime.date()))
 
+    # FIXME It needs insights to be installed
     def use_default_middlewares(self, properties):
         if properties.get('interactive'):
             self.use(msg.RedisProtocol(self.identity).check)
@@ -59,7 +60,7 @@ class TradingFactory(TradingAlgorithm):
         if device:
             self.use(mobile.AndroidPush(device).notify)
         if properties.get('save'):
-            self.use(database.RethinkdbBackend(
+            self.use(database.RethinkdbFinance(
                 table=self.identity, db='portfolios', reset=True)
                 .save_portfolio)
         hipchat_room = properties.get('hipchat')
