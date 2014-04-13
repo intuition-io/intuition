@@ -37,7 +37,6 @@ def _fx_mapping(raw_rates):
     } for pair in map(lambda x: x.split(','), raw_rates)}
 
 
-#FIXME 'Not authorized' mode works weird
 class TrueFX(object):
 
     _api_url = 'http://webrates.truefx.com/rates/connect.html'

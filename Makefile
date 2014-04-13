@@ -32,9 +32,9 @@ tests: warn_missing_linters
 	#TODO Fail if outdated
 	piprot --outdated requirements.txt dev-requirements.txt
 	@echo -e '\tChecking syntax ...'
-	flake8 tests intuition
+	flake8 --ignore E265 tests intuition
 	@echo -e '\tRunning tests ...'
-	nosetests -w tests --with-yanc --with-coverage --cover-package=intuition
+	nosetests -s -w tests --with-yanc --with-coverage --cover-package=intuition
 
 watch: warn_missing_linters
 	watchmedo shell-command \

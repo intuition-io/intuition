@@ -47,3 +47,11 @@ class LoadContextFailed(dna.errors.FactoryError):
 
 class ExchangeIsClosed(dna.errors.FactoryError):
     msg = "{exchange} is closed during {dates}"
+
+
+class InvalidEngine(dna.errors.FactoryError):
+    msg = "Invalid engine {id}: {reason}"
+
+
+class InvalidDatafeed(dna.errors.FactoryError):
+    msg = "Invalid datafeed setup: {reason}"

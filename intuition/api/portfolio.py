@@ -15,8 +15,12 @@
 
 import abc
 import dna.logging
-#import intuition.data.remote as remote
 from intuition.errors import PortfolioOptimizationFailed
+
+
+def _remove_useless_orders(alloc):
+    ''' Pop from the orderbook orders of 0 values '''
+    return {sid: value for sid, value in alloc.iteritems() if value != 0}
 
 
 class PortfolioFactory():
@@ -45,28 +49,19 @@ class PortfolioFactory():
     perfs = None
     date = None
 
-    #TODO Add in the constructor or setup parameters some general settings like
-    #     maximum weights, positions, frequency, ...
-    #TODO Remove stocks with 0 to allocate
-    #NOTE Regarding portfolio constraints: from a set of user-defined
+    # TODO Add in the constructor or setup parameters some general settings
+    # like maximum weights, positions, frequency, ...
+    # TODO Remove stocks with 0 to allocate
+    # NOTE Regarding portfolio constraints: from a set of user-defined
     # parameters, a unique set should be constructed. Then the solution
     # provided by optimize function would have to be a subset of it. (classic
     # mathematical solution) Finally it should be defined how to handle
     # non-correct solutions
-    def __init__(self, configuration):
-        '''
-        Parameters
-            configuration : dict
-                Named parameters used either for general portfolio settings
-                (server and constraints), and for user optimizer function
-        '''
-        self.log = dna.logging.logger(__name__)
 
+    def __init__(self, configuration):
+        self.log = dna.logging.logger(__name__)
         # Other parameters are used in user's optimize() method
         self._optimizer_parameters = configuration
-
-        # In case user optimization would need to retrieve more data
-        #self.data = remote.Data()
 
         self.initialize(configuration)
 
@@ -104,8 +99,7 @@ class PortfolioFactory():
             except Exception, error:
                 raise PortfolioOptimizationFailed(
                     reason=error, date=self.date, data=signals)
-
-        return alloc
+        return _remove_useless_orders(alloc)
 
     def advise(self, **kwargs):
         '''

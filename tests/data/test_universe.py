@@ -4,23 +4,33 @@ Tests for intuition.data.universe
 
 import os
 import unittest
+from nose.tools import raises, eq_
+import intuition.test_utils as test_utils
 import intuition.data.universe as universe
 from intuition.errors import LoadMarketSchemeFailed
 
 
 class MarketTestCase(unittest.TestCase):
-    default_timezone = 'US/Eastern'
-    default_benchmark = '^GSPC'
-    scheme_path = os.path.expanduser('~/.intuition/data/market.yml')
-    good_universe_description = 'stocks:paris:cac40'
-    bad_universe_description = 'whatever'
+
+    def setUp(self):
+        test_utils.setup_logger(self)
+        self.default_timezone = 'US/Eastern'
+        self.default_benchmark = '^GSPC'
+        self.scheme_path = os.path.expanduser('~/.intuition/data/market.yml')
+        self.good_universe_description = 'stocks:paris:cac40'
+        self.bad_universe_description = 'whatever'
+
+    def tearDown(self):
+        test_utils.teardown_logger(self)
 
     # NOTE It also tests market._load_market_scheme()
     def test_initialize_market(self):
         market = universe.Market()
         self.assertIsInstance(market.scheme, dict)
-        self.assertEqual(market.benchmark, self.default_benchmark)
-        self.assertEqual(market.timezone, self.default_timezone)
+        eq_(market.benchmark, self.default_benchmark)
+        eq_(market.timezone, self.default_timezone)
+        #eq_(market.open, self.default_open)
+        #eq_(market.close, self.default_close)
 
     def test_initialize_market_without_scheme(self):
         tmp_path = self.scheme_path.replace('market', 'bkp.market')
@@ -51,17 +61,16 @@ class MarketTestCase(unittest.TestCase):
         market = universe.Market()
         sids = market._lookup_sids(self.good_universe_description, limit)
         self.assertIsInstance(sids, list)
-        self.assertEqual(len(sids), limit)
+        eq_(len(sids), limit)
 
+    @raises(LoadMarketSchemeFailed)
     def test__lookup_sids_wrong_market(self):
         market = universe.Market()
-        self.assertRaises(LoadMarketSchemeFailed,
-                          market._lookup_sids,
-                          self.bad_universe_description)
+        market._lookup_sids(self.bad_universe_description)
 
     def test_parse_universe(self):
         market = universe.Market()
         market.parse_universe_description(
             self.good_universe_description + ',4')
         self.assertIsInstance(market.sids, list)
-        self.assertEqual(len(market.sids), 4)
+        eq_(len(market.sids), 4)

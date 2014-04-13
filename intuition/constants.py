@@ -22,7 +22,6 @@ CONFIG_SCHEMA = Schema({
     # Optional('id'): Use(basestring, error='invalid identity'),
     Optional('id'): basestring,
     Optional('live'): bool,
-    Optional('frequency'): basestring,
     Optional('_id'): object,
     Optional('__v'): object,
     'modules': {

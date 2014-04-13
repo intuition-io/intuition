@@ -12,6 +12,7 @@
 '''
 
 
+import pytz
 import dna.utils
 import dna.logging
 from zipline.finance.trading import TradingEnvironment
@@ -20,6 +21,7 @@ import intuition.constants as constants
 from intuition.data.loader import LiveBenchmark
 from intuition.core.analyzes import Analyze
 import intuition.utils as utils
+from intuition.errors import InvalidEngine
 
 log = dna.logging.logger(__name__)
 
@@ -32,9 +34,13 @@ class TradingEngine(object):
 
     def __new__(self, identity, modules, strategy_conf):
 
+        if 'algorithm' not in modules:
+            raise InvalidEngine(
+                id=identity, reason='no algorithm module provided')
+
         algo_obj = utils.intuition_module(modules['algorithm'])
         algo_obj.identity = identity
-        trading_algo = algo_obj(properties=strategy_conf['algorithm'])
+        trading_algo = algo_obj(properties=strategy_conf.get('algorithm', {}))
 
         trading_algo.set_logger(dna.logging.logger('algo.' + identity))
 
@@ -43,7 +49,7 @@ class TradingEngine(object):
             log.info('initializing manager {}'.format(modules['manager']))
             # Linking to the algorithm the configured portfolio manager
             trading_algo.manager = utils.intuition_module(modules['manager'])(
-                strategy_conf['manager'])
+                strategy_conf.get('manager', {}))
         else:
             trading_algo.manager = None
             log.info('no portfolio manager used')
@@ -66,6 +72,9 @@ class Simulation(object):
     def configure_environment(self, last_trade, benchmark, timezone):
         ''' Prepare benchmark loader and trading context '''
 
+        if last_trade.tzinfo is None:
+            last_trade = pytz.utc.localize(last_trade)
+
         # Setup the trading calendar from market informations
         self.benchmark = benchmark
         self.context = TradingEnvironment(
@@ -78,6 +87,7 @@ class Simulation(object):
         Wrapper of zipline run() method. Use the configuration set so far
         to build up the trading environment
         '''
+        # TODO Catch a problem here
         self.engine = TradingEngine(identity, modules, strategy)
         self.initial_cash = strategy['manager'].get('cash', None)
 

@@ -68,7 +68,6 @@ class Context(object):
 
     def __enter__(self):
         Loader = utils.intuition_module(self._ctx_module)
-
         log.info('building context',
                  driver=self._ctx_module, data=self._ctx_infos)
         config, strategy = Loader(self._ctx_infos).build()

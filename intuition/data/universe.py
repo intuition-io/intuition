@@ -14,6 +14,8 @@
 
 import os
 import random
+import pytz
+import dateutil.parser
 import yaml
 import dna.logging
 from intuition.errors import LoadMarketSchemeFailed
@@ -28,7 +30,10 @@ class Market(object):
 
     # TODO Read default from market.yml or set by the user
     benchmark = '^GSPC'
-    timezone = 'US/Eastern'
+    default_timezone = 'US/Eastern'
+    default_open = '00h01'
+    default_close = '23h59'
+    exchange = None
     raw_description = None
     scheme_path = os.path.expanduser('~/.intuition/data/market.yml')
 
@@ -44,8 +49,8 @@ class Market(object):
             raise LoadMarketSchemeFailed(reason=error)
 
     def _extract_forex(self):
-        self.timezone = self.scheme['forex']['timezone']
-        return self.scheme['forex']['pairs']
+        self.scheme = self.scheme['forex']
+        return self.scheme['pairs']
 
     def _extract_cac40(self, market):
         market_scheme = self.scheme
@@ -53,11 +58,30 @@ class Market(object):
         for key in market[:-1]:
             market_scheme = market_scheme[key]
 
-        self.timezone = market_scheme['timezone']
+        self.scheme = market_scheme
         self.benchmark = market_scheme['benchmark']
         return map(
             lambda x: x + '.pa',
             market_scheme[market[-1]].keys())
+
+    @property
+    def timezone(self):
+        return self.scheme.get('timezone') or self.default_timezone
+
+    @property
+    def open(self):
+        safe_open = self.scheme.get('open') or self.default_open
+        return pytz.timezone(self.timezone)\
+            .localize(dateutil.parser.parse(safe_open))\
+            .astimezone(pytz.utc)
+
+    @property
+    def close(self):
+        # Check if a specific market scheme was set
+        safe_close = self.scheme.get('close') or self.default_close
+        return pytz.timezone(self.timezone)\
+            .localize(dateutil.parser.parse(safe_close))\
+            .astimezone(pytz.utc)
 
     def _lookup_sids(self, market, limit=-1):
         market = market.split(':')

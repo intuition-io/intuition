@@ -5,27 +5,25 @@ Tests for intuition.api.context
 import unittest
 import pandas as pd
 import intuition.api.context as context
-
-
-class FakeContext(context.ContextFactory):
-    ''' Returns fake configuration '''
-
-    def initialize(self, storage):
-        self.storage = storage
-
-    def load(self):
-        return {}
+import intuition.test_utils as test_utils
+from nose.tools import ok_, eq_
 
 
 class StorageTestCase(unittest.TestCase):
-    good_storage = 'localhost:1234/some/where?fake=true'
-    bad_storage = 'evezbb54bz2r'
+
+    def setUp(self):
+        test_utils.setup_logger(self)
+        self.good_storage = 'localhost:1234/some/where?fake=true'
+        self.bad_storage = 'evezbb54bz2r'
+
+    def tearDown(self):
+        test_utils.teardown_logger(self)
 
     def test_parse_storage(self):
         properties = context.parse_storage(self.good_storage)
         self.assertListEqual(sorted(['uri', 'path', 'params']),
                              sorted(properties.keys()))
-        self.assertEqual(properties['uri'], 'localhost:1234')
+        eq_(properties['uri'], 'localhost:1234')
         self.assertListEqual(properties['path'], ['some', 'where'])
         self.assertDictEqual(properties['params'], {'fake': 'true'})
 
@@ -36,18 +34,24 @@ class StorageTestCase(unittest.TestCase):
 
 
 class ContextFactoryTestCase(unittest.TestCase):
-    good_storage = 'localhost:1234/some/where?fake=true'
-    bad_storage = 'evezbb54bz2r'
+
+    def setUp(self):
+        test_utils.setup_logger(self)
+        self.good_storage = 'localhost:1234/some/where?fake=true'
+        self.bad_storage = 'evezbb54bz2r'
+
+    def tearDown(self):
+        test_utils.teardown_logger(self)
 
     def test_initialize_fake_context(self):
-        fake = FakeContext(self.good_storage)
-        self.assertTrue(hasattr(fake, 'log'))
+        fake = test_utils.FakeContext(self.good_storage)
+        ok_(hasattr(fake, 'log'))
         self.assertListEqual(sorted(['uri', 'path', 'params']),
                              sorted(fake.storage.keys()))
 
     def test__normalize_empty_data_types(self):
         empty_data = {}
-        fake = FakeContext(self.good_storage)
+        fake = test_utils.FakeContext(self.good_storage)
         fake._normalize_data_types(empty_data)
         self.assertDictEqual(empty_data, {})
 
@@ -62,7 +66,7 @@ class ContextFactoryTestCase(unittest.TestCase):
             'whatever_true': True,
             'whatever_false': False
         }
-        fake = FakeContext(self.good_storage)
+        fake = test_utils.FakeContext(self.good_storage)
         fake._normalize_data_types(boolean_data)
         self.assertDictEqual(boolean_data, normalized_boolean_data)
         self.assertIsInstance(
@@ -81,7 +85,7 @@ class ContextFactoryTestCase(unittest.TestCase):
             'whatever_float': 3.25,
             'whatever_negative_float': -28.369
         }
-        fake = FakeContext(self.good_storage)
+        fake = test_utils.FakeContext(self.good_storage)
         fake._normalize_data_types(float_data)
         self.assertDictEqual(float_data, normalized_float_data)
         self.assertIsInstance(
@@ -90,7 +94,7 @@ class ContextFactoryTestCase(unittest.TestCase):
             normalized_float_data['whatever_integer'], int)
 
     def test__normalize_dates(self):
-        fake = FakeContext(self.good_storage)
+        fake = test_utils.FakeContext(self.good_storage)
         context = {
             'start': '2012/01/01',
             'end': '2014/01/01',
@@ -98,10 +102,9 @@ class ContextFactoryTestCase(unittest.TestCase):
         fake._normalize_dates(context)
         self.assertIn('live', context)
         self.assertIn('index', context)
-        self.assertIn('frequency', context)
-        self.assertTrue(not context['live'])
+        ok_(not context['live'])
         self.assertIsInstance(context['index'], pd.tseries.index.DatetimeIndex)
 
     def test_build(self):
-        #fake = FakeContext(self.good_storage)
+        #fake = test_utils.FakeContext(self.good_storage)
         pass

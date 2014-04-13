@@ -39,7 +39,7 @@ management/
 *.pdf
 .intuition
 src
-intuition.log
+*.log
 tmp/*
 
 .envrc

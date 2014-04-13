@@ -6,7 +6,7 @@
 #     -e LANG=fr_FR.UTF-8 \
 #     -e LOG=info \
 #     -e QUANDL_API_KEY=$QUANDL_API_KEY \
-#     hivetech/intuition --context insights.contexts.mongodb.MongodbContext://192.168.0.19:27017/intuition/contexts/bt-yahoo --id chuck --bot --showlog
+#     hivetech/intuition intuition --context insights.contexts.mongodb.MongodbContext://192.168.0.19:27017/intuition/contexts/bt-yahoo --id chuck --bot --showlog
 # VERSION 0.1.0
 
 # Administration
@@ -42,4 +42,4 @@ RUN pip install --use-mirrors TA-Lib==0.4.8
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 ENV LANG fr_FR.UTF-8
-CMD ["/usr/local/bin/intuition"]
+CMD ["/usr/local/bin/intuition", "--help"]

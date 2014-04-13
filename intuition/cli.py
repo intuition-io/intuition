@@ -39,7 +39,7 @@ def intuition(args):
         simulation = Simulation()
 
         # Intuition building blocks
-        modules = context['config']['modules'],
+        modules = context['config']['modules']
 
         # Prepare benchmark, timezone, trading calendar
         simulation.configure_environment(
@@ -53,7 +53,7 @@ def intuition(args):
                          context['strategy'])
 
         # Build data generator
-        # TODO How can I use several sources ?
+        # NOTE How can I use several sources ?
         data = {'universe': context['market'],
                 'index': context['config']['index']}
         # Add user settings

@@ -38,7 +38,7 @@ requires = [
     'ystockquote',
     'numpy>=1.8.1',
     'schematics>=0.9-4',
-    'schema==0.2.0',
+    'schema==0.3.0',
     'python-dateutil>=2.2',
     'pytz>=2014.2',
     'PyYAML>=3.11',

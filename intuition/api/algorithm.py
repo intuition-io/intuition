@@ -27,9 +27,9 @@ import insights.plugins.messaging as msg
 
 class TradingFactory(TradingAlgorithm):
     '''
-    Intuition surcharge of main zipline class, but fully compatible.
-    Its role is slightly different : the user will eventually expose an event()
-    method meant to return buy and sell signals, processed further by the
+    Intuition surcharge of main zipline class, but fully compatible.  Its role
+    is slightly different : the user will eventually expose an event() method
+    meant to return buy and sell signals, processed, optionnaly, further by the
     portfolio strategy. However it remains fully compatible with zipline method
     (i.e. it's stil possible to execute orders within the event method and not
     consider any portfolio strategy aside)
@@ -37,14 +37,15 @@ class TradingFactory(TradingAlgorithm):
 
     __metaclass__ = abc.ABCMeta
 
-    #TODO Use another zipline mechanism
+    # TODO Use another zipline mechanism
     days = 0
     sids = []
     middlewares = []
     auto = False
+    manager = None
 
     def __init__(self, *args, **kwargs):
-        self.realworld = kwargs['properties'].get('realworld')
+        self.realworld = kwargs.get('properties', {}).get('realworld')
         TradingAlgorithm.__init__(self, *args, **kwargs)
 
     def _is_interactive(self):

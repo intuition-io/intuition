@@ -107,9 +107,7 @@ class DataQuandl(object):
             data = Quandl.get(code, authtoken=self.quandl_key, **kwargs)
             # FIXME With a symbol not found, insert a not_found column
             data.index = data.index.tz_localize(pytz.utc)
-            #data.columns = map(
-            #   lambda x: x.replace(' ', '_').lower(), data.columns)
-        except:
-            log.error('** unable to fetch %s from Quandl' % code)
+        except Exception, error:
+            log.error('unable to fetch {}: {}'.format(code, error))
             data = pd.DataFrame()
         return data

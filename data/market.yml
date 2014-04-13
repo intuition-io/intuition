@@ -1,8 +1,9 @@
 ---
 forex:
-  timezone: null
-  schedule: null
+  timezone: 'UTC'
   benchmark: null
+  open: 00h01
+  close: 23h59
   pairs:
     - eur/usd
     - usd/jpy
@@ -32,9 +33,10 @@ forex:
     - usd/sek
 stocks:
     paris:
-      # Paris not supported yet
+      # Temporary, Paris not supported
+      open: 08h00
+      close: 16h30
       timezone: Europe/London
-      schedule: '8h,16h30'
       code: epa
       benchmark: fchi
       cac40:
@@ -161,6 +163,9 @@ stocks:
       sbf120: []
       srd: []
     nasdaq:
+      # New York timezone
+      open: 09h30
+      close: 16h00
       code: NASDAQ
       timezone: US/Eastern
       benchmark: ^GSPC

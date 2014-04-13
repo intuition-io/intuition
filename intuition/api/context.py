@@ -66,7 +66,7 @@ class ContextFactory():
 
     def _normalize_dates(self, context):
         '''
-        Build a timeline from the start, end and frequency infos
+        Build a timeline from given (or not) start and end dates
         '''
         if 'start' in context:
             if isinstance(context['start'], dt.date):
@@ -76,11 +76,9 @@ class ContextFactory():
             if isinstance(context['end'], dt.date):
                 context['end'] = dt.date.strftime(
                     context['end'], format='%Y-%m-%d')
-        context['frequency'] = context.get('frequency', 'D')
 
         trading_dates = intuition.utils.build_trading_timeline(
-            context.pop('start', None), context.pop('end', None),
-            context['frequency'])
+            context.pop('start', None), context.pop('end', None))
 
         context['index'] = trading_dates
         context['live'] = (dt.datetime.now(tz=pytz.utc) < trading_dates[-1])
