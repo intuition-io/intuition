@@ -121,43 +121,10 @@ class Market(object):
         ''' Guess from the description and the market scheme '''
         pass
 
-    def filter_open_hours(self, index):
+    def filter_open_days(self, index):
         ''' Remove market specific closed hours '''
         return index
 
     def __str__(self):
         return '<sids: {} exchange: {} timezone: {} benchmark: {}'.format(
             self.sids, self.exchange, self.timezone, self.benchmark)
-
-
-#TODO Complete with :
-# http://en.wikipedia.org/wiki/List_of_stock_exchange_opening_times
-# http://en.wikipedia.org/wiki/List_of_S&P_500_companies
-"""
-def filter_market_hours(dates, exchange):
-    ''' Only return market open hours from UTC timezone'''
-    #NOTE UTC times ! Beware of summer and winter hours
-    if dates.freq >= pd.datetools.Day():
-        # Daily or lower frequency, no hours filter required
-        return dates
-    if exchange == 'paris':
-        selector = ((dates.hour > 6) & (dates.hour < 16)) | \
-            ((dates.hour == 17) & (dates.minute < 31))
-    elif exchange == 'london':
-        selector = ((dates.hour > 8) & (dates.hour < 16)) | \
-            ((dates.hour == 16) & (dates.minute > 31))
-    elif exchange == 'tokyo':
-        selector = ((dates.hour > 0) & (dates.hour < 6))
-    elif exchange == 'nasdaq' or exchange == 'nyse':
-        selector = ((dates.hour > 13) & (dates.hour < 21)) | \
-            ((dates.hour == 13) & (dates.minute > 31))
-    else:
-        # Forex or Unknown market, return as is
-        return dates
-
-    # Pandas dataframe filtering mechanism
-    index = dates[selector]
-    if not index.size:
-        raise ExchangeIsClosed(exchange=exchange, dates=dates)
-    return index
-"""

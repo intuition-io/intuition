@@ -47,6 +47,7 @@ def parse_commandline():
                         help='Customize the session id')
     args = parser.parse_args()
 
+    # Dict will be more generic to process than args namespace
     return {
         'session': args.id,
         'context': args.context,
@@ -67,6 +68,7 @@ class Context(object):
         URLType().validate('http://{}'.format(self._ctx_infos))
 
     def __enter__(self):
+        # Use the given context module to grab configuration
         Loader = utils.intuition_module(self._ctx_module)
         log.info('building context',
                  driver=self._ctx_module, data=self._ctx_infos)
@@ -75,9 +77,11 @@ class Context(object):
         # TODO Validate strategy as well
         self._validate(config)
 
+        # From a human input (forex,4), setup a complete market structure
         market = universe.Market()
         market.parse_universe_description(config.pop('universe'))
-        config['index'] = market.filter_open_hours(config['index'])
+        # Remove holidays and other market closed periods
+        config['index'] = market.filter_open_days(config['index'])
 
         return {'config': config, 'strategy': strategy, 'market': market}
 
@@ -87,12 +91,14 @@ class Context(object):
     def _validate(self, config):
         log.info('validating configuration', config=config)
         try:
+            # Check if needed informations are here
             assert intuition.constants.CONFIG_SCHEMA.validate(config)
         except Exception as error:
             raise InvalidConfiguration(config=config, reason=error)
 
 
 def logfile(session_id):
+    # Create a special file for the session, with a fallback in /tmp
     log_path = os.path.expanduser('~/.intuition/logs')
     log_path = log_path if os.path.exists(log_path) \
         else intuition.constants.DEFAULT_LOGPATH

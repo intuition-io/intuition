@@ -39,7 +39,7 @@ class TradingTimelineTestCase(unittest.TestCase):
     @nottest
     def _validate_dates(self, dates):
         self.assertIsInstance(dates, pd.tseries.index.DatetimeIndex)
-        self.assertGreater(len(dates), 1)
+        self.assertGreater(len(dates), 0)
         eq_(dates.tzinfo, pytz.utc)
 
     def test__build_backtest_trading_timeline(self):
@@ -53,23 +53,20 @@ class TradingTimelineTestCase(unittest.TestCase):
                 eq_(pd.tseries.offsets.Day(1), dates.freq)
 
     def test__build_live_trading_timeline(self):
-        freq = '3min'
         now = dt.datetime.now(pytz.utc)
         for start in [None, now + pd.tseries.offsets.Minute(5)]:
             for end in [None, '2014/06/01']:
-                dates = utils.build_trading_timeline(start, end, freq=freq)
+                dates = utils.build_trading_timeline(start, end)
                 self._validate_dates(dates)
-                eq_(pd.tseries.offsets.Minute(3), dates.freq)
-                self.assertGreater(dates[1], now)
+                self.assertGreater(dates[0], now)
                 self.assertGreater(dates[-1], now)
 
     def test__build_hybrid_trading_timeline(self):
-        freq = '3min'
         now = dt.datetime.now(pytz.utc)
         start = '2014/01/01'
         end = '2014/06/01'
-        dates = utils.build_trading_timeline(start, end, freq)
+        dates = utils.build_trading_timeline(start, end)
         self._validate_dates(dates)
-        eq_(dt.timedelta(0, 180), dates[-1] - dates[-2])
-        self.assertGreater(now, dates[1])
+        eq_(dt.timedelta(days=1), dates[-1] - dates[-2])
+        self.assertGreater(now, dates[0])
         self.assertGreater(dates[-1], now)

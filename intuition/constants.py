@@ -34,6 +34,7 @@ CONFIG_SCHEMA = Schema({
 })
 
 
+# Some urls used by the data module to fetch securities infos
 FINANCE_URLS = {
     'yahoo_hist': 'http://ichart.yahoo.com/table.csv',
     'yahoo_infos': 'http://finance.yahoo/q/pr',
