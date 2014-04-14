@@ -1,39 +1,57 @@
-#
-# Copyright 2013 Xavier Bruhiere
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
+
+'''
+  Intuition specific errors
+  -------------------------
+
+  :copyright (c) 2014 Xavier Bruhiere
+  :license: Apache 2.0, see LICENSE for more details.
+'''
 
 
-class IntuitionError(Exception):
-    msg = None
-
-    def __init__(self, *args, **kwargs):
-        self.args = args
-        self.kwargs = kwargs
-        self.message = str(self)
-
-    def __str__(self):
-        msg = self.msg.format(**self.kwargs)
-        return msg
-
-    __unicode__ = __str__
-    __repr__ = __str__
+import dna.errors
 
 
-# http://www.siteduzero.com/informatique/tutoriels/les-exceptions-9/\
-#     liste-des-exceptions-built-in
-class Example(IntuitionError):
-    '''
-    Temporary example
-    '''
-    msg = "{transform} requires {fields}. Event cannot be processed."
+class InvalidConfiguration(dna.errors.FactoryError):
+    msg = "invalid configuration: {reason} ({config})"
+
+
+class PortfolioOptimizationFailed(dna.errors.FactoryError):
+    msg = """
+[{date}] \
+Portfolio optimization failed: {reason}, \
+processing {data}
+""".strip()
+
+
+class AlgorithmEventFailed(dna.errors.FactoryError):
+    msg = """
+[{date}] \
+algorithm event failed: {reason}, \
+processing {data}
+""".strip()
+
+
+class LoadDataFailed(dna.errors.FactoryError):
+    msg = "Failed to load data for {sids}: {reason}"
+
+
+class LoadMarketSchemeFailed(dna.errors.FactoryError):
+    msg = "Failed to load market scheme: {reason}"
+
+
+class LoadContextFailed(dna.errors.FactoryError):
+    msg = "Unable to load data from {driver}: {reason}"
+
+
+class ExchangeIsClosed(dna.errors.FactoryError):
+    msg = "{exchange} is closed during {dates}"
+
+
+class InvalidEngine(dna.errors.FactoryError):
+    msg = "Invalid engine {id}: {reason}"
+
+
+class InvalidDatafeed(dna.errors.FactoryError):
+    msg = "Invalid datafeed setup: {reason}"

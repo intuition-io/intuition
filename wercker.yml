@@ -10,22 +10,24 @@ build:
         - virtualenv:
             name: setup virtual environment
 
-        # A step that executes `pip install` command.
+        # This packages should be installed before others
         - pip-install:
-            packages_list: numpy nose flake8 coveralls
+            requirements_file:
+            package_list: numpy cython
+
+        # A step that executes `pip install` command.
+        #- pip-install
+        - script:
+            name: install intuition
+            code: python setup.py install
+
+        - pip-install:
+            requirements_file: "dev-requirements.txt"
 
         # A custom script step, name value is used in the UI
         # and the code value contains the command that get executed
         - script:
-            name: echo python information
+            name: run tests
             code: |
-                echo "python version $(python --version) running"
-                echo "pip version $(pip --version) running"
-                nosetests tests
-
-    after-steps:
-        - hipchat-notify:
-            token: $HIPCHAT_TOKEN
-            room-id: 290587
-            passed-notify: true
-            failed-notify: true
+              flake8 --ignore E265 tests intuition
+              nosetests -w tests

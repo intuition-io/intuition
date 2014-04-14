@@ -1,41 +1,44 @@
-#
-# Copyright 2013 Xavier Bruhiere
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
 
+'''
+  Intuition configuration
+  -----------------------
 
+  Configure intuition at launch time
+
+  :copyright (c) 2014 Xavier Bruhiere
+  :license: Apache 2.0, see LICENSE for more details.
+'''
+
+import os
 import argparse
-import logbook
+from schematics.types import StringType, URLType
+import dna.logging
+import dna.utils
+from intuition import __version__, __licence__
+import intuition.constants
+import intuition.utils as utils
+import intuition.data.universe as universe
+from intuition.errors import InvalidConfiguration
 
-import intuition.constants as constants
-import intuition.utils.utils as utils
-
-
-log = logbook.Logger('intuition.core.configuration')
+log = dna.logging.logger(__name__)
 
 
 def parse_commandline():
-    log.debug('parsing commandline arguments')
-
     parser = argparse.ArgumentParser(
         description='Intuition, the terrific trading system')
     parser.add_argument('-V', '--version',
                         action='version',
-                        version='%(prog)s v0.1.3 Licence Apache 2.0',
+                        version='%(prog)s v{} Licence {}'.format(
+                            __version__, __licence__),
                         help='Print program version')
     parser.add_argument('-v', '--showlog',
                         action='store_true',
                         help='Print logs on stdout')
+    parser.add_argument('-b', '--bot',
+                        action='store_true',
+                        help='Allows the algorithm to process orders')
     parser.add_argument('-c', '--context',
                         action='store', default='file::conf.yaml',
                         help='Provides the way to build context')
@@ -44,16 +47,59 @@ def parse_commandline():
                         help='Customize the session id')
     args = parser.parse_args()
 
-    return args.id, args.context, args.showlog
+    # Dict will be more generic to process than args namespace
+    return {
+        'session': args.id,
+        'context': args.context,
+        'showlog': args.showlog,
+        'bot': args.bot
+    }
 
 
-def context(driver):
-    driver = driver.split('::')
-    builder_name = '{}.contexts.{}'.format(constants.MODULES_PATH, driver[0])
+class Context(object):
+    ''' Load and control configuration '''
 
-    build_context = utils.dynamic_import(builder_name, 'build_context')
-    if not build_context:
-        return {}, {'algorithm': {}, 'manager': {}}
+    def __init__(self, access):
+        # Hold infos to reach the config formatted like an url path
+        # <path.to.module>://<ip>:<port>/<access/...?<key>=<value>...
+        StringType(regex='.*://\w').validate(access)
+        self._ctx_module = access.split('://')[0]
+        self._ctx_infos = access.split('://')[1]
+        URLType().validate('http://{}'.format(self._ctx_infos))
 
-    log.info('building context')
-    return build_context(driver[1])
+    def __enter__(self):
+        # Use the given context module to grab configuration
+        Loader = utils.intuition_module(self._ctx_module)
+        log.info('building context',
+                 driver=self._ctx_module, data=self._ctx_infos)
+        config, strategy = Loader(self._ctx_infos).build()
+
+        # TODO Validate strategy as well
+        self._validate(config)
+
+        # From a human input (forex,4), setup a complete market structure
+        market = universe.Market()
+        market.parse_universe_description(config.pop('universe'))
+        # Remove holidays and other market closed periods
+        config['index'] = market.filter_open_days(config['index'])
+
+        return {'config': config, 'strategy': strategy, 'market': market}
+
+    def __exit__(self, type, value, traceback):
+        pass
+
+    def _validate(self, config):
+        log.info('validating configuration', config=config)
+        try:
+            # Check if needed informations are here
+            assert intuition.constants.CONFIG_SCHEMA.validate(config)
+        except Exception as error:
+            raise InvalidConfiguration(config=config, reason=error)
+
+
+def logfile(session_id):
+    # Create a special file for the session, with a fallback in /tmp
+    log_path = os.path.expanduser('~/.intuition/logs')
+    log_path = log_path if os.path.exists(log_path) \
+        else intuition.constants.DEFAULT_LOGPATH
+    return '{}/{}.log'.format(log_path, session_id)

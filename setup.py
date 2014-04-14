@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2013 Quantopian, Inc.
+# Copyright 2014 Xavier Bruhiere
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,17 +13,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import sys
+
 import os
 from glob import glob
-
 from setuptools import setup, find_packages
-
-from intuition import __version__, __author__, __licence__
-
-
-LONG_DESCRIPTION = None
-README_MARKDOWN = None
+from intuition import (
+    __version__, __author__, __licence__, __project__
+)
 
 
 def get_requirements():
@@ -34,37 +30,51 @@ def get_requirements():
         deps.append('pandas>=0.13.0.dev')
         return deps
 
-with open('README.md') as markdown_source:
-    README_MARKDOWN = markdown_source.read()
 
-if 'upload' in sys.argv:
-    # Converts the README.md file to ReST, since PyPI uses ReST for formatting,
-    # This allows to have one canonical README file, being the README.md
-    # The conversion only needs to be done on upload.
-    # Otherwise, the pandoc import and errors that are thrown when
-    # pandoc are both overhead and a source of confusion for general
-    # usage/installation.
-    import pandoc
-    pandoc.core.PANDOC_PATH = '/usr/bin/pandoc'
-    doc = pandoc.Document()
-    doc.markdown = README_MARKDOWN
-    LONG_DESCRIPTION = doc.rst
-else:
-    # If pandoc isn't installed, e.g. when downloading from pip,
-    # just use the regular README.
-    LONG_DESCRIPTION = README_MARKDOWN
+requires = [
+    'beautifulsoup4>=4.3.2',
+    'blist>=1.3.6',
+    'Cython>=0.20.1',
+    'ystockquote',
+    'numpy>=1.8.1',
+    'schematics>=0.9-4',
+    'schema==0.3.0',
+    'python-dateutil>=2.2',
+    'pytz>=2014.2',
+    'PyYAML>=3.11',
+    'Quandl>=1.9.7',
+    'dna>=0.0.3',
+    'requests>=2.2.1',
+    'six>=1.6.1',
+    'zipline>=0.5.11.dev',
+    'pandas>=0.13.0.dev']
+
+
+def long_description():
+    try:
+        #with codecs.open(readme, encoding='utf8') as f:
+        with open('README.md') as f:
+            return f.read()
+    except IOError:
+        return "failed to read README.md"
+
 
 setup(
-    name='intuition',
+    name=__project__,
     version=__version__,
     description='A trading system building blocks',
     author=__author__,
     author_email='xavier.bruhiere@gmail.com',
     packages=find_packages(),
-    long_description=LONG_DESCRIPTION,
+    long_description=long_description(),
     license=__licence__,
-    install_requires=get_requirements(),
+    install_requires=requires,
     url="https://github.com/hackliff/intuition",
+    entry_points={
+        'console_scripts': [
+            'intuition = intuition.__main__:main',
+        ],
+    },
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'License :: OSI Approved :: Apache Software License',
@@ -77,9 +87,12 @@ setup(
         'Topic :: Scientific/Engineering :: Information Analysis',
         'Topic :: System :: Distributed Computing',
     ],
-    scripts=['app/intuition'],
-    data_files=[(os.path.expanduser('~/.intuition/data'), glob('./data/*'))],
+    data_files=[
+        (os.path.expanduser('~/.intuition/data'), glob('data/*')),
+        (os.path.expanduser('~/.intuition/logs'), glob('./MANIFEST.in'))
+    ],
     dependency_links=[
         'http://github.com/pydata/pandas/tarball/master#egg=pandas-0.13.0.dev',
-        'http://github.com/quantopian/zipline/tarball/master#egg=zipline-0.5.11.dev']
+        'http://github.com/quantopian/zipline/tarball/master#egg=zipline-0.5.11.dev'
+    ]
 )

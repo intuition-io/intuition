@@ -1,62 +1,101 @@
-#
-# Copyright 2013 Xavier Bruhiere
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
 
+'''
+  Intuition results analyzer
+  --------------------------
+
+  Wraps session results with convenient analyse methods
+
+  :copyright (c) 2014 Xavier Bruhiere
+  :license: Apache 2.0, see LICENSE for more details.
+'''
 
 import pytz
 import pandas as pd
 import numpy as np
-import logbook
-
+import dna.logging
+import dna.debug
+import dna.utils
 from zipline.data.benchmarks import get_benchmark_returns
+from intuition.finance import qstk_get_sharpe_ratio
 
-from finance import qstk_get_sharpe_ratio
-
-
-log = logbook.Logger('intuition.core.analyze')
+log = dna.logging.logger(__name__)
 
 
 class Analyze():
     ''' Handle backtest results and performances measurments '''
-    def __init__(self, **kwargs):
-        # R analysis file only needs portfolio returns
-        self.returns = kwargs.pop('returns') if 'returns' in kwargs else None
-
+    def __init__(self, params, results, metrics, benchmark='^GSPC'):
+        # NOTE Temporary
+        # Simulation parameters
+        self.sim_params = params
         # Final risk measurments as returned by the backtester
-        self.results = kwargs.pop('results') if 'results' in kwargs else None
-
+        self.results = results
         # Simulation rolling performance
-        self.metrics = kwargs.pop('metrics') if 'metrics' in kwargs else None
+        self.metrics = metrics
+        # Market where we traded
+        self.benchmark = benchmark
 
-        # You better should know what was simulation's parameters
-        self.configuration = kwargs.pop('configuration', None)
+    def build_report(self, timestamp='one_month', show=False):
+        # Get daily, cumulative and not, returns of portfolio and benchmark
+        # NOTE Temporary fix before intuition would be able to get benchmark
+        # data on live trading
+        try:
+            bm_sym = self.benchmark
+            returns_df = self.get_returns(benchmark=bm_sym)
+            skip = False
+        except:
+            log.warn('unable to get benchmark data on live trading for now')
+            skip = True
+
+        orders = 0
+        for order in self.results.orders:
+            orders += len(order)
+
+        final_value = self.results.portfolio_value[-1]
+        report = {
+            'portfolio': final_value,
+            'gain': final_value - self.sim_params.capital_base,
+            'orders': orders,
+            'pnl_mean': self.results.pnl.mean(),
+            'pnl_deviation': self.results.pnl.std(),
+        }
+        if not skip:
+            report['portfolio_perfs'] = returns_df['algo_c_return'][-1] * 100.0
+            report['benchmark_perfs'] = \
+                returns_df['benchmark_c_return'][-1] * 100.0
+
+        perfs = self.overall_metrics(timestamp)
+        for k, v in perfs.iteritems():
+            report[k] = v
+
+        # Float values for humans
+        for key, value in report.iteritems():
+            report[key] = dna.utils.truncate(value, 3)
+
+        log.info('generated report', report=report)
+        if show:
+            print
+            print(dna.debug.emphasis(report, align=True))
+            print
+
+        return report
 
     def _to_perf_array(self, timestamp, key, length):
         return np.array([self.metrics[timestamp][i][key] for i in length])
 
     def rolling_performances(self, timestamp='one_month'):
         ''' Filters self.perfs '''
-        #TODO Study the impact of month choice
-        #TODO Check timestamp in an enumeration
-        #TODO Implement other benchmarks for perf computation
+        # TODO Study the impact of month choice
+        # TODO Check timestamp in an enumeration
+        # TODO Implement other benchmarks for perf computation
         # (zipline issue, maybe expected)
 
         if self.metrics:
             perfs = {}
             length = range(len(self.metrics[timestamp]))
             index = self._get_index(self.metrics[timestamp])
-            perf_keys = self.metrics['one_month'][0].keys()
+            perf_keys = self.metrics[timestamp][0].keys()
             perf_keys.pop(perf_keys.index('period_label'))
 
             perfs['period'] = np.array(
@@ -64,7 +103,7 @@ class Analyze():
             for key in perf_keys:
                 perfs[key] = self._to_perf_array(timestamp, key, length)
         else:
-            #TODO Get it from DB if it exists
+            # TODO Get it from DB if it exists
             raise NotImplementedError()
 
         return pd.DataFrame(perfs, index=index)
@@ -100,15 +139,15 @@ class Analyze():
             try:
                 benchmark_data = (
                     get_benchmark_returns(benchmark,
-                                          self.configuration['index'][0],
-                                          self.configuration['index'][-1]))
+                                          self.results.index[0],
+                                          self.results.index[-1]))
             except Exception as e:
                 raise KeyError(e)
         else:
             #TODO Automatic detection given exchange market (on command line) ?
             raise NotImplementedError()
 
-        #NOTE Could be more efficient. But len(benchmark_data.date) !=
+        # NOTE Could be more efficient. But len(benchmark_data.date) !=
         # len(self.results.returns.index). Maybe because of different markets
         dates = pd.DatetimeIndex([d.date for d in benchmark_data])
 
@@ -128,7 +167,7 @@ class Analyze():
         return df
 
     def _get_index(self, perfs):
-        #NOTE No frequency infos or just period number ?
+        # NOTE No frequency infos or just period number ?
         start = pytz.utc.localize(pd.datetime.strptime(
             perfs[0]['period_label'] + '-01', '%Y-%m-%d'))
         end = pytz.utc.localize(pd.datetime.strptime(

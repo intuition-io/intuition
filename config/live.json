@@ -1,0 +1,25 @@
+
+{
+  "universe": "nasdaq,5",
+  "end": "17h30",
+  "modules": {
+    "manager": "insights.managers.fair.Fair",
+    "algorithm": "insights.algorithms.dummy.Random.BuyAndHold",
+    "data": "insights.sources.hybridforex.ForexRates"
+  },
+  "algorithm": {
+    "start_day": -1,
+    "rate": -1,
+    "hipchat": false,
+    "notify": false,
+    "interactive": false,
+    "save": false,
+  },
+  "manager": {
+    "cash": 10000,
+    "perc_sell": 1.0,
+    "max_weight": 0.3,
+    "sell_scale": 100,
+    "buy_scale": 150
+  }
+}

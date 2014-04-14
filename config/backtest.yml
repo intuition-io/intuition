@@ -1,0 +1,12 @@
+universe: stocks:paris:cac40,5
+start: 2013-02-10
+end: 2013-11-10
+modules:
+  manager: insights.managers.linear.Constant
+  algorithm: insights.algorithms.dummy.Random
+  backtest: insights.sources.backtest.yahoo.YahooPrices
+
+manager:
+  buy_amount: 150
+  sell_amount: 100
+  cash: 20027

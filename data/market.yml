@@ -1,0 +1,176 @@
+---
+forex:
+  timezone: 'UTC'
+  benchmark: null
+  open: 00h01
+  close: 23h59
+  pairs:
+    - eur/usd
+    - usd/jpy
+    - gbp/usd
+    - eur/gbp
+    - usd/chf
+    - eur/jpy
+    - eur/chf
+    - usd/cad
+    - aud/usd
+    - gbp/jpy
+    - aud/cad
+    - aud/chf
+    - aud/jpy
+    - aud/nzd
+    - cad/chf
+    - chf/jpy
+    - eur/aud
+    - eur/cad
+    - eur/nok
+    - eur/nzd
+    - gbp/cad
+    - gbp/chf
+    - nzd/jpy
+    - nzd/usd
+    - usd/nok
+    - usd/sek
+stocks:
+    paris:
+      # Temporary, Paris not supported
+      open: 08h00
+      close: 16h30
+      timezone: Europe/London
+      code: epa
+      benchmark: fchi
+      cac40:
+        #fp:
+          #name: Total
+          #sector: oil
+        vk:
+          name: Vallourec
+          sector: engineering
+        ml:
+          name: Michelin
+          sector: automobile
+        #sol:
+          #name: Solvay
+          #sector: chemistry
+        or:
+          name: L'Oréal
+          sector: home,hygiene
+        #edf:
+          #name: EDF - Electricite De France
+          #sector: energy,public utility
+        viv:
+          name: Vivendi
+          sector: medias
+        #ul:
+          #name: Unibail-Rodamco
+          #sector: real estate
+        #mt:
+          #name: ArcelorMittal
+          #sector: or,precious materials
+        ri:
+          name: Pernod-Ricard
+          sector: food,drink
+        #bn:
+          #name: Danone
+          #sector: food,drink
+        ead:
+          name: Airbus Group
+          sector: transport
+        #ef:
+          #name: Essilor International
+          #sector: services
+        saf:
+          name: Safran
+          sector: engineering
+        #gsz:
+          #name: GDF Suez
+          #sector: gaz,electricity,public,services
+        #lr1:
+          #name: Legrand
+          #sector: electronic
+        san:
+          name: Sanofi
+          sector: pharmacy
+        su:
+          name: Schneider Electric
+          sector: engineering
+        sgo:
+          name: Saint-Gobain
+          sector: engineering
+        #gt1:
+          #name: Gemalto
+          #sector: electronic
+        ai:
+          name: Air Liquide
+          sector: chemistry
+        #vie:
+          #name: Veolia Environment
+          #sector: gaz,electricity,services
+        #mv:
+          #name: LVMH - Moet Hennessy Louis Vuitton
+          #sector: sell
+        pub:
+          name: Publicis Groupe
+          sector: medias
+        #dg:
+          #name: Vinci
+          #sector: engineering
+        #pp:
+          #name: Kering
+          #sector: construction,materials,real estate
+        tec:
+          name: Technip
+          sector: engineering
+        rno:
+          name: Renault
+          sector: automobile
+        #cap:
+          #name: Cap Gemini
+          #sector: information technology
+        #alu:
+          #name: Alcatel-Lucent
+          #sector: telecommunications
+        alo:
+          name: Alstom
+          sector: engineering
+        cs:
+          name: AXA
+          sector: finance
+        #fte:
+          #name: Orange
+          #sector: telecommunications
+        #ca:
+          #name: Carrefour
+          #sector: sell
+        #bnp:
+          #name: BNP Paribas
+          #sector: finance
+        #gle:
+          #name: Societe Generale
+          #sector: finance
+        #aca:
+          #name: Credit agricole
+          #sector: finance
+        lg:
+          name: Lafarge
+          sector: construction,materials,real estate
+        en:
+          name: Bouygues
+          sector: engineering
+        #ac:
+          #name: Accor
+          #sector: services
+      sbf120: []
+      srd: []
+    nasdaq:
+      # New York timezone
+      open: 09h30
+      close: 16h00
+      code: NASDAQ
+      timezone: US/Eastern
+      benchmark: ^GSPC
+      nasdaq100: []
+      others: []
+    london:
+      ftse100: []
+      others: []

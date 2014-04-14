@@ -39,8 +39,10 @@ management/
 *.pdf
 .intuition
 src
-intuition.log
+*.log
 tmp/*
 
 .envrc
 dist
+bkp.README.md
+disclaimer

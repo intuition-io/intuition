@@ -1,0 +1,11 @@
+[report]
+omit =
+    */__init__.py
+    */python?.?/*
+    */.virtualenvs/*
+    */site-packages/*
+    */quant/src/*
+    */quant/lib/*
+
+[run]
+source = intuition

@@ -7,16 +7,14 @@ env:
 before_install:
   - sudo apt-get -y install python-pip python-dev g++ make gfortran
 install:
-  - pip install --upgrade --use-mirrors numpy nose flake8 coveralls
-  - pip install --upgrade --use-mirrors -r requirements.txt
+  - pip install --quiet --upgrade --use-mirrors numpy cython
+  - pip install --use-mirrors --upgrade -r dev-requirements.txt
+  - sudo python setup.py install
 
 before_script:
-  - flake8 intuition tests
+  - flake8 --ignore E265 intuition tests
 script:
   - nosetests -w tests --with-coverage --cover-package=intuition
-
-after_success:
-  - coveralls
 
 branches:
   only:

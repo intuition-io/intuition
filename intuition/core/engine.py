@@ -1,68 +1,55 @@
-#
-# Copyright 2013 Xavier Bruhiere
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
+
+'''
+  Intuition engine
+  ----------------
+
+  Wraps zipline engine and results with more configuration options
+
+  :copyright (c) 2014 Xavier Bruhiere
+  :license: Apache 2.0, see LICENSE for more details.
+'''
 
 
 import pytz
-import pandas as pd
-import logbook
-
+import dna.utils
+import dna.logging
 from zipline.finance.trading import TradingEnvironment
 from zipline.utils.factory import create_simulation_parameters
-
 import intuition.constants as constants
-from intuition.data.utils import Exchanges
 from intuition.data.loader import LiveBenchmark
 from intuition.core.analyzes import Analyze
-import intuition.utils.utils as utils
+import intuition.utils as utils
+from intuition.errors import InvalidEngine
+
+log = dna.logging.logger(__name__)
 
 
-log = logbook.Logger('intuition.core.engine')
-
-
-def _intuition_module(location):
-    ''' Build the module path and import it '''
-    location = location.split('.')
-    obj = location.pop(-1)
-    path = '.'.join([constants.MODULES_PATH] + location)
-    return utils.dynamic_import(path, obj)
-
-
-#NOTE Is there still a point to use here a constructor object instead of a
+# NOTE Is there still a point to use here a constructor object instead of a
 #     simple function ?
 class TradingEngine(object):
     ''' Factory class wrapping zipline Backtester, returns the requested algo
     ready for use '''
 
-    def __new__(self, identity, modules,
-                strategy_conf=constants.DEFAULT_CONFIG):
+    def __new__(self, identity, modules, strategy_conf):
 
-        algo_obj = _intuition_module(modules['algorithm'])
+        if 'algorithm' not in modules:
+            raise InvalidEngine(
+                id=identity, reason='no algorithm module provided')
+
+        algo_obj = utils.intuition_module(modules['algorithm'])
         algo_obj.identity = identity
-        trading_algo = algo_obj(properties=strategy_conf['algorithm'])
+        trading_algo = algo_obj(properties=strategy_conf.get('algorithm', {}))
 
-        trading_algo.set_logger(logbook.Logger('algo.' + identity))
-
-        if modules['data']:
-            trading_algo.set_data_generator(_intuition_module(modules['data']))
+        trading_algo.set_logger(dna.logging.logger('algo.' + identity))
 
         # Use a portfolio manager
-        if modules['manager']:
+        if modules.get('manager'):
             log.info('initializing manager {}'.format(modules['manager']))
             # Linking to the algorithm the configured portfolio manager
-            trading_algo.manager = _intuition_module(modules['manager'])(
-                strategy_conf['manager'])
+            trading_algo.manager = utils.intuition_module(modules['manager'])(
+                strategy_conf.get('manager', {}))
         else:
             trading_algo.manager = None
             log.info('no portfolio manager used')
@@ -71,72 +58,53 @@ class TradingEngine(object):
 
 
 class Simulation(object):
-    ''' Take a trading strategy and evalute its results '''
+    ''' Setup and trigger trading sessions '''
+    context = None
 
-    def __init__(self, configuration):
-        self.configuration = configuration
-        self.context = None
-
-    def configure(self):
+    def _get_benchmark_handler(self, last_trade, freq='minutely'):
         '''
-        Prepare dates, data, trading environment for simulation
+        Setup a custom benchmark handler or let zipline manage it
         '''
-        last_trade = self.configuration['index'][-1]
-        if last_trade > pd.datetime.now(pytz.utc):
-            # This is live trading
-            self.set_benchmark_loader(LiveBenchmark(
-                last_trade, frequency='minute').surcharge_market_data)
-        else:
-            self.set_benchmark_loader(None)
+        return LiveBenchmark(
+            last_trade, frequency=freq).surcharge_market_data \
+            if utils.is_live(last_trade) else None
 
-        self.context = self._configure_context(self.configuration['exchange'])
+    def configure_environment(self, last_trade, benchmark, timezone):
+        ''' Prepare benchmark loader and trading context '''
 
-    def set_benchmark_loader(self, load_function):
-        ''' Define a custom benchmark loader for zipline to use '''
-        self.load_market_data = load_function
+        if last_trade.tzinfo is None:
+            last_trade = pytz.utc.localize(last_trade)
 
-    def _configure_context(self, exchange=''):
+        # Setup the trading calendar from market informations
+        self.benchmark = benchmark
+        self.context = TradingEnvironment(
+            bm_symbol=benchmark,
+            exchange_tz=timezone,
+            load=self._get_benchmark_handler(last_trade))
+
+    def build(self, identity, modules, strategy=constants.DEFAULT_CONFIG):
         '''
-        Setup from exchange traded on benchmarks used, location
-        and method to load data market while simulating
+        Wrapper of zipline run() method. Use the configuration set so far
+        to build up the trading environment
         '''
-        # Environment configuration
-        if exchange in Exchanges:
-            trading_context = TradingEnvironment(
-                bm_symbol=Exchanges[exchange]['symbol'],
-                exchange_tz=Exchanges[exchange]['timezone'],
-                load=self.load_market_data)
-        else:
-            raise NotImplementedError('Because of computation limitation, \
-                trading worldwide not permitted currently')
+        # TODO Catch a problem here
+        self.engine = TradingEngine(identity, modules, strategy)
+        self.initial_cash = strategy['manager'].get('cash', None)
 
-        return trading_context
-
-    def run(self, identity, data, strategy):
-        ''' Wrapper of zipline run() method. Use the configuration set so far
-        to build up the trading environment and launch the system '''
-        engine = TradingEngine(identity,
-                               self.configuration['modules'],
-                               strategy)
-
-        #NOTE This method does not change anything
-        #engine.set_sources([DataLiveSource(data_tmp)])
-        #TODO A new command line parameter ? only minutely and daily
-        #     (and hourly normaly) Use filter parameter of datasource ?
-        #engine.set_data_frequency(self.configuration['frequency'])
-        engine.is_live = self.configuration['live']
-
-        # Running simulation with it
-        #FIXME crash if trading one day that is not a trading day
+    def __call__(self, datafeed, auto=False):
+        ''' wrap zipline.run() with finer control '''
+        self.engine.auto = auto
+        # FIXME crash if trading one day that is not a trading day
         with self.context:
             sim_params = create_simulation_parameters(
-                capital_base=strategy['manager']['cash'],
-                start=self.configuration['index'][0],
-                end=self.configuration['index'][-1])
+                capital_base=self.initial_cash,
+                start=datafeed.start,
+                end=datafeed.end)
 
-            daily_stats = engine.trade(data, sim_params=sim_params)
+            daily_stats = self.engine.run(datafeed, sim_params)
 
         return Analyze(
+            params=sim_params,
             results=daily_stats,
-            metrics=engine.risk_report,
-            configuration=self.configuration)
+            metrics=self.engine.risk_report,
+            benchmark=self.benchmark)
