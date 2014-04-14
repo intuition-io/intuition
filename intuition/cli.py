@@ -64,6 +64,7 @@ def intuition(args):
         if 'live' in modules:
             data['live'] = utils.intuition_module(modules['live'])
 
+        # Run the simulation and return an intuition.core.analyzes object
         return simulation(datafeed.HybridDataFactory(**data), args['bot'])
 
 
@@ -73,6 +74,7 @@ def main():
     args = setup.parse_commandline()
     loglevel = os.environ.get('LOG', 'warning')
     logfile = setup.logfile(args['session'])
+    # Setup structured logs with file and stdout support
     log_setup = dna.logging.setup(
         level=loglevel, show_log=args['showlog'], filename=logfile)
 

@@ -51,12 +51,14 @@ class TradingFactory(TradingAlgorithm):
     def use(self, func, when='whenever'):
         ''' Append a middleware to the algorithm '''
         #NOTE A middleware Object ?
+        # self.use() is usually called from initialize(), so no logger yet
         print('registering middleware {}'.format(func.__name__))
         self.middlewares.append({
             'call': func,
             'name': func.__name__,
             'args': func.func_code.co_varnames,
-            'when': when})
+            'when': when
+        })
 
     #NOTE I'm not superfan of initialize + warm
     def warm(self, data):
@@ -75,7 +77,9 @@ class TradingFactory(TradingAlgorithm):
         signals = {}
         self.orderbook = {}
 
+        # Everytime but the first tick
         if self.initialized and self.manager:
+            # Keep the portfolio aware of the situation
             self.manager.update(
                 self.portfolio,
                 self.datetime,
@@ -102,6 +106,8 @@ class TradingFactory(TradingAlgorithm):
                 if self.auto and self._is_interactive():
                     self.process_orders(self.orderbook)
 
+        # Some middlewares send stuff over the wires. This little security
+        # prevent us from performing a DDOS
         if self._is_interactive():
             self._call_middlewares()
 

@@ -10,8 +10,16 @@ build:
         - virtualenv:
             name: setup virtual environment
 
+        # This packages should be installed before others
+        - pip-install:
+            requirements_file:
+            package_list: numpy cython
+
         # A step that executes `pip install` command.
-        - pip-install
+        #- pip-install
+        - script:
+            name: install intuition
+            code: python setup.py install
 
         - pip-install:
             requirements_file: "dev-requirements.txt"
