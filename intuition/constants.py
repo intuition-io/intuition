@@ -34,8 +34,11 @@ CONFIG_SCHEMA = Schema({
 })
 
 
-PANDAS_FREQ = {
-    'daily': 'D',
-    'hourly': 'H',
-    'minutely': 'Min'
+FINANCE_URLS = {
+    'yahoo_hist': 'http://ichart.yahoo.com/table.csv',
+    'yahoo_infos': 'http://finance.yahoo/q/pr',
+    'google_prices': 'http://www.google.com/finance/getprices',
+    'snapshot_google_light': 'http://www.google.com/finance/info',
+    'info_lookup': ('http://d.yimg.com/autoc.finance.yahoo.com/autoc?' +
+                    'query={}&callback=YAHOO.Finance.SymbolSuggest.ssCallback')
 }

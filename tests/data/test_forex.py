@@ -5,7 +5,7 @@ Tests for intuition.data.universe
 import os
 import unittest
 from nose.tools import eq_
-import intuition.test_utils as test_utils
+import dna.test_utils
 import intuition.data.forex as forex
 
 
@@ -25,10 +25,10 @@ class TruefxUtilsTestCase(unittest.TestCase):
 class TruefxTestCase(unittest.TestCase):
 
     def setUp(self):
-        test_utils.setup_logger(self)
+        dna.test_utils.setup_logger(self)
 
     def tearDown(self):
-        test_utils.teardown_logger(self)
+        dna.test_utils.teardown_logger(self)
 
     def test_initialize_truefx_with_credentials(self):
         fake_credentials = 'login:pass'

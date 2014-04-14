@@ -9,21 +9,10 @@
   :license: Apache 2.0, see LICENSE for more details.
 '''
 
-from logbook import FileHandler
 import pandas as pd
 from intuition.api.context import ContextFactory
 from intuition.api.portfolio import PortfolioFactory
 from intuition.api.algorithm import TradingFactory
-
-
-def setup_logger(test, path='/tmp/tests-intuition.log'):
-    test.log_handler = FileHandler(path)
-    test.log_handler.push_application()
-
-
-def teardown_logger(test):
-    test.log_handler.pop_application()
-    test.log_handler.close()
 
 
 class FakeContext(ContextFactory):

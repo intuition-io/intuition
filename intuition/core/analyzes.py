@@ -16,8 +16,8 @@ import pandas as pd
 import numpy as np
 import dna.logging
 import dna.debug
+import dna.utils
 from zipline.data.benchmarks import get_benchmark_returns
-import intuition.utils
 from intuition.finance import qstk_get_sharpe_ratio
 
 log = dna.logging.logger(__name__)
@@ -71,7 +71,7 @@ class Analyze():
 
         # Float values for humans
         for key, value in report.iteritems():
-            report[key] = intuition.utils.truncate(value, 3)
+            report[key] = dna.utils.truncate(value, 3)
 
         log.info('generated report', report=report)
         if show:

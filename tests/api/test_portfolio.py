@@ -5,7 +5,8 @@ Tests for intuition.api.portfolio
 import unittest
 from nose.tools import raises, ok_, eq_
 import intuition.api.portfolio as portfolio
-import intuition.test_utils as test_utils
+from intuition.test_utils import TestPortfolio
+import dna.test_utils
 
 
 class PortfolioUtilsTestCase(unittest.TestCase):
@@ -31,12 +32,12 @@ class PortfolioUtilsTestCase(unittest.TestCase):
 class PortfolioTestCase(unittest.TestCase):
 
     def setUp(self):
-        test_utils.setup_logger(self)
+        dna.test_utils.setup_logger(self)
         self.test_config = {'useless': 'parameter'}
-        self.pf = test_utils.TestPortfolio(self.test_config)
+        self.pf = TestPortfolio(self.test_config)
 
     def tearDown(self):
-        test_utils.teardown_logger(self)
+        dna.test_utils.teardown_logger(self)
 
     def test_new_portfolio(self):
         ok_(hasattr(self.pf, 'log'))
@@ -102,5 +103,5 @@ class PortfolioTestCase(unittest.TestCase):
             'buy': {'su.pa': 34.5},
             'sell': {'tec.pa': 45.4}
         }
-        pf = test_utils.TestPortfolio({'raise_fake_error': True})
+        pf = TestPortfolio({'raise_fake_error': True})
         pf.trade_signals_handler(signals)

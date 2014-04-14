@@ -39,7 +39,6 @@ def invert_dataframe_axis(fct):
     '''
     def inner(*args, **kwargs):
         df_to_invert = fct(*args, **kwargs)
-        assert isinstance(df_to_invert, pd.DataFrame)
         return pd.DataFrame(df_to_invert.to_dict().values(),
                             index=df_to_invert.to_dict().keys())
     return inner

@@ -13,60 +13,13 @@
 import time
 import datetime as dt
 import pytz
-import calendar
-import locale
-import dateutil.parser
 import pandas as pd
 import dna.utils
+from dna.time_utils import normalize_date_format
 
 
 def is_live(current_date):
     return (current_date > pd.datetime.now(pytz.utc))
-
-
-# TODO Handle in-day dates, with hours and minutes
-def normalize_date_format(date):
-    '''
-    Dates can be defined in many ways, but zipline use
-    aware datetime objects only. Plus, the software work
-    with utc timezone so we convert it.
-    '''
-    if isinstance(date, int):
-        # This is probably epoch time
-        date = time.strftime('%Y-%m-%d %H:%M:%S',
-                             time.localtime(date))
-
-    # assert isinstance(date, str) or isinstance(date, unicode)
-    if isinstance(date, str) or isinstance(date, unicode):
-        date = dateutil.parser.parse(date)
-    if not date.tzinfo:
-        local_tz = pytz.timezone(_detect_timezone())
-        local_dt = local_tz.localize(date, is_dst=None)
-        # local_dt = local_tz.localize(parse(date), is_dst=None)
-        date = local_dt.astimezone(pytz.utc)
-
-    return date
-
-
-def _detect_timezone():
-    '''
-    Experimental and temporary (since there is a world module)
-    get timezone as set by the system
-    '''
-    default_timezone = 'America/New_York'
-    locale_code = locale.getdefaultlocale()
-    return default_timezone if not locale_code else \
-        str(pytz.country_timezones[locale_code[0][-2:]][0])
-
-
-def UTC_date_to_epoch(utc_date):
-    return calendar.timegm(utc_date.timetuple())
-
-
-def epoch_to_date(epoch, tz=pytz.utc):
-    tm = time.gmtime(epoch)
-    return(dt.datetime(tm.tm_year, tm.tm_mon, tm.tm_mday,
-           tm.tm_hour, tm.tm_min, tm.tm_sec, 0, tz))
 
 
 def next_tick(date, interval=15):
@@ -90,13 +43,6 @@ def intuition_module(location):
     return dna.utils.dynamic_import('.'.join(path), obj)
 
 
-def truncate(float_value, n=2):
-    if isinstance(float_value, float):
-        float_value = float('%.*f' % (n, float_value))
-    return float_value
-
-
-# TODO Frequency for live trading (and backtesting ?)
 def build_trading_timeline(start, end, freq='D'):
     EMPTY_DATES = pd.date_range('2000/01/01', periods=0, tz=pytz.utc)
     now = dt.datetime.now(tz=pytz.utc)
@@ -107,7 +53,7 @@ def build_trading_timeline(start, end, freq='D'):
             bt_dates = EMPTY_DATES
             live_dates = pd.date_range(
                 start=now,
-                end=normalize_date_format('23h'),
+                end=normalize_date_format('23h59'),
                 freq=freq)
         else:
             end = normalize_date_format(end)
@@ -152,7 +98,7 @@ def build_trading_timeline(start, end, freq='D'):
                 bt_dates = EMPTY_DATES
                 live_dates = pd.date_range(
                     start=start,
-                    end=normalize_date_format('23h'),
+                    end=normalize_date_format('23h59'),
                     freq=freq)
             else:
                 # Live trading from start to end

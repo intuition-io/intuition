@@ -5,7 +5,7 @@ Tests for intuition.data.universe
 import os
 import unittest
 from nose.tools import raises, eq_
-import intuition.test_utils as test_utils
+import dna.test_utils
 import intuition.data.universe as universe
 from intuition.errors import LoadMarketSchemeFailed
 
@@ -13,7 +13,7 @@ from intuition.errors import LoadMarketSchemeFailed
 class MarketTestCase(unittest.TestCase):
 
     def setUp(self):
-        test_utils.setup_logger(self)
+        dna.test_utils.setup_logger(self)
         self.default_timezone = 'US/Eastern'
         self.default_benchmark = '^GSPC'
         self.scheme_path = os.path.expanduser('~/.intuition/data/market.yml')
@@ -21,7 +21,7 @@ class MarketTestCase(unittest.TestCase):
         self.bad_universe_description = 'whatever'
 
     def tearDown(self):
-        test_utils.teardown_logger(self)
+        dna.test_utils.teardown_logger(self)
 
     # NOTE It also tests market._load_market_scheme()
     def test_initialize_market(self):

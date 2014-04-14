@@ -47,8 +47,11 @@ Features
 * Results analyser
 * Financial library, with common used trading functions, data fetchers, ... used for example to solve Coursera econometrics assignments
 * Easy to use data management, powered by [rethinkdb][6]
-* [Docker](docker.io) support for development workflow and deployment
-* Kind of a CI showcase as I am testing [travis](https://travis-ci.org), [wercker](wercker.com), [shippable](shippable.com), [drone.io](shippable.com), [coveralls](coveralls.io) and [landscape](landscape.io)
+* [Docker][4] support for development workflow and deployment
+* Kind of a CI showcase as I am testing [travis](https://travis-ci.org),
+  [wercker](http://wercker.com), [shippable](http://shippable.com),
+  [drone.io](https://drone.io), [coveralls](https://coveralls.io) and
+  [landscape](https://landscape.io)
 
 
 Status
@@ -61,7 +64,7 @@ Status
 <!--[![Build Status](https://travis-ci.org/hackliff/intuition.png?branch=master)](https://travis-ci.org/hackliff/intuition)-->
 [![Coverage Status](https://coveralls.io/repos/hackliff/intuition/badge.png)](https://coveralls.io/r/hackliff/intuition)
 [![Code Health](https://landscape.io/github/hackliff/intuition/master/landscape.png)](https://landscape.io/github/hackliff/intuition/master)
-[![Requirements Status](https://requires.io/github/hackliff/intuition/requirements.png?branch=master)](https://requires.io/github/hackliff/intuition/requirements/?branch=master)
+<!--[![Requirements Status](https://requires.io/github/hackliff/intuition/requirements.png?branch=master)](https://requires.io/github/hackliff/intuition/requirements/?branch=master)-->
 [![License](https://pypip.in/license/intuition/badge.png)](https://pypi.python.org/pypi/intuition/)
 
 
@@ -94,8 +97,9 @@ Intuition is available under the [Apache License, Version 2.0][5].
 [1]: https://trello.com/b/WvJDlynt/intuition
 [2]: https://github.com/intuition-io/insights
 [3]: https://gitter.im/intuition-io
+[4]: http://docker.io
 [5]: http://www.apache.org/licenses/LICENSE-2.0.html
-[6]: rethinkdb.com
+[6]: http://rethinkdb.com
 [8]: https://github.com/intuition-io/insights/tree/develop/insights/plugins
 [9]: https://github.com/quantopian/zipline
 [10]: http://doc.intuition.io/articles/contributors.html

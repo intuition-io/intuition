@@ -17,12 +17,7 @@
 import abc
 import datetime as dt
 from zipline.algorithm import TradingAlgorithm
-import zipline.finance.commission as commission
 from intuition.errors import AlgorithmEventFailed
-import insights.plugins.database as database
-import insights.plugins.mobile as mobile
-import insights.plugins.hipchat as hipchat
-import insights.plugins.messaging as msg
 
 
 class TradingFactory(TradingAlgorithm):
@@ -52,25 +47,6 @@ class TradingFactory(TradingAlgorithm):
         ''' Prevent middlewares and orders to work outside live mode '''
         return not (
             self.realworld and (dt.date.today() > self.datetime.date()))
-
-    # FIXME It needs insights to be installed
-    def use_default_middlewares(self, properties):
-        if properties.get('interactive'):
-            self.use(msg.RedisProtocol(self.identity).check)
-        device = properties.get('mobile')
-        if device:
-            self.use(mobile.AndroidPush(device).notify)
-        if properties.get('save'):
-            self.use(database.RethinkdbFinance(
-                table=self.identity, db='portfolios', reset=True)
-                .save_portfolio)
-        hipchat_room = properties.get('hipchat')
-        if hipchat_room:
-            self.use(hipchat.Bot(
-                hipchat_room, name=self.identity).notify)
-
-        self.set_commission(commission.PerTrade(
-            cost=properties.get('commission', 2.5)))
 
     def use(self, func, when='whenever'):
         ''' Append a middleware to the algorithm '''
@@ -115,7 +91,7 @@ class TradingFactory(TradingAlgorithm):
             signals = self.event(data)
         except Exception, error:
             # NOTE Temporary debug. Will probably notify the error and go on
-            # with signals=None
+            # with signals={}
             raise AlgorithmEventFailed(
                 reason=error, date=self.datetime, data=data)
 

@@ -4,7 +4,7 @@ Tests for intuition.core.configuration
 
 import unittest
 from nose.tools import raises
-import intuition.test_utils as test_utils
+import dna.test_utils as test_utils
 import pandas as pd
 import intuition.core.configuration as configuration
 from dna.errors import DynamicImportFailed
@@ -15,7 +15,10 @@ class ConfigurationUtilsTestCase(unittest.TestCase):
 
     def test_logfile(self):
         logfile = configuration.logfile('fake_id')
-        self.assertIn('.intuition/logs/fake_id.log', logfile)
+        if 'tmp' in logfile:
+            self.assertEqual('/tmp/logs/fake_id.log', logfile)
+        else:
+            self.assertIn('.intuition/logs/fake_id.log', logfile)
 
 
 class ContextLoadTestCase(unittest.TestCase):

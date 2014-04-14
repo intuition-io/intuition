@@ -11,7 +11,8 @@ import dna.errors
 #from zipline.data.benchmarks import BenchmarkDataNotFoundError
 import intuition.core.engine as engine
 from intuition.errors import InvalidEngine
-import intuition.test_utils as test_utils
+from intuition.test_utils import TestAlgorithm
+import dna.test_utils
 
 
 # TODO Test standalone run of this engine
@@ -19,13 +20,13 @@ class EngineTestCase(unittest.TestCase):
     default_capital_base = 100000.0
 
     def setUp(self):
-        test_utils.setup_logger(self)
+        dna.test_utils.setup_logger(self)
         self.test_identity = 'test-gekko'
         self.good_algo = 'intuition.test_utils.TestAlgorithm'
         self.good_manager = 'intuition.test_utils.TestPortfolio'
 
     def tearDown(self):
-        test_utils.teardown_logger(self)
+        dna.test_utils.teardown_logger(self)
 
     def test_new_minimal_engine(self):
         eng = engine.TradingEngine(
@@ -73,7 +74,7 @@ class EngineTestCase(unittest.TestCase):
 class SimulationTestCase(unittest.TestCase):
 
     def setUp(self):
-        test_utils.setup_logger(self)
+        dna.test_utils.setup_logger(self)
         self.test_identity = 'test-gekko'
         self.good_algo = 'intuition.test_utils.TestAlgorithm'
         self.good_manager = 'intuition.test_utils.TestPortfolio'
@@ -86,7 +87,7 @@ class SimulationTestCase(unittest.TestCase):
         self.simu = engine.Simulation()
 
     def tearDown(self):
-        test_utils.teardown_logger(self)
+        dna.test_utils.teardown_logger(self)
 
     @nottest
     def _check_environment(self, env):
@@ -134,7 +135,7 @@ class SimulationTestCase(unittest.TestCase):
     def _check_engine(self, eng):
         eq_(eng.identity, self.test_identity)
         self.assertIsNone(eng.manager)
-        eq_(eng.__class__, test_utils.TestAlgorithm)
+        eq_(eng.__class__, TestAlgorithm)
 
     def test_build_minimal_simulator(self):
         self.simu.build(self.test_identity,

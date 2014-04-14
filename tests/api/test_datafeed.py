@@ -11,7 +11,7 @@ import pandas as pd
 import intuition.api.datafeed as datafeed
 from intuition.data.universe import Market
 from intuition.errors import InvalidDatafeed
-import intuition.test_utils as test_utils
+import dna.test_utils
 
 
 class FakeBacktestDatasource(object):
@@ -95,7 +95,7 @@ class FakeLiveDatasource(object):
 class DatafeedUtilsTestCase(unittest.TestCase):
 
     def setUp(self):
-        test_utils.setup_logger(self)
+        dna.test_utils.setup_logger(self)
         self.fake_sid = 'fake_sid'
         self.fake_one_sid_series = pd.Series(
             {key: random.random() for key in ['low', 'close']})
@@ -107,7 +107,7 @@ class DatafeedUtilsTestCase(unittest.TestCase):
         self.fake_date = dt.datetime(2013, 1, 1)
 
     def tearDown(self):
-        test_utils.teardown_logger(self)
+        dna.test_utils.teardown_logger(self)
 
     @nottest
     def _check_event(self, event):
@@ -153,7 +153,7 @@ class DatafeedUtilsTestCase(unittest.TestCase):
 class HybridDataFactoryTestCase(unittest.TestCase):
 
     def setUp(self):
-        test_utils.setup_logger(self)
+        dna.test_utils.setup_logger(self)
         self.test_index = pd.date_range(
             '2012/01/01', '2012/01/7', tz=pytz.utc)
         self.test_universe = 'forex,5'
@@ -162,7 +162,7 @@ class HybridDataFactoryTestCase(unittest.TestCase):
         self.test_sids = self.market.sids
 
     def tearDown(self):
-        test_utils.teardown_logger(self)
+        dna.test_utils.teardown_logger(self)
 
     @nottest
     def _check_datasource(self, source):
@@ -215,12 +215,12 @@ class HybridDataFactoryTestCase(unittest.TestCase):
 class SpecificMarketDataFactoryTestCase(unittest.TestCase):
 
     def setUp(self):
-        test_utils.setup_logger(self)
+        dna.test_utils.setup_logger(self)
         self.test_index = pd.date_range(
             '2012/01/01', '2012/01/7', tz=pytz.utc)
 
     def tearDown(self):
-        test_utils.teardown_logger(self)
+        dna.test_utils.teardown_logger(self)
 
     def test_dataframe_forex_backtest_data_generation(self):
         test_universe = 'forex,5'

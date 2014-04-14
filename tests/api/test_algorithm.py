@@ -4,12 +4,13 @@ Tests for intuition.api.algorithm
 
 import unittest
 from nose.tools import raises, ok_, eq_, nottest
-import intuition.test_utils as test_utils
+import dna.test_utils
 import pandas as pd
 import pytz
 import datetime as dt
 from intuition.api.datafeed import HybridDataFactory
 from intuition.data.universe import Market
+from intuition.test_utils import TestAlgorithm
 from test_datafeed import FakeBacktestDatasource
 
 
@@ -17,17 +18,17 @@ from test_datafeed import FakeBacktestDatasource
 class AlgorithmTestCase(unittest.TestCase):
 
     def setUp(self):
-        test_utils.setup_logger(self)
+        dna.test_utils.setup_logger(self)
         self.test_index = pd.date_range(
             '2012/01/01', '2012/01/7',
             tz=pytz.utc)
         self.today = dt.datetime.today()
         self.past_date = self.today - dt.timedelta(days=10)
         self.test_properties = {'test': True}
-        self.algo = test_utils.TestAlgorithm(properties=self.test_properties)
+        self.algo = TestAlgorithm(properties=self.test_properties)
 
     def tearDown(self):
-        test_utils.teardown_logger(self)
+        dna.test_utils.teardown_logger(self)
 
     @nottest
     def _setup_source(self):
@@ -56,7 +57,7 @@ class AlgorithmTestCase(unittest.TestCase):
 
     @raises(TypeError)
     def test_new_algorithm_without_properties(self):
-        test_utils.TestAlgorithm()
+        TestAlgorithm()
 
     def test_overload_initialize(self):
         eq_(self.algo.properties, self.test_properties)
