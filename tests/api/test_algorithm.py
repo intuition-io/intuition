@@ -3,15 +3,13 @@ Tests for intuition.api.algorithm
 '''
 
 import unittest
-from nose.tools import raises, ok_, eq_, nottest
+from nose.tools import ok_, eq_, nottest
 import dna.test_utils
-import pandas as pd
-import pytz
 import datetime as dt
-from intuition.api.datafeed import HybridDataFactory
-from intuition.data.universe import Market
-from intuition.test_utils import TestAlgorithm
-from test_datafeed import FakeBacktestDatasource
+from intuition.test_framework import (
+    TestAlgorithm,
+    build_fake_hybridDataFactory
+)
 
 
 # TODO Test with a manager
@@ -19,29 +17,17 @@ class AlgorithmTestCase(unittest.TestCase):
 
     def setUp(self):
         dna.test_utils.setup_logger(self)
-        self.test_index = pd.date_range(
-            '2012/01/01', '2012/01/7',
-            tz=pytz.utc)
         self.today = dt.datetime.today()
         self.past_date = self.today - dt.timedelta(days=10)
         self.test_properties = {'test': True}
         self.algo = TestAlgorithm(properties=self.test_properties)
+        self.default_identity = 'johndoe'
 
     def tearDown(self):
         dna.test_utils.teardown_logger(self)
 
     @nottest
-    def _setup_source(self):
-        market = Market()
-        market.parse_universe_description('forex,5')
-        return HybridDataFactory(
-            universe=market,
-            index=self.test_index,
-            backtest=FakeBacktestDatasource)
-
-    @nottest
     def _check_algorithm_object(self, algo):
-        eq_(algo.days, 0)
         self.assertFalse(algo.auto)
         self.assertFalse(algo.initialized)
         self.assertIsNone(algo.realworld)
@@ -55,9 +41,10 @@ class AlgorithmTestCase(unittest.TestCase):
         self.assertIsNone(self.algo.manager)
         self._check_algorithm_object(self.algo)
 
-    @raises(TypeError)
     def test_new_algorithm_without_properties(self):
-        TestAlgorithm()
+        algo = TestAlgorithm()
+        ok_(not algo.realworld)
+        eq_(algo.identity, self.default_identity)
 
     def test_overload_initialize(self):
         eq_(self.algo.properties, self.test_properties)
@@ -73,7 +60,7 @@ class AlgorithmTestCase(unittest.TestCase):
         self.assertFalse(self.algo._is_interactive())
 
     def test_run_algorithm(self):
-        results = self.algo.run(self._setup_source())
+        results = self.algo.run(build_fake_hybridDataFactory())
         ok_(not results.empty)
 
     def test_warm_overload(self):

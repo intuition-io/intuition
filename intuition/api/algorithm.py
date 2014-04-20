@@ -32,16 +32,15 @@ class TradingFactory(TradingAlgorithm):
 
     __metaclass__ = abc.ABCMeta
 
-    # TODO Use another zipline mechanism
-    days = 0
     sids = []
     middlewares = []
     auto = False
     manager = None
 
-    def __init__(self, *args, **kwargs):
-        self.realworld = kwargs.get('properties', {}).get('realworld')
-        TradingAlgorithm.__init__(self, *args, **kwargs)
+    def __init__(self, identity='johndoe', properties={}):
+        self.identity = identity
+        self.realworld = properties.get('realworld')
+        TradingAlgorithm.__init__(self, properties=properties)
 
     def _is_interactive(self):
         ''' Prevent middlewares and orders to work outside live mode '''
@@ -73,7 +72,6 @@ class TradingFactory(TradingAlgorithm):
     def handle_data(self, data):
         ''' Method called for each event by zipline. In intuition this is the
         place to factorize algorithms and then call event() '''
-        self.days += 1
         signals = {}
         self.orderbook = {}
 
@@ -126,6 +124,10 @@ class TradingFactory(TradingAlgorithm):
                 self.logger.warning(
                     '{}: invalid order for {}: {})'
                     .format(self.datetime, stock, alloc))
+
+    @property
+    def elapsed_time(self):
+        return self.datetime - self.portfolio.start_date
 
     def _call_one_middleware(self, middleware):
         ''' Evaluate arguments and execute the middleware function '''

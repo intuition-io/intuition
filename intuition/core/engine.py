@@ -39,8 +39,10 @@ class TradingEngine(object):
                 id=identity, reason='no algorithm module provided')
 
         algo_obj = utils.intuition_module(modules['algorithm'])
-        algo_obj.identity = identity
-        trading_algo = algo_obj(properties=strategy_conf.get('algorithm', {}))
+        trading_algo = algo_obj(
+            identity=identity,
+            properties=strategy_conf.get('algorithm', {})
+        )
 
         trading_algo.set_logger(dna.logging.logger('algo.' + identity))
 

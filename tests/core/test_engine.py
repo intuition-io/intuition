@@ -11,19 +11,20 @@ import dna.errors
 #from zipline.data.benchmarks import BenchmarkDataNotFoundError
 import intuition.core.engine as engine
 from intuition.errors import InvalidEngine
-from intuition.test_utils import TestAlgorithm
+from intuition.test_framework import TestAlgorithm
 import dna.test_utils
 
 
 # TODO Test standalone run of this engine
+# TODO Test elapsed_time
 class EngineTestCase(unittest.TestCase):
     default_capital_base = 100000.0
 
     def setUp(self):
         dna.test_utils.setup_logger(self)
         self.test_identity = 'test-gekko'
-        self.good_algo = 'intuition.test_utils.TestAlgorithm'
-        self.good_manager = 'intuition.test_utils.TestPortfolio'
+        self.good_algo = 'intuition.test_framework.TestAlgorithm'
+        self.good_manager = 'intuition.test_framework.TestPortfolio'
 
     def tearDown(self):
         dna.test_utils.teardown_logger(self)
@@ -32,10 +33,10 @@ class EngineTestCase(unittest.TestCase):
         eng = engine.TradingEngine(
             self.test_identity,
             {'algorithm': self.good_algo},
-            {})
+            {}
+        )
         eq_(eng.identity, self.test_identity)
         ok_(hasattr(eng, 'logger'))
-        eq_(eng.days, 0)
         eq_(eng.capital_base, self.default_capital_base)
         self.assertIsNone(eng.manager)
         self.assertFalse(eng.auto)
@@ -76,8 +77,8 @@ class SimulationTestCase(unittest.TestCase):
     def setUp(self):
         dna.test_utils.setup_logger(self)
         self.test_identity = 'test-gekko'
-        self.good_algo = 'intuition.test_utils.TestAlgorithm'
-        self.good_manager = 'intuition.test_utils.TestPortfolio'
+        self.good_algo = 'intuition.test_framework.TestAlgorithm'
+        self.good_manager = 'intuition.test_framework.TestPortfolio'
         #self.default_first_date = dt.date(1990, 1, 2)
         #self.default_first_date = dt.date(2008, 6, 25)
         self.default_last_date = (dt.date.today() - pd.datetools.Day()).date()

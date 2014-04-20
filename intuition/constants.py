@@ -1,6 +1,14 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 
+'''
+  Intuition constants
+  -------------------
+
+  :copyright (c) 2014 Xavier Bruhiere
+  :license: Apache 2.0, see LICENSE for more details.
+'''
+
 
 import os
 from schema import Schema, Optional, Or
@@ -18,7 +26,6 @@ DEFAULT_HOME = '/'.join([os.environ.get('HOME', '/'), '.intuition'])
 CONFIG_SCHEMA = Schema({
     'universe': basestring,
     'index': object,
-    Optional('_id'): object,
     # Optional('id'): Use(basestring, error='invalid identity'),
     Optional('id'): basestring,
     Optional('live'): bool,

@@ -7,7 +7,7 @@ import dna.test_utils
 from nose.tools import ok_, eq_
 import pandas as pd
 import intuition.api.context as context
-from intuition.test_utils import FakeContext
+from intuition.test_framework import FakeContext
 
 
 class StorageTestCase(unittest.TestCase):

@@ -4,92 +4,20 @@ Tests for intuition.api.datafeed
 
 import unittest
 from nose.tools import raises, ok_, eq_, nottest
-import random
+from random import random
 import pytz
 import datetime as dt
 import pandas as pd
 import intuition.api.datafeed as datafeed
 from intuition.data.universe import Market
 from intuition.errors import InvalidDatafeed
+from intuition.test_framework import (
+    FakeLiveDatasource,
+    FakeBacktestDatasource,
+    FakePanelBacktestDatasource,
+    FakePanelWithoutVolumeBacktestDatasource
+)
 import dna.test_utils
-
-
-class FakeBacktestDatasource(object):
-
-    def __init__(self, sids, properties):
-        pass
-
-    @property
-    def mapping(self):
-        return {
-            'backtest': (lambda x: True, 'sid'),
-            'dt': (lambda x: x, 'dt'),
-            'sid': (lambda x: x, 'sid'),
-            'price': (float, 'price'),
-            'volume': (int, 'volume'),
-        }
-
-    def get_data(self, sids, start, end):
-        index = pd.date_range(start, end, tz=pytz.utc)
-        return pd.DataFrame({sid: [random.random()] * len(index)
-                            for sid in sids}, index=index)
-
-
-class FakePanelBacktestDatasource(object):
-
-    def __init__(self, sids, properties):
-        pass
-
-    @property
-    def mapping(self):
-        return {
-            'backtest': (lambda x: True, 'sid'),
-            'dt': (lambda x: x, 'dt'),
-            'sid': (lambda x: x, 'sid'),
-            'price': (float, 'price'),
-            'low': (float, 'low'),
-            'high': (float, 'high'),
-            'volume': (int, 'volume'),
-        }
-
-    def get_data(self, sids, start, end):
-        index = pd.date_range(start, end, tz=pytz.utc)
-        fake_data = {}
-        for sid in sids:
-            fake_data[sid] = pd.DataFrame(
-                {field: [random.random()] * len(index)
-                 for field in ['price', 'low', 'high', 'volume']}, index=index)
-        return pd.Panel(fake_data)
-
-
-class FakePanelWithoutVolumeBacktestDatasource(object):
-
-    def __init__(self, sids, properties):
-        pass
-
-    def get_data(self, sids, start, end):
-        index = pd.date_range(start, end, tz=pytz.utc)
-        fake_data = {}
-        for sid in sids:
-            fake_data[sid] = pd.DataFrame(
-                {field: [random.random()] * len(index)
-                 for field in ['price', 'low', 'high']}, index=index)
-        return pd.Panel(fake_data)
-
-
-class FakeLiveDatasource(object):
-
-    def __init__(self, sids, properties):
-        pass
-
-    @property
-    def mapping(self):
-        return {
-            'live': True
-        }
-
-    def get_data(self, sids, start, end):
-        return pd.DataFrame()
 
 
 class DatafeedUtilsTestCase(unittest.TestCase):
@@ -98,11 +26,11 @@ class DatafeedUtilsTestCase(unittest.TestCase):
         dna.test_utils.setup_logger(self)
         self.fake_sid = 'fake_sid'
         self.fake_one_sid_series = pd.Series(
-            {key: random.random() for key in ['low', 'close']})
+            {key: random() for key in ['low', 'close']})
         self.fake_multiple_sids_series = pd.Series(
-            {key: random.random() for key in ['goog', 'fake_sid']})
+            {key: random() for key in ['goog', 'fake_sid']})
         self.fake_multiple_sids_df = pd.DataFrame(
-            {key: {'price': random.random(), 'close': 0.3}
+            {key: {'price': random(), 'close': 0.3}
              for key in ['goog', 'fake_sid']})
         self.fake_date = dt.datetime(2013, 1, 1)
 

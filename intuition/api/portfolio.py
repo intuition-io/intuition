@@ -58,19 +58,19 @@ class PortfolioFactory():
     # mathematical solution) Finally it should be defined how to handle
     # non-correct solutions
 
-    def __init__(self, configuration):
+    def __init__(self, properties):
         self.log = dna.logging.logger(__name__)
         # Other parameters are used in user's optimize() method
-        self._optimizer_parameters = configuration
+        self.properties = properties
 
-        self.initialize(configuration)
+        self.initialize(properties)
 
-    def initialize(self, configuration):
+    def initialize(self, properties):
         ''' Users should overwrite this method '''
         pass
 
     @abc.abstractmethod
-    def optimize(self, date, to_buy, to_sell, parameters):
+    def optimize(self, to_buy={}, to_sell={}):
         ''' Users should overwrite this method '''
         pass
 
@@ -87,15 +87,12 @@ class PortfolioFactory():
         '''
         Process buy and sell signals from the simulation
         '''
-        alloc = {}
-
         if signals['buy'] or signals['sell']:
             # Compute the optimal portfolio allocation,
             # Using user defined function
             try:
                 alloc, e_ret, e_risk = self.optimize(
-                    self.date, signals['buy'], signals['sell'],
-                    self._optimizer_parameters)
+                    signals['buy'], signals['sell'])
             except Exception, error:
                 raise PortfolioOptimizationFailed(
                     reason=error, date=self.date, data=signals)
@@ -107,4 +104,4 @@ class PortfolioFactory():
         (maw_weigth, max_assets, max_frequency, commission cost)
         '''
         for name, value in kwargs.iteritems():
-            self._optimizer_parameters[name] = value
+            self.properties[name] = value

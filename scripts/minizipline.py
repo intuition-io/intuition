@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# NOTE #######################################
+# This file is deprecated but the minizipline is an interesting concept
+# introduced by Mathieu Dous, worth to explore (although this is not a
+# priority). That's why for the time being it remains here.
+# ############################################
+
 from neuronquant.algorithmic.strategies import MarkovGenerator
 import csv
 

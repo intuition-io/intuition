@@ -12,7 +12,7 @@ install:
   - sudo python setup.py install
 
 before_script:
-  - flake8 --ignore E265 intuition tests
+  - pep8 --ignore E265 intuition tests
 script:
   - nosetests -w tests --with-coverage --cover-package=intuition
 

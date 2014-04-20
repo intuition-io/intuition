@@ -7,20 +7,19 @@
 
 
 function usage {
-  program=$1
-  echo "usage : ${program} NASDAQ | NYSE | AMEX"
+  echo "usage : ${1} NASDAQ | NYSE | AMEX"
   exit 1
 }
 
 
 function download() {
   exchange=$1
-  output="${QTRADE}/data/${exchange}.csv"
+  destination="${OUTPUT}/${exchange}.csv"
 
-  wget -q -O ${output} \
+  wget -qO- ${destination} \
     "http://www.nasdaq.com/screening/companies-by-industry.aspx?exchange=${exchange}&render=download"
 }
 
 [ $# -ne 1 ] && usage $0
-[ -z ${QTRADE} ] && export QTRADE=/tmp
+[ -z ${OUTPUT} ] && export OUTPUT=$HOME/.intuition/data
 download $1

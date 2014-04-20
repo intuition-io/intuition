@@ -17,6 +17,7 @@ import pandas as pd
 from pandas.io.data import DataReader, get_quote_yahoo
 import dna.logging
 from intuition.constants import FINANCE_URLS
+import intuition.data.ystockquote as ystockquote
 from intuition.data.utils import (
     use_google_symbol, invert_dataframe_axis, apply_mapping)
 
@@ -106,3 +107,29 @@ def lookup_symbol(company):
     request = requests.get(FINANCE_URLS['info_lookup'].format(company))
     return json.loads(request.text[39:-1])["ResultSet"]["Result"] \
         if request.ok else {'error': request.reason}
+
+
+def fill_stock_metadata(sid):
+    ''' Fetch extra informations about a stock, from yahoo '''
+    metadata = {}
+    try:
+        metadata['name'] = ystockquote.get_company_name(sid)
+    except Exception, error:
+        log.error(error)
+        log.warning('sometimes it just times out, retry later')
+        return {}
+
+    metadata['exchange'] = ystockquote.get_stock_exchange(sid)
+    if metadata['exchange'].find('Nasdaq') > 0:
+        # It returns NasdaqNM
+        metadata['exchange'] = 'Nasdaq'
+    metadata['type'] = ystockquote.get_type(sid)
+    metadata['revenue'] = ystockquote.get_revenue(sid)
+    #FIXME Almost never found
+    #metadata['index'] = ystockquote.get_indices(sid)
+    metadata['sector'] = ystockquote.get_sector(sid)
+    metadata['industry'] = ystockquote.get_industry(sid)
+
+    log.debug('successfully fetched metadata about {}'.format(sid))
+    log.debug(dna.debug.emphasis(metadata))
+    return metadata

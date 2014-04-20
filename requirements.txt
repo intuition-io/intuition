@@ -12,5 +12,5 @@ requests==2.2.1
 six==1.6.1
 PyYAML==3.11
 dna==0.0.3
--e git+https://github.com/pydata/pandas.git@master#egg=pandas-0.13.0-27-gf7aeaeb
+pandas==0.13.1
 -e git+https://github.com/quantopian/zipline.git@master#egg=zipline-0.5.11.dev

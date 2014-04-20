@@ -13,6 +13,7 @@
 
 import os
 import argparse
+import pytz
 from schematics.types import StringType, URLType
 import dna.logging
 import dna.utils
@@ -93,6 +94,9 @@ class Context(object):
         try:
             # Check if needed informations are here
             assert intuition.constants.CONFIG_SCHEMA.validate(config)
+            # Index Check
+            assert config['index'].size, 'No trading timeline'
+            assert (config['index'].tzinfo == pytz.utc), 'Invalid timezone'
         except Exception as error:
             raise InvalidConfiguration(config=config, reason=error)
 

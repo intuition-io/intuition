@@ -29,5 +29,5 @@ build:
         - script:
             name: run tests
             code: |
-              flake8 --ignore E265 tests intuition
+              pep8 --ignore E265 tests intuition
               nosetests -w tests

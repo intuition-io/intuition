@@ -9,7 +9,7 @@ pip install --quiet --use-mirrors numpy
 pip install --use-mirrors --upgrade intuition
 
 if [ -n "$FULL_INTUITION" ]; then
-  apt-get install -y r-base libssl-dev
+  apt-get install -y r-base libssl-dev libreadline-dev
   pip install --use-mirrors --upgrade insights
   # Install R libraries
   wget -qO- http://bit.ly/L39jeY | R --no-save

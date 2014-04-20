@@ -5,7 +5,7 @@ Tests for intuition.api.portfolio
 import unittest
 from nose.tools import raises, ok_, eq_
 import intuition.api.portfolio as portfolio
-from intuition.test_utils import TestPortfolio
+from intuition.test_framework import TestPortfolio
 import dna.test_utils
 
 
@@ -49,10 +49,10 @@ class PortfolioTestCase(unittest.TestCase):
         ok_(self.pf.initialized)
 
     def test_portfolio_config(self):
-        eq_(self.pf._optimizer_parameters, self.test_config)
+        eq_(self.pf.properties, self.test_config)
 
     def test_advise_portfolio(self):
-        eq_(self.pf._optimizer_parameters, self.test_config)
+        eq_(self.pf.properties, self.test_config)
         self.pf.advise(
             test=True, profile='fearless', favorites=['goog', 'aapl'])
         self.test_config.update({
@@ -60,7 +60,7 @@ class PortfolioTestCase(unittest.TestCase):
             'profile': 'fearless',
             'favorites': ['goog', 'aapl']
         })
-        eq_(self.pf._optimizer_parameters, self.test_config)
+        eq_(self.pf.properties, self.test_config)
 
     def test_update_portfolio_state(self):
         self.assertIsNone(self.pf.date)
@@ -78,15 +78,13 @@ class PortfolioTestCase(unittest.TestCase):
 
     def test_overload_optimize(self):
         alloc, e_ret, e_risk = self.pf.optimize(
-            date='2014/12/25',
             to_buy={'su.pa': 34.5},
-            to_sell={'tec.pa': 45.4},
-            parameters={}
+            to_sell={'tec.pa': 45.4}
         )
         eq_(e_ret, 0)
         eq_(e_risk, 1)
-        eq_(alloc['date'], '2014/12/25')
         eq_(alloc['buy'], {'su.pa': 34.5})
+        self.assertIsNone(alloc['date'])
 
     def test_trade_signals_handler(self):
         signals = {

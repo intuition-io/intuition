@@ -1,6 +1,6 @@
 
 {
-  "universe": "nasdaq,5",
+  "universe": "stocks:paris:cac40,5",
   "end": "17h30",
   "modules": {
     "manager": "insights.managers.fair.Fair",
@@ -13,7 +13,7 @@
     "hipchat": false,
     "notify": false,
     "interactive": false,
-    "save": false,
+    "save": false
   },
   "manager": {
     "cash": 10000,

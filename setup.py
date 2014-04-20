@@ -1,18 +1,14 @@
 #!/usr/bin/env python
-#
-# Copyright 2014 Xavier Bruhiere
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
+
+'''
+  Packaging
+  ---------
+
+  :copyright (c) 2014 Xavier Bruhiere
+  :license: Apache 2.0, see LICENSE for more details.
+'''
 
 import os
 from glob import glob
@@ -47,7 +43,7 @@ requires = [
     'requests>=2.2.1',
     'six>=1.6.1',
     'zipline>=0.5.11.dev',
-    'pandas>=0.13.0.dev']
+    'pandas>=0.13.1']
 
 
 def long_description():
@@ -92,7 +88,6 @@ setup(
         (os.path.expanduser('~/.intuition/logs'), glob('./MANIFEST.in'))
     ],
     dependency_links=[
-        'http://github.com/pydata/pandas/tarball/master#egg=pandas-0.13.0.dev',
         'http://github.com/quantopian/zipline/tarball/master#egg=zipline-0.5.11.dev'
     ]
 )

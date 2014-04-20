@@ -1,6 +1,14 @@
 Intuition
 =========
 
+[![Latest Version](https://pypip.in/v/intuition/badge.png)](https://pypi.python.org/pypi/intuition/)
+[![Build Status](https://drone.io/github.com/hackliff/intuition/status.png)](https://drone.io/github.com/hackliff/intuition/latest)
+[![Coverage Status](https://coveralls.io/repos/hackliff/intuition/badge.png)](https://coveralls.io/r/hackliff/intuition)
+[![Code Health](https://landscape.io/github/hackliff/intuition/master/landscape.png)](https://landscape.io/github/hackliff/intuition/master)
+[![License](https://pypip.in/license/intuition/badge.png)](https://pypi.python.org/pypi/intuition/)
+[![Gitter chat](https://badges.gitter.im/intuition-io.png)](https://gitter.im/intuition-io)
+
+
 > Quantitative trading kit, for hackers
 
 
@@ -53,16 +61,6 @@ Features
   [wercker](http://wercker.com), [shippable](http://shippable.com),
   [drone.io](https://drone.io), [coveralls](https://coveralls.io) and
   [landscape](https://landscape.io)
-
-
-Status
-------
-
-[![Latest Version](https://pypip.in/v/intuition/badge.png)](https://pypi.python.org/pypi/intuition/)
-[![Build Status](https://drone.io/github.com/hackliff/intuition/status.png)](https://drone.io/github.com/hackliff/intuition/latest)
-[![Coverage Status](https://coveralls.io/repos/hackliff/intuition/badge.png)](https://coveralls.io/r/hackliff/intuition)
-[![Code Health](https://landscape.io/github/hackliff/intuition/master/landscape.png)](https://landscape.io/github/hackliff/intuition/master)
-[![License](https://pypip.in/license/intuition/badge.png)](https://pypi.python.org/pypi/intuition/)
 
 
 Getting started
