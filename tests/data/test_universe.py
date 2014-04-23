@@ -5,9 +5,60 @@ Tests for intuition.data.universe
 import os
 import unittest
 from nose.tools import raises, eq_
+import pytz
+import pandas as pd
+import datetime as dt
 import dna.test_utils
 import intuition.data.universe as universe
 from intuition.errors import LoadMarketSchemeFailed
+
+
+# TODO Test parse, parse_punctual, parse_constant_frequency
+class TickTestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.default_tz = 'UTC'
+        self.default_delta = dt.timedelta(hours=1)
+        self.default_start = pd.datetools.normalize_date(
+            dt.datetime.now(tz=pytz.utc))
+        self.default_end = pd.datetools.normalize_date(
+            self.default_start + dt.timedelta(days=1))
+
+    def test_default_new_tick(self):
+        tick_ = universe.Tick()
+        eq_(tick_.delta, self.default_delta)
+        eq_(tick_.start, self.default_start)
+        eq_(tick_.end, self.default_end)
+        eq_(tick_._tz, self.default_tz)
+
+    def test_tack_generator(self):
+        tick_ = universe.Tick()
+        dates = [date for date in tick_.tack]
+        eq_(dates, filter(lambda x: isinstance(x, dt.datetime), dates))
+        eq_(dates, filter(lambda x: x.tzinfo == pytz.utc, dates))
+        eq_(dates[0], tick_.start)
+        self.assertLessEqual(dates[-1], tick_.end)
+
+    def test_trick_new_tick_params(self):
+        now = dt.datetime.now(tz=pytz.utc)
+        custom_start = now - dt.timedelta(hours=5)
+        custom_end = now + dt.timedelta(hours=5)
+        tick_ = universe.Tick(
+            start=custom_start,
+            end=custom_end,
+            delta=dt.timedelta(minutes=33),
+            tz='Europe/Paris'
+        )
+        eq_(tick_.delta, dt.timedelta(minutes=33))
+        eq_(tick_.start, custom_start)
+        eq_(tick_.end, custom_end)
+        eq_(tick_._tz, 'Europe/Paris')
+
+        dates = [date for date in tick_.tack]
+        eq_(dates, filter(lambda x: isinstance(x, dt.datetime), dates))
+        eq_(dates, filter(lambda x: x.tzinfo == pytz.utc, dates))
+        eq_(dates[0], tick_.start)
+        self.assertLessEqual(dates[-1], tick_.end)
 
 
 class MarketTestCase(unittest.TestCase):

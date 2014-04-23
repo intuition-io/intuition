@@ -79,12 +79,10 @@ class Context(object):
         self._validate(config)
 
         # From a human input (forex,4), setup a complete market structure
-        market = universe.Market()
-        market.parse_universe_description(config.pop('universe'))
-        # Remove holidays and other market closed periods
-        config['index'] = market.filter_open_days(config['index'])
+        market_ = universe.Market()
+        market_.parse_universe_description(config.pop('universe'))
 
-        return {'config': config, 'strategy': strategy, 'market': market}
+        return {'config': config, 'strategy': strategy, 'market': market_}
 
     def __exit__(self, type, value, traceback):
         pass

@@ -43,10 +43,9 @@ def parse_storage(storage):
 
 class ContextFactory():
     '''
-    Contexts loader gives to intuition everything it needs to know about user
+    Context loaders give to Intuition everything it needs to know about user
     configuration. It also provides some methods to make the setup process
-    easier (like the interpreting the shortcut 'nasdaq,6' into 6 random symbols
-    from nasdaq exchange).
+    easier.
     '''
 
     __metaclass__ = abc.ABCMeta

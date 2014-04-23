@@ -12,14 +12,15 @@
   :license: Apache 2.0, see LICENSE for more details.
 '''
 
-
+#import pytz
+#import datetime as dt
 import pandas as pd
-from datetime import timedelta
 import dna.logging
 from zipline.sources.data_source import DataSource
 from zipline.gens.utils import hash_args
 import intuition.utils as utils
 from intuition.errors import LoadDataFailed, InvalidDatafeed
+import intuition.data.universe as universe
 
 
 def _build_safe_event(event, date, sid):
@@ -32,11 +33,19 @@ def _build_safe_event(event, date, sid):
 
 
 def _check_data_modules(backtest, live, start, end):
-    # TODO Fails if the class as no get_data method
-    # TODO Fails if no backtest for past dates and same for live
+    # TODO Fails if the class has no get_data method
     if not backtest and not live:
         raise InvalidDatafeed(
             reason='provide at least a backtest or a live data module')
+
+    if not backtest and not utils.is_live(start):
+        raise InvalidDatafeed(
+            reason='no backtest data source provided for past dates')
+
+    if not live and utils.is_live(end):
+        raise InvalidDatafeed(
+            reason='no live data source provided for futur dates')
+
     return True
 
 
@@ -67,9 +76,11 @@ class HybridDataFactory(DataSource):
         self.start = self.index[0]
         self.end = self.index[-1]
 
-        self.frequency = float(kwargs.get('frequency', 14))
+        #self.frequency = float(kwargs.get('frequency', 14))
+        self.frequency = kwargs.get('frequency', 'at opening')
         self.market_open = kwargs['universe'].open
         self.market_close = kwargs['universe'].close
+        self.market_timezone = kwargs['universe'].timezone
 
         if 'backtest' in kwargs:
             self.backtest = kwargs['backtest'](self.sids, kwargs)
@@ -88,10 +99,6 @@ class HybridDataFactory(DataSource):
             return self.live.mapping
         else:
             return self.backtest.mapping
-
-    def _set_next_tick(self, date):
-        ''' Use self.freq and the given date to deduce the next event hour '''
-        return date + timedelta(hours=self.frequency)
 
     def _get_backtest_data(self):
         # The first date is usually a few seconds before now,
@@ -122,7 +129,8 @@ class HybridDataFactory(DataSource):
                      for sid, price in dated_data.iterkv()})
 
         else:
-            midnight_date = date.replace(hour=0, minute=0)
+            #midnight_date = date.replace(hour=0, minute=0)
+            midnight_date = pd.datetools.normalize_date(date)
             if n_axes == 2:
                 if midnight_date in data.index:
                     dated_data = pd.DataFrame(
@@ -142,13 +150,18 @@ class HybridDataFactory(DataSource):
 
         for date in self.index:
             backtest_is_done = False
-            date = date.replace(hour=self.market_open.hour,
-                                minute=self.market_open.minute)
+            #date = date.replace(hour=self.market_open.hour,
+            open_hour = date.replace(hour=self.market_open.hour,
+                                     minute=self.market_open.minute)
             close_hour = date.replace(hour=self.market_close.hour,
                                       minute=self.market_close.minute)
 
+            tick_ = universe.Tick(
+                start=open_hour, end=close_hour, tz=self.market_timezone)
+            tick_.parse(self.frequency)
+
             # Trade until the end of the trading day
-            while date < close_hour:
+            for date in tick_.tack:
                 # Set to opening of the market
                 self.log.debug('--> next tick {}'.format(date))
                 # NOTE Make _is_live a property ?
@@ -164,9 +177,6 @@ class HybridDataFactory(DataSource):
 
                         yield _build_safe_event(series.to_dict(), date, sid)
                     backtest_is_done = True
-
-                # Done for this event, when is the next ?
-                date = self._set_next_tick(date)
 
     @property
     def instance_hash(self):

@@ -32,7 +32,7 @@ class DatafeedUtilsTestCase(unittest.TestCase):
         self.fake_multiple_sids_df = pd.DataFrame(
             {key: {'price': random(), 'close': 0.3}
              for key in ['goog', 'fake_sid']})
-        self.fake_date = dt.datetime(2013, 1, 1)
+        self.fake_date = dt.datetime(2013, 1, 1, tzinfo=pytz.utc)
 
     def tearDown(self):
         dna.test_utils.teardown_logger(self)
@@ -67,10 +67,32 @@ class DatafeedUtilsTestCase(unittest.TestCase):
         wrong_type = bool
         datafeed._build_safe_event(wrong_type, self.fake_date, self.fake_sid)
 
-    def test_check_data_modules(self):
+    def test_check_backtest_data_modules(self):
         end = self.fake_date + pd.datetools.MonthBegin(6)
         ok_(datafeed._check_data_modules(
             'backtest.module', None, self.fake_date, end))
+
+    def test_check_live_data_modules(self):
+        start = dt.datetime.now(pytz.utc) + pd.datetools.timedelta(days=1)
+        end = start + pd.datetools.MonthBegin(6)
+        ok_(datafeed._check_data_modules(
+            None, 'live.module', start, end))
+
+    def test_check_hybride_data_modules(self):
+        end = self.fake_date + pd.datetools.MonthBegin(36)
+        ok_(datafeed._check_data_modules(
+            'backtest.module', 'live.module', self.fake_date, end))
+
+    @raises(InvalidDatafeed)
+    def test_check_data_modules_missing_backtest(self):
+        end = self.fake_date + pd.datetools.MonthBegin(36)
+        datafeed._check_data_modules(None, 'live.module', self.fake_date, end)
+
+    @raises(InvalidDatafeed)
+    def test_check_data_modules_missing_live(self):
+        start = dt.datetime.now(pytz.utc) + pd.datetools.timedelta(days=1)
+        end = start + pd.datetools.MonthBegin(36)
+        datafeed._check_data_modules('backtest.module', None, start, end)
 
     @raises(InvalidDatafeed)
     def test_check_data_modules_all_nones(self):
@@ -78,6 +100,7 @@ class DatafeedUtilsTestCase(unittest.TestCase):
         datafeed._check_data_modules(None, None, self.fake_date, end)
 
 
+# TODO Test data source generator
 class HybridDataFactoryTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -127,6 +150,15 @@ class HybridDataFactoryTestCase(unittest.TestCase):
             backtest=FakeBacktestDatasource)
         self._check_datasource(source)
 
+    def test_custom_freq_data_source(self):
+        source = datafeed.HybridDataFactory(
+            universe=self.market,
+            index=self.test_index,
+            backtest=FakeBacktestDatasource,
+            frequency='at opening')
+        self._check_datasource(source)
+        eq_('at opening', source.frequency)
+
     def test_hybrid_mapping(self):
         source = datafeed.HybridDataFactory(
             universe=self.market,
@@ -140,6 +172,7 @@ class HybridDataFactoryTestCase(unittest.TestCase):
 
 
 # TODO Test Live data sources
+# TODO Test custom frequency sources
 class SpecificMarketDataFactoryTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -165,7 +198,7 @@ class SpecificMarketDataFactoryTestCase(unittest.TestCase):
                     sorted(row.keys()),
                     sorted(['dt', 'price', 'sid', 'volume']))
             total_rows += 1
-        eq_(total_rows, 2 * len(self.test_index) * len(market.sids))
+        eq_(total_rows, len(self.test_index) * len(market.sids))
 
     def test_dataframe_cac40_backtest_data_generation(self):
         test_universe = 'stocks:paris:cac40'

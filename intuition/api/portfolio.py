@@ -58,10 +58,10 @@ class PortfolioFactory():
     # mathematical solution) Finally it should be defined how to handle
     # non-correct solutions
 
-    def __init__(self, properties):
+    def __init__(self, properties=None):
         self.log = dna.logging.logger(__name__)
         # Other parameters are used in user's optimize() method
-        self.properties = properties
+        self.properties = properties or {}
 
         self.initialize(properties)
 
@@ -87,15 +87,15 @@ class PortfolioFactory():
         '''
         Process buy and sell signals from the simulation
         '''
-        if signals['buy'] or signals['sell']:
-            # Compute the optimal portfolio allocation,
-            # Using user defined function
+        buy_sig, sell_sig = signals.get('buy', {}), signals.get('sell', {})
+        if buy_sig or sell_sig:
+            # Compute optimal portfolio allocation, Using user defined function
             try:
-                alloc, e_ret, e_risk = self.optimize(
-                    signals['buy'], signals['sell'])
+                alloc, e_ret, e_risk = self.optimize(buy_sig, sell_sig)
             except Exception, error:
                 raise PortfolioOptimizationFailed(
                     reason=error, date=self.date, data=signals)
+
         return _remove_useless_orders(alloc)
 
     def advise(self, **kwargs):

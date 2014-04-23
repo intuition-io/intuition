@@ -1,16 +1,34 @@
 language: python
 python:
   - "2.7"
-before_script: mkdir -p shippable/codecoverage shippable/testresults
-install:
+
+env:
+  - COVERALLS_REPO_TOKEN=bcZSpPjEqwx3oyzzFvdONvpFM6IXOcAYd
+
+before_install:
   - sudo apt-get -y install python-pip python-dev g++ make gfortran
-  - pip install --quiet --upgrade --use-mirrors numpy cython
-  - pip install --use-mirrors -r dev-requirements.txt
+  - pip install --quiet --use-mirrors numpy cython
+
+install:
   - python setup.py install
+  - pip install --use-mirrors -r dev-requirements.txt
+
+before_script:
+  - mkdir -p shippable/codecoverage shippable/testresults
+  - pep8 --ignore E265 intuition tests
+
 script:
-  - pep8 --ignore E265 tests intuition
   - nosetests tests --with-coverage --cover-package=intuition --with-xunit --xunit-file=shippable/testresults/nosetests.xml
   - coverage xml -o shippable/codecoverage/coverage.xml
+
+after_success:
+  - coveralls
+
 notifications:
   mail:
     xavier.bruhiere@gmail.com
+
+branches:
+  only:
+    - master
+    - develop

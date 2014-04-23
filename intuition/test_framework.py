@@ -151,10 +151,10 @@ def build_fake_hybridDataFactory(start='2012/01/01',
                                  end='2012/01/07',
                                  universe='forex,3'):
     test_index = pd.date_range(start, end, tz=pytz.utc)
-    market = Market()
-    market.parse_universe_description(universe)
+    market_ = Market()
+    market_.parse_universe_description(universe)
     return HybridDataFactory(
-        universe=market,
+        universe=market_,
         index=test_index,
         backtest=FakeBacktestDatasource
     )

@@ -16,11 +16,12 @@
 
 import abc
 import datetime as dt
-from zipline.algorithm import TradingAlgorithm
-from intuition.errors import AlgorithmEventFailed
+import zipline.algorithm
+import intuition.errors
 
 
-class TradingFactory(TradingAlgorithm):
+#pylint: disable=R0921
+class TradingFactory(zipline.algorithm.TradingAlgorithm):
     '''
     Intuition surcharge of main zipline class, but fully compatible.  Its role
     is slightly different : the user will eventually expose an event() method
@@ -32,34 +33,39 @@ class TradingFactory(TradingAlgorithm):
 
     __metaclass__ = abc.ABCMeta
 
-    sids = []
-    middlewares = []
-    auto = False
-    manager = None
+    def __init__(self, identity='johndoe', properties=None):
+        # Attributes initialization
+        self.sids = []
+        self.middlewares = []
+        self.auto = False
+        self.manager = None
+        self.initialized = False
+        self.orderbook = {}
 
-    def __init__(self, identity='johndoe', properties={}):
+        # User customized attributes
+        safe_properties = properties or {}
         self.identity = identity
-        self.realworld = properties.get('realworld')
-        TradingAlgorithm.__init__(self, properties=properties)
+        self.realworld = safe_properties.get('realworld')
+        zipline.algorithm.TradingAlgorithm.__init__(
+            self, properties=safe_properties)
 
     def _is_interactive(self):
         ''' Prevent middlewares and orders to work outside live mode '''
-        return not (
-            self.realworld and (dt.date.today() > self.datetime.date()))
+        return not (self.realworld and
+                    dt.date.today() > self.datetime.date())
 
-    def use(self, func, when='whenever'):
+    def use(self, func):
         ''' Append a middleware to the algorithm '''
-        #NOTE A middleware Object ?
+        # NOTE A middleware Object ?
         # self.use() is usually called from initialize(), so no logger yet
-        print('registering middleware {}'.format(func.__name__))
+        print 'registering middleware {}'.format(func.__name__)
         self.middlewares.append({
             'call': func,
             'name': func.__name__,
-            'args': func.func_code.co_varnames,
-            'when': when
+            'args': func.func_code.co_varnames
         })
 
-    #NOTE I'm not superfan of initialize + warm
+    # NOTE I'm not superfan of initialize + warm
     def warm(self, data):
         ''' Called at the first handle_data frame '''
         pass
@@ -80,7 +86,7 @@ class TradingFactory(TradingAlgorithm):
             # Keep the portfolio aware of the situation
             self.manager.update(
                 self.portfolio,
-                self.datetime,
+                self.get_datetime(),
                 self.perf_tracker.cumulative_risk_metrics.to_dict())
         else:
             # Perf_tracker needs at least a turn to have an index
@@ -94,12 +100,12 @@ class TradingFactory(TradingAlgorithm):
         except Exception, error:
             # NOTE Temporary debug. Will probably notify the error and go on
             # with signals={}
-            raise AlgorithmEventFailed(
-                reason=error, date=self.datetime, data=data)
+            raise intuition.errors.AlgorithmEventFailed(
+                reason=error, date=self.get_datetime(), data=data)
 
         # One can process orders within the alogrithm and don't return anything
         if signals and self.manager:
-            if (signals.get('buy') or signals.get('sell')):
+            if signals.get('buy') or signals.get('sell'):
                 self.orderbook = self.manager.trade_signals_handler(signals)
                 if self.auto and self._is_interactive():
                     self.process_orders(self.orderbook)
@@ -114,7 +120,7 @@ class TradingFactory(TradingAlgorithm):
         sophisticated strategies '''
         for stock, alloc in orderbook.iteritems():
             self.logger.info('{}: Ordered {} {} stocks'.format(
-                self.datetime, stock, alloc))
+                self.get_datetime(), stock, alloc))
             if isinstance(alloc, int):
                 self.order(stock, alloc)
             elif isinstance(alloc, float) and \
@@ -127,7 +133,7 @@ class TradingFactory(TradingAlgorithm):
 
     @property
     def elapsed_time(self):
-        return self.datetime - self.portfolio.start_date
+        return self.get_datetime() - self.portfolio.start_date
 
     def _call_one_middleware(self, middleware):
         ''' Evaluate arguments and execute the middleware function '''
@@ -140,13 +146,8 @@ class TradingFactory(TradingAlgorithm):
                           .format(middleware['name']))
         middleware['call'](**args)
 
-    def _check_condition(self, when):
-        ''' Verify that the middleware condition is True '''
-        #TODO Use self.datetime to evaluate <when>
-        return True
-
     def _call_middlewares(self):
         ''' Execute the middleware stack '''
         for middleware in self.middlewares:
-            if self._check_condition(middleware['when']):
-                self._call_one_middleware(middleware)
+            # TODO Call upon datetime conditions
+            self._call_one_middleware(middleware)
