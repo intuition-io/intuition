@@ -29,14 +29,14 @@ class QuandlTestCase(unittest.TestCase):
     def test_initialize_quandl_with_key(self):
         fake_api_key = 'fake'
         qdl = quandl.DataQuandl(fake_api_key)
-        eq_(fake_api_key, qdl.quandl_key)
+        eq_(fake_api_key, qdl.api_key)
 
     def test_initialize_quandl_with_environ(self):
         os.environ['QUANDL_API_KEY'] = 'fake'
         qdl = quandl.DataQuandl()
-        eq_('fake', qdl.quandl_key)
+        eq_('fake', qdl.api_key)
 
     def test_initialize_quandl_without_key(self):
         os.environ.pop('QUANDL_API_KEY', None)
         qdl = quandl.DataQuandl()
-        self.assertIsNone(qdl.quandl_key)
+        self.assertIsNone(qdl.api_key)

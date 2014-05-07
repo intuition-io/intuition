@@ -1,36 +1,43 @@
 ---
-forex:
-  timezone: 'UTC'
-  benchmark: null
-  open: 00h01
-  close: 23h59
-  pairs:
-    - eur/usd
-    - usd/jpy
-    - gbp/usd
-    - eur/gbp
-    - usd/chf
-    - eur/jpy
-    - eur/chf
-    - usd/cad
-    - aud/usd
-    - gbp/jpy
-    - aud/cad
-    - aud/chf
-    - aud/jpy
-    - aud/nzd
-    - cad/chf
-    - chf/jpy
-    - eur/aud
-    - eur/cad
-    - eur/nok
-    - eur/nzd
-    - gbp/cad
-    - gbp/chf
-    - nzd/jpy
-    - nzd/usd
-    - usd/nok
-    - usd/sek
+currencies:
+  bitcoin:
+    timezone: 'UTC'
+    benchmark: null
+    open: 00h01
+    close: 23h59
+    quandl_url: http://www.quandl.com/help/api-for-bitcoin-data
+  forex:
+    timezone: 'UTC'
+    benchmark: null
+    open: 00h01
+    close: 23h59
+    pairs:
+      - eur/usd
+      - usd/jpy
+      - gbp/usd
+      - eur/gbp
+      - usd/chf
+      - eur/jpy
+      - eur/chf
+      - usd/cad
+      - aud/usd
+      - gbp/jpy
+      - aud/cad
+      - aud/chf
+      - aud/jpy
+      - aud/nzd
+      - cad/chf
+      - chf/jpy
+      - eur/aud
+      - eur/cad
+      - eur/nok
+      - eur/nzd
+      - gbp/cad
+      - gbp/chf
+      - nzd/jpy
+      - nzd/usd
+      - usd/nok
+      - usd/sek
 stocks:
     paris:
       # Temporary, Paris not supported
@@ -40,9 +47,9 @@ stocks:
       code: epa
       benchmark: fchi
       cac40:
-        #fp:
-          #name: Total
-          #sector: oil
+        fp:
+          name: Total
+          sector: oil
         vk:
           name: Vallourec
           sector: engineering
@@ -55,9 +62,9 @@ stocks:
         or:
           name: L'Oréal
           sector: home,hygiene
-        #edf:
-          #name: EDF - Electricite De France
-          #sector: energy,public utility
+        edf:
+          name: EDF - Electricite De France
+          sector: energy,public utility
         viv:
           name: Vivendi
           sector: medias
@@ -70,24 +77,24 @@ stocks:
         ri:
           name: Pernod-Ricard
           sector: food,drink
-        #bn:
-          #name: Danone
-          #sector: food,drink
+        bn:
+          name: Danone
+          sector: food,drink
         ead:
           name: Airbus Group
           sector: transport
-        #ef:
-          #name: Essilor International
-          #sector: services
+        ei:
+          name: Essilor International
+          sector: services
         saf:
           name: Safran
           sector: engineering
         #gsz:
           #name: GDF Suez
           #sector: gaz,electricity,public,services
-        #lr1:
-          #name: Legrand
-          #sector: electronic
+        lr:
+          name: Legrand
+          sector: electronic
         san:
           name: Sanofi
           sector: pharmacy
@@ -97,24 +104,24 @@ stocks:
         sgo:
           name: Saint-Gobain
           sector: engineering
-        #gt1:
-          #name: Gemalto
-          #sector: electronic
+        gto:
+          name: Gemalto
+          sector: electronic
         ai:
           name: Air Liquide
           sector: chemistry
-        #vie:
-          #name: Veolia Environment
-          #sector: gaz,electricity,services
-        #mv:
-          #name: LVMH - Moet Hennessy Louis Vuitton
-          #sector: sell
+        vie:
+          name: Veolia Environment
+          sector: gaz,electricity,services
+        mc:
+          name: LVMH - Moet Hennessy Louis Vuitton
+          sector: sell
         pub:
           name: Publicis Groupe
           sector: medias
-        #dg:
-          #name: Vinci
-          #sector: engineering
+        dg:
+          name: Vinci
+          sector: engineering
         #pp:
           #name: Kering
           #sector: construction,materials,real estate
@@ -124,12 +131,12 @@ stocks:
         rno:
           name: Renault
           sector: automobile
-        #cap:
-          #name: Cap Gemini
-          #sector: information technology
-        #alu:
-          #name: Alcatel-Lucent
-          #sector: telecommunications
+        cap:
+          name: Cap Gemini
+          sector: information technology
+        alu:
+          name: Alcatel-Lucent
+          sector: telecommunications
         alo:
           name: Alstom
           sector: engineering
@@ -139,27 +146,27 @@ stocks:
         #fte:
           #name: Orange
           #sector: telecommunications
-        #ca:
-          #name: Carrefour
-          #sector: sell
-        #bnp:
-          #name: BNP Paribas
-          #sector: finance
-        #gle:
-          #name: Societe Generale
-          #sector: finance
-        #aca:
-          #name: Credit agricole
-          #sector: finance
+        ca:
+          name: Carrefour
+          sector: sell
+        bnp:
+          name: BNP Paribas
+          sector: finance
+        gle:
+          name: Societe Generale
+          sector: finance
+        aca:
+          name: Credit agricole
+          sector: finance
         lg:
           name: Lafarge
           sector: construction,materials,real estate
         en:
           name: Bouygues
           sector: engineering
-        #ac:
-          #name: Accor
-          #sector: services
+        ac:
+          name: Accor
+          sector: services
       sbf120: []
       srd: []
     nasdaq:

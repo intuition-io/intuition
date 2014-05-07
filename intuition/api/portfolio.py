@@ -62,8 +62,7 @@ class PortfolioFactory():
         self.log = dna.logging.logger(__name__)
         # Other parameters are used in user's optimize() method
         self.properties = properties or {}
-
-        self.initialize(properties)
+        self.initialize(self.properties)
 
     def initialize(self, properties):
         ''' Users should overwrite this method '''

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 
@@ -24,7 +23,7 @@ def get_requirements():
         deps = requirements.read().split('\n')[:-3]
         deps.append('zipline>=0.5.11.dev')
         deps.append('pandas>=0.13.0.dev')
-        return deps
+    return deps
 
 
 requires = [
@@ -34,16 +33,17 @@ requires = [
     'ystockquote',
     'numpy>=1.8.1',
     'schematics>=0.9-4',
-    'schema==0.3.0',
+    'schema==0.3.1',
     'python-dateutil>=2.2',
     'pytz>=2014.2',
     'PyYAML>=3.11',
     'Quandl>=1.9.7',
-    'dna>=0.0.3',
+    'dna>=0.0.4',
     'requests>=2.2.1',
     'six>=1.6.1',
     'zipline>=0.5.11.dev',
-    'pandas>=0.13.1']
+    'pandas>=0.13.1'
+]
 
 
 def long_description():

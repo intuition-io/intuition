@@ -44,7 +44,7 @@ def invert_dataframe_axis(fct):
     return inner
 
 
-#NOTE with_market symbol, build jxr.pa => JXR:EPA
+# NOTE with_market symbol, build jxr.pa => JXR:EPA
 def use_google_symbol(fct):
     '''
     Removes ".PA" or other market indicator from yahoo symbol
@@ -64,7 +64,35 @@ def use_google_symbol(fct):
                 symbol[:dot_pos] if (dot_pos > 0) else symbol)
 
         data = fct(google_symbols)
-        #NOTE Not very elegant
+        # NOTE Not very elegant
         data.columns = [s for s in symbols if s.split('.')[0] in data.columns]
         return data
     return decorator
+
+
+def fractionate_request(fct):
+    def inner(symbols, **kwargs):
+        tolerance_window = 10
+        cursor = 0
+        data = {}
+        df = pd.DataFrame()
+        while cursor < len(symbols):
+            if cursor + tolerance_window > len(symbols):
+                limit = len(symbols)
+            else:
+                limit = cursor + tolerance_window
+            symbols_fraction = symbols[cursor:limit]
+            cursor += tolerance_window
+            data_fraction = fct(symbols_fraction, **kwargs)
+            for sid, df in data_fraction.iteritems():
+                if not df.empty:
+                    data[sid] = df
+
+        if isinstance(df, pd.Series):
+            data = pd.DataFrame(data)
+        elif isinstance(df, pd.DataFrame):
+            data = pd.Panel(data)
+        else:
+            raise NotImplementedError(type(df))
+        return data.fillna(method='pad')
+    return inner

@@ -98,10 +98,9 @@ class ContextLoadTestCase(unittest.TestCase):
 
     def test_loaded_configuration(self):
         with configuration.Context(self.good_driver) as context:
+            self.assertIn('index', context['config'])
             for field in ['manager', 'algorithm', 'data']:
                 self.assertIn(field, context['strategy'])
-            for field in ['index', 'live']:
-                self.assertIn(field, context['config'])
 
     @raises(DynamicImportFailed)
     def test_absent_driver_context_load(self):

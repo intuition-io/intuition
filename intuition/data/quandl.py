@@ -20,6 +20,11 @@ import intuition.data.utils as utils
 log = dna.logging.logger(__name__)
 
 
+# http://www.quandl.com/help/api-for-bitcoin-data
+BITCOIN_CODE = 'BITCOIN/{market}{currency}'
+YAHOO_PARIS_CODE = 'YAHOO/PA_{symbol}'
+
+
 def _build_quandl_code(symbol):
     dot_pos = symbol.find('.')
     slash_pos = symbol.find('/')
@@ -41,61 +46,55 @@ def _build_quandl_code(symbol):
 
 
 def use_quandl_symbols(fct):
-    def decorator(self, symbols, **kwargs):
+    def decorator(symbols, **kwargs):
         if not isinstance(symbols, list):
             symbols = [symbols]
         quandl_symbols = map(_build_quandl_code, symbols)
-        raw_data = fct(self, quandl_symbols, **kwargs)
+        raw_data = fct(quandl_symbols, **kwargs)
 
         data = {}
         for sid in symbols:
-            data[sid] = raw_data.filter(regex='.*{}.*'.format(
-                utils.clean_sid(sid).upper()))
-            data[sid].columns = map(
+            # Filter out other sids
+            df_ = raw_data.filter(
+                #regex='YAHOO.*_{} -.*'.format(utils.clean_sid(sid).upper())
+                regex='.*_{} -.*'.format(utils.clean_sid(sid).upper())
+            )
+            # Remove Quandl code and useless spaces
+            df_.columns = map(
                 lambda x: x.replace(' ', '_').lower().split('_-_')[-1],
-                data[sid].columns)
+                df_.columns
+            )
+            if 'not_found' not in df_.columns:
+                data[sid] = df_
+            else:
+                log.warning('no data was returned for ' + sid)
         return data
     return decorator
 
 
-def fractionate_request(fct):
-    def inner(self, symbols, **kwargs):
-        tolerance_window = 10
-        cursor = 0
-        data = {}
-        while cursor < len(symbols):
-            if cursor + tolerance_window > len(symbols):
-                limit = len(symbols)
-            else:
-                limit = cursor + tolerance_window
-            symbols_fraction = symbols[cursor:limit]
-            cursor += tolerance_window
-            data_fraction = fct(self, symbols_fraction, **kwargs)
-            for sid, df in data_fraction.iteritems():
-                data[sid] = df
-        return pd.Panel(data).fillna(method='pad')
-    return inner
+@utils.fractionate_request
+@use_quandl_symbols
+def download(codes, **kwargs):
+    try:
+        data = Quandl.get(codes, **kwargs)
+        data.index = data.index.tz_localize(pytz.utc)
+    except Exception, error:
+        log.error('unable to fetch {}: {}'.format(codes, error))
+        data = pd.DataFrame()
+
+    return data
 
 
+# NOTE With last simplifications, an object seems useless ?
 class DataQuandl(object):
-    '''
-    Quandl.com as datasource
-    '''
-    def __init__(self, quandl_key=None):
-        self.quandl_key = quandl_key if quandl_key \
-            else os.environ.get('QUANDL_API_KEY', None)
+    ''' Quandl.com as datasource '''
 
-    @fractionate_request
-    @use_quandl_symbols
-    def fetch(self, code, **kwargs):
-        '''
-        Quandl entry point in datafeed object
-        '''
-        log.debug('fetching QuanDL data (%s)' % code)
-        # This way you can use your credentials even if
-        # you didn't provide them to the constructor
-        if 'authtoken' in kwargs:
-            self.quandl_key = kwargs.pop('authtoken')
+    def __init__(self, api_key=None):
+        self.api_key = api_key or os.environ.get('QUANDL_API_KEY', None)
+
+    def fetch(self, codes, **kwargs):
+        ''' Quandl entry point in datafeed object '''
+        log.debug('fetching QuanDL data (%s)' % codes)
 
         # Harmonization: Quandl call start trim_start
         if 'start' in kwargs:
@@ -103,11 +102,4 @@ class DataQuandl(object):
         if 'end' in kwargs:
             kwargs['trim_end'] = kwargs.pop('end')
 
-        try:
-            data = Quandl.get(code, authtoken=self.quandl_key, **kwargs)
-            # FIXME With a symbol not found, insert a not_found column
-            data.index = data.index.tz_localize(pytz.utc)
-        except Exception, error:
-            log.error('unable to fetch {}: {}'.format(code, error))
-            data = pd.DataFrame()
-        return data
+        return download(codes, authtoken=self.api_key, **kwargs)

@@ -18,8 +18,7 @@ from pandas.io.data import DataReader, get_quote_yahoo
 import dna.logging
 from intuition.constants import FINANCE_URLS
 import intuition.data.ystockquote as ystockquote
-from intuition.data.utils import (
-    use_google_symbol, invert_dataframe_axis, apply_mapping)
+import intuition.data.utils as utils
 
 log = dna.logging.logger(__name__)
 
@@ -28,15 +27,15 @@ def historical_pandas_yahoo(symbol, source='yahoo', start=None, end=None):
     '''
     Fetch from yahoo! finance historical quotes
     '''
-    #NOTE Panel for multiple symbols ?
-    #NOTE Adj Close column name not cool (a space)
+    # NOTE Panel for multiple symbols ?
+    # NOTE Adj Close column name not cool (a space)
     return DataReader(symbol, source, start=start, end=end)
 
 
-#NOTE From here every methods has the same signature:
+# NOTE From here every methods has the same signature:
 #     pandas.DataFrame = fct(yahoo_symbol(s))
 # Index symbol ex: ^fchi
-@invert_dataframe_axis
+@utils.invert_dataframe_axis
 def snapshot_yahoo_pandas(symbols):
     '''
     Get a simple snapshot from yahoo, return dataframe
@@ -49,16 +48,18 @@ def snapshot_yahoo_pandas(symbols):
         symbols = [symbols]
     # TODO lower() columns
     data = get_quote_yahoo(symbols)
-    data.columns = map(str.lower, data.columns)
+    data.index = [str(sid).lower() for sid in data.index]
     return data
 
 
-#NOTE Can use symbol with market: 'goog:nasdaq', any difference ?
-@use_google_symbol
+# NOTE Can use symbol with market: 'goog:nasdaq', any difference ?
+@utils.fractionate_request
+@utils.use_google_symbol
 def snapshot_google(symbols):
     payload = {'client': 'ig', 'q': ','.join(symbols)}
     response = requests.get(FINANCE_URLS['snapshot_google_light'],
                             params=payload)
+    # FIXME Some errors are not detected
     try:
         json_infos = json.loads(response.text[3:], encoding='utf-8')
     except ValueError:
@@ -67,9 +68,8 @@ def snapshot_google(symbols):
 
     snapshot = {}
     for i, quote in enumerate(json_infos):
-        #FIXME nasdaq and nyse `symbols` are in capital, not cac40
         if quote['t'].lower() in map(str.lower, symbols):
-            snapshot[symbols[i]] = apply_mapping(
+            snapshot[symbols[i]] = utils.apply_mapping(
                 quote, google_light_mapping)
         else:
             log.warning('Unknown symbol {}, ignoring...'.format(
@@ -125,8 +125,8 @@ def fill_stock_metadata(sid):
         metadata['exchange'] = 'Nasdaq'
     metadata['type'] = ystockquote.get_type(sid)
     metadata['revenue'] = ystockquote.get_revenue(sid)
-    #FIXME Almost never found
-    #metadata['index'] = ystockquote.get_indices(sid)
+    # FIXME Almost never found
+    # metadata['index'] = ystockquote.get_indices(sid)
     metadata['sector'] = ystockquote.get_sector(sid)
     metadata['industry'] = ystockquote.get_industry(sid)
 

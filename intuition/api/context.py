@@ -5,15 +5,11 @@
   Intuition Context api
   ---------------------
 
-  Context factory api.
-
   :copyright (c) 2014 Xavier Bruhiere
   :license: Apache 2.0, see LICENSE for more details.
 '''
 
-
 import abc
-import pytz
 import datetime as dt
 import dna.logging
 import intuition.utils
@@ -80,7 +76,6 @@ class ContextFactory():
             context.pop('start', None), context.pop('end', None))
 
         context['index'] = trading_dates
-        context['live'] = (dt.datetime.now(tz=pytz.utc) < trading_dates[-1])
 
     def _normalize_data_types(self, strategy):
         ''' some contexts only retrieves strings, giving back right type '''

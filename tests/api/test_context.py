@@ -101,11 +101,9 @@ class ContextFactoryTestCase(unittest.TestCase):
             'end': '2014/01/01',
         }
         fake._normalize_dates(context)
-        self.assertIn('live', context)
         self.assertIn('index', context)
-        ok_(not context['live'])
         self.assertIsInstance(context['index'], pd.tseries.index.DatetimeIndex)
 
     def test_build(self):
-        #fake = FakeContext(self.good_storage)
+        # fake = FakeContext(self.good_storage)
         pass

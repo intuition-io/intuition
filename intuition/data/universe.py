@@ -65,7 +65,7 @@ class Tick(object):
           - "at opening" => self.start + 5 minutes
           - "at midday" => self.end + self.start / 2
           - "at opening" => self.start + 5 minutes
-          - "at X o'clock" => self.start + 5 minutes
+          - "at X o'clock" => parse(Xh00)
           - "at xxhxx" => parse(xxhxx)
         '''
         tokens = human_time.split()
@@ -144,7 +144,7 @@ class Market(object):
             raise LoadMarketSchemeFailed(reason=error)
 
     def _extract_forex(self):
-        self.scheme = self.scheme['forex']
+        self.scheme = self.scheme['currencies']['forex']
         return self.scheme['pairs']
 
     def _extract_cac40(self, market):

@@ -20,7 +20,7 @@ import zipline.algorithm
 import intuition.errors
 
 
-#pylint: disable=R0921
+# pylint: disable=R0921
 class TradingFactory(zipline.algorithm.TradingAlgorithm):
     '''
     Intuition surcharge of main zipline class, but fully compatible.  Its role

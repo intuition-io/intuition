@@ -16,6 +16,28 @@ import math
 import datetime as dt
 
 
+class DailyReturn(object):
+    '''
+    >>> returns = DailyReturn()
+    >>> returns(1.34)
+    0.0
+    >>> returns(1.37)
+    2.2388059701492558
+    '''
+    _last_price = None
+
+    def __call__(self, new_price):
+        if self._last_price:
+            daily_return = ((new_price - self._last_price)
+                            / self._last_price) * 100
+        else:
+            daily_return = 0.0
+
+        self._last_price = new_price
+
+        return daily_return
+
+
 # NOTE This is temporary copied from QSTK library
 #     which will be more used in the future
 def qstk_get_sharpe_ratio(rets, risk_free=0.00):

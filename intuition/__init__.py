@@ -1,6 +1,6 @@
 '''
   Intuition
-  ----
+  ---------
 
   Intuition is an engine, some building bricks and a set of tools meant to let
   you efficiently and intuitively make your own automated quantitative trading
