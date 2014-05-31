@@ -28,7 +28,7 @@ def intuition(args):
     Load the configuration, run the engine and return the analyze.
     '''
 
-    # Use the provided context builder to fill:
+    # Use the provided context builder to load:
     #   - config: General behavior
     #   - strategy: Modules properties
     #   - market: The universe we will trade on
@@ -45,7 +45,8 @@ def intuition(args):
         simulation.configure_environment(
             context['config']['index'][-1],
             context['market'].benchmark,
-            context['market'].timezone)
+            context['market'].timezone
+        )
 
         # Wire togetether modules and initialize them
         simulation.build(args['session'],
@@ -54,8 +55,10 @@ def intuition(args):
 
         # Build data generator
         # NOTE How can I use several sources ?
-        data = {'universe': context['market'],
-                'index': context['config']['index']}
+        data = {
+            'universe': context['market'],
+            'index': context['config']['index']
+        }
         # Add user settings
         data.update(context['strategy']['data'])
         # Load backtest and / or live module(s)

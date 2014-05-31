@@ -14,10 +14,12 @@
 FROM hivetech/pyscience
 MAINTAINER Xavier Bruhiere <xavier.bruhiere@gmail.com>
 
-#RUN git clone https://github.com/intuition-io/intuition.git -b develop --depth 1 && \
-  #cd /intuition && python setup.py install
+ENV LANG fr_FR.UTF-8
+
 ADD . /intuition
-RUN cd /intuition && python setup.py install
+RUN cd /intuition && \
+  mkdir -p /root/.intuition/{assets,data,logs,R} && \
+  python setup.py install
 
 # Install Insights ------------------------------------------
 RUN git clone https://github.com/intuition-io/insights.git -b develop --depth 1 && \
@@ -37,9 +39,9 @@ RUN apt-get install -y libopenblas-dev liblapack-dev gfortran && \
   make && \
   make install
 # Python wrapper
-RUN pip install --use-mirrors TA-Lib==0.4.8
+RUN pip install --use-mirrors --upgrade setuptools
+  pip install --use-mirrors TA-Lib==0.4.8 && \
 
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-ENV LANG fr_FR.UTF-8
 CMD ["/usr/local/bin/intuition", "--help"]

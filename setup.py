@@ -20,35 +20,32 @@ from intuition import (
 def get_requirements():
     with open('./requirements.txt') as requirements:
         # Avoid github based requirements and replace them
-        deps = requirements.read().split('\n')[:-3]
+        deps = requirements.read().split('\n')[:-2]
         deps.append('zipline>=0.5.11.dev')
-        deps.append('pandas>=0.13.0.dev')
     return deps
 
 
 requires = [
-    'beautifulsoup4>=4.3.2',
-    'blist>=1.3.6',
-    'Cython>=0.20.1',
+    'beautifulsoup4',
+    'blist',
+    'Cython',
     'ystockquote',
-    'numpy>=1.8.1',
-    'schematics>=0.9-4',
-    'schema==0.3.1',
-    'python-dateutil>=2.2',
-    'pytz>=2014.2',
-    'PyYAML>=3.11',
+    'numpy',
+    'schematics',
+    'schema',
+    'python-dateutil',
+    'pytz',
+    'PyYAML',
     'Quandl>=1.9.7',
-    'dna>=0.0.4',
-    'requests>=2.2.1',
-    'six>=1.6.1',
-    'zipline>=0.5.11.dev',
+    'dna>=0.0.6',
+    'six',
+    'zipline>=0.5.9',
     'pandas>=0.13.1'
 ]
 
 
 def long_description():
     try:
-        #with codecs.open(readme, encoding='utf8') as f:
         with open('README.md') as f:
             return f.read()
     except IOError:

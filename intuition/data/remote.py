@@ -32,9 +32,6 @@ def historical_pandas_yahoo(symbol, source='yahoo', start=None, end=None):
     return DataReader(symbol, source, start=start, end=end)
 
 
-# NOTE From here every methods has the same signature:
-#     pandas.DataFrame = fct(yahoo_symbol(s))
-# Index symbol ex: ^fchi
 @utils.invert_dataframe_axis
 def snapshot_yahoo_pandas(symbols):
     '''

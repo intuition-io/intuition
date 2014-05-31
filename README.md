@@ -2,7 +2,7 @@ Intuition
 =========
 
 [![Latest Version](https://pypip.in/v/intuition/badge.png)](https://pypi.python.org/pypi/intuition/)
-[![Build Status](https://drone.io/github.com/hackliff/intuition/status.png)](https://drone.io/github.com/hackliff/intuition/latest)
+[![Build Status](https://api.shippable.com/projects/533bd06d89767b85005e1667/badge/master)](https://www.shippable.com/projects/533bd06d89767b85005e1667)
 [![Coverage Status](https://coveralls.io/repos/hackliff/intuition/badge.png)](https://coveralls.io/r/hackliff/intuition)
 [![Code Health](https://landscape.io/github/intuition-io/intuition/master/landscape.png)](https://landscape.io/github/intuition-io/intuition/master)
 [![License](https://pypip.in/license/intuition/badge.png)](https://pypi.python.org/pypi/intuition/)

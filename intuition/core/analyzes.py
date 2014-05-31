@@ -73,12 +73,16 @@ class Analyze():
         for key, value in report.iteritems():
             report[key] = dna.utils.truncate(value, 3)
 
+        # Infinite sharpe ration breaks a lot of tools using this report
+        # It usually happens when no transaction were processed
+        if np.isinf(report['sharpe']):
+            report['sharpe'] = 0.0
+
         log.info('generated report', report=report)
         if show:
             print
             print(dna.debug.emphasis(report, align=True))
             print
-
         return report
 
     def _to_perf_array(self, timestamp, key, length):
@@ -144,7 +148,7 @@ class Analyze():
             except Exception as e:
                 raise KeyError(e)
         else:
-            #TODO Automatic detection given exchange market (on command line) ?
+            # TODO Automatic detection given exchange market ?
             raise NotImplementedError()
 
         # NOTE Could be more efficient. But len(benchmark_data.date) !=

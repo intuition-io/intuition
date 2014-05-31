@@ -26,17 +26,17 @@ currencies:
       - aud/chf
       - aud/jpy
       - aud/nzd
-      - cad/chf
+      #- cad/chf
       - chf/jpy
       - eur/aud
       - eur/cad
       - eur/nok
       - eur/nzd
-      - gbp/cad
+      #- gbp/cad
       - gbp/chf
       - nzd/jpy
       - nzd/usd
-      - usd/nok
+      #- usd/nok
       - usd/sek
 stocks:
     paris:

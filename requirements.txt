@@ -6,11 +6,10 @@ schema==0.3.1
 Cython==0.20.1
 numpy==1.8.1
 python-dateutil==2.2
-pytz==2014.2
+pytz==2014.3
 Quandl==1.9.7
-requests==2.2.1
 six==1.6.1
 PyYAML==3.11
-dna==0.0.4
-pandas==0.13.1
+dna==0.0.6
+pandas==0.14.0
 -e git+https://github.com/quantopian/zipline.git@master#egg=zipline-0.5.11.dev

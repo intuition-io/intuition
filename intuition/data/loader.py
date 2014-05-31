@@ -57,7 +57,7 @@ class LiveBenchmark(object):
              for i, c in enumerate(tr_curves.values())),
             key=lambda t: t[0]))
 
-        # NOTE the code concept is deprecated
+        # NOTE the 1001 code concept is deprecated
         bm_fake = pd.Series([1001] * len(dates), index=dates)
         for i, dt in enumerate(tr_curves.keys()):
             pd.Timestamp(event_dt + i * self.offset)
