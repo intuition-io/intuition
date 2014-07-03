@@ -2,16 +2,14 @@
 # vim:fenc=utf-8
 
 '''
-  Packaging
-  ---------
-
   :copyright (c) 2014 Xavier Bruhiere
   :license: Apache 2.0, see LICENSE for more details.
 '''
 
 import os
 from glob import glob
-from setuptools import setup, find_packages
+import multiprocessing
+import setuptools
 from intuition import (
     __version__, __author__, __licence__, __project__
 )
@@ -25,7 +23,7 @@ def get_requirements():
     return deps
 
 
-requires = [
+REQUIREMENTS = [
     'beautifulsoup4',
     'blist',
     'Cython',
@@ -52,16 +50,16 @@ def long_description():
         return "failed to read README.md"
 
 
-setup(
+setuptools.setup(
     name=__project__,
     version=__version__,
     description='A trading system building blocks',
     author=__author__,
     author_email='xavier.bruhiere@gmail.com',
-    packages=find_packages(),
+    packages=setuptools.find_packages(),
     long_description=long_description(),
     license=__licence__,
-    install_requires=requires,
+    install_requires=REQUIREMENTS,
     url="https://github.com/hackliff/intuition",
     entry_points={
         'console_scripts': [

@@ -12,8 +12,6 @@
   :license: Apache 2.0, see LICENSE for more details.
 '''
 
-#import pytz
-#import datetime as dt
 import pandas as pd
 import dna.logging
 from zipline.sources.data_source import DataSource
@@ -76,8 +74,7 @@ class HybridDataFactory(DataSource):
         self.start = self.index[0]
         self.end = self.index[-1]
 
-        #self.frequency = float(kwargs.get('frequency', 14))
-        self.frequency = kwargs.get('frequency', 'at opening')
+        self.frequency = kwargs.get('frequency', 'at closing')
         self.market_open = kwargs['universe'].open
         self.market_close = kwargs['universe'].close
         self.market_timezone = kwargs['universe'].timezone
@@ -129,7 +126,6 @@ class HybridDataFactory(DataSource):
                      for sid, price in dated_data.iterkv()})
 
         else:
-            #midnight_date = date.replace(hour=0, minute=0)
             midnight_date = pd.datetools.normalize_date(date)
             if n_axes == 2:
                 if midnight_date in data.index:
@@ -150,7 +146,6 @@ class HybridDataFactory(DataSource):
 
         for date in self.index:
             backtest_is_done = False
-            #date = date.replace(hour=self.market_open.hour,
             open_hour = date.replace(hour=self.market_open.hour,
                                      minute=self.market_open.minute)
             close_hour = date.replace(hour=self.market_close.hour,

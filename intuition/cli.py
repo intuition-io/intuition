@@ -68,7 +68,7 @@ def intuition(args):
             data['live'] = utils.intuition_module(modules['live'])
 
         # Run the simulation and return an intuition.core.analyzes object
-        return simulation(datafeed.HybridDataFactory(**data), args['bot'])
+        return simulation(datafeed.HybridDataFactory(**data))
 
 
 def main():
@@ -84,7 +84,7 @@ def main():
     with log_setup.applicationbound():
         try:
             log.info('intuition v{} ready'.format(__version__),
-                     level=loglevel, bot=args['bot'],
+                     level=loglevel,
                      context=args['context'],
                      session=args['session'])
 

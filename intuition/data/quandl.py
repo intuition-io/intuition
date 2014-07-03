@@ -56,8 +56,8 @@ def use_quandl_symbols(fct):
         for sid in symbols:
             # Filter out other sids
             df_ = raw_data.filter(
-                #regex='YAHOO.*_{} -.*'.format(utils.clean_sid(sid).upper())
-                regex='.*_{} -.*'.format(utils.clean_sid(sid).upper())
+                # regex='.*_{} -.*'.format(utils.clean_sid(sid).upper())
+                regex='.*{} -.*'.format(utils.clean_sid(sid).upper())
             )
             # Remove Quandl code and useless spaces
             df_.columns = map(

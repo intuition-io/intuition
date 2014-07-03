@@ -67,9 +67,11 @@ class Simulation(object):
         '''
         Setup a custom benchmark handler or let zipline manage it
         '''
-        return LiveBenchmark(
-            last_trade, frequency=freq).surcharge_market_data \
-            if utils.is_live(last_trade) else None
+        benchmark_handler = None
+        if utils.is_live(last_trade) or not dna.utils.is_online():
+            benchmark_handler = LiveBenchmark(
+                last_trade, frequency=freq).surcharge_market_data
+        return benchmark_handler
 
     def configure_environment(self, last_trade, benchmark, timezone):
         ''' Prepare benchmark loader and trading context '''
@@ -93,9 +95,8 @@ class Simulation(object):
         self.engine = TradingEngine(identity, modules, strategy)
         self.initial_cash = strategy['manager'].get('cash', None)
 
-    def __call__(self, datafeed, auto=False):
+    def __call__(self, datafeed):
         ''' wrap zipline.run() with finer control '''
-        self.engine.auto = auto
         # FIXME crash if trading one day that is not a trading day
         with self.context:
             sim_params = create_simulation_parameters(

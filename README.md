@@ -50,6 +50,7 @@ Features
 * Made to let you tweak algorithms, portfolio manager, data sources, contexts and plugins
 * [Plugin friendly][8]. Enjoy mail reports, mobile notifications, redis messaging, ...
 * Already includes [many][2]
+* Backtests work offline
 * Experimental live trading on different markets (Nyse, Nasdaq, CAC40 and Forex for now)
 * Experimental R integration in your algorithms
 * Results analyser

@@ -15,9 +15,9 @@
 
 
 import abc
-import datetime as dt
 import zipline.algorithm
 import intuition.errors
+import intuition.utils
 
 
 # pylint: disable=R0921
@@ -37,7 +37,6 @@ class TradingFactory(zipline.algorithm.TradingAlgorithm):
         # Attributes initialization
         self.sids = []
         self.middlewares = []
-        self.auto = False
         self.manager = None
         self.initialized = False
         self.orderbook = {}
@@ -45,25 +44,8 @@ class TradingFactory(zipline.algorithm.TradingAlgorithm):
         # User customized attributes
         safe_properties = properties or {}
         self.identity = identity
-        self.realworld = safe_properties.get('realworld')
         zipline.algorithm.TradingAlgorithm.__init__(
             self, properties=safe_properties)
-
-    def _is_interactive(self):
-        ''' Prevent middlewares and orders to work outside live mode '''
-        return not (self.realworld and
-                    dt.date.today() > self.datetime.date())
-
-    def use(self, func):
-        ''' Append a middleware to the algorithm '''
-        # NOTE A middleware Object ?
-        # self.use() is usually called from initialize(), so no logger yet
-        print 'registering middleware {}'.format(func.__name__)
-        self.middlewares.append({
-            'call': func,
-            'name': func.__name__,
-            'args': func.func_code.co_varnames
-        })
 
     # NOTE I'm not superfan of initialize + warm
     def warm(self, data):
@@ -107,47 +89,48 @@ class TradingFactory(zipline.algorithm.TradingAlgorithm):
         if signals and self.manager:
             if signals.get('buy') or signals.get('sell'):
                 self.orderbook = self.manager.trade_signals_handler(signals)
-                if self.auto and self._is_interactive():
-                    self.process_orders(self.orderbook)
 
-        # Some middlewares send stuff over the wires. This little security
-        # prevent us from performing a DDOS
-        if self._is_interactive():
-            self._call_middlewares()
+        self._safely_call_middlewares()
 
-    def process_orders(self, orderbook):
-        ''' Default and costant orders processor. Overwrite it for more
-        sophisticated strategies '''
-        for stock, alloc in orderbook.iteritems():
-            self.logger.info('{}: Ordered {} {} stocks'.format(
-                self.get_datetime(), stock, alloc))
-            if isinstance(alloc, int):
-                self.order(stock, alloc)
-            elif isinstance(alloc, float) and \
-                    alloc >= -1 and alloc <= 1:
-                self.order_percent(stock, alloc)
-            else:
-                self.logger.warning(
-                    '{}: invalid order for {}: {})'
-                    .format(self.datetime, stock, alloc))
+    @property
+    def _is_live(self):
+        ''' Prevent middlewares and orders to work outside live mode '''
+        return intuition.utils.is_live(self.get_datetime())
 
     @property
     def elapsed_time(self):
         return self.get_datetime() - self.portfolio.start_date
 
+    def use(self, func, backtest=False):
+        ''' Append a middleware to the algorithm stack '''
+        # NOTE A middleware Object ?
+        # self.use() is usually called from initialize(), so no logger yet
+        print 'registering middleware {}'.format(func.__name__)
+        self.middlewares.append({
+            'call': func,
+            'name': func.__name__,
+            'args': func.func_code.co_varnames,
+            'allow_backtest': backtest
+        })
+
     def _call_one_middleware(self, middleware):
         ''' Evaluate arguments and execute the middleware function '''
-        args = {}
-        for arg in middleware['args']:
-            if hasattr(self, arg):
-                # same as eval() but safer for arbitrary code execution
-                args[arg] = reduce(getattr, arg.split('.'), self)
-        self.logger.debug('calling middleware event {}'
-                          .format(middleware['name']))
+        args = {
+            # same as eval() but safer for arbitrary code execution
+            arg: reduce(getattr, arg.split('.'), self)
+            for arg in middleware['args'] if hasattr(self, arg)
+        }
         middleware['call'](**args)
 
-    def _call_middlewares(self):
+    def _safely_call_middlewares(self):
         ''' Execute the middleware stack '''
         for middleware in self.middlewares:
+            name = middleware['name']
             # TODO Call upon datetime conditions
-            self._call_one_middleware(middleware)
+            # Some middlewares send stuff over the wires. This little security
+            # prevent us from performing DDOS
+            if not self._is_live and not middleware['allow_backtest']:
+                self.logger.debug('skipping middleware', name=name)
+            else:
+                self.logger.debug('calling middleware', name=name)
+                self._call_one_middleware(middleware)

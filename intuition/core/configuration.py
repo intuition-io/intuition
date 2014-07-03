@@ -37,9 +37,6 @@ def parse_commandline():
     parser.add_argument('-v', '--showlog',
                         action='store_true',
                         help='Print logs on stdout')
-    parser.add_argument('-b', '--bot',
-                        action='store_true',
-                        help='Allows the algorithm to process orders')
     parser.add_argument('-c', '--context',
                         action='store', default='file::conf.yaml',
                         help='Provides the way to build context')
@@ -52,8 +49,7 @@ def parse_commandline():
     return {
         'session': args.id,
         'context': args.context,
-        'showlog': args.showlog,
-        'bot': args.bot
+        'showlog': args.showlog
     }
 
 
