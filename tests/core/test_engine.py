@@ -8,7 +8,7 @@ import pytz
 import datetime as dt
 import pandas as pd
 import dna.errors
-#from zipline.data.benchmarks import BenchmarkDataNotFoundError
+# from zipline.data.benchmarks import BenchmarkDataNotFoundError
 import intuition.core.engine as engine
 from intuition.errors import InvalidEngine
 from intuition.test_framework import TestAlgorithm
@@ -39,11 +39,11 @@ class EngineTestCase(unittest.TestCase):
         ok_(hasattr(eng, 'logger'))
         eq_(eng.capital_base, self.default_capital_base)
         self.assertIsNone(eng.manager)
-        self.assertFalse(eng.auto)
-        self.assertFalse(eng.initialized)
+        # New version of zipline set it to true
+        self.assertTrue(eng.initialized)
+        self.assertFalse(eng._warmed)
         self.assertListEqual(eng.middlewares, [])
         self.assertListEqual(eng.sources, [])
-        self.assertIsNone(eng.realworld)
 
     @raises(InvalidEngine)
     def test_new_engine_without_algo_module(self):
@@ -79,8 +79,8 @@ class SimulationTestCase(unittest.TestCase):
         self.test_identity = 'test-gekko'
         self.good_algo = 'intuition.test_framework.TestAlgorithm'
         self.good_manager = 'intuition.test_framework.TestPortfolio'
-        #self.default_first_date = dt.date(1990, 1, 2)
-        #self.default_first_date = dt.date(2008, 6, 25)
+        # self.default_first_date = dt.date(1990, 1, 2)
+        # self.default_first_date = dt.date(2008, 6, 25)
         self.default_last_date = (dt.date.today() - pd.datetools.Day()).date()
         self.whatever_naive_date = dt.datetime(2013, 1, 1)
         self.whatever_date = dt.datetime(2013, 1, 1, tzinfo=pytz.utc)
@@ -94,37 +94,37 @@ class SimulationTestCase(unittest.TestCase):
     @nottest
     def _check_environment(self, env):
         eq_(env.exchange_tz, 'Europe/Paris')
-        #eq_(env.first_trading_day.date(), self.default_first_date)
+        # eq_(env.first_trading_day.date(), self.default_first_date)
         # FIXME It doesn't work this way
-        #eq_(env.last_trading_day.date(), self.default_last_date)
+        # eq_(env.last_trading_day.date(), self.default_last_date)
         self.assertIsInstance(env.treasury_curves, pd.DataFrame)
         self.assertFalse(env.treasury_curves.empty)
         self.assertIsInstance(env.benchmark_returns, pd.Series)
         self.assertFalse(env.benchmark_returns.empty)
 
     def test_environment_configuration(self):
-        self.assertIsNone(self.simu.context)
+        self.assertIsNone(self.simu.trading_context)
         self.simu.configure_environment(
             last_trade=self.whatever_date,
             benchmark='FCHI',
             timezone='Europe/Paris')
         eq_(self.simu.benchmark, 'FCHI')
-        eq_(self.simu.benchmark, self.simu.context.bm_symbol)
-        self._check_environment(self.simu.context)
+        eq_(self.simu.benchmark, self.simu.trading_context.bm_symbol)
+        self._check_environment(self.simu.trading_context)
 
     def test_environment_configuration_naive_date(self):
         self.simu.configure_environment(
             last_trade=self.whatever_naive_date,
             benchmark='FCHI',
             timezone='Europe/Paris')
-        self._check_environment(self.simu.context)
+        self._check_environment(self.simu.trading_context)
 
     def test_environment_configuration_live_date(self):
         self.simu.configure_environment(
             last_trade=self.whatever_live_date,
             benchmark='FCHI',
             timezone='Europe/Paris')
-        self._check_environment(self.simu.context)
+        self._check_environment(self.simu.trading_context)
 
     # FIXME This test uses the network
     '''
@@ -138,16 +138,3 @@ class SimulationTestCase(unittest.TestCase):
         eq_(eng.identity, self.test_identity)
         self.assertIsNone(eng.manager)
         eq_(eng.__class__, TestAlgorithm)
-
-    def test_build_minimal_simulator(self):
-        self.simu.build(self.test_identity,
-                        {'algorithm': self.good_algo})
-        self.assertIsNone(self.simu.initial_cash)
-        self._check_engine(self.simu.engine)
-
-    def test_build_simulator_with_cash(self):
-        self.simu.build(self.test_identity,
-                        {'algorithm': self.good_algo},
-                        {'manager': {'cash': 2000.0}})
-        eq_(self.simu.initial_cash, 2000.0)
-        self._check_engine(self.simu.engine)

@@ -16,9 +16,8 @@ import pytz
 import dna.utils
 import dna.logging
 from zipline.finance.trading import TradingEnvironment
-from zipline.utils.factory import create_simulation_parameters
 import intuition.constants as constants
-from intuition.data.loader import LiveBenchmark
+import intuition.data.loader as loader
 from intuition.core.analyzes import Analyze
 import intuition.utils as utils
 from intuition.errors import InvalidEngine
@@ -41,6 +40,7 @@ class TradingEngine(object):
         algo_obj = utils.intuition_module(modules['algorithm'])
         trading_algo = algo_obj(
             identity=identity,
+            capital_base=strategy_conf.get('manager', {}).get('cash'),
             properties=strategy_conf.get('algorithm', {})
         )
 
@@ -61,16 +61,21 @@ class TradingEngine(object):
 
 class Simulation(object):
     ''' Setup and trigger trading sessions '''
-    context = None
+    trading_context = None
 
-    def _get_benchmark_handler(self, last_trade, freq='minutely'):
+    def _benchmark_handler(self, last_trade, freq='daily'):
         '''
         Setup a custom benchmark handler or let zipline manage it
         '''
         benchmark_handler = None
-        if utils.is_live(last_trade) or not dna.utils.is_online():
-            benchmark_handler = LiveBenchmark(
-                last_trade, frequency=freq).surcharge_market_data
+        if not dna.utils.is_online():
+            benchmark_handler = loader.OfflineBenchmark(
+                frequency=freq
+            ).surcharge_market_data
+        elif utils.is_live(last_trade):
+            benchmark_handler = loader.LiveBenchmark(
+                frequency=freq
+            ).surcharge_market_data
         return benchmark_handler
 
     def configure_environment(self, last_trade, benchmark, timezone):
@@ -81,33 +86,25 @@ class Simulation(object):
 
         # Setup the trading calendar from market informations
         self.benchmark = benchmark
-        self.context = TradingEnvironment(
+        self.trading_context = TradingEnvironment(
             bm_symbol=benchmark,
             exchange_tz=timezone,
-            load=self._get_benchmark_handler(last_trade))
+            load=self._benchmark_handler(last_trade)
+        )
 
-    def build(self, identity, modules, strategy=constants.DEFAULT_CONFIG):
-        '''
-        Wrapper of zipline run() method. Use the configuration set so far
-        to build up the trading environment
-        '''
-        # TODO Catch a problem here
-        self.engine = TradingEngine(identity, modules, strategy)
-        self.initial_cash = strategy['manager'].get('cash', None)
-
-    def __call__(self, datafeed):
+    def __call__(self, identity, datafeed, modules, strategy=None):
         ''' wrap zipline.run() with finer control '''
         # FIXME crash if trading one day that is not a trading day
-        with self.context:
-            sim_params = create_simulation_parameters(
-                capital_base=self.initial_cash,
-                start=datafeed.start,
-                end=datafeed.end)
-
-            daily_stats = self.engine.run(datafeed, sim_params)
+        strategy = strategy or constants.DEFAULT_CONFIG
+        with self.trading_context:
+            self.engine = TradingEngine(identity, modules, strategy)
+            daily_stats = self.engine.run(datafeed, overwrite_sim_params=True)
 
         return Analyze(
-            params=sim_params,
+            # Safer to access internal sim_params as there are several methods
+            # to get the structure setup
+            params=self.engine.sim_params,
             results=daily_stats,
             metrics=self.engine.risk_report,
-            benchmark=self.benchmark)
+            benchmark=self.benchmark
+        )

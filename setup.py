@@ -37,7 +37,7 @@ REQUIREMENTS = [
     'Quandl>=1.9.7',
     'dna>=0.0.6',
     'six',
-    'zipline>=0.5.9',
+    'zipline>=0.7.0',
     'pandas>=0.13.1'
 ]
 
@@ -60,7 +60,7 @@ setuptools.setup(
     long_description=long_description(),
     license=__licence__,
     install_requires=REQUIREMENTS,
-    url="https://github.com/hackliff/intuition",
+    url="https://github.com/intuition-io/intuition",
     entry_points={
         'console_scripts': [
             'intuition = intuition.__main__:main',

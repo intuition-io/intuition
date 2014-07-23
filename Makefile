@@ -38,22 +38,14 @@ tests: warn_missing_linters
 	@echo -e '\tRunning tests ...'
 	nosetests -s -w tests --with-yanc --with-coverage --cover-package=intuition
 
-watch: warn_missing_linters
-	watchmedo shell-command \
-    --patterns="*.py;*.txt" \
-    --recursive \
-    --command="make tests" .
-
 present_pep8=$(shell which pep8)
 present_radon=$(shell which radon)
 present_nose=$(shell which nosetests)
 present_piprot=$(shell which piprot)
-present_watchdog=$(shell which watchmedo)
 warn_missing_linters:
 	@test -n "$(present_radon)" || echo "WARNING: radon not installed."
 	@test -n "$(present_pep8)" || echo "WARNING: pep8 not installed."
 	@test -n "$(present_nose)" || echo "WARNING: nose not installed."
 	@test -n "$(present_piprot)" || echo "WARNING: piprot not installed."
-	@test -n "$(present_watchdog)" || echo "WARNING: watchdog not installed."
 
 .PHONY: dependencies install warn_missing_linters tests package

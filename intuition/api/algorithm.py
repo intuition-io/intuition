@@ -33,19 +33,28 @@ class TradingFactory(zipline.algorithm.TradingAlgorithm):
 
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, identity='johndoe', properties=None):
+    def __init__(self, identity='johndoe', capital_base=None, properties=None):
         # Attributes initialization
         self.sids = []
         self.middlewares = []
         self.manager = None
-        self.initialized = False
+        self._warmed = False
         self.orderbook = {}
+        self.identity = identity
 
+        # NOTE Probably need to build sim_param here if we want to customize
+        # data_frequecy/rate.
         # User customized attributes
         safe_properties = properties or {}
-        self.identity = identity
-        zipline.algorithm.TradingAlgorithm.__init__(
-            self, properties=safe_properties)
+        kwargs = {
+            'properties': safe_properties,
+            'instant_fill': safe_properties.get('instant_fill', True)
+        }
+        if capital_base:
+            kwargs['capital_base'] = capital_base
+
+        #zipline.algorithm.TradingAlgorithm.__init__(self, **kwargs)
+        super(TradingFactory, self).__init__(**kwargs)
 
     # NOTE I'm not superfan of initialize + warm
     def warm(self, data):
@@ -63,8 +72,12 @@ class TradingFactory(zipline.algorithm.TradingAlgorithm):
         signals = {}
         self.orderbook = {}
 
+        # Copied from zipline.algorithm:l225
+        if self.history_container:
+            self.history_container.update(data, self.datetime)
+
         # Everytime but the first tick
-        if self.initialized and self.manager:
+        if self._warmed and self.manager:
             # Keep the portfolio aware of the situation
             self.manager.update(
                 self.portfolio,
@@ -74,7 +87,7 @@ class TradingFactory(zipline.algorithm.TradingAlgorithm):
             # Perf_tracker needs at least a turn to have an index
             self.sids = data.keys()
             self.warm(data)
-            self.initialized = True
+            self._warmed = True
             return
 
         try:

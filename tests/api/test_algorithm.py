@@ -28,10 +28,9 @@ class AlgorithmTestCase(unittest.TestCase):
 
     @nottest
     def _check_algorithm_object(self, algo):
-        self.assertFalse(algo.auto)
-        self.assertFalse(algo.initialized)
-        self.assertIsNone(algo.realworld)
-        self.assertIsNone(algo.sim_params)
+        self.assertTrue(algo.initialized)
+        self.assertFalse(algo._warmed)
+        self.assertIsNotNone(algo.sim_params)
         eq_(algo.sids, [])
         eq_(algo.middlewares, [])
         eq_(algo.sources, [])
@@ -43,21 +42,10 @@ class AlgorithmTestCase(unittest.TestCase):
 
     def test_new_algorithm_without_properties(self):
         algo = TestAlgorithm()
-        ok_(not algo.realworld)
         eq_(algo.identity, self.default_identity)
 
     def test_overload_initialize(self):
         eq_(self.algo.properties, self.test_properties)
-
-    def test__is_interactive(self):
-        self.algo.realworld = False
-        for self.algo.datetime in [self.past_date, self.today]:
-            ok_(self.algo._is_interactive())
-        self.algo.realworld = True
-        self.algo.datetime = self.today
-        ok_(self.algo._is_interactive())
-        self.algo.datetime = self.past_date
-        self.assertFalse(self.algo._is_interactive())
 
     def test_run_algorithm(self):
         results = self.algo.run(build_fake_hybridDataFactory())

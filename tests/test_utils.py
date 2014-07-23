@@ -36,6 +36,8 @@ class UtilsTestCase(unittest.TestCase):
 
 class TradingTimelineTestCase(unittest.TestCase):
 
+    _future_date = '2020/01/01'
+
     @nottest
     def _validate_dates(self, dates):
         self.assertIsInstance(dates, pd.tseries.index.DatetimeIndex)
@@ -55,7 +57,7 @@ class TradingTimelineTestCase(unittest.TestCase):
     def test__build_live_trading_timeline(self):
         now = dt.datetime.now(pytz.utc)
         for start in [None, now + pd.tseries.offsets.Minute(5)]:
-            for end in [None, '2014/06/01']:
+            for end in [None, self._future_date]:
                 dates = utils.build_trading_timeline(start, end)
                 self._validate_dates(dates)
                 self.assertGreater(dates[0], now)
@@ -64,10 +66,9 @@ class TradingTimelineTestCase(unittest.TestCase):
     def test__build_hybrid_trading_timeline(self):
         now = dt.datetime.now(pytz.utc)
         start = '2014/01/01'
-        end = '2014/06/01'
-        dates = utils.build_trading_timeline(start, end)
+        dates = utils.build_trading_timeline(start, self._future_date)
         self._validate_dates(dates)
         # FIXME Almost a day
-        #eq_(dt.timedelta(days=1), dates[-1] - dates[-2])
+        # eq_(dt.timedelta(days=1), dates[-1] - dates[-2])
         self.assertGreater(now, dates[0])
         self.assertGreater(dates[-1], now)

@@ -48,11 +48,6 @@ def intuition(args):
             context['market'].timezone
         )
 
-        # Wire togetether modules and initialize them
-        simulation.build(args['session'],
-                         modules,
-                         context['strategy'])
-
         # Build data generator
         # NOTE How can I use several sources ?
         data = {
@@ -68,7 +63,12 @@ def intuition(args):
             data['live'] = utils.intuition_module(modules['live'])
 
         # Run the simulation and return an intuition.core.analyzes object
-        return simulation(datafeed.HybridDataFactory(**data))
+        return simulation(
+            args['session'],
+            datafeed.HybridDataFactory(**data),
+            modules,
+            context['strategy']
+        )
 
 
 def main():
@@ -79,7 +79,8 @@ def main():
     logfile = setup.logfile(args['session'])
     # Setup structured logs with file and stdout support
     log_setup = dna.logging.setup(
-        level=loglevel, show_log=args['showlog'], filename=logfile)
+        level=loglevel, show_log=args['showlog'], filename=logfile
+    )
 
     with log_setup.applicationbound():
         try:
