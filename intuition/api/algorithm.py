@@ -15,6 +15,7 @@
 
 
 import abc
+from copy import copy
 import zipline.algorithm
 import intuition.errors
 import intuition.utils
@@ -23,43 +24,38 @@ import intuition.utils
 # pylint: disable=R0921
 class TradingFactory(zipline.algorithm.TradingAlgorithm):
     '''
-    Intuition surcharge of main zipline class, but fully compatible.  Its role
-    is slightly different : the user will eventually expose an event() method
-    meant to return buy and sell signals, processed, optionnaly, further by the
-    portfolio strategy. However it remains fully compatible with zipline method
-    (i.e. it's stil possible to execute orders within the event method and not
-    consider any portfolio strategy aside)
+    Intuition surcharge of main zipline class, but fully compatible.
     '''
 
     __metaclass__ = abc.ABCMeta
+    # Up to us to say when the algorithm is initialized
+    AUTO_INITIALIZE = False
 
-    def __init__(self, identity='johndoe', capital_base=None, properties=None):
+    def __init__(self, sim_params, identity='johndoe', properties=None):
         # Attributes initialization
-        self.sids = []
         self.middlewares = []
-        self.manager = None
-        self._warmed = False
-        self.orderbook = {}
         self.identity = identity
 
-        # NOTE Probably need to build sim_param here if we want to customize
-        # data_frequecy/rate.
         # User customized attributes
         safe_properties = properties or {}
         kwargs = {
-            'properties': safe_properties,
-            'instant_fill': safe_properties.get('instant_fill', True)
+            'sim_params': sim_params,
+            # Set algo capital to the same value as portfolio cash
+            'capital_base': sim_params.capital_base,
+            'instant_fill': safe_properties.get('instant_fill', True),
+            'properties': safe_properties
         }
-        if capital_base:
-            kwargs['capital_base'] = capital_base
 
-        #zipline.algorithm.TradingAlgorithm.__init__(self, **kwargs)
         super(TradingFactory, self).__init__(**kwargs)
+        # Zipline overwrites our portfolio setup, store it for later
+        # If has no effect if the user didn't hook the portfolio
+        self._saved_portfolio = copy(self.portfolio)
 
-    # NOTE I'm not superfan of initialize + warm
-    def warm(self, data):
-        ''' Called at the first handle_data frame '''
-        pass
+    def hook_portfolio(self, portfolio):
+        ''' Replace default zipline portfolio '''
+        print('Using custom portfolio: {}'.format(portfolio.__class__))
+        self.perf_tracker.cumulative_performance._portfolio_store = \
+            portfolio
 
     @abc.abstractmethod
     def event(self, data):
@@ -69,39 +65,22 @@ class TradingFactory(zipline.algorithm.TradingAlgorithm):
     def handle_data(self, data):
         ''' Method called for each event by zipline. In intuition this is the
         place to factorize algorithms and then call event() '''
-        signals = {}
-        self.orderbook = {}
+        if not self.initialized:
+            self.perf_tracker.cumulative_performance._portfolio_store = \
+                self._saved_portfolio
+            self.initialized = True
 
         # Copied from zipline.algorithm:l225
         if self.history_container:
             self.history_container.update(data, self.datetime)
 
-        # Everytime but the first tick
-        if self._warmed and self.manager:
-            # Keep the portfolio aware of the situation
-            self.manager.update(
-                self.portfolio,
-                self.get_datetime(),
-                self.perf_tracker.cumulative_risk_metrics.to_dict())
-        else:
-            # Perf_tracker needs at least a turn to have an index
-            self.sids = data.keys()
-            self.warm(data)
-            self._warmed = True
-            return
-
         try:
-            signals = self.event(data)
+            self.event(data)
         except Exception, error:
             # NOTE Temporary debug. Will probably notify the error and go on
             # with signals={}
             raise intuition.errors.AlgorithmEventFailed(
-                reason=error, date=self.get_datetime(), data=data)
-
-        # One can process orders within the alogrithm and don't return anything
-        if signals and self.manager:
-            if signals.get('buy') or signals.get('sell'):
-                self.orderbook = self.manager.trade_signals_handler(signals)
+                reason=error, date=self.get_datetime(), data={})
 
         self._safely_call_middlewares()
 
@@ -116,7 +95,6 @@ class TradingFactory(zipline.algorithm.TradingAlgorithm):
 
     def use(self, func, backtest=False):
         ''' Append a middleware to the algorithm stack '''
-        # NOTE A middleware Object ?
         # self.use() is usually called from initialize(), so no logger yet
         print 'registering middleware {}'.format(func.__name__)
         self.middlewares.append({

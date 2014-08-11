@@ -71,6 +71,11 @@ class Context(object):
                  driver=self._ctx_module, data=self._ctx_infos)
         config, strategy = Loader(self._ctx_infos).build()
 
+        # Trader identity, optional and printed for development for now
+        trader = config.pop('author', None)
+        if isinstance(trader, dict):
+            log.info('Trader identity', **trader)
+
         # TODO Validate strategy as well
         self._validate(config)
 
@@ -78,6 +83,7 @@ class Context(object):
         market_ = universe.Market()
         market_.parse_universe_description(config.pop('universe'))
 
+        log.info('Context successfully loaded')
         return {'config': config, 'strategy': strategy, 'market': market_}
 
     def __exit__(self, type, value, traceback):

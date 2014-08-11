@@ -133,7 +133,7 @@ class Market(object):
     scheme_path = os.path.expanduser('~/.intuition/data/market.yml')
 
     def __init__(self):
-        log.info('loading market scheme')
+        log.info('loading market scheme ({})'.format(self.scheme_path))
         self._load_market_scheme()
 
     def _load_market_scheme(self):
@@ -144,10 +144,12 @@ class Market(object):
             raise LoadMarketSchemeFailed(reason=error)
 
     def _extract_forex(self):
+        log.debug('Loading {} structure'.format('forex'))
         self.scheme = self.scheme['currencies']['forex']
         return self.scheme['pairs']
 
     def _extract_cac40(self, market):
+        log.debug('Loading {} structure'.format(market))
         market_scheme = self.scheme
         # Walk the market structure
         for key in market[:-1]:
@@ -201,12 +203,14 @@ class Market(object):
 
         where exchange is a combination of 'type:index:submarket'
         '''
+        log.debug('Parsing user universe: {}'.format(description))
         self.raw_description = description
         description = description.split(',')
         self.exchange = description[0]
 
         n = int(description[1]) if len(description) == 2 else -1
         self.sids = self._lookup_sids(description[0], n)
+        log.debug('Done: {}'.format(self.sids))
 
     def _detect_exchange(self, description):
         ''' Guess from the description and the market scheme '''

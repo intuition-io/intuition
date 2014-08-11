@@ -37,7 +37,8 @@ REQUIREMENTS = [
     'Quandl>=1.9.7',
     'dna>=0.0.6',
     'six',
-    'zipline>=0.7.0',
+    'zipline>=0.5.9',
+    'portfolio>=0.0.1',
     'pandas>=0.13.1'
 ]
 
@@ -83,6 +84,7 @@ setuptools.setup(
         (os.path.expanduser('~/.intuition/logs'), glob('./MANIFEST.in'))
     ],
     dependency_links=[
+        'http://github.com/intuition-io/portfolio/tarball/master#egg=portfolio',
         'http://github.com/quantopian/zipline/tarball/master#egg=zipline-0.5.11.dev'
     ]
 )

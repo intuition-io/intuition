@@ -28,15 +28,14 @@ CONFIG_SCHEMA = Schema({
     'index': object,
     # Optional('id'): Use(basestring, error='invalid identity'),
     Optional('id'): basestring,
-    #Optional('live'): bool,
+    Optional('cash'): Or(int, float),
     Optional('_id'): object,
     Optional('__v'): object,
     'modules': {
         'algorithm': basestring,
         # TODO It will be at least one
         Optional('backtest'): basestring,
-        Optional('live'): basestring,
-        Optional('manager'): Or(basestring, None)
+        Optional('live'): basestring
     }
 })
 

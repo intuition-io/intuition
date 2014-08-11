@@ -15,7 +15,6 @@ from random import random
 from intuition.data.universe import Market
 from intuition.api.context import ContextFactory
 from intuition.api.datafeed import HybridDataFactory
-from intuition.api.portfolio import PortfolioFactory
 from intuition.api.algorithm import TradingFactory
 
 
@@ -49,24 +48,8 @@ class TestAlgorithm(TradingFactory):
     def initialize(self, properties):
         self.properties = properties
 
-    def warm(self, data):
-        self.warmed_data = data
-
     def event(self, data):
-        return {}
-
-
-class TestPortfolio(PortfolioFactory):
-    ''' Returns minimal portfolio for tests '''
-    initialized = False
-
-    def initialize(self, properties):
-        self.initialized = True
-
-    def optimize(self, to_buy, to_sell):
-        if 'raise_fake_error' in self.properties:
-            raise ValueError('whatever error')
-        return {'date': self.date, 'buy': to_buy}, 0, 1
+        pass
 
 
 class FakeBacktestDatasource(object):

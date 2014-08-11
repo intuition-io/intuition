@@ -67,13 +67,13 @@ Features
 Getting started
 ---------------
 
-Learn more and find the (in progress) documentation at http://doc.intuition.io.
+Learn more and find the (in progress) documentation at [doc.intuition.io][12].
 
 You can follow the development on this [trello board][1] and chat about the
 project on [Gitter][3].
 
 A webapp built on top of Intuition is also in development, get your early
-ticket at http://intuition.io !
+ticket at [intuition.io][11] !
 
 
 Contributing
@@ -99,3 +99,5 @@ Intuition is available under the [Apache License, Version 2.0][5].
 [8]: https://github.com/intuition-io/insights/tree/develop/insights/plugins
 [9]: https://github.com/quantopian/zipline
 [10]: http://doc.intuition.io/articles/contributors.html
+[11]: http://intuition.io
+[12]: http://doc.intuition.io

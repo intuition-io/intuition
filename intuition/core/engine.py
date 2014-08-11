@@ -16,6 +16,7 @@ import pytz
 import dna.utils
 import dna.logging
 from zipline.finance.trading import TradingEnvironment
+from zipline.utils.factory import create_simulation_parameters
 import intuition.constants as constants
 import intuition.data.loader as loader
 from intuition.core.analyzes import Analyze
@@ -25,13 +26,11 @@ from intuition.errors import InvalidEngine
 log = dna.logging.logger(__name__)
 
 
-# NOTE Is there still a point to use here a constructor object instead of a
-#     simple function ?
 class TradingEngine(object):
-    ''' Factory class wrapping zipline Backtester, returns the requested algo
-    ready for use '''
+    ''' Dynamically loaded class wrapping zipline Backtester, returns the
+    requested algo ready for use '''
 
-    def __new__(self, identity, modules, strategy_conf):
+    def __new__(self, identity, sim_params, modules, strategy_conf):
 
         if 'algorithm' not in modules:
             raise InvalidEngine(
@@ -40,22 +39,11 @@ class TradingEngine(object):
         algo_obj = utils.intuition_module(modules['algorithm'])
         trading_algo = algo_obj(
             identity=identity,
-            capital_base=strategy_conf.get('manager', {}).get('cash'),
+            sim_params=sim_params,
             properties=strategy_conf.get('algorithm', {})
         )
 
         trading_algo.set_logger(dna.logging.logger('algo.' + identity))
-
-        # Use a portfolio manager
-        if modules.get('manager'):
-            log.info('initializing manager {}'.format(modules['manager']))
-            # Linking to the algorithm the configured portfolio manager
-            trading_algo.manager = utils.intuition_module(modules['manager'])(
-                strategy_conf.get('manager', {}))
-        else:
-            trading_algo.manager = None
-            log.info('no portfolio manager used')
-
         return trading_algo
 
 
@@ -78,11 +66,18 @@ class Simulation(object):
             ).surcharge_market_data
         return benchmark_handler
 
-    def configure_environment(self, last_trade, benchmark, timezone):
+    def configure_environment(self, datafeed, capital, benchmark, timezone):
         ''' Prepare benchmark loader and trading context '''
-
+        last_trade = datafeed.end
         if last_trade.tzinfo is None:
             last_trade = pytz.utc.localize(last_trade)
+
+        self.sim_params = create_simulation_parameters(
+            capital_base=capital,
+            sids=datafeed.sids,
+            start=datafeed.start,
+            end=datafeed.end
+        )
 
         # Setup the trading calendar from market informations
         self.benchmark = benchmark
@@ -92,14 +87,21 @@ class Simulation(object):
             load=self._benchmark_handler(last_trade)
         )
 
-    def __call__(self, identity, datafeed, modules, strategy=None):
-        ''' wrap zipline.run() with finer control '''
+        self.datafeed = datafeed
+
+    def __call__(self, identity, modules, strategy=None):
+        ''' Wrap zipline.run() with finer control '''
         # FIXME crash if trading one day that is not a trading day
         strategy = strategy or constants.DEFAULT_CONFIG
         with self.trading_context:
-            self.engine = TradingEngine(identity, modules, strategy)
-            daily_stats = self.engine.run(datafeed, overwrite_sim_params=True)
+            self.engine = TradingEngine(
+                identity, self.sim_params, modules, strategy
+            )
+            daily_stats = self.engine.run(
+                self.datafeed, overwrite_sim_params=False
+            )
 
+        # TODO Use zipline self.analyze hook instead
         return Analyze(
             # Safer to access internal sim_params as there are several methods
             # to get the structure setup

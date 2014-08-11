@@ -41,13 +41,6 @@ def intuition(args):
         # Intuition building blocks
         modules = context['config']['modules']
 
-        # Prepare benchmark, timezone, trading calendar
-        simulation.configure_environment(
-            context['config']['index'][-1],
-            context['market'].benchmark,
-            context['market'].timezone
-        )
-
         # Build data generator
         # NOTE How can I use several sources ?
         data = {
@@ -62,13 +55,16 @@ def intuition(args):
         if 'live' in modules:
             data['live'] = utils.intuition_module(modules['live'])
 
-        # Run the simulation and return an intuition.core.analyzes object
-        return simulation(
-            args['session'],
+        # Prepare simulation parameters and environment
+        simulation.configure_environment(
             datafeed.HybridDataFactory(**data),
-            modules,
-            context['strategy']
+            context['strategy'].get('cash', 10000),
+            context['market'].benchmark,
+            context['market'].timezone
         )
+
+        # Run the simulation and return an intuition.core.analyzes object
+        return simulation(args['session'], modules, context['strategy'])
 
 
 def main():
@@ -97,6 +93,10 @@ def main():
             if loglevel == 'debug':
                 raise
             log.error('{}: {}'.format(type(error).__name__, str(error)))
+            if hasattr(error, 'kwargs'):
+                log.error('Data: {}'.format(error.kwargs.get('data')))
+                log.error('[{}] {}'.format(
+                    error.kwargs['date'], error.kwargs.get('reason')))
             exit_status = 1
 
         finally:
