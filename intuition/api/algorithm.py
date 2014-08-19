@@ -19,6 +19,7 @@ from copy import copy
 import zipline.algorithm
 import intuition.errors
 import intuition.utils
+from intuition.api.middleware import TimeGuard, Middleware
 
 
 # pylint: disable=R0921
@@ -62,6 +63,14 @@ class TradingFactory(zipline.algorithm.TradingAlgorithm):
         ''' User should overwrite this method '''
         pass
 
+    @property
+    def elapsed_time(self):
+        return self.get_datetime() - self.portfolio.start_date
+
+    @property
+    def is_live(self):
+        return intuition.utils.is_live(self.get_datetime())
+
     def handle_data(self, data):
         ''' Method called for each event by zipline. In intuition this is the
         place to factorize algorithms and then call event() '''
@@ -80,48 +89,26 @@ class TradingFactory(zipline.algorithm.TradingAlgorithm):
             # NOTE Temporary debug. Will probably notify the error and go on
             # with signals={}
             raise intuition.errors.AlgorithmEventFailed(
-                reason=error, date=self.get_datetime(), data={})
+                reason=error, date=self.get_datetime(), data={}
+            )
 
-        self._safely_call_middlewares()
+        for mdw in self.middlewares:
+            self.process_middleware(mdw)
 
-    @property
-    def _is_live(self):
-        ''' Prevent middlewares and orders to work outside live mode '''
-        return intuition.utils.is_live(self.get_datetime())
-
-    @property
-    def elapsed_time(self):
-        return self.get_datetime() - self.portfolio.start_date
-
-    def use(self, func, backtest=False):
-        ''' Append a middleware to the algorithm stack '''
+    def use(self, func, when=['every events'], hf=False, critical=False):
+        checker = TimeGuard(None, None, when, hf)
+        self.middlewares.append(Middleware(func, checker, critical))
         # self.use() is usually called from initialize(), so no logger yet
-        print 'registering middleware {}'.format(func.__name__)
-        self.middlewares.append({
-            'call': func,
-            'name': func.__name__,
-            'args': func.func_code.co_varnames,
-            'allow_backtest': backtest
-        })
+        print('Registered middleware {}'.format(str(func)))
 
-    def _call_one_middleware(self, middleware):
-        ''' Evaluate arguments and execute the middleware function '''
-        args = {
-            # same as eval() but safer for arbitrary code execution
-            arg: reduce(getattr, arg.split('.'), self)
-            for arg in middleware['args'] if hasattr(self, arg)
-        }
-        middleware['call'](**args)
-
-    def _safely_call_middlewares(self):
-        ''' Execute the middleware stack '''
-        for middleware in self.middlewares:
-            name = middleware['name']
-            # TODO Call upon datetime conditions
-            # Some middlewares send stuff over the wires. This little security
-            # prevent us from performing DDOS
-            if not self._is_live and not middleware['allow_backtest']:
-                self.logger.debug('skipping middleware', name=name)
-            else:
-                self.logger.debug('calling middleware', name=name)
-                self._call_one_middleware(middleware)
+    def process_middleware(self, mdw):
+        if mdw.check(self.get_datetime()):
+            requested_attributes = {
+                # same as eval() but safer for arbitrary code execution
+                arg: reduce(getattr, arg.split('.'), self)
+                for arg in mdw.args if hasattr(self, arg)
+            }
+            result = mdw(**requested_attributes)
+            self.logger.debug(
+                'processed middleware', name=mdw.name, result=result
+            )

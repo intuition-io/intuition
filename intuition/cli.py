@@ -13,6 +13,7 @@
 
 import os
 import dna.logging
+import dna.debug
 from intuition import __version__
 import intuition.utils as utils
 import intuition.api.datafeed as datafeed
@@ -85,8 +86,11 @@ def main():
                      context=args['context'],
                      session=args['session'])
 
-            analyzes = intuition(args)
-            analyzes.build_report(show=args['showlog'])
+            Analysis = intuition(args)
+            if args['showlog']:
+                print
+                print(dna.debug.emphasis(Analysis.report(), align=True))
+                print
         except KeyboardInterrupt:
             log.info('Received SIGINT, cleaning...')
         except Exception as error:

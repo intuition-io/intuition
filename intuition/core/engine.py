@@ -19,7 +19,6 @@ from zipline.finance.trading import TradingEnvironment
 from zipline.utils.factory import create_simulation_parameters
 import intuition.constants as constants
 import intuition.data.loader as loader
-from intuition.core.analyzes import Analyze
 import intuition.utils as utils
 from intuition.errors import InvalidEngine
 
@@ -101,12 +100,10 @@ class Simulation(object):
                 self.datafeed, overwrite_sim_params=False
             )
 
-        # TODO Use zipline self.analyze hook instead
-        return Analyze(
-            # Safer to access internal sim_params as there are several methods
-            # to get the structure setup
-            params=self.engine.sim_params,
-            results=daily_stats,
-            metrics=self.engine.risk_report,
-            benchmark=self.benchmark
+        # A fallback is available so that it stays optional
+        analyzer_path = modules.get('analyzer', 'intuition.api.analysis.Basic')
+        AnalyzerObj = utils.intuition_module(analyzer_path)
+        return AnalyzerObj(
+            daily_stats,  # Pretty much everything that appened, daily
+            self.engine.perf_tracker.cumulative_risk_metrics
         )
