@@ -38,7 +38,7 @@ REQUIREMENTS = [
     'dna>=0.0.6',
     'six',
     'zipline>=0.5.9',
-    'portfolio>=0.0.1',
+    'portfolio-analytics>=0.0.1',
     'pandas>=0.13.1'
 ]
 
