@@ -6,7 +6,7 @@ env:
   - COVERALLS_REPO_TOKEN=bcZSpPjEqwx3oyzzFvdONvpFM6IXOcAYd
 
 before_install:
-  - sudo apt-get -y install python-pip python-dev g++ make gfortran
+  - sudo apt-get -y install python-pip python-dev g++ make libopenblas-dev liblapack-dev gfortran
   - pip install --quiet --upgrade numpy dna
 
 install:

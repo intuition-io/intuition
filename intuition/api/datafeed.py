@@ -17,8 +17,8 @@ import dna.logging
 from zipline.sources.data_source import DataSource
 from zipline.gens.utils import hash_args
 import intuition.utils as utils
-from intuition.errors import LoadDataFailed, InvalidDatafeed
 import intuition.data.universe as universe
+from intuition.errors import LoadDataFailed, InvalidDatafeed
 
 
 def _build_safe_event(event, date, sid):
@@ -30,65 +30,60 @@ def _build_safe_event(event, date, sid):
     return event
 
 
-def _check_data_modules(backtest, live, start, end):
-    # TODO Fails if the class has no get_data method
-    if not backtest and not live:
-        raise InvalidDatafeed(
-            reason='provide at least a backtest or a live data module')
-
-    if not backtest and not utils.is_live(start):
-        raise InvalidDatafeed(
-            reason='no backtest data source provided for past dates')
-
-    if not live and utils.is_live(end):
-        raise InvalidDatafeed(
-            reason='no live data source provided for futur dates')
-
-    return True
-
-
 class HybridDataFactory(DataSource):
     '''
     Surcharge of zipline.DataSource, switching automatically between live
     stream and backtest sources
     '''
-
-    backtest = None
-    live = None
     _is_live = False
 
-    def __init__(self, **kwargs):
-        # TODO Use alternatives to `index` and `universe` objects
+    def __init__(self, index, market, frequency):
+        self.backtest = None
+        self.live = None
+
+        # TODO Use alternatives to `index` and `market` objects
         self.log = dna.logging.logger(__name__)
+        self.frequency = frequency
 
-        if 'index' not in kwargs or 'universe' not in kwargs:
-            raise InvalidDatafeed(
-                reason='you must provide a universe and an index')
-        if not isinstance(kwargs.get('index'),
-                          pd.tseries.index.DatetimeIndex):
-            raise InvalidDatafeed(reason='you must provide a valid time index')
-
-        # Unpack config dictionary with default values.
-        self.sids = kwargs['universe'].sids
-        self.index = kwargs['index']
+        self.index = index
         self.start = self.index[0]
         self.end = self.index[-1]
-
-        self.frequency = kwargs.get('frequency', 'at closing')
-        self.market_open = kwargs['universe'].open
-        self.market_close = kwargs['universe'].close
-        self.market_timezone = kwargs['universe'].timezone
-
-        if 'backtest' in kwargs:
-            self.backtest = kwargs['backtest'](self.sids, kwargs)
-        if 'live' in kwargs:
-            self.live = kwargs['live'](self.sids, kwargs)
-
-        _check_data_modules(self.backtest, self.live, self.start, self.end)
+        self.sids = market.sids
+        self.market_open = market.open
+        self.market_close = market.close
+        self.market_timezone = market.timezone
 
         # Hash_value for downstream sorting.
-        self.arg_string = hash_args(**kwargs)
+        self.arg_string = hash_args({'index': index, 'market': market})
         self._raw_data = None
+
+    def check_sources(self):
+        # TODO Fails if the class has no get_data method
+        if not self.backtest and not self.live:
+            raise InvalidDatafeed(
+                reason='provide at least a backtest or a live data module'
+            )
+
+        if not self.backtest and not utils.is_live(self.start):
+            raise InvalidDatafeed(
+                reason='no backtest data source provided for past dates')
+
+        if not self.live and utils.is_live(self.end):
+            raise InvalidDatafeed(
+                reason='no live data source provided for futur dates'
+            )
+
+    # NOTE We overwrite source but it should be possible to append them
+    # TODO Validate here data source
+    # TODO Validate we have at least a backtest or live source
+    def add_source(self, mode, path, **kwargs):
+        source_module = utils.intuition_module(path)
+        if mode == 'live':
+            self.live = source_module(self.sids, kwargs)
+        elif mode == 'backtest':
+            self.backtest = source_module(self.sids, kwargs)
+        else:
+            raise ValueError('Invalid source mode: {}'.format(mode))
 
     @property
     def mapping(self):
@@ -152,7 +147,8 @@ class HybridDataFactory(DataSource):
                                       minute=self.market_close.minute)
 
             tick_ = universe.Tick(
-                start=open_hour, end=close_hour, tz=self.market_timezone)
+                start=open_hour, end=close_hour, tz=self.market_timezone
+            )
             tick_.parse(self.frequency)
 
             # Trade until the end of the trading day

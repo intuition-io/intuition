@@ -37,7 +37,7 @@ def parse_storage(storage):
     }
 
 
-class ContextFactory():
+class ContextFactory(object):
     '''
     Context loaders give to Intuition everything it needs to know about user
     configuration. It also provides some methods to make the setup process

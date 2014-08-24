@@ -11,13 +11,10 @@
   :license: Apache 2.0, see LICENSE for more details.
 '''
 
-import os
-import argparse
 import pytz
 from schematics.types import StringType, URLType
 import dna.logging
 import dna.utils
-from intuition import __version__, __licence__
 import intuition.constants
 import intuition.utils as utils
 import intuition.data.universe as universe
@@ -26,34 +23,16 @@ from intuition.errors import InvalidConfiguration
 log = dna.logging.logger(__name__)
 
 
-def parse_commandline():
-    parser = argparse.ArgumentParser(
-        description='Intuition, the terrific trading system')
-    parser.add_argument('-V', '--version',
-                        action='version',
-                        version='%(prog)s v{} Licence {}'.format(
-                            __version__, __licence__),
-                        help='Print program version')
-    parser.add_argument('-v', '--showlog',
-                        action='store_true',
-                        help='Print logs on stdout')
-    parser.add_argument('-c', '--context',
-                        action='store', default='file::conf.yaml',
-                        help='Provides the way to build context')
-    parser.add_argument('-i', '--id',
-                        action='store', default='gekko',
-                        help='Customize the session id')
-    args = parser.parse_args()
-
-    # Dict will be more generic to process than args namespace
-    return {
-        'session': args.id,
-        'context': args.context,
-        'showlog': args.showlog
-    }
-
-
 class Context(object):
+    ''' Data Structure '''
+    def __init__(self, initial_values):
+        self.__dict__ = initial_values
+
+    def __getitem__(self, name):
+        return self.__dict__[name]
+
+
+class LoadContext(object):
     ''' Load and control configuration '''
 
     def __init__(self, access):
@@ -84,7 +63,9 @@ class Context(object):
         market_.parse_universe_description(config.pop('universe'))
 
         log.info('Context successfully loaded')
-        return {'config': config, 'strategy': strategy, 'market': market_}
+        return Context({
+            'config': config, 'strategy': strategy, 'market': market_
+        })
 
     def __exit__(self, type, value, traceback):
         pass
@@ -99,11 +80,3 @@ class Context(object):
             assert (config['index'].tzinfo == pytz.utc), 'Invalid timezone'
         except Exception as error:
             raise InvalidConfiguration(config=config, reason=error)
-
-
-def logfile(session_id):
-    # Create a special file for the session, with a fallback in /tmp
-    log_path = os.path.expanduser('~/.intuition/logs')
-    log_path = log_path if os.path.exists(log_path) \
-        else intuition.constants.DEFAULT_LOGPATH
-    return '{}/{}.log'.format(log_path, session_id)

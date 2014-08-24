@@ -20,6 +20,12 @@ DEFAULT_LOGPATH = '/tmp'
 
 DEFAULT_HOME = '/'.join([os.environ.get('HOME', '/'), '.intuition'])
 
+DEFAULT_CAPITAL = 10000.0
+
+DEFAULT_FREQUENCY = 'at closing'
+
+LOGBOOK_LEVELS = ['debug', 'info', 'notice', 'warning', 'error', 'critical']
+
 # https://github.com/halst/schema
 # NOTE Even better ? https://github.com/j2labs/schematics
 # TODO More strict validation
